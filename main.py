@@ -51,6 +51,10 @@ def run_step(step_name: str, command: list, env_overrides: dict | None = None) -
                     logging.info(f"  -> {line.strip()}")
         return True
     except subprocess.CalledProcessError as e:
+        # 42 = YouTube günlük yükleme kotası doldu -> bu bir HATA değil, planlı bir atlama
+        if e.returncode == 42:
+            logging.warning(f"[⏭️ ATLANDI] {step_name}: YouTube günlük yükleme kotanı doldu.")
+            return True
         logging.error(f"[-] KRİTİK HATA: {step_name}")
         logging.error(f"Stdout: {e.stdout}")
         logging.error(f"Stderr: {e.stderr}")

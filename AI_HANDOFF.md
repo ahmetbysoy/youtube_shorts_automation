@@ -179,3 +179,28 @@ PRUNE_ONLY_VIDEO_IDS=<VIDEO_ID> xvfb-run -a node prune_low_performers.js
 - 10 matris işi aynı hesabı paylaştığı için job-level `concurrency.group = pruner-studio-lock` **kaldırılmamalıdır** (eşzamanlı Studio oturumları satır kaymasına yol açıp yanlış video silinmesine yol açar).
 
 **Bir sonraki ajan için:** Faz 10 canlı doğrulandı (ilk hedef `Y6cCy07CIS8` kalıcı olarak silindi → watch sayfası "Video unavailable"). `python -m unittest discover -s tests` ile **31/31** test yeşil olmalıdır; `node tests/pruner_logic.test.js` 4/4 geçer.
+
+---
+
+## 8. Faz 11 — Viral Metadata, AI Kapak ve Zamanlayıcı Teşhisi (Operasyon Notları)
+
+### 8.1 ZAMANLAYICI NEDEN ÇALIŞMIYORDU? (Kök neden analizi)
+- `GET /repos/ahmetbysoy/youtube_shorts_automation/actions/runs?event=schedule` → **`total_count = 0`**: GitHub'ın `schedule` tetikleyicisi bu depoda **hiç** otomatik çalıştırma üretmemişti. Tüm çalıştırmalar `workflow_dispatch` ile elle tetiklenmişti.
+- Tüm iş akışları `state=active`, repo `public`, varsayılan dal `main` → "Enable workflow" sorunu yok.
+- **Düzeltme:** (a) `cron: '0,15,30,45 * * * *'` kesin dilimler, (b) otomatik commit mesajlarındaki **`[skip ci]` kaldırıldı** (HEAD commit mesajında `[skip ci]` varsa zamanlayıcı sessizce atlanır), (c) **`cron-kick` zincir job'ı** eklendi: zamanlayıcı ölüyse iş akışı `workflow_dispatch` ile kendini bir sonraki 15 dakikalık dilime yeniden tetikler, (d) `cron_probe.yml` nabız iş akışı eklendi.
+- **Test komutu:** `curl -s -H "Authorization: Bearer $TOKEN" "https://api.github.com/repos/ahmetbysoy/youtube_shorts_automation/actions/runs?event=schedule&per_page=5"`
+
+### 8.2 YouTube GÜNLÜK YÜKLEME KOTASI (kritik operasyonel gerçek)
+- 10 kanallı matris **tek hesabı** (`COOKIES_JSON_1..10` aynı kanal) kullandığı için her 15 dakikada **10 video** yükleniyor → kanalın **günlük yükleme limitini** birkaç dakikada tüketiyor.
+- Studio diyaloğunda "**Günlük yükleme sınırına ulaşıldı**" uyarısı görüldü; `youtube_studio_uploader.js` artık bunu yakalayıp **çökmeden** `⏭️ YÜKLEME ATLANDI` (çıkış kodu 42) ile atlar.
+- **Öneri (bir sonraki faz):** matrisin her kanalı **farklı bir YouTube hesabına** bağlamak (`COOKIES_JSON_1..10` ayrı hesaplar) veya kanal başına günlük kota takibi (`YT_DAILY_UPLOAD_LIMIT`) eklemek. Limit gece yarısı (PT) sıfırlanır.
+- Not: Faz 10 pruner videoları **sildiği için günlük kota geri gelmez** — kota "bugün yüklenen video sayısı" üzerinden işler.
+
+### 8.3 Kapak (Thumbnail) Üretim Hattı
+- Motor: `https://image.pollinations.ai/prompt/<url-encoded>?width=1080&height=1920&nologo=true&model=flux&seed=<rastgele>` (anahtarsız, ücretsiz; **yoğun saatlerde HTTP 402/429** döner → 4 denemeli geri çekilme var).
+- FFmpeg ile 1080x1920'e ölçeklenir (YouTube minimum genişlik 640 px) ve alt filigran kırpılır.
+- Studio'ya yükleme: `ytcp-thumbnail-uploader input[type="file"]` → `setInputFiles()`.
+- Doğrulama logları: `[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...`, `[+] Kapak resmi başarıyla yüklendi.`, `[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak.`
+
+### 8.4 Doğrulama
+`python -m unittest discover -s tests` → **40/40 OK** (Faz 11 testleri: `tests/test_faz11_viral_metadata.py`).

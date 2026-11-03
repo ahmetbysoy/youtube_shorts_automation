@@ -122,3 +122,49 @@ curl -X POST -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/
   https://api.github.com/repos/ahmetbysoy/youtube_shorts_automation/actions/workflows/hourly_pruner.yml/dispatches \
   -d '{"ref":"main","inputs":{"target_channel":"1"}}'
 ```
+
+---
+
+## Faz 11 — Viral Metadata, AI Kapak (Thumbnail) ve Cron Kilidi Kırma
+
+### 1) Viral Metadata Üretimi (`content_engine.py`)
+
+LLM istemi artık metinle birlikte **algoritma hackleme metadatası** da üretir:
+
+| Alan | Açıklama |
+| :--- | :--- |
+| `hook` | İlk 3 saniyenin kancası ("Merhaba" yasak) |
+| `cta_line` | Videonun son cümlesi: yorum/abone çağrısı |
+| `thumbnail_prompt` | **İngilizce**, dikey (9:16), yüksek kontrastlı kapak görseli promptu |
+| `viral_hashtags` | **Tam 3 adet** spesifik trend hashtag (YouTube 3'ten fazlasını yok sayar) |
+
+Açıklama sırası (YouTube'da görünen hâli):
+```
+[1] Affiliate CTA + link      (Faz 9: en üstte)
+[2] Etkileşim CTA (cta_line)
+[3] Govde metni
+[4] #hashtag1 #hashtag2 #hashtag3
+```
+Yedek senaryo havuzu (LLM anahtarı yokken) için 23 başlığın **elle seçilmiş** hashtag haritası `FALLBACK_VIRAL_TAGS` içinde tanımlıdır.
+
+### 2) Ücretsiz AI Kapak Üretimi + Yükleme (`youtube_studio_uploader.js`)
+
+- **Görsel motoru:** `https://image.pollinations.ai/prompt/<prompt>?width=1080&height=1920&nologo=true&model=flux` (anahtar istemez, ücretsiz).
+- **Rate limit (HTTP 402/429) yönetimi:** 4 deneme / 12s-60s bekleme; başarısız olursa YouTube otomatik kare seçimine düşer (yükleme asla çökmez).
+- **FFmpeg ile 1080x1920'e ölçekleme** (YouTube minimum genişlik 640 px) + filigran kırpma.
+- **Studio'ya yükleme:** `ytcp-thumbnail-uploader input[type="file"]` → özel kapak anında uygulanır (doğrulama: `ytcp-video-custom-still-editor`).
+- Log satırları: `[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...` → `[+] Kapak resmi başarıyla yüklendi.`
+
+### 3) Günlük Kota Koruması
+
+YouTube günlük yükleme limiti dolduğunda yükleme **çökmez**, planlı olarak atlanır:
+`⏭️ YÜKLEME ATLANDI: YouTube günlük yükleme kotanı dolmuş (limit gece yarısı sıfırlanır).` (çıkış kodu `42` → `main.py` bunu hata saymaz).
+
+### 4) Cron Kilidi Kırma (Zamanlayıcı Bağımsız Zincir)
+
+GitHub'ın `schedule` tetikleyicisi bu depoda **hiç otomatik tetiklenmemişti** (`event=schedule` toplam çalıştırma = 0). Çözüm:
+
+1. `cron: '0,15,30,45 * * * *'` (kesin dilimler) + `permissions: contents/actions/pull-requests: write`.
+2. **Otomatik commit mesajlarındaki `[skip ci]` kaldırıldı** — HEAD commit mesajında `[skip ci]` varsa zamanlayıcı sessizce atlanır.
+3. **`cron-kick` job'ı (zincir):** Her çalıştırmanın sonunda zamanlayıcı canlı mı kontrol edilir (API: `?event=schedule`); **ölüyse** iş akışı `workflow_dispatch` ile kendini bir sonraki 15 dakikalık dilime yeniden tetikler. Böylece üretim zinciri zamanlayıcıdan bağımsız çalışır.
+4. `.github/workflows/cron_probe.yml`: 5 dakikada bir "PROBE OK" atan nabız iş akışı (zamanlayıcı sağlık teşhisi).

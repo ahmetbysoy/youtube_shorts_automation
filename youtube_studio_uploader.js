@@ -307,6 +307,162 @@ async function fillContentEditable(page, containerSelector, value) {
     throw new Error(`Metin alanı bulunamadı: ${containerSelector}`);
 }
 
+
+// ============================================================================
+// FAZ 11: VIRAL METADATA + AI KAPAK (THUMBNAIL) MOTORU
+// ============================================================================
+
+/** YouTube'un gunluk yukleme kotasinin dolup dolmadigini sayfa uzerinden kontrol eder. */
+async function detectDailyUploadLimit(page) {
+    const markers = /günlük yükleme sınırına ulaşıldı|daily upload limit|upload limit reached|yükleme limiti/i;
+    try {
+        const bodyText = await page.locator('body').innerText({ timeout: 5000 });
+        if (markers.test(bodyText)) return true;
+    } catch (_) {}
+    const errorVisible = await page.locator(
+        'ytcp-error, [class*="error-tip-container"], ytcp-video-upload-progress'
+    ).first().innerText({ timeout: 3000 }).catch(() => '');
+    return markers.test(errorVisible || '');
+}
+
+/** Betikten gelen alanlari guvenli sekilde okur. */
+function readScenarioField(scriptData, key, fallback = '') {
+    const value = scriptData[key];
+    if (value === undefined || value === null) return fallback;
+    return String(value).trim();
+}
+
+/**
+ * FAZ 11: Aciklamayi "viral" siralamayla kurar:
+ *   [1] Affiliate CTA + link (Faz 9: en ustte)  [2] Etkilesim CTA (cta_line)
+ *   [3] Govde metni                                [4] Tam 3 adet trend hashtag
+ */
+function buildFinalDescription(scriptData) {
+    const desc = readScenarioField(scriptData, 'description');
+    const affiliateCta = readScenarioField(scriptData, 'affiliate_cta');
+    const affiliateLink = readScenarioField(scriptData, 'affiliate_link');
+    const ctaLine = readScenarioField(scriptData, 'cta_line');
+    const hashtags = (Array.isArray(scriptData.viral_hashtags) ? scriptData.viral_hashtags : [])
+        .map(h => String(h).trim())
+        .filter(Boolean)
+        .slice(0, 3);
+
+    const blocks = [];
+
+    const top = [];
+    if (affiliateCta) {
+        top.push(affiliateCta);
+    } else if (affiliateLink) {
+        top.push(`İncele: ${affiliateLink}`);
+    }
+    if (ctaLine) top.push(ctaLine);
+    const topText = top.join('\n\n');
+    if (topText && !desc.startsWith(topText)) {
+        blocks.push(topText);
+    }
+
+    blocks.push(desc);
+
+    const hashtagText = hashtags.join(' ');
+    if (hashtagText && !desc.includes(hashtagText)) {
+        blocks.push(hashtagText);
+    }
+
+    return blocks.filter(Boolean).join('\n\n').slice(0, 4900);
+}
+
+/** pollinations.ai (anahtarsiz, ucretsiz) ile dikey kapak uretir. Rate limit (402/429) olursa tekrar dener. */
+async function generateAiThumbnail(prompt) {
+    if (!prompt) return null;
+    if (typeof fetch !== 'function') {
+        console.log('[!] Bu Node surumunda global fetch yok, kapak uretilmedi (Node 18+ gerekir).');
+        return null;
+    }
+
+    const seed = Math.floor(Math.random() * 1e9);
+    const encoded = encodeURIComponent(`${prompt}, vertical 9:16 aspect ratio, highly detailed, vibrant colors, youtube shorts thumbnail style`);
+    const url = `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1920&nologo=true&model=flux&seed=${seed}`;
+    const rawPath = path.join(os.tmpdir(), `yt_thumb_raw_${Date.now()}.jpg`);
+    const finalPath = path.join(os.tmpdir(), `yt_thumb_${Date.now()}.jpg`);
+
+    const retryDelays = [0, 12000, 30000, 60000];
+    for (const delay of retryDelays) {
+        if (delay > 0) {
+            console.log(`[*] Kapak servisi meşgul (rate limit), ${delay / 1000}s sonra tekrar denenecek...`);
+            await new Promise(r => setTimeout(r, delay));
+        }
+        try {
+            const res = await fetch(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36' }
+            });
+            if (res.status === 402 || res.status === 429) {
+                console.log(`[!] Kapak servisi rate limit döndü (HTTP ${res.status}).`);
+                continue;
+            }
+            if (!res.ok) {
+                console.log(`[!] Kapak servisi HTTP ${res.status} döndü.`);
+                continue;
+            }
+            const buffer = Buffer.from(await res.arrayBuffer());
+            if (buffer.length < 8000) {
+                console.log('[!] Kapak görseli boş geldi, atlanıyor.');
+                continue;
+            }
+            fs.writeFileSync(rawPath, buffer);
+
+            // YouTube minimum genislik 640 px ister -> ffmpeg ile 1080x1920'e buyut
+            try {
+                await new Promise((resolve, reject) => {
+                    const ffmpeg = require('child_process').spawn('ffmpeg', [
+                        '-y', '-i', rawPath,
+                        '-vf', 'crop=iw:ih-52:0:0,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
+                        '-q:v', '3', finalPath
+                    ], { stdio: 'ignore' });
+                    ffmpeg.on('error', reject);
+                    ffmpeg.on('close', code => (code === 0 ? resolve() : reject(new Error(`ffmpeg ${code}`))));
+                });
+                fs.unlinkSync(rawPath);
+                console.log(`[*] Kapak görseli 1080x1920 olarak hazırlandı (${Math.round(fs.statSync(finalPath).size / 1024)} KB).`);
+                return finalPath;
+            } catch (ffErr) {
+                console.log(`[*] ffmpeg ile yeniden boyutlama yapılamadı (${ffErr.message}), ham görsel kullanılıyor.`);
+                fs.copyFileSync(rawPath, finalPath);
+                fs.unlinkSync(rawPath);
+                return finalPath;
+            }
+        } catch (err) {
+            console.log(`[!] Kapak indirme hatası: ${err.message}`);
+        }
+    }
+    return null;
+}
+
+/** YouTube Studio'daki "Küçük resim" (thumbnail) alanına özel kapağı yükler. */
+async function uploadCustomThumbnail(page, thumbPath) {
+    const input = page.locator(
+        'ytcp-thumbnail-uploader input[type="file"], ' +
+        'ytcp-video-thumbnail-editor input[type="file"], ' +
+        'ytcp-video-custom-still-editor input[type="file"], ' +
+        'input#file-loader'
+    ).first();
+
+    if (await input.count() === 0) {
+        return { ok: false, reason: 'kapak dosya alanı bulunamadı' };
+    }
+
+    await input.setInputFiles(thumbPath);
+    await page.waitForTimeout(5000);
+
+    // Dogrulama: onizleme gorseli degisti mi? (otomatik secilen kare ile ayni olmamali)
+    const applied = await page.evaluate(() => {
+        const editor = document.querySelector('ytcp-video-thumbnail-editor');
+        if (!editor) return false;
+        const custom = editor.querySelector('ytcp-video-custom-still-editor');
+        return !!custom;
+    });
+    return { ok: true, customApplied: applied };
+}
+
 async function uploadToYouTubeStudio() {
     if (!fs.existsSync(VIDEO_PATH)) {
         console.error("[-] HATA: final_short.mp4 bulunamadı! Önce Python montaj hattını çalıştır.");
@@ -319,19 +475,16 @@ async function uploadToYouTubeStudio() {
 
     const scriptData = JSON.parse(fs.readFileSync(SCRIPT_PATH, 'utf8'));
     const title = (scriptData.title || 'İlginç Bilgi #Shorts').slice(0, 100);
-    const rawDescription = (scriptData.description || '').trim();
-    const affiliateCta = (scriptData.affiliate_cta || '').trim();
-    const affiliateLink = (scriptData.affiliate_link || '').trim();
-    let finalDescription = rawDescription;
-    if (affiliateCta && !rawDescription.startsWith(affiliateCta)) {
-        finalDescription = (!affiliateLink || !rawDescription.includes(affiliateLink))
-            ? `${affiliateCta}\n\n${rawDescription}`.trim()
-            : rawDescription;
-    } else if (!affiliateCta && affiliateLink && !rawDescription.includes(affiliateLink)) {
-        finalDescription = `İncele: ${affiliateLink}\n\n${rawDescription}`.trim();
-    }
-    const description = finalDescription.slice(0, 4900);
-    const tags = 'shorts,ilginçbilgiler,tarih,bilim';
+    // FAZ 11: Viral metadata kurulumu (affiliate CTA -> etkilesim CTA -> govde -> 3 hashtag)
+    const description = buildFinalDescription(scriptData);
+    const ctaLine = readScenarioField(scriptData, 'cta_line');
+    const viralHashtags = (Array.isArray(scriptData.viral_hashtags) ? scriptData.viral_hashtags : [])
+        .map(h => String(h).trim()).filter(Boolean).slice(0, 3);
+    const thumbnailPrompt = readScenarioField(scriptData, 'thumbnail_prompt');
+    if (ctaLine) console.log(`[*] Etkileşim CTA (açıklama üstü): ${ctaLine}`);
+    if (viralHashtags.length) console.log(`[*] Trend hashtag'ler: ${viralHashtags.join(' ')}`);
+    const tags = ['shorts', 'ilginçbilgiler', 'tarih', 'bilim', ...viralHashtags.map(h => h.replace('#', ''))]
+        .filter(Boolean).join(',').slice(0, 500);
 
     const hasDisplay = Boolean(process.env.DISPLAY);
     const headlessMode = process.env.HEADLESS === 'true' ? true : !hasDisplay;
@@ -416,6 +569,15 @@ async function uploadToYouTubeStudio() {
         await fileInput.setInputFiles(VIDEO_PATH);
 
         console.log("[*] Video yükleniyor, detaylar giriliyor... (Bu işlem video boyutuna göre 1-2 dakika sürebilir)");
+        await page.waitForTimeout(2500);
+
+        // Kota koruması: YouTube günlük yükleme limiti dolduysa boşuna uğraşma
+        if (await detectDailyUploadLimit(page)) {
+            console.error('⏭️ YÜKLEME ATLANDI: YouTube günlük yükleme kotanı dolmuş (limit gece yarısı sıfırlanır).');
+            writeAuthStatus('skipped_daily_limit', { title, channelUrl: page.url() });
+            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'daily_limit.png') }).catch(() => {});
+            process.exit(42);
+        }
         await page.locator('ytcp-social-suggestions-textbox#title-textarea #textbox').first().waitFor({ state: 'visible', timeout: 90000 });
         await page.waitForTimeout(1500);
 
@@ -426,6 +588,33 @@ async function uploadToYouTubeStudio() {
         await page.waitForTimeout(800);
         await fillContentEditable(page, 'ytcp-social-suggestions-textbox#description-textarea', description);
         await page.waitForTimeout(800);
+
+        // --- FAZ 11: AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor ---
+        console.log('[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...');
+        let thumbPath = null;
+        try {
+            thumbPath = await generateAiThumbnail(thumbnailPrompt);
+        } catch (thumbErr) {
+            console.log(`[!] Kapak üretimi başarısız: ${thumbErr.message}`);
+        }
+        if (!thumbPath) {
+            console.log('[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Manuel müdahale gerekebilir)');
+        } else {
+            try {
+                const thumbResult = await uploadCustomThumbnail(page, thumbPath);
+                if (thumbResult.ok) {
+                    console.log('[+] Kapak resmi başarıyla yüklendi.');
+                } else {
+                    console.log(`[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Sebep: ${thumbResult.reason})`);
+                }
+            } catch (thumbUploadErr) {
+                console.log(`[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Hata: ${thumbUploadErr.message})`);
+            } finally {
+                if (fs.existsSync(thumbPath)) {
+                    try { fs.unlinkSync(thumbPath); } catch (_) {}
+                }
+            }
+        }
 
         // Çocuklara özel değil (Zorunlu YouTube Studio alanı!)
         const notForKids = page.locator('tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]').first();
@@ -462,7 +651,17 @@ async function uploadToYouTubeStudio() {
         // Herkese Açık (PUBLIC) seçeneğini işaretle - Faz 7 Tam Otonom Yayın!
         const publicRadio = page.locator('tp-yt-paper-radio-button[name="PUBLIC"], #public-radio-button, input[value="PUBLIC"]').first();
         await publicRadio.scrollIntoViewIfNeeded().catch(() => {});
-        await publicRadio.waitFor({ state: 'visible', timeout: 25000 });
+        try {
+            await publicRadio.waitFor({ state: 'visible', timeout: 25000 });
+        } catch (waitErr) {
+            if (await detectDailyUploadLimit(page)) {
+                console.error('⏭️ YÜKLEME ATLANDI: YouTube günlük yükleme kotanı dolmuş (limit gece yarısı sıfırlanır).');
+                writeAuthStatus('skipped_daily_limit', { title, channelUrl: page.url() });
+                await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'daily_limit.png') }).catch(() => {});
+                process.exit(42);
+            }
+            throw waitErr;
+        }
         await publicRadio.click({ force: true });
         console.log("[*] Görünürlük 'PUBLIC (Herkese Açık)' olarak işaretlendi.");
         await page.waitForTimeout(1500);

@@ -1,0 +1,25 @@
+name: Cron Probe (Zamanlayıcı Canlılık Testi)
+
+# GitHub Actions'ın zamanlayıcısı (schedule event) bu depoda gerçekten çalışıyor mu?
+# 5 dakikada bir tetiklenir; tetiklenirse "PROBE OK" yazar ve bir saniyelik job yapar.
+# Not: HEAD commit mesajında [skip ci] varsa zamanlayıcı sessizce atlanır -> bu yüzden
+# otomatik commit mesajlarında [skip ci] KULLANILMAZ.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Zamanlayıcı Nabzı
+        run: |
+          echo "PROBE OK - Zamanlayıcı çalışıyor. UTC: $(date -u '+%Y-%m-%d %H:%M:%S')"
+          echo "Tetikleyici: ${{ github.event_name }} | Run: ${{ github.run_number }}"
+          echo "Aktif iş akışı sayısı: $(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/actions/workflows | grep -c '"id"')"

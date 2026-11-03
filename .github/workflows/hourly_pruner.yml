@@ -11,6 +11,11 @@ on:
         required: false
         default: 'all'
         type: string
+      slot_epoch:
+        description: "Zincir tetikleyicisi için hedef saat dilimi (epoch saniye)."
+        required: false
+        default: ''
+        type: string
 
 # Aynı anda birden fazla temizlik oturumu açılmasın (Studio oturum çakışması)
 concurrency:
@@ -87,7 +92,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add prune_report.json prune_state.json 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "Faz 10 Auto-Pruner: Saatlik ölü ağırlık temizlik raporu [skip ci]"
+          git diff --staged --quiet || git commit -m "Faz 10 Auto-Pruner: Saatlik ölü ağırlık temizlik raporu"
           git pull --rebase origin main || true
           git push origin main || echo "Push atlandı (eşzamanlı güncelleme)"
 
@@ -101,3 +106,35 @@ jobs:
             prune_state.json
           retention-days: 14
           if-no-files-found: ignore
+
+  # CRON KILIDI KIRMA: Saatlik zamanlayıcı çalışmıyorsa zincir kendini tetikler.
+  cron-kick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: prune-videos
+    if: always()
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Zamanlayıcı Sağlığını Kontrol Et ve Zinciri Devam Ettir
+        run: |
+          NOW=$(date -u +%s)
+          WORKFLOW="hourly_pruner.yml"
+          LAST=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?event=schedule&per_page=1" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
+          if [ -n "$LAST" ]; then
+            LAST_EPOCH=$(date -u -d "$LAST" +%s)
+            AGE=$(( NOW - LAST_EPOCH ))
+            if [ "$AGE" -lt 5400 ]; then
+              echo "[OK] Saatlik zamanlayici CANLI (${AGE} saniye once) -> zincir tetiklenmiyor."
+              exit 0
+            fi
+          fi
+          NEXT_SLOT=$(( (NOW / 3600 + 1) * 3600 ))
+          echo "[*] Sonraki saat dilimi: ${NEXT_SLOT} (UTC $(date -u -d @${NEXT_SLOT} '+%H:%M:%S'))"
+          curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches" \
+            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"all\",\"slot_epoch\":\"${NEXT_SLOT}\"}}"
+          echo "[*] Zincir tetiklendi."

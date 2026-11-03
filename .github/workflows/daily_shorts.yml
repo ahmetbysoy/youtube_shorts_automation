@@ -2,13 +2,18 @@ name: 15-Minute Blitzkrieg Money Printer
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # Her 15 dakikada bir tetiklenir
+    - cron: '0,15,30,45 * * * *' # GitHub'ın daha iyi algıladığı kesin 15 dakikalık dilimler
   workflow_dispatch:
     inputs:
       target_channel:
         description: "Test edilecek tekil kanal ID (ör: 1) veya tüm matris için 'all'"
         required: false
         default: 'all'
+        type: string
+      slot_epoch:
+        description: "Zincir tetikleyicisi için hedef dilim (epoch saniye). Boşsa hemen başlar."
+        required: false
+        default: ''
         type: string
 
 # Çakışmayı önlemek için hayati ayar
@@ -33,6 +38,21 @@ jobs:
     steps:
       - name: Depoyu Çek (Checkout)
         uses: actions/checkout@v4
+
+      - name: "Zincir Zaman Dilimi Beklemesi (15dk kanalizasyonu)"
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.slot_epoch != '' }}
+        run: |
+          TARGET="${{ inputs.slot_epoch }}"
+          NOW=$(date -u +%s)
+          if ! [[ "$TARGET" =~ ^[0-9]+$ ]]; then
+            echo "[*] slot_epoch gecersiz, bekleme yok."
+            exit 0
+          fi
+          if [ "$TARGET" -gt "$NOW" ]; then
+            DELAY=$(( TARGET - NOW ))
+            echo "[*] Zincir tetikleyicisi: ${DELAY} saniye sonra 15 dakikalik dilime geçilecek..."
+            sleep "$DELAY"
+          fi
 
       - name: Sistem Paketlerini Kur (FFmpeg, Fontlar & Xvfb Sanal Ekran)
         run: |
@@ -106,3 +126,44 @@ jobs:
             script.json
             logs/
           retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # CRON KILIDI KIRMA: GitHub'ın 'schedule' tetikleyicisi throttle/yok sayılabiliyor.
+  # Bu job, zamanlayıcı ölüyse iş akışını kendi kendine yeniden tetikler (workflow_dispatch).
+  # Böylece 15 dakikalık üretim zinciri zamanlayıcıdan bağımsız olarak sürer.
+  # ---------------------------------------------------------------------------
+  cron-kick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-and-upload
+    if: always()
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Zamanlayıcı Sağlığını Kontrol Et ve Zinciri Devam Ettir
+        run: |
+          NOW=$(date -u +%s)
+          WORKFLOW="daily_shorts.yml"
+          LAST=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?event=schedule&per_page=1" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
+
+          if [ -n "$LAST" ]; then
+            LAST_EPOCH=$(date -u -d "$LAST" +%s)
+            AGE=$(( NOW - LAST_EPOCH ))
+            if [ "$AGE" -lt 1500 ]; then
+              echo "[OK] GitHub zamanlayicisi CANLI (son schedule calistirmasi ${AGE} saniye once) -> zincir tetiklenmiyor."
+              exit 0
+            fi
+            echo "[UYARI] Zamanlayici ${AGE} saniye once calismis -> zincir devam ettiriliyor."
+          else
+            echo "[UYARI] Hic zamanlanmis calistirma yok -> zincir devam ettiriliyor."
+          fi
+
+          NEXT_SLOT=$(( (NOW / 900 + 1) * 900 ))
+          echo "[*] Sonraki 15 dakikalik dilim: ${NEXT_SLOT} (UTC $(date -u -d @${NEXT_SLOT} '+%H:%M:%S'))"
+          curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches" \
+            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"all\",\"slot_epoch\":\"${NEXT_SLOT}\"}}"
+          echo "[*] Zincir tetiklendi."

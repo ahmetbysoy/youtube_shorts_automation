@@ -175,3 +175,44 @@ youtube_shorts_automation/
 ### 6.3 Matris Notu
 
 10 matris işi de aynı YouTube hesabını (`COOKIES_JSON_1..10` = aynı kanal) kullandığı için temizlik işleri `concurrency.group = pruner-studio-lock` ile **sıraya alınır**; aynı anda tek Studio oturumu açılır, böylece satır kayması kaynaklı yanlış silme riski ortadan kalkar.
+
+---
+
+## 7. Faz 11 — Viral Metadata + AI Kapak Akışı
+
+```
+content_engine.py
+   ├─ build_llm_prompts()      -> hook | script_text | cta_line | thumbnail_prompt | viral_hashtags
+   ├─ validate_and_normalize_scenario()
+   │      ├─ sanitize_hashtag() / tr_lower()      (Türkçe + Latin doğru küçük harf)
+   │      ├─ lookup_curated_hashtags()            (23 başlığa elle seçilmiş 3'er hashtag)
+   │      └─ açıklama montajı: affiliate CTA → CTA → gövde → hashtag'ler
+   └─ script.json  { description, cta_line, thumbnail_prompt, viral_hashtags, ... }
+
+youtube_studio_uploader.js
+   ├─ buildFinalDescription()            (aynı sıralama, idempotent)
+   ├─ generateAiThumbnail()              (pollinations.ai -> ffmpeg 1080x1920)
+   └─ uploadCustomThumbnail()            (ytcp-thumbnail-uploader input[type=file])
+```
+
+### 7.1 Kapak Yükleme Seçici Haritası (canlı kanalda doğrulandı)
+
+| Adım | Seçici | Not |
+| :--- | :--- | :--- |
+| Küçük resim bölümü | `ytcp-video-thumbnail-editor` | `#autogen-thumb-label` = "Küçük resim" |
+| Dosya alanı | `ytcp-thumbnail-uploader input[type="file"]` (`accept="image/jpeg,image/png"`, `#file-loader`) | Gizli input — `setInputFiles` ile doğrudan beslenir |
+| "Dosya yükle" butonu | `ytcp-video-custom-still-editor` | Tıklanınca da aynı dosya alanı açılır |
+| Özel kapak doğrulaması | `ytcp-video-custom-still-editor` varlığı | Yüklemeden sonra "Videodan seç" → "Seçenekler"e döner |
+| Otomatik kapak (fallback) | `ytcp-thumbnail-editor #select-button` | Özel kapak yoksa YouTube kareyi seçer |
+
+### 7.2 Cron Kilidi Kırma (Çift Kaynaklı Tetikleme)
+
+```
+cron (schedule)  ──(çalışıyorsa)──>  doğrudan çalışır
+        │
+        └──(çalışmıyorsa)──> cron-kick job'ı workflow_dispatch ile sonraki dilimi tetikler
+                                   (slot_epoch = bir sonraki 15dk dilimi; iş başında sleep ile bekler)
+```
+- Tetikleyici kontrolü: `GET /repos/{repo}/actions/workflows/{file}/runs?event=schedule&per_page=1`
+- `workflow_dispatch` **GITHUB_TOKEN ile tetiklenebilir** (GitHub'ın "GITHUB_TOKEN olayları yeni çalıştırma oluşturmaz" kuralının istisnasıdır).
+- `[skip ci]` içeren commit mesajları zamanlayıcıyı sessizce atladığı için otomatik commit mesajlarında **kullanılmaz**.

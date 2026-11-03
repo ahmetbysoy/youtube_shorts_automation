@@ -656,17 +656,29 @@ def build_llm_prompts(
 
     system_prompt = (
         "Sen milyonlarca izlenen Türkçe YouTube Shorts belgesel kanallarının baş senaristisin. "
-        "Görevin 'İlginç Bilgiler / Tarih / Bilim' konseptinde %100 gerçek, doğrulanabilir ve "
-        "izleyiciyi son saniyeye kadar ekranda tutan bir Shorts seslendirme metni yazmaktır.\n\n"
+        "Görevin 'İlginç Bilgiler / Tarih / Bilim' konseptinde %100 gerçek, doğrulanabilir, "
+        "izleyiciyi ilk 3 saniyede yakalayan ve son saniyeye kadar ekranda tutan bir Shorts paketi üretmektir. "
+        "Sen bir 'algoritma hacker'ısın: metnin yanında KAPAK (thumbnail) ve ETKİLEŞİM (CTA + hashtag) "
+        "metadatasını da üretirsin.\n\n"
         "KESİN KURALLAR:\n"
-        "1. İlk cümle (ilk 3 saniye - Hook): Kaydırmayı anında durduracak merak uyandırıcı bir soru veya çarpıcı gerçek olmalı. "
-        "Asla 'Merhaba', 'Bugün sizlere' gibi klasik girişler yapma.\n"
-        "2. Uzunluk: `script_text` alanı TAM OLARAK 60 ile 80 Türkçe kelime arasında olmalı (yaklaşık 30-45 saniye).\n"
-        "3. Dil ve Diksiyon: Çok doğal, akıcı ve vurucu bir belgesel Türkçesi kullan. Emoji, hashtag, markdown veya "
+        "1. HOOK (İlk Cümle - ilk 3 saniye): Asla 'Merhaba' deme. Doğrudan beyni sarsan bir soru veya "
+        "şok edici istatistik olmalı; kaydırmayı anında durduracak merak uyandırıcı bir gerçek veya soru.\n"
+        "2. UZUNLUK: `script_text` alanı TAM OLARAK 60 ile 80 Türkçe kelime arasında olmalı (yaklaşık 30-45 saniye).\n"
+        "3. CTA (Call to Action): `cta_line` alanı, videonun son cümlesi gibi izleyiciyi yorum yapmaya veya "
+        "abone olmaya ZORLAYAN tek bir cümle olmalı. "
+        "Örnek: 'Sen olsan ne yapardın? Yorumlara yaz!' veya 'Bunu bilen var mı? Abone ol, birlikte şaşıralım!'\n"
+        "4. THUMBNAIL PROMPT: `thumbnail_prompt` alanı, bu videonun YouTube KAPAĞI olacak; yüksek kontrastlı, "
+        "sinematik, DIKEY (9:16) bir görsel için İNGİLİZCE bir 'image generation prompt' olmalı. "
+        "Örnek: 'Cinematic vertical shot of Napoleon running from giant rabbits, hyper-realistic, dramatic lighting, 8k'. "
+        "Görselde yazı/metin olmasın, odak tek bir güçlü sahnede olsun.\n"
+        "5. HASHTAGLAR: `viral_hashtags` alanında SADECE 3 adet, çok spesifik ve trend hashtag üret "
+        "(örn. '#göbeklitepe', '#napolyon', '#marianacukuru'). Genel etiketler ('#bilim', '#tarih') yazma; "
+        "#shorts zaten sistemde var, onu da yazma.\n"
+        "6. Dil ve Diksiyon: Çok doğal, akıcı ve vurucu bir belgesel Türkçesi kullan. Emoji, hashtag, markdown veya "
         "sahne notu YAZMA. Kısaltmaları ('milattan önce' gibi) açık yaz.\n"
-        "4. Görsel Arama Kelimeleri: Faz 3'te Pexels/Pixabay dikey stok video aramasında kullanılmak üzere "
+        "7. Görsel Arama Kelimeleri: Faz 3'te Pexels/Pixabay dikey stok video aramasında kullanılmak üzere "
         "konuya uygun 4 adet İngilizce sinematik arama terimi (`visual_keywords`) üret.\n"
-        "5. Yalnızca geçerli bir JSON nesnesi döndür."
+        "8. Yalnızca geçerli bir JSON nesnesi döndür."
     )
 
     user_prompt = (
@@ -677,10 +689,13 @@ def build_llm_prompts(
         "Lütfen tam olarak aşağıdaki JSON şemasında üretim yap:\n"
         "{\n"
         '  "topic": "Tarih veya Bilim veya İlginç Bilgiler",\n'
-        '  "title": "Merak uyandıran çarpıcı Türkçe YouTube Shorts başlığı #Shorts",\n'
-        '  "description": "Kısa Türkçe SEO açıklaması ve 3-4 etiket",\n'
+        '  "title": "Merak uyandıran çarpıcı Türkçe başlık (Maks 60 karakter) #Shorts",\n'
+        '  "description": "Kısa Türkçe SEO açıklaması",\n'
         '  "hook": "Metnin ilk cümlesi olan 3 saniyelik kanca",\n'
-        '  "script_text": "Hook cümlesiyle başlayan, toplam 60-80 kelimelik tam seslendirme metni",\n'
+        '  "script_text": "Hook cümlesiyle başlayan, 60-80 kelimelik tam seslendirme metni",\n'
+        '  "cta_line": "Videonun sonundaki etkileşim çağrısı cümlesi",\n'
+        '  "thumbnail_prompt": "İngilizce, dikey, yüksek kontrastlı kapak görseli promptu",\n'
+        '  "viral_hashtags": ["#spesifik1", "#spesifik2", "#spesifik3"],\n'
         '  "visual_keywords": ["english keyword 1", "english keyword 2", "english keyword 3", "english keyword 4"]\n'
         "}"
     )
@@ -700,6 +715,211 @@ def extract_json_object(raw_text: str) -> dict[str, Any]:
         raise ValueError("LLM yanıtında geçerli JSON nesnesi bulunamadı.")
 
     return json.loads(cleaned[start : end + 1])
+
+
+# --- FAZ 11: Viral Metadata yardimcilari (CTA, kapak promptu, trend hashtag) ---
+FALLBACK_CTA_LINES = [
+    "Sen olsan ne yapardın? Yorumlara yaz!",
+    "Bunu bilen var mı? Abone ol, birlikte şaşıralım!",
+    "Sence gerçek mi? Yorumlarda tartışalım!",
+    "Daha fazlası için abone olmayı unutma!",
+    "İlginç değil mi? Yorumlarda paylaş!",
+]
+
+_TR_STOPWORDS = {
+    "bir", "bu", "ve", "ile", "için", "daha", "çok", "ama", "ancak", "her", "gibi",
+    "değil", "olan", "oldu", "ise", "sonra", "önce", "kadar", "göre", "yerine",
+    "nasıl", "neden", "kimin", "hangi", "şey", "zaman", "yıl", "yılında", "sirada",
+    "tarih", "bilim", "ilginç", "bilgiler", "shorts", "video", "videosu",
+    "eski", "daha", "bin", "yıl", "yıllık", "gün", "dakika", "saniye", "saat",
+    "şey", "yer", "göre", "kadar", "sonra", "önce", "değil", "olan", "veya",
+    "biliyor", "musunuz", "vardı", "var", "yeni", "en", "çok", "tüm",
+}
+
+
+def tr_lower(text: str) -> str:
+    """Hibrit kucuk harf: Turkce karakter iceren kelimelerde 'I' -> 'ı', 'İ' -> 'i';
+    Latin (MARIANA gibi) adlarda Python varsayilani kullanilir."""
+    s = str(text or "")
+    if any(ch in s for ch in "ğüşıöç"):
+        return s.replace("İ", "i").replace("I", "ı").lower()
+    return s.lower()
+
+
+def sanitize_hashtag(raw: str) -> str:
+    """'Göbeklitepe' / '#Göbeklitepe' -> '#göbeklitepe' (Türkçe karakterler korunur)."""
+    text = str(raw or "").strip().lstrip("#")
+    text = re.sub(r"[^0-9A-Za-zÇĞİÖŞÜçğıöşü]", "", text)
+    if not text:
+        return ""
+    if text.isdigit():
+        return ""
+    return "#" + tr_lower(text)
+
+
+def strip_hashtags(text: str) -> str:
+    """Açıklamadaki eski hashtag'leri temizler (YouTube 3'ten fazla hashtag'i yok sayar)."""
+    cleaned = re.sub(r"#[0-9A-Za-zÇĞİÖŞÜçğıöşü_]+", " ", str(text or ""))
+    return re.sub(r"\s{2,}", " ", cleaned).strip()
+
+
+# FAZ 11: Yedek senaryo havuzu icin elle kurulmus SPESIFIK hashtag haritasi
+# (anahtar: baslikta aranan ayirt edici parca -> 3 adet trend hashtag)
+FALLBACK_VIRAL_TAGS: dict[str, list[str]] = {
+    "en kısa savaşı": ["#zanzibarsavaşı", "#kısasavaş", "#tarih"],
+    "venüs": ["#venüs", "#gezegenler", "#uzay"],
+    "denizanası": ["#denizanası", "#ölümsüzhayvan", "#turkuaz"],
+    "tavşan ordusu": ["#napolyon", "#tavşanordusu", "#napoleonbonapart"],
+    "göbeklitepe": ["#göbeklitepe", "#şıanlıurfa", "#antiktapınak"],
+    "mariana çukuru": ["#marianacukuru", "#okyanusderinliği", "#bilim"],
+    "uzayda ağlarsanız": ["#uzay", "#gözyaşı", "#astrofizik"],
+    "devekuşlarına": ["#devekuşu", "#avustralya", "#tarih"],
+    "nötron yıldızı": ["#nötronyıldızı", "#nükleerfizik", "#bilim"],
+    "mavi kanlı": ["#ahtapot", "#derincanlıları", "#okyanus"],
+    "kleopatra": ["#kleopatra", "#ay inişi", "#tarih"],
+    "antik mısır balı": ["#mısırbalı", "#antikmisır", "#arkeoloji"],
+    "elmas yağmurları": ["#neptün", "#uranüs", "#elmasyağmuru"],
+    "antikythera": ["#antikythera", "#antikbilgisayar", "#arkeoloji"],
+    "metaller kendi kendine": ["#fizik", "#metal", "#uzay"],
+    "muzlar": ["#muz", "#radyoaktif", "#besin"],
+    "tunguska": ["#tunguska", "#volkan", "#tarih"],
+    "su ayısı": ["#suayısı", "#uzayyaşamı", "#bilim"],
+    "voyager": ["#voyager", "#uzaylılara", "#altınmektup"],
+    "güneş ışığı": ["#güneş", "#ışık", "#fizik"],
+    "pompeii": ["#pompeii", "#yanardağ", "#arkeoloji"],
+    "ağaç sayısı": ["#ağaç", "#samanyolu", "#ekoloji"],
+    "krakatoa": ["#krakatoa", "#volkan", "#tarih"],
+}
+
+
+def lookup_curated_hashtags(title: str) -> list[str]:
+    """Faz 11: Basliga gore elle secilmis spesifik hashtag seti (varsa)."""
+    low = tr_lower(title)
+    for key, tags in FALLBACK_VIRAL_TAGS.items():
+        if key in low:
+            return [sanitize_hashtag(t) for t in tags if sanitize_hashtag(t)]
+    return []
+
+
+
+def derive_viral_hashtags(
+    title: str,
+    topic: str,
+    script_text: str = "",
+    provided: Any = None,
+) -> list[str]:
+    """Faz 11: Tam olarak 3 adet SPESIFIK trend hashtag uretir (YouTube limiti = 3).
+
+    Oncelik sirasi:
+      1) LLM/LLM-benzeri taraftan gelen `provided` listesi (varsa temizlenerek)
+      2) Baslik + metindeki OZNE (proper noun) adlari (skorlanarak)
+      3) Konu (topic) ve metindeki alan kelimeleri ile tamamlama
+    """
+    tags: list[str] = []
+
+    if isinstance(provided, list):
+        for item in provided:
+            tag = sanitize_hashtag(str(item))
+            if tag and tag not in tags:
+                tags.append(tag)
+            if len(tags) >= 3:
+                break
+
+    if len(tags) < 3:
+        curated = lookup_curated_hashtags(title)
+        for tag in curated:
+            if tag and tag not in tags:
+                tags.append(tag)
+            if len(tags) >= 3:
+                break
+
+    if len(tags) < 3:
+        title_clean = str(title or "").replace("#Shorts", " ")
+        script_clean = str(script_text or "")
+        words = re.findall(r"[0-9A-Za-zÇĞİÖŞÜçğıöşü]+", title_clean + " " + script_clean)
+        title_words = set(re.findall(r"[0-9A-Za-zÇĞİÖŞÜçğıöşü]+", title_clean))
+
+        scored: list[tuple[float, str]] = []
+        for word in words:
+            if len(word) < 4 or word.lower() in _TR_STOPWORDS:
+                continue
+            if not word[0].isupper():
+                continue
+            score = 0.0
+            if word in title_words:
+                score += 2.0
+            if len(word) >= 6:
+                score += 1.0
+            if len(word) >= 9:
+                score += 0.5
+            if word.lower() in {"tarih", "bilim", "ilginç"}:
+                score -= 2.0
+            scored.append((score, word))
+
+        seen_words: set[str] = set()
+        for _, word in sorted(scored, key=lambda item: -item[0]):
+            key = word.lower()
+            if key in seen_words:
+                continue
+            seen_words.add(key)
+            tag = sanitize_hashtag(word)
+            if tag and tag not in tags:
+                tags.append(tag)
+            if len(tags) >= 3:
+                break
+
+    if len(tags) < 3:
+        for word in re.findall(r"[0-9A-Za-zÇĞİÖŞÜçğıöşü]+", str(title or "").replace("#Shorts", " ")):
+            if len(word) < 4 or word.lower() in _TR_STOPWORDS:
+                continue
+            tag = sanitize_hashtag(word)
+            if tag and tag not in tags:
+                tags.append(tag)
+            if len(tags) >= 3:
+                break
+
+    if len(tags) < 3:
+        # Metindeki alan kelimeleri (uzay, gezegen, tapinak, savaş...)
+        for word in re.findall(r"[0-9A-Za-zÇĞİÖŞÜçğıöşü]+", str(script_text or "")):
+            if len(word) < 6 or word.lower() in _TR_STOPWORDS:
+                continue
+            tag = sanitize_hashtag(word)
+            if tag and tag not in tags:
+                tags.append(tag)
+            if len(tags) >= 3:
+                break
+
+    if len(tags) < 3:
+        niche = sanitize_hashtag(topic or "")
+        if niche and niche not in tags:
+            tags.append(niche)
+
+    if len(tags) < 3:
+        for filler in ("#tarih", "#bilim", "#ilginçbilgiler"):
+            if filler not in tags:
+                tags.append(filler)
+            if len(tags) >= 3:
+                break
+
+    return tags[:3]
+
+
+def build_thumbnail_prompt(topic: str, title: str, visual_keywords: Any = None) -> str:
+    """Faz 11: Kapak icin INGILIZCE, dikey, yuksek kontrastli image-generation promptu."""
+    keywords = [str(k).strip() for k in (visual_keywords or []) if str(k).strip()]
+    subject = ", ".join(keywords[:2]) if keywords else "dramatic cinematic historical scene"
+    niche = str(topic or "documentary").lower()
+    return (
+        f"Cinematic vertical 9:16 shot of {subject}, hyper-realistic, dramatic lighting, "
+        f"high contrast, vivid saturated colors, ultra detailed, 8k, {niche} documentary style, "
+        f"no text, no watermark"
+    )
+
+
+def build_fallback_cta(title: str) -> str:
+    """Faz 11: LLM yokken (yedek senaryo havuzu) kullanilan deterministik CTA."""
+    index = sum(ord(ch) for ch in str(title or "")) % len(FALLBACK_CTA_LINES)
+    return FALLBACK_CTA_LINES[index]
 
 
 def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str) -> dict[str, Any]:
@@ -725,11 +945,29 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
     raw_desc = str(
         raw_data.get("description", f"{title} #ilginçbilgiler #tarih #bilim #shorts")
     ).strip()
+
+    # --- FAZ 11: Viral metadata (CTA / kapak promptu / trend hashtag) ---
+    cta_line = sanitize_for_tts(str(raw_data.get("cta_line", ""))).strip()
+    if not cta_line:
+        cta_line = build_fallback_cta(title)
+    cta_line = cta_line[:180].strip()
+
+    thumbnail_prompt = str(raw_data.get("thumbnail_prompt", "")).strip()
+    if not thumbnail_prompt:
+        thumbnail_prompt = build_thumbnail_prompt(topic_val, title, keywords)
+
+    viral_hashtags = derive_viral_hashtags(
+        title, topic_val, script_text, raw_data.get("viral_hashtags")
+    )
+
+    # Aciklamada eski hashtag'leri temizle (YouTube 3'ten fazla hashtag'i yok sayar)
+    base_desc = strip_hashtags(raw_desc) or title
+
     affiliate_link, affiliate_cta = resolve_affiliate_offer(topic_val, title, script_text)
-    if affiliate_link not in raw_desc:
-        enriched_desc = f"{affiliate_cta}\n\n{raw_desc}"
-    else:
-        enriched_desc = raw_desc
+
+    # SIRA: [1] Affiliate CTA + link (Faz 9: en ustte) -> [2] Viral CTA -> [3] Govde -> [4] Hashtag'ler
+    blocks = [affiliate_cta, cta_line, base_desc, " ".join(viral_hashtags)]
+    enriched_desc = "\n\n".join([b for b in blocks if b]).strip()
 
     return {
         "provider": provider_name,
@@ -738,6 +976,9 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
         "description": enriched_desc,
         "affiliate_link": affiliate_link,
         "affiliate_cta": affiliate_cta,
+        "cta_line": cta_line,
+        "thumbnail_prompt": thumbnail_prompt,
+        "viral_hashtags": viral_hashtags,
         "hook": sanitize_for_tts(str(raw_data.get("hook", ""))) or script_text.split(".")[0],
         "script_text": script_text,
         "word_count": word_count,
@@ -1116,6 +1357,9 @@ def run_content_pipeline(
         "description": scenario["description"],
         "affiliate_link": scenario["affiliate_link"],
         "affiliate_cta": scenario["affiliate_cta"],
+        "cta_line": scenario["cta_line"],
+        "thumbnail_prompt": scenario["thumbnail_prompt"],
+        "viral_hashtags": scenario["viral_hashtags"],
         "hook": scenario["hook"],
         "script_text": script_text,
         "word_count": scenario["word_count"],
