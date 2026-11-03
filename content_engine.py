@@ -150,6 +150,42 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
             "european forest autumn",
         ],
     },
+    {
+        "topic": "Tarih",
+        "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+        "description": "Şanlıurfa'daki Göbeklitepe insanlık tarihini nasıl baştan yazdı? #göbeklitepe #tarih #ilginçbilgiler #shorts",
+        "hook": "Mısır piramitlerinden bile tam yedi bin yıl daha eski dev bir tapınağın Türkiye topraklarında olduğunu biliyor muydunuz?",
+        "script_text": (
+            "Mısır piramitlerinden bile tam yedi bin yıl daha eski dev bir tapınağın Türkiye topraklarında olduğunu biliyor muydunuz? "
+            "Şanlıurfa yakınlarındaki Göbeklitepe, günümüzden yaklaşık on iki bin yıl önce, insanlar henüz yerleşik tarıma bile geçmemişken inşa edildi. "
+            "Ağırlığı on altı tonu bulan T biçimli dev taş sütunların üzerine tilki, yılan ve akbaba kabartmaları ustalıkla işlenmişti. "
+            "Tekerleğin ve metal aletlerin olmadığı bir çağda bu dev kayaların nasıl taşındığı hâlâ arkeolojinin en büyük gizemlerinden biri olarak duruyor."
+        ),
+        "visual_keywords": [
+            "ancient stone temple",
+            "archaeology excavation desert",
+            "prehistoric monolith ruins",
+            "sunset ancient stones",
+        ],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+        "description": "Okyanusun 11 kilometre altındaki Mariana Çukuru'nda neler yaşıyor? #bilim #okyanus #ilginçbilgiler #shorts",
+        "hook": "Everest Dağı'nı alıp okyanusun en derin noktasına koysaydınız, zirvesinin hâlâ iki kilometre su altında kalacağını biliyor muydunuz?",
+        "script_text": (
+            "Everest Dağı'nı alıp okyanusun en derin noktasına koysaydınız, zirvesinin hâlâ iki kilometre su altında kalacağını biliyor muydunuz? "
+            "Pasifik Okyanusu'ndaki Mariana Çukuru yaklaşık on bir kilometre derinliğiyle Dünya'nın en karanlık uçurumudur. "
+            "Güneş ışığının asla ulaşamadığı bu derinlikte basınç, yüzeydekinden tam bin kat daha fazladır. "
+            "Buna rağmen bilim insanları bu dondurucu karanlıkta kendi ışığını üreten şeffaf balıklar ve dev kabuklular keşfetmeyi başardı."
+        ),
+        "visual_keywords": [
+            "deep ocean abyss",
+            "submarine underwater dark",
+            "bioluminescent sea creature",
+            "pacific ocean waves",
+        ],
+    },
 ]
 
 
@@ -379,7 +415,12 @@ def call_gemini_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[
 
 
 def pick_fallback_scenario(recent_titles: list[str]) -> dict[str, Any]:
-    """Yedek Senaryo Havuzu: API kesintisi veya kota aşımında çökmeden doğrulanmış senaryo döndürür."""
+    """Yedek Senaryo Havuzu: Paralel matris kanallarında çakışmasız ve deterministik seçim yapar."""
+    matrix_ch = os.environ.get("MATRIX_CHANNEL_ID", "").strip()
+    if matrix_ch.isdigit():
+        day_index = datetime.now(timezone.utc).timetuple().tm_yday
+        slot = (day_index * 3 + (int(matrix_ch) - 1)) % len(FALLBACK_SCENARIOS)
+        return validate_and_normalize_scenario(FALLBACK_SCENARIOS[slot], f"local-fallback-matrix-{matrix_ch}")
     unused = [item for item in FALLBACK_SCENARIOS if item["title"] not in recent_titles]
     chosen = random.choice(unused if unused else FALLBACK_SCENARIOS)
     return validate_and_normalize_scenario(chosen, "local-fallback-pool")

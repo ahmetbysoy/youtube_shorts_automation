@@ -2,65 +2,92 @@ name: Daily Shorts Money Printer
 
 on:
   schedule:
-    - cron: '0 12 * * *' # Her gün UTC 12:00 (TR 15:00)
-  workflow_dispatch: # Manuel tetikleme için
+    # Her gün Türkiye saatiyle 18:00'de (UTC 15:00) otomatik çalışır
+    - cron: '0 15 * * *'
+  workflow_dispatch: # GitHub arayüzünden tek tıkla manuel tetikleme izni
 
 jobs:
   build-and-upload:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false # Bir kanal patlarsa diğerleri durmasın, üretime devam etsin!
+      matrix:
+        channel_id: ['1', '2', '3'] # Aynı anda 3 paralel üretim hattı
+
     steps:
-      - name: Checkout Repository
+      - name: Depoyu Çek (Checkout)
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.13
+      - name: Sistem Paketlerini Kur (FFmpeg & Fontlar)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-liberation fonts-dejavu-core libass9
+
+      - name: Python 3.11 Kur
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.11'
+          cache: 'pip'
 
-      - name: Setup Node.js
+      - name: Node.js 20 Kur
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install System Dependencies (FFmpeg, Fonts, Xvfb)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-montserrat xvfb
-
-      - name: Install Python Dependencies
+      - name: Python Bağımlılıklarını Yükle
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install Node Dependencies & Playwright
+      - name: Node & Playwright Tarayıcısını Yükle
         run: |
           npm install
           npx playwright install --with-deps chromium
 
-      - name: Setup Environment & Secrets
+      - name: Gizli Anahtarları ve Kanal Çerezlerini Enjekte Et (Kanal ${{ matrix.channel_id }})
         env:
-          SECRET_ENV_FILE: ${{ secrets.ENV_FILE }}
-          SECRET_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
-          SECRET_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+          CHANNEL_ENV_FILE: ${{ secrets[format('ENV_FILE_{0}', matrix.channel_id)] }}
+          CHANNEL_COOKIES_JSON: ${{ secrets[format('COOKIES_JSON_{0}', matrix.channel_id)] }}
+          CHANNEL_STORAGE_STATE_JSON: ${{ secrets[format('STORAGE_STATE_JSON_{0}', matrix.channel_id)] }}
+          FALLBACK_ENV_FILE: ${{ secrets.ENV_FILE }}
+          FALLBACK_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+          FALLBACK_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
         run: |
-          printf '%s\n' "$SECRET_ENV_FILE" > .env
-          printf '%s\n' "$SECRET_COOKIES_JSON" > cookies.json
-          if [ -n "$SECRET_STORAGE_STATE_JSON" ]; then
-            printf '%s\n' "$SECRET_STORAGE_STATE_JSON" > storage_state.json
-            chmod 600 storage_state.json
+          umask 077
+          EFFECTIVE_ENV="${CHANNEL_ENV_FILE:-$FALLBACK_ENV_FILE}"
+          EFFECTIVE_COOKIES="${CHANNEL_COOKIES_JSON:-$FALLBACK_COOKIES_JSON}"
+          EFFECTIVE_STATE="${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}"
+
+          if [ -z "$EFFECTIVE_ENV" ] || [ -z "$EFFECTIVE_COOKIES" ]; then
+            echo "::error::Kanal ${{ matrix.channel_id }} için ENV_FILE_${{ matrix.channel_id }} veya COOKIES_JSON_${{ matrix.channel_id }} eksik!"
+            exit 1
           fi
-          chmod 600 .env cookies.json
 
-      - name: Run Orchestrator (Main Pipeline)
+          printf '%s\n' "$EFFECTIVE_ENV" > .env
+          printf '\nMATRIX_CHANNEL_ID=%s\n' "${{ matrix.channel_id }}" >> .env
+          printf '%s\n' "$EFFECTIVE_COOKIES" > cookies.json
+          if [ -n "$EFFECTIVE_STATE" ]; then
+            printf '%s\n' "$EFFECTIVE_STATE" > storage_state.json
+          fi
+
+          python -c "import json; c=json.load(open('cookies.json')); print(f'[OK] Kanal ${{ matrix.channel_id }} cookies.json doğrulandı ({len(c)} çerez)')"
+
+      - name: Ana Orkestratörü Ateşle (Kanal ${{ matrix.channel_id }} - PUBLIC Auto-Publish)
+        env:
+          HEADLESS: "true"
+          PYTHONUNBUFFERED: "1"
+          MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
         run: |
-          xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py
+          python main.py
 
-      - name: Upload Output Artifacts (Logs & Final Video)
-        uses: actions/upload-artifact@v4
+      - name: Üretilen Videoyu ve Logları Yedekle (Artifact - Kanal ${{ matrix.channel_id }})
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: shorts-output-${{ github.run_number }}
+          name: shorts-output-channel-${{ matrix.channel_id }}-${{ github.run_number }}
           path: |
-            logs/
             output/final_short.mp4
-            pending_approval.json
+            script.json
+            logs/
+          retention-days: 7

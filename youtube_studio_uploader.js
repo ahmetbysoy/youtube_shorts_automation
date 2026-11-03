@@ -324,6 +324,12 @@ async function uploadToYouTubeStudio() {
 
     const hasDisplay = Boolean(process.env.DISPLAY);
     const headlessMode = process.env.HEADLESS === 'true' ? true : !hasDisplay;
+    const matrixChannelId = (process.env.MATRIX_CHANNEL_ID || '').trim();
+    if (matrixChannelId && Number(matrixChannelId) > 1) {
+        const staggerMs = (Number(matrixChannelId) - 1) * 15000;
+        console.log(`[*] Matris Kanal #${matrixChannelId}: Paralel oturum çakışmasını önlemek için ${staggerMs / 1000}s kademeli başlatma...`);
+        await new Promise(r => setTimeout(r, staggerMs));
+    }
 
     console.log(`[*] Playwright Chromium başlatılıyor... (headless=${headlessMode})`);
     const hasLocalProfile = fs.existsSync(path.join(PROFILE_DIR, 'Default', 'Cookies'));
@@ -433,7 +439,7 @@ async function uploadToYouTubeStudio() {
             }
         }
 
-        console.log("[*] Görünürlük ayarı 'Gizli' (Private) ekranına ilerleniyor...");
+        console.log("[*] Görünürlük ayarı 'Herkese Açık' (Public) ekranına ilerleniyor...");
         for (let step = 0; step < 3; step++) {
             const nextBtn = page.locator('ytcp-button#next-button').first();
             if (await nextBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -442,12 +448,24 @@ async function uploadToYouTubeStudio() {
             }
         }
 
-        // Gizli (Private) seçeneğini işaretle
-        const privateRadio = page.locator('tp-yt-paper-radio-button[name="PRIVATE"], #private-radio-button, input[value="PRIVATE"]').first();
-        await privateRadio.waitFor({ state: 'visible', timeout: 25000 });
-        await privateRadio.click({ force: true });
-        console.log("[*] Görünürlük 'PRIVATE (Gizli)' olarak işaretlendi.");
-        await page.waitForTimeout(1000);
+        // Herkese Açık (PUBLIC) seçeneğini işaretle - Faz 7 Tam Otonom Yayın!
+        const publicRadio = page.locator('tp-yt-paper-radio-button[name="PUBLIC"], #public-radio-button, input[value="PUBLIC"]').first();
+        await publicRadio.scrollIntoViewIfNeeded().catch(() => {});
+        await publicRadio.waitFor({ state: 'visible', timeout: 25000 });
+        await publicRadio.click({ force: true });
+        console.log("[*] Görünürlük 'PUBLIC (Herkese Açık)' olarak işaretlendi.");
+        await page.waitForTimeout(1500);
+
+        // Olası ara onay/çocuk güvenliği diyaloglarını otomatik onayla
+        const preConfirmDialog = page.locator('ytcp-confirmation-dialog, ytcp-confirmation-dialog-renderer').first();
+        if (await preConfirmDialog.isVisible({ timeout: 2000 }).catch(() => false)) {
+            const confirmBtn = preConfirmDialog.locator('ytcp-button#confirm-button, #confirm-button').first();
+            if (await confirmBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+                await confirmBtn.click({ force: true });
+                console.log("[*] Görünürlük onay penceresi kabul edildi.");
+                await page.waitForTimeout(1000);
+            }
+        }
 
         // Video linkini yakala
         let videoUrl = '';
@@ -475,22 +493,58 @@ async function uploadToYouTubeStudio() {
             await page.waitForTimeout(3000);
         }
 
-        await page.locator('ytcp-button#done-button').first().click({ force: true });
+        // Yayınla (Publish) butonuna tıkla
+        const doneBtn = page.locator('ytcp-button#done-button').first();
+        await doneBtn.waitFor({ state: 'visible', timeout: 30000 });
+        await doneBtn.click({ force: true });
+        console.log("[*] 'Yayınla' (Publish) butonuna tıklandı.");
+        await page.waitForTimeout(3000);
+
+        // Kontroller devam ederken çıkabilen 'Yine de yayınla / Publish anyway' veya onay penceresini geç
+        const postPublishConfirmSelectors = [
+            'ytcp-prechecks-warning-dialog ytcp-button#secondary-action-button',
+            'ytcp-prechecks-warning-dialog #secondary-action-button',
+            'ytcp-confirmation-dialog ytcp-button#confirm-button',
+            'ytcp-confirmation-dialog-renderer ytcp-button#confirm-button',
+            'button:has-text("Yine de yayınla")',
+            'button:has-text("Publish anyway")',
+            'ytcp-button#confirm-button'
+        ];
+        for (const sel of postPublishConfirmSelectors) {
+            const btn = page.locator(sel).first();
+            if (await btn.isVisible({ timeout: 1200 }).catch(() => false)) {
+                await btn.click({ force: true });
+                console.log(`[*] Yayın sonrası ek onay diyalogu geçildi: ${sel}`);
+                await page.waitForTimeout(2500);
+                break;
+            }
+        }
+
         await page.waitForTimeout(6000);
+        if (!videoUrl) {
+            const postLinkEl = page.locator('a[href*="youtube.com/shorts/"], a[href*="youtu.be/"]').first();
+            if (await postLinkEl.isVisible({ timeout: 3000 }).catch(() => false)) {
+                videoUrl = (await postLinkEl.getAttribute('href')) || '';
+            }
+        }
         await page.screenshot({ path: '/tmp/yt_upload_success.png' }).catch(() => {});
+        await page.locator('ytcp-video-share-dialog ytcp-button#close-button, ytcp-uploads-still-processing-dialog ytcp-button#close-button').first().click({ timeout: 2500 }).catch(() => {});
 
         await persistAllSessionArtifacts(context);
-        writeAuthStatus('upload_completed', { title, videoUrl, channelUrl: page.url() });
+        writeAuthStatus('upload_completed', { title, videoUrl, visibility: 'PUBLIC', matrixChannelId: matrixChannelId || '1', channelUrl: page.url() });
 
         console.log("\n============================================================");
-        console.log(" 🚀 PLAYWRIGHT BACKDOOR YÜKLEME BAŞARILI! 🚀");
+        console.log(" 🚀 PLAYWRIGHT TAM OTONOM YAYIN (PUBLIC) BAŞARILI! 🚀");
         console.log("============================================================");
+        if (matrixChannelId) {
+            console.log(` Matris Kanalı: #${matrixChannelId}`);
+        }
         console.log(` Video: ${title}`);
         if (videoUrl) {
             console.log(` Link : ${videoUrl}`);
         }
-        console.log(" Durum: PRIVATE (Gizli) - API Kotası Kullanılmadı!");
-        console.log(" Not: YouTube Studio'dan manuel olarak 'Herkese Açık' yapabilirsin.");
+        console.log(" Durum: PUBLIC (Herkese Açık) - Tam Otonom Yayınlandı!");
+        console.log(" Not  : Sıfır API kotası, sıfır manuel müdahale ile yayında.");
         console.log("============================================================\n");
     } catch (uploadErr) {
         const errShot = path.join(BASE_DIR, 'logs', 'studio_error.png');

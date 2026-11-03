@@ -64,8 +64,12 @@ python -m unittest discover -s tests/ -p "test_faz1_faz2.py" -v
 
 `.env.example` yalnızca şablondur. Gerçek API anahtarları `.env` dosyasında veya GitHub Secrets üzerinde tutulmalıdır. `.env`, `secrets/`, `client_secret*.json`, `*token*.json`, `cookies.json`, `storage_state.json` ve `*.har` dosyaları `.gitignore` ile koruma altındadır; asla depoya eklenmez.
 
-## Faz 5: Node.js + Playwright YouTube Studio "Backdoor" Mimarisi
+## Faz 5–7: Playwright YouTube Studio Otonom Yayın (`PUBLIC`) & GitHub Actions Matris Çoğaltma
 
-YouTube Data API v3 günlük kota sınırına (`10.000 birim`) takılmamak için `youtube_studio_uploader.js` modülü Node.js ve Playwright Chromium üzerinden doğrudan YouTube Studio (`studio.youtube.com`) arayüzünü otomatikleştirir.
-İlk giriş sonrasında tarayıcı profili, `cookies.json`, `storage_state.json` ve `session.har` oturum artefaktları `0600` izinle yerel diskte saklanarak sonraki çalışmalarda yeniden şifre/2FA gerektirmeden oturum sürdürülür.
-Üretilen `output/final_short.mp4` ve `script.json` verileri okunarak video sıfır API kotası tüketimiyle doğrudan **Gizli (Private)** modda kanala yüklenir.
+- **Faz 5 — Playwright YouTube Studio Backdoor (`youtube_studio_uploader.js`):** YouTube Data API v3 günlük kota sınırına (`10.000 birim`) takılmamak için Node.js + Playwright Chromium üzerinden doğrudan YouTube Studio (`studio.youtube.com`) arayüzünü otomatikleştirir. Oturum `cookies.json`, `storage_state.json` ve `session.har` (`0600`) ile kalıcı olarak korunur.
+- **Faz 6 — Ana Orkestratör (`main.py`):** Senaryo/TTS (`content_engine.py`), dikey montaj (`src/media_processing/media_processor.py`) ve YouTube Studio yükleyicisini (`youtube_studio_uploader.js`) tek komutta uçtan uca zincirler.
+- **Faz 7 — Tam Otonom Yayın (`PUBLIC`) ve Çoklu Kanal Matrisi (`.github/workflows/daily_shorts.yml`):**
+  - Videolar artık sıfır manuel müdahaleyle doğrudan **`PUBLIC` (Herkese Açık)** olarak yayınlanır (`tp-yt-paper-radio-button[name="PUBLIC"]` + ek onay penceresi yönetimi).
+  - GitHub Actions üzerinde `strategy.fail-fast: false` ve `matrix.channel_id: ['1', '2', '3']` mimarisiyle her gün **TSİ 18:00**'de (`0 15 * * *`) 3 paralel sunucuda (`build-and-upload (1)`, `build-and-upload (2)`, `build-and-upload (3)`) çakışmasız farklı senaryolar üretilip yayınlanır.
+  - Kanal bazlı GitHub Secrets (`ENV_FILE_1..3`, `COOKIES_JSON_1..3`, `STORAGE_STATE_JSON_1..3`) dinamik olarak enjekte edilir.
+
