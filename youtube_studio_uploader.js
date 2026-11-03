@@ -112,6 +112,25 @@ async function performGoogleLogin(page) {
         return;
     }
 
+    // AccountChooser ekranındaysa kayıtlı hesaba tıkla
+    if (page.url().includes('accountchooser')) {
+        console.log("[*] Google AccountChooser algılandı, hesap seçiliyor...");
+        const acctTile = page.locator(`[data-identifier="${email}"], [data-email="${email}"]`).first();
+        if (await acctTile.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await acctTile.click();
+            await page.waitForTimeout(2500);
+            if (await isAuthenticatedInStudio(page)) {
+                return;
+            }
+        } else {
+            const anotherBtn = page.locator('li:has-text("Başka bir hesap kullan"), li:has-text("Use another account")').first();
+            if (await anotherBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+                await anotherBtn.click();
+                await page.waitForTimeout(1500);
+            }
+        }
+    }
+
     const emailInput = page.locator('input[type="email"], input#identifierId').first();
     if (await emailInput.isVisible({ timeout: 8000 }).catch(() => false)) {
         await emailInput.fill(email);
@@ -127,7 +146,8 @@ async function performGoogleLogin(page) {
     console.log("[!] Kimlik doğrulama yanıtı ve varsa 2FA / telefon bildirimi bekleniyor...");
     await page.waitForTimeout(3500);
 
-    const deadline = Date.now() + 600000;
+    const waitMs = process.env.GITHUB_ACTIONS === 'true' ? 75000 : 600000;
+    const deadline = Date.now() + waitMs;
     while (Date.now() < deadline) {
         const currentUrl = page.url();
 
@@ -297,21 +317,35 @@ async function uploadToYouTubeStudio() {
     const headlessMode = process.env.HEADLESS === 'true' ? true : !hasDisplay;
 
     console.log(`[*] Playwright Chromium başlatılıyor... (headless=${headlessMode})`);
-    fs.mkdirSync(PROFILE_DIR, { recursive: true });
+    const hasLocalProfile = fs.existsSync(path.join(PROFILE_DIR, 'Default', 'Cookies'));
+    let browser = null;
+    let context = null;
 
-    const context = await chromium.launchPersistentContext(PROFILE_DIR, {
-        headless: headlessMode,
-        slowMo: 200,
+    const commonArgs = [
+        '--disable-blink-features=AutomationControlled',
+        '--no-sandbox',
+        '--disable-dev-shm-usage'
+    ];
+    const commonContextOpts = {
         viewport: { width: 1366, height: 900 },
         locale: 'tr-TR',
         userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        recordHar: { path: HAR_PATH, mode: 'minimal', content: 'omit' },
-        args: [
-            '--disable-blink-features=AutomationControlled',
-            '--no-sandbox',
-            '--disable-dev-shm-usage'
-        ]
-    });
+        recordHar: { path: HAR_PATH, mode: 'minimal', content: 'omit' }
+    };
+
+    if (!hasLocalProfile && fs.existsSync(STORAGE_STATE_PATH)) {
+        console.log("[*] CI modu: storage_state.json ile oturum bağlamı başlatılıyor...");
+        browser = await chromium.launch({ headless: headlessMode, slowMo: 200, args: commonArgs });
+        context = await browser.newContext({ ...commonContextOpts, storageState: STORAGE_STATE_PATH });
+    } else {
+        fs.mkdirSync(PROFILE_DIR, { recursive: true });
+        context = await chromium.launchPersistentContext(PROFILE_DIR, {
+            headless: headlessMode,
+            slowMo: 200,
+            ...commonContextOpts,
+            args: commonArgs
+        });
+    }
 
     await context.addInitScript(() => {
         Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
@@ -455,6 +489,9 @@ async function uploadToYouTubeStudio() {
         throw uploadErr;
     } finally {
         await context.close();
+        if (browser) {
+            await browser.close();
+        }
         if (fs.existsSync(HAR_PATH)) {
             fs.chmodSync(HAR_PATH, 0o600);
         }

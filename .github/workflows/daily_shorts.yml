@@ -41,9 +41,14 @@ jobs:
         env:
           SECRET_ENV_FILE: ${{ secrets.ENV_FILE }}
           SECRET_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+          SECRET_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
         run: |
           printf '%s\n' "$SECRET_ENV_FILE" > .env
           printf '%s\n' "$SECRET_COOKIES_JSON" > cookies.json
+          if [ -n "$SECRET_STORAGE_STATE_JSON" ]; then
+            printf '%s\n' "$SECRET_STORAGE_STATE_JSON" > storage_state.json
+            chmod 600 storage_state.json
+          fi
           chmod 600 .env cookies.json
 
       - name: Run Orchestrator (Main Pipeline)
