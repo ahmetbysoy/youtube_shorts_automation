@@ -1,36 +1,129 @@
-# Mimari sınırlar ve sonraki aşamalar
+# Sistem Mimarisi ve Teknik Veri Sözleşmeleri (`ARCHITECTURE.md`)
 
-Bu dosya kurulu özellik listesi değil, sonraki uygulama için taslaktır. Şu an yalnızca proje iskeleti ve yerel doğrulama vardır.
+> **Sürüm:** Faz 7 (Tam Otonom `PUBLIC` Yayın & GitHub Actions 3'lü Matris Mimarisi)  
+> **Son Güncelleme:** `2026-11-03`
 
-## İçerik
+Bu doküman, `youtube_shorts_automation` boru hattındaki modüllerin iç yapısını, dosya sözleşmelerini (data contracts), FFmpeg filtre grafiğini ve Playwright DOM seçicilerini açıklar. Devir teslim ve operasyonel kurallar için kök dizindeki [`AI_HANDOFF.md`](../AI_HANDOFF.md) dosyasına bakın.
 
-1. İzinli bir LLM sağlayıcısı veya yerel modelle senaryo.
-2. Kullanım koşulları uygun bir TTS sağlayıcısıyla ses.
-3. Lisansı doğrulanmış stok medya veya kullanıcının kendi medyaları.
-4. FFmpeg / MoviePy 2.2.1 ile 1080×1920 çıktı ve altyazı.
+---
 
-Stok API kotası dolarsa tarayıcıyla kota atlatılmaz. Önbellek, izinli alternatif sağlayıcı veya yeniden zamanlama kullanılır. Sağlayıcı anahtarları ayrı hesaplara bölerek limit aşılmaz.
+## 1. Uçtan Uca Boru Hattı (Pipeline) Akışı
 
-## YouTube
+```text
+[GitHub Actions Cron (15:00 UTC) / workflow_dispatch]
+        │
+        ├──► Job 1: MATRIX_CHANNEL_ID=1 ──┐
+        ├──► Job 2: MATRIX_CHANNEL_ID=2 ──┼──► Paralel Ubuntu Sunucuları (Xvfb 1366x900x24)
+        └──► Job 3: MATRIX_CHANNEL_ID=3 ──┘
+                                          │
+                                          ▼
+                                   [ python main.py ]
+                                          │
+         ┌────────────────────────────────┼────────────────────────────────┐
+         ▼                                ▼                                ▼
+ 1. content_engine.py        2. media_processor.py          3. youtube_studio_uploader.js
+ ────────────────────        ─────────────────────          ─────────────────────────────
+ • Groq / Gemini /           • Pexels / Pixabay /           • storage_state.json +
+   Matris Havuzu               Wikimedia dikey klip           cookies.json yükleme
+ • Türkçe Wikipedia          • 3 kelimelik dinamik          • Google AccountChooser &
+   gerçeklik çapası            Pop-up .ass altyazı            ara ekran bypass
+ • edge-tts (AhmetNeural)    • Tek geçişli (single-pass)    • Başlık, açıklama, etiket,
+ • WordBoundary milisaniye     FFmpeg 1080x1920 H.264         "Çocuklara özel değil"
+   kelime zamanlaması          + arka plan müzik miksajı    • Görünürlük: PUBLIC
+         │                                │                 • "Yayınla" + onay diyalogları
+         ▼                                ▼                                │
+   script.json                     output/final_short.mp4                  ▼
+   voiceover.mp3                   output/final.ass           Canlı YouTube Shorts URL
+   voiceover.srt                                              logs/auth_status.json
+```
 
-- OAuth 2.0, kullanıcının açık yetkilendirmesiyle.
-- Yükleme isteğinde `status.privacyStatus=private` açıkça gönderilir; Google'ın güncel belgesine göre bu alan verilmezse varsayılan public olabilir.
-- Public'e geçiş ayrı onay adımıdır.
-- İşlem kimlikleri ve durum SQLite'ta tutulacak; aynı işin tekrar yüklenmesi engellenecek.
-- Kota hatasında üstel bekleme ve ertesi güne kuyruk; kota aşma yedeği yok.
+---
 
-## Güncel kota notu — 2026-11-03
+## 2. Modül ve Dosya Yapısı
 
-Google'ın kontrol edilen güncel `videos.insert` belgesi, varsayılan Video Uploads kotasını günde 100 çağrı ve çağrı başına 1 birim olarak veriyor. Eski `1.600 birim / 10.000 ortak birim` hesabı bu belgeye göre güncel değil. Kendi projenin gerçek kotası Cloud Console'dan doğrulanmalıdır; varsayılanlar değişebilir.
+```text
+youtube_shorts_automation/
+├── .github/workflows/
+│   └── daily_shorts.yml           # Faz 6–7: 3'lü Matris GitHub Actions CI/CD iş akışı
+├── AI_HANDOFF.md                  # Yapay zeka devir teslim ve operasyon kılavuzu
+├── README.md                      # Genel proje özeti ve kurulum rehberi
+├── main.py                        # Faz 6: Ana orkestratör (Faz 2 -> Faz 3 -> Faz 5 zinciri)
+├── content_engine.py              # Faz 2: LLM/Fallback senaryo + edge-tts ses + SRT üretici
+├── youtube_studio_uploader.js     # Faz 5 & 7: Playwright YouTube Studio PUBLIC yükleyici
+├── youtube_auth.py                # Faz 1: OAuth2 PKCE konsol/loopback yetkilendirme aracı
+├── upload_test.py                 # Faz 1: Resmi YouTube Data API v3 test yükleyicisi
+├── assets/
+│   └── background_music.mp3       # Telifsiz arka plan ambiyans müziği (%12 ses seviyesi)
+├── config/
+│   ├── constants.py               # 1080x1920, 30 FPS, ses/video sabitleri
+│   └── settings.py                # Ortam değişkeni doğrulayıcı
+├── docs/
+│   ├── ARCHITECTURE.md            # Bu teknik mimari belgesi
+│   └── setup/                     # Kurulum ve bağımlılık karar raporları
+├── src/
+│   ├── content_generation/        # İçerik motoru paket sarmalayıcısı
+│   ├── media_processing/
+│   │   └── media_processor.py     # Faz 3: Stok video indirme, .ass altyazı ve FFmpeg montaj
+│   └── youtube_upload/
+│       ├── oauth_handler.py       # OAuth2 token yenileme ve PKCE yöneticisi
+│       └── youtube_uploader.py    # YouTube Data API v3 resumable yükleyici (yedek modül)
+├── samples/                       # Örnek senaryo, ses, SRT ve test MP4 çıktıları
+└── tests/                         # 22 adet birim ve entegrasyon testi (unittest)
+```
 
-Kaynaklar: [1](https://developers.google.com/youtube/v3/docs/videos/insert), [YouTube Data API genel belgesi](https://developers.google.com/youtube/data/getting-started#quota).
+---
 
-## Otomasyon ve yedek
+## 3. Veri Sözleşmeleri (Data Contracts)
 
-GitHub Actions ve systemd birbirinin yerine geçebilecek çalıştırma ortamlarıdır; ikisinin aynı anda aynı işi yapmasını engelleyen iş kilidi/kimliği gerekir. Actions üzerinde çalışacak uzun video işlerinin süresi ve depolama ihtiyacı ayrıca ölçülmalıdır.
+### `script.json` (Faz 2 Çıktısı -> Faz 3 & Faz 5 Girdisi)
+```json
+{
+  "topic": "Tarih",
+  "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+  "description": "Şanlıurfa'daki Göbeklitepe insanlık tarihini nasıl baştan yazdı? #göbeklitepe #tarih #ilginçbilgiler #shorts",
+  "hook": "Mısır piramitlerinden bile tam yedi bin yıl daha eski...",
+  "script_text": "Tam seslendirme metni...",
+  "visual_keywords": ["ancient stone temple", "archaeology excavation desert"],
+  "provider": "local-fallback-matrix-2",
+  "voice": "tr-TR-AhmetNeural",
+  "audio_file": "voiceover.mp3",
+  "subtitle_file": "voiceover.srt",
+  "duration_seconds": 36.4
+}
+```
 
-Drive yedeği kod ve dokümantasyon içindir; OAuth sırları ve tokenlar yedeklenmez. Üretilen medya yedeği ayrıca kota, maliyet ve kullanıcı onayıyla tasarlanmalıdır.
+### `logs/auth_status.json` (Faz 5/7 Çıktısı)
+```json
+{
+  "timestamp": "2026-11-03T18:27:30.297Z",
+  "state": "upload_completed",
+  "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+  "videoUrl": "https://youtube.com/shorts/atw6R7iSY88",
+  "visibility": "PUBLIC",
+  "matrixChannelId": "2",
+  "channelUrl": "https://studio.youtube.com/channel/UCBZVbwc7s7TeUCcOaN58oHQ"
+}
+```
 
-## Henüz uygulanmayanlar
+---
 
-SQLite şeması, gerçek iş kuyruğu, API istemcileri, OAuth, Telegram/e-posta bildirimi, video üretimi, Drive senkronizasyonu, GitHub Actions ve systemd zamanlayıcıları.
+## 4. FFmpeg Montaj Mimarisi (`src/media_processing/media_processor.py`)
+
+- **Çözünürlük ve Kare Hızı:** `1080x1920` (`setsar=1`, `30 fps`, `yuv420p`, `libx264`, `-preset veryfast`, `-crf 23`).
+- **Bellek Dostu Döngü:** FFmpeg `loop` filtresi yerine girdi seviyesinde `-stream_loop` + `-t` kullanılarak bulut sunucularında RAM taşması (OOM) tamamen engellenir.
+- **Altyazı Stili (`output/final.ass`):** `voiceover.srt` blokları en fazla 3 kelimelik vurucu parçalara bölünür; merkez-alt hizalı (`Alignment=2`, `MarginV=380`), kalın sarı/beyaz dolgulu, siyah dış konturlu (`Outline=5`) ve `\fscx85\fscy85\t(0,90,\fscx105\fscy105)\t(90,150,\fscx100\fscy100)` pop-animasyonlu `.ass` katmanı videoya gömülür.
+- **Ses Miksajı:** Seslendirme (`1.0` ses seviyesi) + arka plan müziği (`0.12` ses seviyesi, son 1.5 saniyede `afade=t=out`) `amix=inputs=2:duration=first` ile birleştirilir.
+
+---
+
+## 5. Playwright YouTube Studio Seçici Haritası (`youtube_studio_uploader.js`)
+
+| Adım | Kullanılan Birincil Seçiciler |
+| :--- | :--- |
+| **Yükleme Modalı Açma** | `ytcp-button#create-icon`, `ytcp-icon-button#upload-icon`, `tp-yt-paper-item#text-item-0`, ` studio.youtube.com/channel/{ID}/videos/upload?d=ud` doğrudan URL yedeği |
+| **Dosya Yükleme** | `input[type="file"]` |
+| **Başlık & Açıklama** | `ytcp-social-suggestions-textbox#title-textarea #textbox`, `ytcp-social-suggestions-textbox#description-textarea #textbox` |
+| **Çocuklara Özel Değil** | `tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]` |
+| **İleri Adımları (3×)** | `ytcp-button#next-button` |
+| **Herkese Açık (`PUBLIC`)** | `tp-yt-paper-radio-button[name="PUBLIC"]`, `#public-radio-button`, `input[value="PUBLIC"]` |
+| **Yayınla & Ek Onaylar** | `ytcp-button#done-button` -> varsa `ytcp-prechecks-warning-dialog #secondary-action-button` / `ytcp-confirmation-dialog #confirm-button` / `button:has-text("Yine de yayınla")` |

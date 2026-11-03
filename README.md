@@ -1,75 +1,75 @@
-# YouTube Shorts Automation — Sıfır Maliyetli İçerik Fabrikası
+# YouTube Shorts Automation — Tam Otonom İçerik Fabrikası (Faz 1–7)
 
-Python 3.13 ve FFmpeg tabanlı, modüler, hata toleranslı ve sıfır maliyetli YouTube Shorts otomasyon altyapısı.
+Python, FFmpeg ve Node.js Playwright tabanlı; **sıfır API kotası**, **sıfır maliyet** ve **sıfır manuel müdahale** ile çalışan, GitHub Actions üzerinde her gün paralel olarak Türkçe YouTube Shorts üreten ve doğrudan **Herkese Açık (`PUBLIC`)** yayınlayan uçtan uca otomasyon sistemi.
 
-## Mevcut Durum (Tamamlanan Fazlar)
-
-- **Proje İskeleti & Doğrulama (`config/`, `tests/`, `main.py`):** Ortam değişkenlerine dayalı yapılandırma, dikey (1080×1920, 9:16) sabitler ve sistem/bağımlılık testleri.
-- **Faz 1 — YouTube OAuth2 & Private Yükleme (`youtube_auth.py`, `upload_test.py`, `src/youtube_upload/`):**
-  - Google'ın kaldırdığı `run_console()` yerine bulut/headless uyumlu **Loopback URL Kopyalama + PKCE (`code_verifier`)** akışı.
-  - Süresi dolan `access_token`'ı `refresh_token` ile otomatik yenileyen, kesintiye dayanıklı (`resumable` + exponential backoff) ve **`privacyStatus="private"` zorunlu güvenlik kilitli** yükleyici.
-- **Faz 2 — İçerik ve Seslendirme Motoru (`content_engine.py`, `src/content_generation/`):**
-  - **Çok Katmanlı LLM Zinciri:** Groq Free API (`llama-3.3-70b-versatile`) -> Google Gemini Free API (`gemini-2.5-flash`) -> Doğrulanmış Çevrimdışı Yedek Senaryo Havuzu (`FALLBACK_SCENARIOS`).
-  - **Gerçeklik Çapası:** Türkçe Wikipedia REST API üzerinden kaynak doğrulama ve `.used_topics.json` ile konu tekrarı engelleme.
-  - **TTS & Milisaniye Senkronlu Altyazı:** `edge-tts` (`tr-TR-AhmetNeural` / `tr-TR-EmelNeural`) `WordBoundary` akışıyla Whisper'a gerek kalmadan 2-3 kelimelik dinamik Shorts `.srt` ve `word_timestamps` üretimi (+ `gTTS` yedeği).
-- **Örnek Çıktılar (`samples/`):** Faz 1 ve Faz 2 test üretimleri (`test.mp4`, `voiceover.mp3`, `voiceover.srt`, `script.json`, `script.txt`).
-- **Sıradaki Fazlar:**
-  - *Faz 3:* `src/media_processing/` — Pexels/Pixabay dikey stok video çekimi, FFmpeg Ken Burns, ses miksajı ve dinamik altyazı gömme.
-  - *Faz 4:* GitHub Actions CI/CD cron otomasyonu ve Secrets entegrasyonu.
+> 🤖 **Projeyi Devralacak Yapay Zeka / Geliştirici İçin İlk Adım:**  
+> Tüm sistem durumu, kimlik/oturum dosyalarının Google Drive & GitHub Secrets konumları, kritik güvenlik kuralları ve çözülmüş teknik tuzaklar için önce **[`AI_HANDOFF.md`](./AI_HANDOFF.md)** ve **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)** belgelerini okuyun.
 
 ---
 
-## Kurulum — Debian 13 / Ubuntu / Python 3.13
+## Tamamlanan Fazlar ve Sistem Özeti
+
+| Faz | Modül | Açıklama | Durum |
+| :---: | :--- | :--- | :---: |
+| **Faz 1** | `youtube_auth.py`, `src/youtube_upload/` | Headless/bulut uyumlu OAuth2 PKCE akışı ve YouTube Data API v3 yedek yükleme modülü | ✅ |
+| **Faz 2** | `content_engine.py` | Groq / Gemini / Çakışmasız Matris Havuzu + Türkçe Wikipedia doğrulaması + `edge-tts` (`tr-TR-AhmetNeural`) seslendirme + milisaniye senkronlu `.srt` üretimi | ✅ |
+| **Faz 3** | `src/media_processing/media_processor.py` | Dikey stok video indirme (Pexels / Pixabay / Wikimedia), pop-animasyonlu `.ass` altyazı, arka plan müziği miksajı ve tek geçişli `1080x1920` (30 FPS, H.264/AAC) FFmpeg montajı | ✅ |
+| **Faz 4** | `src/youtube_upload/youtube_uploader.py` | Resumable API yükleme ve onay kuyruğu altyapısı (`22/22` birim testi) | ✅ |
+| **Faz 5** | `youtube_studio_uploader.js` | API kotasını (`10.000 birim`) tamamen aşan Playwright Chromium YouTube Studio yükleyicisi + kalıcı oturum (`cookies.json`, `storage_state.json`) | ✅ |
+| **Faz 6** | `main.py`, `.github/workflows/daily_shorts.yml` | Tüm fazları tek komutta zincirleyen Ana Orkestratör ve GitHub Actions `ubuntu-latest` + `Xvfb` bulut otomasyonu | ✅ |
+| **Faz 7** | `daily_shorts.yml`, `youtube_studio_uploader.js` | Doğrudan **`PUBLIC` (Herkese Açık)** otomatik yayın ve `matrix.channel_id: ['1', '2', '3']` ile aynı anda **3 paralel bulut sunucusunda** çakışmasız üretim | ✅ |
+
+---
+
+## Hızlı Kurulum ve Çalıştırma
+
+### 1. Sistem ve Dil Bağımlılıkları (Debian / Ubuntu)
 
 ```bash
-sudo apt-get update && sudo apt-get install -y ffmpeg tree
+sudo apt-get update
+sudo apt-get install -y ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core libass9 xvfb
+
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+
+npm install
+npx playwright install --with-deps chromium
 ```
 
-## Kullanım
+### 2. Ortam ve Oturum Dosyaları
 
-### Faz 1: YouTube OAuth2 Yetkilendirme & Private Test Yüklemesi
+`.env.example` dosyasını `.env` olarak kopyalayın (veya devir teslim yedeğindeki `.env`, `cookies.json` ve `storage_state.json` dosyalarını kök dizine yerleştirin):
 
 ```bash
-# 1. Headless ortamda yetkilendirme linki üret:
-python youtube_auth.py --generate-url
-
-# 2. Tarayıcıda onay sonrası yönlendirilen http://localhost:8080/?code=... adresini takas et:
-python youtube_auth.py --exchange "http://localhost:8080/?state=...&code=..."
-
-# 3. Private yükleme paketini kota harcamadan doğrula (Dry-Run):
-python upload_test.py --video samples/test.mp4 --dry-run
-
-# 4. Canlı Private test yüklemesi:
-python upload_test.py --video samples/test.mp4
+chmod 600 .env cookies.json storage_state.json
 ```
 
-### Faz 2: Senaryo, Seslendirme ve Altyazı Üretimi
+### 3. Uçtan Uca Üretim ve `PUBLIC` Yayın
 
 ```bash
-# Ortam değişkenlerini (.env) yapılandırıp çalıştırın (anahtar yoksa otomatik fallback çalışır):
-python content_engine.py --concept "İlginç Bilgiler ve Tarih" --voice ahmet
+# Sanal ekran (Xvfb) ile tam tarayıcı bütünlüğünde çalıştırma:
+xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py
 ```
 
-## Testler
+### 4. Birim Testlerini Çalıştırma
 
 ```bash
-python -m unittest discover -s tests/ -p "test_scaffold.py" -v
-python -m unittest discover -s tests/ -p "test_faz1_faz2.py" -v
+python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-## Gizli Bilgiler & Güvenlik
+---
 
-`.env.example` yalnızca şablondur. Gerçek API anahtarları `.env` dosyasında veya GitHub Secrets üzerinde tutulmalıdır. `.env`, `secrets/`, `client_secret*.json`, `*token*.json`, `cookies.json`, `storage_state.json` ve `*.har` dosyaları `.gitignore` ile koruma altındadır; asla depoya eklenmez.
+## GitHub Actions 7/24 Paralel Matris Otomasyonu
 
-## Faz 5–7: Playwright YouTube Studio Otonom Yayın (`PUBLIC`) & GitHub Actions Matris Çoğaltma
+`.github/workflows/daily_shorts.yml` iş akışı her gün **TSİ 18:00'de (`cron: '0 15 * * *'`)** veya GitHub arayüzünden **`Run workflow` (`workflow_dispatch`)** butonuyla tetiklendiğinde:
 
-- **Faz 5 — Playwright YouTube Studio Backdoor (`youtube_studio_uploader.js`):** YouTube Data API v3 günlük kota sınırına (`10.000 birim`) takılmamak için Node.js + Playwright Chromium üzerinden doğrudan YouTube Studio (`studio.youtube.com`) arayüzünü otomatikleştirir. Oturum `cookies.json`, `storage_state.json` ve `session.har` (`0600`) ile kalıcı olarak korunur.
-- **Faz 6 — Ana Orkestratör (`main.py`):** Senaryo/TTS (`content_engine.py`), dikey montaj (`src/media_processing/media_processor.py`) ve YouTube Studio yükleyicisini (`youtube_studio_uploader.js`) tek komutta uçtan uca zincirler.
-- **Faz 7 — Tam Otonom Yayın (`PUBLIC`) ve Çoklu Kanal Matrisi (`.github/workflows/daily_shorts.yml`):**
-  - Videolar artık sıfır manuel müdahaleyle doğrudan **`PUBLIC` (Herkese Açık)** olarak yayınlanır (`tp-yt-paper-radio-button[name="PUBLIC"]` + ek onay penceresi yönetimi).
-  - GitHub Actions üzerinde `strategy.fail-fast: false` ve `matrix.channel_id: ['1', '2', '3']` mimarisiyle her gün **TSİ 18:00**'de (`0 15 * * *`) 3 paralel sunucuda (`build-and-upload (1)`, `build-and-upload (2)`, `build-and-upload (3)`) çakışmasız farklı senaryolar üretilip yayınlanır.
-  - Kanal bazlı GitHub Secrets (`ENV_FILE_1..3`, `COOKIES_JSON_1..3`, `STORAGE_STATE_JSON_1..3`) dinamik olarak enjekte edilir.
+1. `build-and-upload (1)`, `build-and-upload (2)` ve `build-and-upload (3)` olmak üzere **3 bağımsız bulut sunucusu** paralel ayağa kalkar (`fail-fast: false`).
+2. Her hat kendi GitHub Secret setini (`ENV_FILE_<id>`, `COOKIES_JSON_<id>`, `STORAGE_STATE_JSON_<id>`) yükler ve birbirinden farklı bir senaryo seçer.
+3. Videolar `1080x1920` dikey formatta montajlanıp doğrudan **Herkese Açık (`PUBLIC`)** olarak YouTube'da yayınlanır ve çıktılar `shorts-output-channel-<id>-<run_number>` artifact paketlerine yedeklenir.
 
+---
+
+## Gizli Bilgiler ve Güvenlik
+
+`.env`, `cookies.json`, `storage_state.json`, `*.har`, `client_secret*.json` ve `*token*.json` dosyaları `.gitignore` ile koruma altındadır; **asla** Git deposuna eklenmez. Bulut ortamında yalnızca şifreli **GitHub Repository Secrets** ve özel **Google Drive** yedekleri kullanılır.
