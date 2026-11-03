@@ -113,6 +113,68 @@ class TestFaz11ViralMetadata(unittest.TestCase):
                 if "git commit -m" in line:
                     self.assertNotIn("skip ci", line.lower(), f"{wf.name} içinde [skip ci] var")
 
+    def test_channel_map_script_detects_duplicate_accounts(self) -> None:
+        """Ayni hesabi isaret eden kanallar ayiklanmali (gunluk kota 10x harcanmasin)."""
+        script = PROJECT_ROOT / "scripts" / "channel_map.sh"
+        self.assertTrue(script.exists())
+
+        # 10 kanalin tamami AYNI hesap
+        env = {"GITHUB_RUN_NUMBER": "1"}
+        for i in range(1, 11):
+            env[f"C{i}"] = "AYNI-CEREZ"
+            env[f"S{i}"] = "AYNI-STATE"
+        out = self._run_channel_map(env)
+        self.assertIn("distinct_count=1", out)
+        self.assertIn('distinct_matrix=["1"]', out)
+        self.assertIn("next_channel=1", out)
+
+        # 3 kanal, 2 farkli hesap (1=2 ayni, 3 farkli)
+        env = {"GITHUB_RUN_NUMBER": "2"}
+        for i in range(1, 11):
+            env[f"C{i}"] = f"c{i}"
+            env[f"S{i}"] = f"s{i}"
+        env["C2"] = env["C1"]
+        env["S2"] = env["S1"]
+        out = self._run_channel_map(env)
+        # 1 ve 2 ayni hesap -> 2 ayiklanir; 3..10 ayri hesaplar
+        self.assertIn('distinct_matrix=["1","3","4","5","6","7","8","9","10"]', out)
+        self.assertIn("distinct_count=9", out)
+        self.assertIn("[AYNI HESAP] Kanal 2 = Kanal 1", out)
+
+    def _run_channel_map(self, env: dict) -> str:
+        import tempfile
+
+        script = PROJECT_ROOT / "scripts" / "channel_map.sh"
+        with tempfile.NamedTemporaryFile("w+", suffix=".out", delete=False) as fh:
+            out_path = fh.name
+        try:
+            full_env = dict(os.environ)
+            full_env.update(env)
+            full_env["GITHUB_OUTPUT"] = out_path
+            proc = subprocess.run(
+                ["bash", str(script)], env=full_env, capture_output=True, text=True, timeout=60
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            with open(out_path, "r", encoding="utf-8") as fh:
+                return fh.read() + proc.stdout
+        finally:
+            os.unlink(out_path)
+
+    def test_workflows_run_channels_sequentially_not_in_parallel(self) -> None:
+        """10 kanal ayni anda calismamali: max-parallel: 1 + zincir tek kanal tetikler."""
+        daily = DAILY_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("max-parallel: 1", daily)
+        self.assertIn("needs.channel-map.outputs.distinct_matrix", daily)
+        self.assertIn("scripts/channel_map.sh", daily)
+        # Zincir "all" DEGIL, tek kanal tetiklemeli
+        self.assertIn("${TARGET_CHANNEL}", daily)
+        self.assertNotIn('target_channel\\":\\"all', daily)
+
+        pruner = PRUNER_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("max-parallel: 1", pruner)
+        self.assertIn("needs.channel-map.outputs.distinct_matrix", pruner)
+        self.assertIn("actions: write", pruner)
+
     def test_probe_workflow_exists_for_scheduler_health(self) -> None:
         self.assertTrue(PROBE_WORKFLOW.exists())
         probe = PROBE_WORKFLOW.read_text(encoding="utf-8")

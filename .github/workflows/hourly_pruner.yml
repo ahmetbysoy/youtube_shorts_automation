@@ -24,15 +24,56 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
+  # Kanal haritasi: ayni hesabi isaret eden kanallar ayiklanir (bosuna tarama olmasin).
+  channel-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      distinct_matrix: ${{ steps.map.outputs.distinct_matrix }}
+      next_channel: ${{ steps.map.outputs.next_channel }}
+      distinct_count: ${{ steps.map.outputs.distinct_count }}
+    steps:
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Kanal Benzersizlik Analizi
+        id: map
+        env:
+          C1: ${{ secrets.COOKIES_JSON_1 }}
+          S1: ${{ secrets.STORAGE_STATE_JSON_1 }}
+          C2: ${{ secrets.COOKIES_JSON_2 }}
+          S2: ${{ secrets.STORAGE_STATE_JSON_2 }}
+          C3: ${{ secrets.COOKIES_JSON_3 }}
+          S3: ${{ secrets.STORAGE_STATE_JSON_3 }}
+          C4: ${{ secrets.COOKIES_JSON_4 }}
+          S4: ${{ secrets.STORAGE_STATE_JSON_4 }}
+          C5: ${{ secrets.COOKIES_JSON_5 }}
+          S5: ${{ secrets.STORAGE_STATE_JSON_5 }}
+          C6: ${{ secrets.COOKIES_JSON_6 }}
+          S6: ${{ secrets.STORAGE_STATE_JSON_6 }}
+          C7: ${{ secrets.COOKIES_JSON_7 }}
+          S7: ${{ secrets.STORAGE_STATE_JSON_7 }}
+          C8: ${{ secrets.COOKIES_JSON_8 }}
+          S8: ${{ secrets.STORAGE_STATE_JSON_8 }}
+          C9: ${{ secrets.COOKIES_JSON_9 }}
+          S9: ${{ secrets.STORAGE_STATE_JSON_9 }}
+          C10: ${{ secrets.COOKIES_JSON_10 }}
+          S10: ${{ secrets.STORAGE_STATE_JSON_10 }}
+        run: |
+          bash scripts/channel_map.sh
+
   prune-videos:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: channel-map
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON('["1","2","3","4","5","6","7","8","9","10"]') }}
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || needs.channel-map.outputs.distinct_matrix }}
 
     # 10 kanallı matris aynı YouTube Studio oturumunu paylaşabildiği için
     # temizlik işleri sıraya alınır (aynı anda çakışma olmaz).
@@ -111,10 +152,12 @@ jobs:
   cron-kick:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: prune-videos
+    needs: [channel-map, prune-videos]
     if: always()
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NEXT_CHANNEL: ${{ needs.channel-map.outputs.next_channel }}
+      DISTINCT_COUNT: ${{ needs.channel-map.outputs.distinct_count }}
     steps:
       - name: Zamanlayıcı Sağlığını Kontrol Et ve Zinciri Devam Ettir
         run: |
@@ -132,9 +175,12 @@ jobs:
             fi
           fi
           NEXT_SLOT=$(( (NOW / 3600 + 1) * 3600 ))
+          TARGET_CHANNEL="${NEXT_CHANNEL:-1}"
+          echo "[*] Benzersiz (ayri hesap) kanal sayisi: ${DISTINCT_COUNT:-1}"
+          echo "[*] Siradaki kanal: ${TARGET_CHANNEL}"
           echo "[*] Sonraki saat dilimi: ${NEXT_SLOT} (UTC $(date -u -d @${NEXT_SLOT} '+%H:%M:%S'))"
           curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches" \
-            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"all\",\"slot_epoch\":\"${NEXT_SLOT}\"}}"
-          echo "[*] Zincir tetiklendi."
+            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"${TARGET_CHANNEL}\",\"slot_epoch\":\"${NEXT_SLOT}\"}}"
+          echo "[*] Zincir tetiklendi -> kanal ${TARGET_CHANNEL}."

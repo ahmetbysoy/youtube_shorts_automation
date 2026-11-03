@@ -48,7 +48,9 @@ class TestFaz10AutoPruner(unittest.TestCase):
         self.assertTrue(PRUNER_WORKFLOW.exists(), "hourly_pruner.yml bulunmalı")
         yml = PRUNER_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("cron: '0 * * * *'", yml)
-        self.assertIn('fromJSON(\'["1","2","3","4","5","6","7","8","9","10"]\')', yml)
+        # Faz 11: matris artik sabit 10 kanal degil, AYRI hesapli (benzersiz) kanallardan olusur.
+        self.assertIn('needs.channel-map.outputs.distinct_matrix', yml)
+        self.assertIn('max-parallel: 1', yml)
         self.assertIn("fail-fast: false", yml)
         self.assertIn("pruner-studio-lock", yml)
         self.assertIn("cancel-in-progress: false", yml)

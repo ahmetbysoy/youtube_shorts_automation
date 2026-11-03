@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       target_channel:
-        description: "Test edilecek tekil kanal ID (ör: 1) veya tüm matris için 'all'"
+        description: "Test edilecek tekil kanal ID (ör: 1). Boş/'all' = benzersiz (ayrı hesap) kanallar, teker teker."
         required: false
         default: 'all'
         type: string
@@ -27,13 +27,59 @@ permissions:
   pull-requests: write
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # KANAL HARİTASI: 10 secret'in hepsi aynı YouTube hesabını işaret edebilir.
+  # Aynı hesabı işaret eden kanallar ayıklanır (günlük kota 10x harcanmasın).
+  # Sadece AYRI hesaplara sahip kanallar üretime girer.
+  # ---------------------------------------------------------------------------
+  channel-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      distinct_matrix: ${{ steps.map.outputs.distinct_matrix }}
+      next_channel: ${{ steps.map.outputs.next_channel }}
+      distinct_count: ${{ steps.map.outputs.distinct_count }}
+    steps:
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Kanal Benzersizlik Analizi
+        id: map
+        env:
+          C1: ${{ secrets.COOKIES_JSON_1 }}
+          S1: ${{ secrets.STORAGE_STATE_JSON_1 }}
+          C2: ${{ secrets.COOKIES_JSON_2 }}
+          S2: ${{ secrets.STORAGE_STATE_JSON_2 }}
+          C3: ${{ secrets.COOKIES_JSON_3 }}
+          S3: ${{ secrets.STORAGE_STATE_JSON_3 }}
+          C4: ${{ secrets.COOKIES_JSON_4 }}
+          S4: ${{ secrets.STORAGE_STATE_JSON_4 }}
+          C5: ${{ secrets.COOKIES_JSON_5 }}
+          S5: ${{ secrets.STORAGE_STATE_JSON_5 }}
+          C6: ${{ secrets.COOKIES_JSON_6 }}
+          S6: ${{ secrets.STORAGE_STATE_JSON_6 }}
+          C7: ${{ secrets.COOKIES_JSON_7 }}
+          S7: ${{ secrets.STORAGE_STATE_JSON_7 }}
+          C8: ${{ secrets.COOKIES_JSON_8 }}
+          S8: ${{ secrets.STORAGE_STATE_JSON_8 }}
+          C9: ${{ secrets.COOKIES_JSON_9 }}
+          S9: ${{ secrets.STORAGE_STATE_JSON_9 }}
+          C10: ${{ secrets.COOKIES_JSON_10 }}
+          S10: ${{ secrets.STORAGE_STATE_JSON_10 }}
+        run: |
+          bash scripts/channel_map.sh
+
   build-and-upload:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: channel-map
     strategy:
       fail-fast: false
+      # Kanal sirasi: BIR video TAMAMEN (kapak + baslik + hashtag + yayin) bitmeden
+      # diger kanal BASLAMAZ. Ayni anda 10 kanal calismaz.
+      max-parallel: 1
       matrix:
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON('["1","2","3","4","5","6","7","8","9","10"]') }}
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || needs.channel-map.outputs.distinct_matrix }}
 
     steps:
       - name: Depoyu Çek (Checkout)
@@ -50,7 +96,7 @@ jobs:
           fi
           if [ "$TARGET" -gt "$NOW" ]; then
             DELAY=$(( TARGET - NOW ))
-            echo "[*] Zincir tetikleyicisi: ${DELAY} saniye sonra 15 dakikalik dilime geçilecek..."
+            echo "[*] Zincir tetikleyicisi: ${DELAY} saniye sonra 15 dakikalık dilime geçilecek..."
             sleep "$DELAY"
           fi
 
@@ -113,7 +159,8 @@ jobs:
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
         run: |
-          # Kanal ID'sini orkestratöre geçiriyoruz ki benzersiz tohum oluşsun
+          # Tek video: icerik -> ses -> video -> kapak -> baslik/hashtag -> YAYIN (PUBLIC)
+          # Tamami bitmeden sonraki kanal/kullanici devreye girmez (max-parallel: 1).
           xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py --channel_id ${{ matrix.channel_id }}
 
       - name: Üretilen Videoyu ve Logları Yedekle (Artifact - Kanal ${{ matrix.channel_id }})
@@ -130,20 +177,45 @@ jobs:
   # ---------------------------------------------------------------------------
   # CRON KILIDI KIRMA: GitHub'ın 'schedule' tetikleyicisi throttle/yok sayılabiliyor.
   # Bu job, zamanlayıcı ölüyse iş akışını kendi kendine yeniden tetikler (workflow_dispatch).
-  # Böylece 15 dakikalık üretim zinciri zamanlayıcıdan bağımsız olarak sürer.
+  # ÖNEMLİ: Zincir TEK kanal tetikler (dizi kanal sirasi), "all" DEĞIL.
   # ---------------------------------------------------------------------------
   cron-kick:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: build-and-upload
+    needs: [channel-map, build-and-upload]
     if: always()
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NEXT_CHANNEL: ${{ needs.channel-map.outputs.next_channel }}
+      DISTINCT_COUNT: ${{ needs.channel-map.outputs.distinct_count }}
     steps:
       - name: Zamanlayıcı Sağlığını Kontrol Et ve Zinciri Devam Ettir
         run: |
           NOW=$(date -u +%s)
           WORKFLOW="daily_shorts.yml"
+
+          # --- 1) Onceki turun kotaya takilip takilmadigini kontrol et ---
+          QUOTA_HIT=0
+          JOB_IDS=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=20" \
+            | python3 -c "import json,sys;print(' '.join(str(j['id']) for j in json.load(sys.stdin).get('jobs',[])))" 2>/dev/null || true)
+          for J in ${JOB_IDS}; do
+            if curl -sL -H "Authorization: Bearer ${GH_TOKEN}" \
+                 "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/jobs/${J}/logs" 2>/dev/null \
+                 | grep -qiE "YÜKLEME ATLANDI|yükleme kotanı doldu|kota doldu"; then
+              QUOTA_HIT=1
+              break
+            fi
+          done
+
+          if [ "$QUOTA_HIT" = "1" ]; then
+            echo "[KOTA] Onceki tur gunluk yukleme kotasiyla durdu -> bosuna uretim yapmamak icin sonraki deneme 4 saat sonra."
+            NEXT_SLOT=$(( NOW + 14400 ))
+          else
+            NEXT_SLOT=$(( (NOW / 900 + 1) * 900 ))
+          fi
+
+          # --- 2) Zamanlayici canli mi? ---
           LAST=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?event=schedule&per_page=1" \
             | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
@@ -160,10 +232,14 @@ jobs:
             echo "[UYARI] Hic zamanlanmis calistirma yok -> zincir devam ettiriliyor."
           fi
 
-          NEXT_SLOT=$(( (NOW / 900 + 1) * 900 ))
-          echo "[*] Sonraki 15 dakikalik dilim: ${NEXT_SLOT} (UTC $(date -u -d @${NEXT_SLOT} '+%H:%M:%S'))"
+          # --- 3) Siradaki kanal (ayri hesaplar arasinda donusum) ---
+          TARGET_CHANNEL="${NEXT_CHANNEL:-1}"
+          echo "[*] Benzersiz (ayri hesap) kanal sayisi: ${DISTINCT_COUNT:-1}"
+          echo "[*] Siradaki kanal: ${TARGET_CHANNEL}"
+          echo "[*] Sonraki dilim: ${NEXT_SLOT} (UTC $(date -u -d @${NEXT_SLOT} '+%H:%M:%S'))"
+
           curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches" \
-            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"all\",\"slot_epoch\":\"${NEXT_SLOT}\"}}"
-          echo "[*] Zincir tetiklendi."
+            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"${TARGET_CHANNEL}\",\"slot_epoch\":\"${NEXT_SLOT}\"}}"
+          echo "[*] Zincir tetiklendi -> kanal ${TARGET_CHANNEL}, dilim ${NEXT_SLOT}."
