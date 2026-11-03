@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      distinct_matrix: ${{ steps.map.outputs.distinct_matrix }}
+      distinct_csv: ${{ steps.map.outputs.distinct_csv }}
       next_channel: ${{ steps.map.outputs.next_channel }}
       distinct_count: ${{ steps.map.outputs.distinct_count }}
     steps:
@@ -79,7 +79,7 @@ jobs:
       # diger kanal BASLAMAZ. Ayni anda 10 kanal calismaz.
       max-parallel: 1
       matrix:
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || needs.channel-map.outputs.distinct_matrix }}
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', join(needs.channel-map.outputs.distinct_csv, '","'))) }}
 
     steps:
       - name: Depoyu Çek (Checkout)

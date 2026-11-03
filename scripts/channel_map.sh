@@ -40,8 +40,11 @@ if [ "${#ORDER[@]}" -eq 0 ]; then
   ORDER=(1)
 fi
 
-MATRIX=$(printf '"%s",' "${ORDER[@]}")
-MATRIX="[${MATRIX%,}]"
+# GitHub, "[" ve "{" iceren job output'larini "secret icerebilir" diye ATIYOR.
+# Bu yuzden JSON degil, VIRGULLU liste cikartiyoruz; is akisi
+# fromJSON('["' + join(distinct_csv, '","') + '"]') ile geri ceviriyor.
+MATRIX=$(printf '%s,' "${ORDER[@]}")
+MATRIX="${MATRIX%,}"
 
 RUN_NUMBER="${GITHUB_RUN_NUMBER:-1}"
 IDX=$(( (RUN_NUMBER - 1) % ${#ORDER[@]} ))
@@ -51,7 +54,7 @@ echo "[*] Benzersiz kanallar: ${ORDER[*]}"
 echo "[*] Siradaki kanal (rotasyon ${RUN_NUMBER}): ${NEXT}"
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
-  echo "distinct_matrix=${MATRIX}" >> "$GITHUB_OUTPUT"
+  echo "distinct_csv=${MATRIX}" >> "$GITHUB_OUTPUT"
   echo "next_channel=${NEXT}" >> "$GITHUB_OUTPUT"
   echo "distinct_count=${#ORDER[@]}" >> "$GITHUB_OUTPUT"
 fi

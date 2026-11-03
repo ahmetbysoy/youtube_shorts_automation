@@ -125,7 +125,8 @@ class TestFaz11ViralMetadata(unittest.TestCase):
             env[f"S{i}"] = "AYNI-STATE"
         out = self._run_channel_map(env)
         self.assertIn("distinct_count=1", out)
-        self.assertIn('distinct_matrix=["1"]', out)
+        # GitHub, [ ] { } iceren output'lari "secret" sanip atiyor -> virgullu liste kullanilir.
+        self.assertIn("distinct_csv=1", out)
         self.assertIn("next_channel=1", out)
 
         # 3 kanal, 2 farkli hesap (1=2 ayni, 3 farkli)
@@ -137,7 +138,7 @@ class TestFaz11ViralMetadata(unittest.TestCase):
         env["S2"] = env["S1"]
         out = self._run_channel_map(env)
         # 1 ve 2 ayni hesap -> 2 ayiklanir; 3..10 ayri hesaplar
-        self.assertIn('distinct_matrix=["1","3","4","5","6","7","8","9","10"]', out)
+        self.assertIn("distinct_csv=1,3,4,5,6,7,8,9,10", out)
         self.assertIn("distinct_count=9", out)
         self.assertIn("[AYNI HESAP] Kanal 2 = Kanal 1", out)
 
@@ -164,7 +165,8 @@ class TestFaz11ViralMetadata(unittest.TestCase):
         """10 kanal ayni anda calismamali: max-parallel: 1 + zincir tek kanal tetikler."""
         daily = DAILY_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("max-parallel: 1", daily)
-        self.assertIn("needs.channel-map.outputs.distinct_matrix", daily)
+        self.assertIn("needs.channel-map.outputs.distinct_csv", daily)
+        self.assertIn("join(needs.channel-map.outputs.distinct_csv", daily)
         self.assertIn("scripts/channel_map.sh", daily)
         # Zincir "all" DEGIL, tek kanal tetiklemeli
         self.assertIn("${TARGET_CHANNEL}", daily)
@@ -172,7 +174,7 @@ class TestFaz11ViralMetadata(unittest.TestCase):
 
         pruner = PRUNER_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("max-parallel: 1", pruner)
-        self.assertIn("needs.channel-map.outputs.distinct_matrix", pruner)
+        self.assertIn("needs.channel-map.outputs.distinct_csv", pruner)
         self.assertIn("actions: write", pruner)
 
     def test_probe_workflow_exists_for_scheduler_health(self) -> None:
