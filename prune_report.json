@@ -1,78 +1,86 @@
 {
-  "started_at": "2026-11-03T20:53:11.190Z",
+  "started_at": "2026-11-03T20:58:00.012Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 9,
+  "scanned": 8,
   "targets": [
-    {
-      "videoId": "Y6cCy07CIS8",
-      "title": "Güneş Işığı Dünya'ya Gelene Kadar 8 Dakika Geçmiş Olur! #Shorts",
-      "views": 3,
-      "ageMinutes": 84,
-      "ageSource": "rss"
-    }
-  ],
-  "deleted": [],
-  "protected": [
     {
       "videoId": "UmhrPrW5y6g",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
-      "reason": "filtre"
+      "ageMinutes": 132,
+      "ageSource": "rss"
     },
     {
       "videoId": "6qDAYQ3ZdVw",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 1,
-      "reason": "filtre"
+      "ageMinutes": 132,
+      "ageSource": "rss"
     },
     {
       "videoId": "uXy84Ga48sg",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "views": 1,
-      "reason": "filtre"
+      "ageMinutes": 133,
+      "ageSource": "rss"
+    }
+  ],
+  "deleted": [
+    {
+      "videoId": "UmhrPrW5y6g",
+      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "views": 1
     },
+    {
+      "videoId": "6qDAYQ3ZdVw",
+      "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+      "views": 1
+    },
+    {
+      "videoId": "uXy84Ga48sg",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "views": 1
+    }
+  ],
+  "protected": [
     {
       "videoId": "atw6R7iSY88",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 142,
-      "reason": "filtre"
+      "reason": "performanslı"
     },
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 439,
-      "reason": "filtre"
+      "views": 479,
+      "reason": "performanslı"
     },
     {
       "videoId": "3SFUI9fSYSU",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 331,
-      "reason": "filtre"
+      "views": 346,
+      "reason": "performanslı"
     },
     {
       "videoId": "zELMhLQ6ZXE",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "views": 2,
-      "reason": "filtre"
+      "reason": "çok-yeni",
+      "ageMinutes": 7.3479
     },
     {
       "videoId": "wOzB6rtg6Yg",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "views": 4,
-      "reason": "filtre"
+      "reason": "çok-yeni",
+      "ageMinutes": 7.3479
     }
   ],
-  "errors": [
-    {
-      "videoId": "Y6cCy07CIS8",
-      "title": "Güneş Işığı Dünya'ya Gelene Kadar 8 Dakika Geçmiş Olur! #Shorts",
-      "reason": "onay sonrası video listede görünmüyor (silinemedi)"
-    }
-  ],
-  "finished_at": "2026-11-03T20:54:13.885Z",
-  "deleted_count": 0
+  "errors": [],
+  "finished_at": "2026-11-03T20:59:05.766Z",
+  "deleted_count": 3
 }
