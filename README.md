@@ -75,3 +75,50 @@ python -m unittest discover -s tests -p "test_*.py" -v
 ## Gizli Bilgiler ve Güvenlik
 
 `.env`, `cookies.json`, `storage_state.json`, `*.har`, `client_secret*.json` ve `*token*.json` dosyaları `.gitignore` ile koruma altındadır; **asla** Git deposuna eklenmez. Bulut ortamında yalnızca şifreli **GitHub Repository Secrets** ve özel **Google Drive** yedekleri kullanılır.
+
+---
+
+## Faz 10 — Otonom "Ölü Ağırlık" Temizliği (Auto-Pruner, Saatlik)
+
+`.github/workflows/hourly_pruner.yml` iş akışı **her saat başı (`cron: '0 * * * *'`)** devreye girer, 10 kanallı matrisle (kanal `1..10`, `fail-fast: false`) YouTube Studio'ya girer ve **ilk 1 saatini geçmiş + 100 izlenmenin altında kalmış** videoları kalıcı olarak siler.
+
+### Çalışma Mantığı (`prune_low_performers.js`)
+
+| Adım | Gerçek YouTube Studio Yapısı (canlı kanalda doğrulandı) |
+| :--- | :--- |
+| **Video Satırları** | `ytcp-video-row` (her satırda `#video-title`, `a[href*="/video/{ID}"]`) |
+| **İzlenme Sütunu** | `.tablecell-views` (Türkçe sayı biçimi: `1.234`, `1,2 B`, `3,4 Mn`) |
+| **Yayın Tarihi Sütunu** | `.tablecell-date` (`3 Kas 2026` + `Yayınlandı` / `Yüklendi`) |
+| **Seçenek Menüsü** | `ytcp-icon-button.open-menu-button` (`aria-label="Seçenekler"`) |
+| **Silme Kalemi** | `tp-yt-paper-item[test-id="delete"]` (metin: **"Tamamen sil"**) |
+| **Onay Penceresi** | `ytcp-video-delete-dialog` → `#confirm-checkbox #checkbox` (kalıcılık onayı) → `#confirm-button` |
+
+### Yaş (Süre) Çözümleme — 3 Katmanlı, Asla Erken Silme Garantili
+
+1. **Kanal RSS yayını** (`https://www.youtube.com/feeds/videos.xml?channel_id=...`) → kesin ISO yayın zamanı.
+2. **`prune_state.json`** (ilk görülme kaydı) → gözlem tabanlı kesin yaş (gizli videolar için de çalışır).
+3. **Studio tarih sütunu** → göreli (`3 saat önce`) veya mutlak tarih; mutlak tarihte video günün **en geç 23:59'unda** yayınlanmış sayılır (asla erken silinmez).
+
+### Emniyet Kilitleri (Env ile ayarlanabilir)
+
+| Değişken | Varsayılan | Açıklama |
+| :--- | :--- | :--- |
+| `PRUNE_MIN_VIEWS` | `100` | Bu izlenmenin altındakiler hedeflenir |
+| `PRUNE_MIN_AGE_MINUTES` | `60` | İlk 1 saatteki videolar **dokunulmaz** |
+| `PRUNE_MAX_DELETIONS` | `10` | Tek çalıştırmada silme üst sınırı |
+| `PRUNE_MIN_REMAINING` | `1` | Kanalda bırakılacak en az video |
+| `PRUNE_DRY_RUN` | `false` | `true` ise yalnızca raporlar, silmez |
+
+### Çıktılar
+
+- `prune_report.json` → tarama/HD/KORUNDU/silme raporu (artifact + repo'ya yazılır).
+- `prune_state.json` → video ID → ilk görülme zamanı (yaş çözümleme hafızası).
+- Log satırları: `[!] HEDEF TESPİT EDİLDİ: ...`, `[+] BAŞARILI: '...' kalıcı olarak silindi.`, `[*] KORUNDU: ...` ve `🚀 TEMİZLİK TAMAMLANDI: X adet düşük performanslı video imha edildi. 🚀`
+
+### Manuel Tetikleme
+
+```bash
+curl -X POST -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/ahmetbysoy/youtube_shorts_automation/actions/workflows/hourly_pruner.yml/dispatches \
+  -d '{"ref":"main","inputs":{"target_channel":"1"}}'
+```

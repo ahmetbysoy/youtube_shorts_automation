@@ -1,0 +1,103 @@
+name: Hourly Low-View Pruner (Ölü Ağırlık Temizleyici - Faz 10)
+
+on:
+  schedule:
+    # Her saat başı (XX:00) "ölü ağırlık" videoları taranır ve kalıcı olarak silinir.
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      target_channel:
+        description: "Test edilecek tekil kanal ID (ör: 1) veya tüm matris için 'all'"
+        required: false
+        default: 'all'
+        type: string
+
+# Aynı anda birden fazla temizlik oturumu açılmasın (Studio oturum çakışması)
+concurrency:
+  group: pruner-workflow-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  prune-videos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON('["1","2","3","4","5","6","7","8","9","10"]') }}
+
+    # 10 kanallı matris aynı YouTube Studio oturumunu paylaşabildiği için
+    # temizlik işleri sıraya alınır (aynı anda çakışma olmaz).
+    concurrency:
+      group: pruner-studio-lock
+      cancel-in-progress: false
+
+    steps:
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Sistem Paketlerini Kur (Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Node.js 20 Kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Playwright Chromium Yükle
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Oturum Bilgilerini Enjekte Et (Kanal #{{ matrix.channel_id }})
+        env:
+          CHANNEL_ENV_FILE: ${{ secrets[format('ENV_FILE_{0}', matrix.channel_id)] }}
+          CHANNEL_COOKIES_JSON: ${{ secrets[format('COOKIES_JSON_{0}', matrix.channel_id)] }}
+          CHANNEL_STORAGE_STATE_JSON: ${{ secrets[format('STORAGE_STATE_JSON_{0}', matrix.channel_id)] }}
+          FALLBACK_ENV_FILE: ${{ secrets.ENV_FILE }}
+          FALLBACK_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+          FALLBACK_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+        run: |
+          umask 077
+          printf '%s\n' "${CHANNEL_ENV_FILE:-$FALLBACK_ENV_FILE}" > .env
+          printf '%s\n' "${CHANNEL_COOKIES_JSON:-$FALLBACK_COOKIES_JSON}" > cookies.json
+          if [ -n "${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}" ]; then
+            printf '%s\n' "${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}" > storage_state.json
+          fi
+          mkdir -p logs
+
+      - name: "Ölü Ağırlık Temizleyicisini Çalıştır (Faz 10)"
+        env:
+          MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
+          PRUNE_MIN_VIEWS: ${{ vars.PRUNE_MIN_VIEWS || '100' }}
+          PRUNE_MIN_AGE_MINUTES: ${{ vars.PRUNE_MIN_AGE_MINUTES || '60' }}
+          PRUNE_MAX_DELETIONS: ${{ vars.PRUNE_MAX_DELETIONS || '10' }}
+          PRUNE_MIN_REMAINING: ${{ vars.PRUNE_MIN_REMAINING || '1' }}
+        run: |
+          xvfb-run -a --server-args="-screen 0 1366x900x24" node prune_low_performers.js
+
+      - name: Temizlik Raporunu Depoya Kaydet
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add prune_report.json prune_state.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Faz 10 Auto-Pruner: Saatlik ölü ağırlık temizlik raporu [skip ci]"
+          git pull --rebase origin main || true
+          git push origin main || echo "Push atlandı (eşzamanlı güncelleme)"
+
+      - name: Temizlik Raporunu Yedekle (Artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prune-report-${{ matrix.channel_id }}-${{ github.run_number }}
+          path: |
+            prune_report.json
+            prune_state.json
+          retention-days: 14
+          if-no-files-found: ignore

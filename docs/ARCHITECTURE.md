@@ -129,3 +129,49 @@ youtube_shorts_automation/
 | **İleri Adımları (3×)** | `ytcp-button#next-button` |
 | **Herkese Açık (`PUBLIC`)** | `tp-yt-paper-radio-button[name="PUBLIC"]`, `#public-radio-button`, `input[value="PUBLIC"]` |
 | **Yayınla & Ek Onaylar** | `ytcp-button#done-button` -> varsa `ytcp-prechecks-warning-dialog #secondary-action-button` / `ytcp-confirmation-dialog #confirm-button` / `button:has-text("Yine de yayınla")` |
+
+---
+
+## 6. Faz 10 — Otonom "Ölü Ağırlık" Temizleyici (`prune_low_performers.js`)
+
+### 6.1 Genel Akış
+
+```
+[cron '0 * * * *']  hourly_pruner.yml
+        │
+        ├─ matrix: channel_id ['1'..'10']  (fail-fast: false, job-level concurrency: pruner-studio-lock)
+        │
+        ├─ Secrets: ENV_FILE_<id> / COOKIES_JSON_<id> / STORAGE_STATE_JSON_<id>  (fallback: ENV_FILE / COOKIES_JSON / STORAGE_STATE_JSON)
+        │
+        ├─ xvfb-run -a --server-args="-screen 0 1366x900x24" node prune_low_performers.js
+        │        │
+        │        ├─ 1) YouTube Studio → /channel/{UC...}/videos/short  (+ /videos/upload)
+        │        ├─ 2) Satır taraması: ytcp-video-row → .tablecell-views / .tablecell-date
+        │        ├─ 3) Yaş çözümleme: RSS (kesin) → prune_state.json (kesin) → Studio tarihi (muhafazakâr)
+        │        ├─ 4) Karar: yaş ≥ 60 dk VE izlenme < 100  →  HEDEF
+        │        ├─ 5) Silme: open-menu-button → tp-yt-paper-item[test-id="delete"] →
+        │        │          #confirm-checkbox #checkbox → #confirm-button → satır listeden kayboldu mu (doğrulama)
+        │        └─ 6) Çıktı: prune_report.json + prune_state.json (artifact + repo)
+        │
+        └─ git commit "Faz 10 Auto-Pruner: Saatlik ölü ağırlık temizlik raporu [skip ci]"
+```
+
+### 6.2 Seçici Haritası (canlı kanalda doğrulandı — `UCBZVbwc7s7TeUCcOaN58oHQ`)
+
+| Adım | Seçici | Not |
+| :--- | :--- | :--- |
+| Satır | `ytcp-video-row` | `ytcp-video-list-cell` **yoktur** (hücreler `div[role="cell"].cell-body`) |
+| Başlık | `#video-title` | Video ID: `a[href*="/video/{ID}"]` |
+| İzlenme | `.tablecell-views` | Düz sayı (`3`, `142`); binlik ayırıcı `,`/`.` karışıklığı `parseTrNumber` ile çözülür |
+| Yayın tarihi | `.tablecell-date` (+ `.cell-description` → `Yayınlandı` / `Yüklendi`) | Mutlak tarihte 23:59 varsayılır |
+| Görünürlük | `.tablecell-visibility` | `Herkese açık` / `Gizli` |
+| Menü | `ytcp-icon-button.open-menu-button` | `aria-label="Seçenekler"` |
+| Silme | `tp-yt-paper-item[test-id="delete"]` | Metin **"Tamamen sil"** (sadece "Sil" değil!) |
+| Onay kutusu | `ytcp-confirmation-dialog #confirm-checkbox #checkbox` | `aria-checked="false"` → `true` yapılmalı |
+| Onay butonu | `ytcp-video-delete-dialog #confirm-button` | "Tamamen sil" |
+
+> **Tuzak:** `ytcp-video-delete-dialog` ve `ytcp-confirmation-dialog` sarmalayıcıları Playwright'e `visible=false` görünür (`display:contents`); bu yüzden **içindeki** `#confirm-button` / `#confirm-checkbox` hedeflenir.
+
+### 6.3 Matris Notu
+
+10 matris işi de aynı YouTube hesabını (`COOKIES_JSON_1..10` = aynı kanal) kullandığı için temizlik işleri `concurrency.group = pruner-studio-lock` ile **sıraya alınır**; aynı anda tek Studio oturumu açılır, böylece satır kayması kaynaklı yanlış silme riski ortadan kalkar.

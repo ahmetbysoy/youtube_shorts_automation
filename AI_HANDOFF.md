@@ -145,3 +145,37 @@ Bir sonraki yapay zeka ajanının doğrudan başlayabileceği geliştirmeler:
    - `.env` ve `ENV_FILE_1..3` içine ücretsiz `GROQ_API_KEY` (`llama-3.3-70b-versatile`) ve `PEXELS_API_KEY` / `PIXABAY_API_KEY` eklendiğinde `main.py` içindeki `--force-fallback` bayrağı kaldırılarak sınırsız dinamik Wikipedia destekli konu üretimine geçilebilir (`content_engine.py` ve `media_processor.py` bu entegrasyona şimdiden %100 hazırdır).
 3. **2. ve 3. Bağımsız YouTube Kanallarının Bağlanması:**
    - Farklı nişlerde (ör. Kanal 1: *Tarih*, Kanal 2: *Uzay & Bilim*, Kanal 3: *Psikoloji & İlginç Bilgiler*) yeni Gmail/YouTube kanalları açıldığında `COOKIES_JSON_2` / `STORAGE_STATE_JSON_2` ve `_3` secret'ları güncellenerek 3 ayrı kanala eşzamanlı yayın yapılabilir.
+
+---
+
+## 7. Faz 10 — Otonom "Ölü Ağırlık" Temizleyici (Auto-Pruner) Operasyon Protokolü
+
+**Ne yapar:** `prune_low_performers.js` her saat başı YouTube Studio'ya girer; **1 saatten eski** ve **100 izlenmenin altında** kalan videoları kalıcı olarak siler. `hourly_pruner.yml` bunu 10 kanallı matrisle (`1..10`, `fail-fast: false`) ve saatlik `cron: '0 * * * *'` ile çalıştırır.
+
+**Çalıştırma komutları:**
+
+```bash
+# Manuel tetikleme (tek kanal)
+curl -X POST -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/ahmetbysoy/youtube_shorts_automation/actions/workflows/hourly_pruner.yml/dispatches \
+  -d '{"ref":"main","inputs":{"target_channel":"1"}}'
+
+# Yerelde kuru deneme (SİLMEZ)
+PRUNE_DRY_RUN=true xvfb-run -a --server-args="-screen 0 1366x900x24" node prune_low_performers.js
+
+# Tek video hedefiyle test (dikkat: gerçekten siler)
+PRUNE_ONLY_VIDEO_IDS=<VIDEO_ID> xvfb-run -a node prune_low_performers.js
+```
+
+**Eşikler (GitHub Secrets/Vars ile ezilebilir):** `PRUNE_MIN_VIEWS=100`, `PRUNE_MIN_AGE_MINUTES=60`, `PRUNE_MAX_DELETIONS=10`, `PRUNE_MIN_REMAINING=1`, `PRUNE_DRY_RUN=false`.
+
+**Çıktı dosyaları:** `prune_report.json` (tarama + silme kanıtı), `prune_state.json` (video ID → ilk görülme zamanı; gizli videoların yaşını çözer).
+
+**CANLI STUDIO SEÇİCİ TUZAKLARI (SAKIN BOZMA!):**
+- Video satırı `ytcp-video-row`'dur; `ytcp-video-list-cell` **yoktur** (hücreler `div[role="cell"].cell-body`).
+- Silme menüsü kalemi `tp-yt-paper-item[test-id="delete"]` → metin **"Tamamen sil"** (düz "Sil" değil!).
+- Onay penceresi `ytcp-video-delete-dialog`; önce `#confirm-checkbox #checkbox` (`role=checkbox`) işaretlenir, sonra `#confirm-button` tıklanır. Sarmaç (`ytcp-video-delete-dialog`, `ytcp-confirmation-dialog`) Playwright'e görünmez göründüğü için **içindeki** buton hedeflenir.
+- Yaş tespiti için Studio tarih sütunu tek başına **yetersizdir** (aynı gün yayınlananlarda da mutlak tarih yazar). Kesin yayın zamanı kanalın **RSS yayınından** (`https://www.youtube.com/feeds/videos.xml?channel_id={UC...}`) gelir; gizli videolar için `prune_state.json` ilk-görülme kaydı kullanılır.
+- 10 matris işi aynı hesabı paylaştığı için job-level `concurrency.group = pruner-studio-lock` **kaldırılmamalıdır** (eşzamanlı Studio oturumları satır kaymasına yol açıp yanlış video silinmesine yol açar).
+
+**Bir sonraki ajan için:** Faz 10 canlı doğrulandı (ilk hedef `Y6cCy07CIS8` kalıcı olarak silindi → watch sayfası "Video unavailable"). `python -m unittest discover -s tests` ile **31/31** test yeşil olmalıdır; `node tests/pruner_logic.test.js` 4/4 geçer.
