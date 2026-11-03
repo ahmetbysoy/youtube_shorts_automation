@@ -47,13 +47,22 @@ def run_step(step_name: str, command: list, env_overrides: dict | None = None) -
         logging.info(f"[+] BAŞARILI: {step_name}")
         if result.stdout:
             for line in result.stdout.splitlines():
-                if any(tok in line for tok in ("INFO", "BAŞARILI", "🚀", "unsharp", "eq=", "Başlık", "Link :", "Durum:")):
+                show_tokens = (
+                    "INFO", "BAŞARILI", "🚀", "unsharp", "eq=", "Başlık", "Link :", "Durum:",
+                    # Faz 11: viral metadata + AI kapak kanitlari CI logunda gorunsun
+                    "AI ile dikkat", "Kapak resmi", "Kapak görseli", "Etkileşim CTA",
+                    "Trend hashtag", "YÜKLEME ATLANDI", "günlük yükleme",
+                )
+                if any(tok in line for tok in show_tokens):
                     logging.info(f"  -> {line.strip()}")
         return True
     except subprocess.CalledProcessError as e:
         # 42 = YouTube günlük yükleme kotası doldu -> bu bir HATA değil, planlı bir atlama
         if e.returncode == 42:
             logging.warning(f"[⏭️ ATLANDI] {step_name}: YouTube günlük yükleme kotanı doldu.")
+            for line in (e.stdout or "").splitlines():
+                if any(tok in line for tok in ("Kapak", "CTA", "hashtag", "YÜKLEME", "kota", "günlük")):
+                    logging.info(f"  -> {line.strip()}")
             return True
         logging.error(f"[-] KRİTİK HATA: {step_name}")
         logging.error(f"Stdout: {e.stdout}")

@@ -570,13 +570,8 @@ async function uploadToYouTubeStudio() {
 
         console.log("[*] Video yükleniyor, detaylar giriliyor... (Bu işlem video boyutuna göre 1-2 dakika sürebilir)");
         await page.waitForTimeout(2500);
-
-        // Kota koruması: YouTube günlük yükleme limiti dolduysa boşuna uğraşma
         if (await detectDailyUploadLimit(page)) {
-            console.error('⏭️ YÜKLEME ATLANDI: YouTube günlük yükleme kotanı dolmuş (limit gece yarısı sıfırlanır).');
-            writeAuthStatus('skipped_daily_limit', { title, channelUrl: page.url() });
-            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'daily_limit.png') }).catch(() => {});
-            process.exit(42);
+            console.log('[!] Uyarı: YouTube günlük yükleme kotanı dolu görünüyor (yayın adımında atlanacak).');
         }
         await page.locator('ytcp-social-suggestions-textbox#title-textarea #textbox').first().waitFor({ state: 'visible', timeout: 90000 });
         await page.waitForTimeout(1500);
@@ -588,6 +583,14 @@ async function uploadToYouTubeStudio() {
         await page.waitForTimeout(800);
         await fillContentEditable(page, 'ytcp-social-suggestions-textbox#description-textarea', description);
         await page.waitForTimeout(800);
+
+        // Kota koruması: YouTube günlük yükleme limiti dolduysa boşuna uğraşma (kapak yüklendikten SONRA)
+        if (await detectDailyUploadLimit(page)) {
+            console.error('⏭️ YÜKLEME ATLANDI: YouTube günlük yükleme kotanı dolmuş (limit gece yarısı sıfırlanır).');
+            writeAuthStatus('skipped_daily_limit', { title, thumbnail: thumbnailPrompt, channelUrl: page.url() });
+            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'daily_limit.png') }).catch(() => {});
+            process.exit(42);
+        }
 
         // --- FAZ 11: AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor ---
         console.log('[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...');
