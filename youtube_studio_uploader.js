@@ -33,11 +33,11 @@ async function persistAllSessionArtifacts(context) {
     saveSecureFile(COOKIES_PATH, JSON.stringify(cookies, null, 2));
     const storageState = await context.storageState();
     saveSecureFile(STORAGE_STATE_PATH, JSON.stringify(storageState, null, 2));
-    console.log("[*] Oturum cookie'leri ve storage_state kaydedildi. Bir sonraki çalıştırmada tam otomatik olacak.");
+    console.log(`[*] Oturum cookie'leri (${cookies.length} adet) ve storage_state.json kaydedildi. Sonraki çalışmalarda tam otomatik!`);
 }
 
 async function dismissStudioModalsIfPresent(page) {
-    // Kanal henüz oluşturulmamışsa "Kanal oluştur / Create channel" modalını tamamla
+    // 1. Kanal henüz oluşturulmamışsa "Kanal oluştur / Create channel" modalını tamamla
     const createChannelSelectors = [
         'ytd-channel-creation-dialog-renderer #create-channel-button button',
         'ytd-channel-creation-dialog-renderer ytcp-button#create-channel-button',
@@ -47,43 +47,46 @@ async function dismissStudioModalsIfPresent(page) {
     ];
     for (const sel of createChannelSelectors) {
         const loc = page.locator(sel).first();
-        if (await loc.isVisible({ timeout: 1500 }).catch(() => false)) {
+        if (await loc.isVisible({ timeout: 1200 }).catch(() => false)) {
             console.log(`[*] Yeni kanal oluşturma penceresi algılandı (${sel}), onaylanıyor...`);
-            await loc.click().catch(() => {});
-            await page.waitForTimeout(4000);
+            await loc.click({ force: true }).catch(() => {});
+            await page.waitForTimeout(8000);
             break;
         }
     }
 
-    // Hoş geldiniz / tanıtım pencerelerini kapat
+    // 2. "YouTube Studio'ya hoş geldiniz -> Devam" ve tanıtım pencerelerini kapat
     const dismissSelectors = [
+        'ytcp-warm-welcome-dialog button:has-text("Devam")',
+        'ytcp-warm-welcome-dialog button:has-text("Continue")',
         'ytcp-warm-welcome-dialog #dismiss-button',
+        'button:has-text("Devam")',
+        'button:has-text("Continue")',
         'ytcp-feature-discovery-callout #dismiss-button',
         'ytcp-button#dismiss-button',
-        'button:has-text("Continue")',
-        'button:has-text("Devam")'
+        'button:has-text("Kapat")',
+        'button:has-text("Close")'
     ];
     for (const sel of dismissSelectors) {
         const loc = page.locator(sel).first();
         if (await loc.isVisible({ timeout: 1000 }).catch(() => false)) {
-            await loc.click().catch(() => {});
-            await page.waitForTimeout(1000);
+            console.log(`[*] Tanıtım penceresi kapatılıyor (${sel})...`);
+            await loc.click({ force: true }).catch(() => {});
+            await page.waitForTimeout(1500);
         }
     }
+    await page.keyboard.press('Escape').catch(() => {});
+    await page.waitForTimeout(500);
 }
 
-async function isStudioReady(page) {
-    await dismissStudioModalsIfPresent(page);
-    const selectors = [
-        'ytcp-button#create-icon',
-        '#create-icon',
-        'ytcp-icon-button#upload-icon',
-        '#upload-icon'
-    ];
-    for (const sel of selectors) {
-        if (await page.locator(sel).first().isVisible({ timeout: 1500 }).catch(() => false)) {
-            return true;
-        }
+async function isAuthenticatedInStudio(page) {
+    const url = page.url();
+    if (url.includes('accounts.google.com') || url.includes('ServiceLogin')) {
+        return false;
+    }
+    if (url.includes('studio.youtube.com')) {
+        await dismissStudioModalsIfPresent(page);
+        return !page.url().includes('accounts.google.com');
     }
     return false;
 }
@@ -103,10 +106,17 @@ async function performGoogleLogin(page) {
         timeout: 45000
     });
 
+    // Eğer Google zaten oturumu tanıdıysa ve doğrudan studio.youtube.com'a yönlendirdiyse çık
+    await page.waitForTimeout(2500);
+    if (await isAuthenticatedInStudio(page)) {
+        return;
+    }
+
     const emailInput = page.locator('input[type="email"], input#identifierId').first();
-    await emailInput.waitFor({ state: 'visible', timeout: 30000 });
-    await emailInput.fill(email);
-    await page.locator('#identifierNext, button:has-text("Next"), button:has-text("İleri")').first().click();
+    if (await emailInput.isVisible({ timeout: 8000 }).catch(() => false)) {
+        await emailInput.fill(email);
+        await page.locator('#identifierNext, button:has-text("Next"), button:has-text("İleri")').first().click();
+    }
 
     const passInput = page.locator('input[type="password"], input[name="Passwd"]').first();
     await passInput.waitFor({ state: 'visible', timeout: 30000 });
@@ -117,20 +127,31 @@ async function performGoogleLogin(page) {
     console.log("[!] Kimlik doğrulama yanıtı ve varsa 2FA / telefon bildirimi bekleniyor...");
     await page.waitForTimeout(3500);
 
-    // 2FA veya bildirim kontrol döngüsü (3 dakika)
-    const deadline = Date.now() + 180000;
+    const deadline = Date.now() + 600000;
     while (Date.now() < deadline) {
         const currentUrl = page.url();
 
-        if (currentUrl.includes('studio.youtube.com') || currentUrl.includes('youtube.com/channel')) {
-            if (await isStudioReady(page)) {
-                writeAuthStatus('authenticated', { url: currentUrl });
-                return;
-            }
+        if (await isAuthenticatedInStudio(page)) {
+            writeAuthStatus('authenticated', { url: page.url() });
+            return;
         }
 
-        // Google "Anladım / I understand / Not now / Şimdi değil" geçiş ekranları
+        if (currentUrl.includes('gds.google.com')) {
+            console.log("[*] Google ara bilgilendirme ekranı (gds.google.com) geçiliyor...");
+            const cancelBtn = page.locator('button:has-text("İptal"), button:has-text("Cancel")').first();
+            if (await cancelBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+                await cancelBtn.click().catch(() => {});
+                await page.waitForTimeout(3000);
+            } else {
+                await page.goto('https://studio.youtube.com/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+                await page.waitForTimeout(3000);
+            }
+            continue;
+        }
+
         const skipBtns = [
+            'button:has-text("İptal")',
+            'button:has-text("Cancel")',
             'button:has-text("Not now")',
             'button:has-text("Şimdi değil")',
             'button:has-text("I understand")',
@@ -147,14 +168,12 @@ async function performGoogleLogin(page) {
             }
         }
 
-        // Harici 2FA kodu dosyası bırakıldıysa otomatik gir
         if (fs.existsSync(CODE_INPUT_FILE)) {
             const suppliedCode = fs.readFileSync(CODE_INPUT_FILE, 'utf8').trim();
             if (suppliedCode) {
                 fs.unlinkSync(CODE_INPUT_FILE);
                 const otpInput = page.locator('input[type="tel"], input#idvPin, input[name="totpPin"], input[type="text"]').first();
                 if (await otpInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-                    console.log("[*] Harici doğrulama kodu/yanıtı giriliyor...");
                     await otpInput.fill(suppliedCode);
                     await page.keyboard.press('Enter');
                     await page.waitForTimeout(4000);
@@ -163,29 +182,100 @@ async function performGoogleLogin(page) {
             }
         }
 
-        // Ekrandaki bildirim metnini ve olası eşleşme sayısını oku (şifre alanı yokken!)
         const hasPasswordField = await page.locator('input[type="password"]').isVisible().catch(() => false);
         const bodyText = await page.locator('body').innerText().catch(() => '');
-        const compactText = bodyText.replace(/\s+/g, ' ').slice(0, 600);
-        writeAuthStatus('waiting_2fa_or_redirect', { url: currentUrl, promptText: compactText });
+        writeAuthStatus('waiting_2fa_or_redirect', {
+            url: currentUrl,
+            promptText: bodyText.replace(/\s+/g, ' ').slice(0, 600)
+        });
 
         if (!hasPasswordField) {
             await page.screenshot({ path: '/tmp/yt_auth_challenge.png' }).catch(() => {});
         }
-
         await page.waitForTimeout(3000);
     }
 
-    throw new Error("2FA / Oturum açma zaman aşımına uğradı (180s).");
+    throw new Error("2FA / Oturum açma zaman aşımına uğradı.");
+}
+
+async function openUploadModal(page) {
+    await dismissStudioModalsIfPresent(page);
+
+    // Yöntem 1: Sağ üst "+ Oluştur / Create" butonu veya doğrudan yükleme ikonu
+    const createSelectors = [
+        'ytcp-button#create-icon',
+        '#create-icon',
+        'button:has-text("Oluştur")',
+        'button:has-text("Create")',
+        'ytcp-icon-button#upload-icon',
+        '#upload-icon',
+        'button[aria-label*="Video yükle"]',
+        'button[aria-label*="Upload videos"]'
+    ];
+
+    for (const sel of createSelectors) {
+        const btn = page.locator(sel).first();
+        if (await btn.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log(`[*] Yükleme tetikleyicisine tıklanıyor (${sel})...`);
+            await btn.click({ force: true });
+            await page.waitForTimeout(1200);
+
+            // Eğer zaten input[type="file"] eklendiyse tamam
+            if (await page.locator('input[type="file"]').count() > 0) {
+                return;
+            }
+
+            // Açılır menüden "Video yükle / Upload videos" seç
+            const menuSelectors = [
+                'tp-yt-paper-item#text-item-0',
+                'ytcp-ve#upload-video-button',
+                'tp-yt-paper-item:has-text("Video yükle")',
+                'tp-yt-paper-item:has-text("Videoları yükle")',
+                'tp-yt-paper-item:has-text("Upload videos")',
+                '[role="menuitem"]:has-text("Video")',
+                '[role="menuitem"]:has-text("Upload")'
+            ];
+            for (const ms of menuSelectors) {
+                const item = page.locator(ms).first();
+                if (await item.isVisible({ timeout: 1500 }).catch(() => false)) {
+                    await item.click({ force: true });
+                    await page.waitForTimeout(1500);
+                    if (await page.locator('input[type="file"]').count() > 0) {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    // Yöntem 2: Doğrudan kanal yükleme URL parametresi (?d=ud)
+    const baseChannelUrl = page.url().split('?')[0].replace(/\/$/, '');
+    const directUploadUrl = baseChannelUrl.includes('/channel/')
+        ? `${baseChannelUrl}/videos/upload?d=ud`
+        : 'https://www.youtube.com/upload';
+    console.log(`[*] Doğrudan yükleme penceresi açılıyor: ${directUploadUrl}`);
+    await page.goto(directUploadUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.waitForTimeout(4000);
+    await dismissStudioModalsIfPresent(page);
 }
 
 async function fillContentEditable(page, containerSelector, value) {
-    const box = page.locator(`${containerSelector} #textbox, ${containerSelector}`).first();
-    await box.waitFor({ state: 'visible', timeout: 60000 });
-    await box.click();
-    await page.keyboard.press('Control+A');
-    await page.keyboard.press('Backspace');
-    await page.keyboard.insertText(value);
+    const candidates = [
+        `${containerSelector} #textbox`,
+        containerSelector
+    ];
+    for (const sel of candidates) {
+        const box = page.locator(sel).first();
+        if (await box.isVisible({ timeout: 15000 }).catch(() => false)) {
+            await box.click({ force: true });
+            await page.waitForTimeout(300);
+            await page.keyboard.press('Control+A');
+            await page.keyboard.press('Backspace');
+            await page.keyboard.insertText(value);
+            return;
+        }
+    }
+    throw new Error(`Metin alanı bulunamadı: ${containerSelector}`);
 }
 
 async function uploadToYouTubeStudio() {
@@ -211,7 +301,7 @@ async function uploadToYouTubeStudio() {
 
     const context = await chromium.launchPersistentContext(PROFILE_DIR, {
         headless: headlessMode,
-        slowMo: 250,
+        slowMo: 200,
         viewport: { width: 1366, height: 900 },
         locale: 'tr-TR',
         userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
@@ -227,7 +317,6 @@ async function uploadToYouTubeStudio() {
         Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
     });
 
-    // Varsa eski cookie'leri yükle (Session bypass)
     if (fs.existsSync(COOKIES_PATH)) {
         try {
             const cookies = JSON.parse(fs.readFileSync(COOKIES_PATH, 'utf8'));
@@ -235,9 +324,7 @@ async function uploadToYouTubeStudio() {
                 await context.addCookies(cookies);
                 console.log("[*] Önceki oturum cookie'leri yüklendi.");
             }
-        } catch (e) {
-            console.warn("[!] cookies.json okunamadı, temiz oturumla devam ediliyor.");
-        }
+        } catch (_) {}
     }
 
     const page = context.pages()[0] || await context.newPage();
@@ -245,36 +332,36 @@ async function uploadToYouTubeStudio() {
     try {
         console.log("[*] YouTube Studio'ya gidiliyor...");
         await page.goto('https://studio.youtube.com/', { waitUntil: 'domcontentloaded', timeout: 45000 });
-        await page.waitForTimeout(4000);
+        await page.waitForTimeout(5000);
 
-        if (!(await isStudioReady(page))) {
+        if (!(await isAuthenticatedInStudio(page))) {
             await performGoogleLogin(page);
             if (!page.url().includes('studio.youtube.com')) {
                 await page.goto('https://studio.youtube.com/', { waitUntil: 'domcontentloaded', timeout: 45000 });
-                await page.waitForTimeout(4000);
+                await page.waitForTimeout(5000);
             }
             await dismissStudioModalsIfPresent(page);
+        } else {
+            console.log(`[*] Kayıtlı oturum ile doğrudan YouTube Studio açıldı: ${page.url()}`);
         }
 
-        // Cookie ve oturum durumunu kaydet (Gelecekte tek seferde çalışması için)
+        // Oturum artefaktlarını hemen diske yaz (cookies.json + storage_state.json)
         await persistAllSessionArtifacts(context);
 
-        console.log("[*] Yükleme penceresi açılıyor...");
-        const uploadIcon = page.locator('ytcp-icon-button#upload-icon, #upload-icon').first();
-        if (await uploadIcon.isVisible({ timeout: 2500 }).catch(() => false)) {
-            await uploadIcon.click();
-        } else {
-            await page.locator('ytcp-button#create-icon, #create-icon').first().click();
-            await page.waitForTimeout(1000);
-            await page.locator('tp-yt-paper-item#text-item-0, ytcp-ve#upload-video-button, tp-yt-paper-item:has-text("Video yükle"), tp-yt-paper-item:has-text("Upload videos")').first().click();
-        }
+        await openUploadModal(page);
 
         console.log("[*] Video dosyası seçiliyor...");
         const fileInput = page.locator('input[type="file"]').first();
-        await fileInput.waitFor({ state: 'attached', timeout: 30000 });
+        await fileInput.waitFor({ state: 'attached', timeout: 45000 });
         await fileInput.setInputFiles(VIDEO_PATH);
 
         console.log("[*] Video yükleniyor, detaylar giriliyor... (Bu işlem video boyutuna göre 1-2 dakika sürebilir)");
+        await page.locator('ytcp-social-suggestions-textbox#title-textarea #textbox').first().waitFor({ state: 'visible', timeout: 90000 });
+        await page.waitForTimeout(1500);
+
+        // İlk kez yüklemede çıkabilen küçük ipucu balonlarını kapat
+        await page.locator('ytcp-feature-discovery-callout #dismiss-button').click({ timeout: 1500 }).catch(() => {});
+
         await fillContentEditable(page, 'ytcp-social-suggestions-textbox#title-textarea', title);
         await page.waitForTimeout(800);
         await fillContentEditable(page, 'ytcp-social-suggestions-textbox#description-textarea', description);
@@ -282,37 +369,47 @@ async function uploadToYouTubeStudio() {
 
         // Çocuklara özel değil (Zorunlu YouTube Studio alanı!)
         const notForKids = page.locator('tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]').first();
+        await notForKids.scrollIntoViewIfNeeded().catch(() => {});
         if (await notForKids.isVisible({ timeout: 10000 }).catch(() => false)) {
-            await notForKids.click();
+            await notForKids.click({ force: true });
+            console.log("[*] 'Hayır, çocuklara özel değil' seçildi.");
         }
 
         // Daha fazla göster -> Etiketler
         const toggleBtn = page.locator('ytcp-button#toggle-button, #toggle-button').first();
+        await toggleBtn.scrollIntoViewIfNeeded().catch(() => {});
         if (await toggleBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-            await toggleBtn.click();
+            await toggleBtn.click({ force: true });
             await page.waitForTimeout(1000);
             const tagInput = page.locator('ytcp-free-text-chip-bar input#text-input, input[aria-label*="Etiket"], input[aria-label*="Tags"]').first();
             if (await tagInput.isVisible({ timeout: 4000 }).catch(() => false)) {
+                await tagInput.scrollIntoViewIfNeeded().catch(() => {});
                 await tagInput.fill(tags);
                 await page.keyboard.press('Enter');
+                console.log("[*] Etiketler girildi.");
             }
         }
 
-        console.log("[*] Görünürlük ayarı 'Gizli' (Private) yapılıyor...");
+        console.log("[*] Görünürlük ayarı 'Gizli' (Private) ekranına ilerleniyor...");
         for (let step = 0; step < 3; step++) {
-            await page.locator('ytcp-button#next-button').click();
-            await page.waitForTimeout(1200);
+            const nextBtn = page.locator('ytcp-button#next-button').first();
+            if (await nextBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+                await nextBtn.click({ force: true });
+                await page.waitForTimeout(1500);
+            }
         }
 
-        const privateRadio = page.locator('tp-yt-paper-radio-button[name="PRIVATE"], input[value="PRIVATE"]').first();
-        await privateRadio.waitFor({ state: 'visible', timeout: 20000 });
-        await privateRadio.click();
+        // Gizli (Private) seçeneğini işaretle
+        const privateRadio = page.locator('tp-yt-paper-radio-button[name="PRIVATE"], #private-radio-button, input[value="PRIVATE"]').first();
+        await privateRadio.waitFor({ state: 'visible', timeout: 25000 });
+        await privateRadio.click({ force: true });
+        console.log("[*] Görünürlük 'PRIVATE (Gizli)' olarak işaretlendi.");
         await page.waitForTimeout(1000);
 
-        // Video linkini yakala (varsa)
+        // Video linkini yakala
         let videoUrl = '';
-        const linkEl = page.locator('a.style-scope.ytcp-video-info[href*="youtu"], a[href*="youtube.com/shorts/"], a[href*="youtu.be/"]').first();
-        if (await linkEl.isVisible({ timeout: 3000 }).catch(() => false)) {
+        const linkEl = page.locator('a[href*="youtube.com/shorts/"], a[href*="youtu.be/"]').first();
+        if (await linkEl.isVisible({ timeout: 5000 }).catch(() => false)) {
             videoUrl = (await linkEl.getAttribute('href')) || '';
         }
 
@@ -321,21 +418,26 @@ async function uploadToYouTubeStudio() {
         const uploadWaitDeadline = Date.now() + 180000;
         while (Date.now() < uploadWaitDeadline) {
             const progressText = await page.locator('ytcp-video-upload-progress').innerText().catch(() => '');
+            const compactProg = progressText.replace(/\s+/g, ' ').trim();
+            if (compactProg) {
+                console.log(`[*] Durum: ${compactProg}`);
+            }
             if (
-                !progressText ||
-                /tamamlandı|complete|checks complete|kontroller tamamlandı|işleniyor|processing|sd|hd/i.test(progressText) &&
-                !/yükleniyor|uploading/i.test(progressText)
+                !compactProg ||
+                ((/tamamlandı|complete|kontroller|checks|işleniyor|processing|sd|hd/i.test(compactProg)) &&
+                !(/%\s*\d+|\d+\s*%|yükleniyor|uploading/i.test(compactProg)))
             ) {
                 break;
             }
-            await page.waitForTimeout(2000);
+            await page.waitForTimeout(3000);
         }
 
-        await page.locator('ytcp-button#done-button').click();
-        await page.waitForTimeout(5000);
+        await page.locator('ytcp-button#done-button').first().click({ force: true });
+        await page.waitForTimeout(6000);
+        await page.screenshot({ path: '/tmp/yt_upload_success.png' }).catch(() => {});
 
         await persistAllSessionArtifacts(context);
-        writeAuthStatus('upload_completed', { title, videoUrl });
+        writeAuthStatus('upload_completed', { title, videoUrl, channelUrl: page.url() });
 
         console.log("\n============================================================");
         console.log(" 🚀 PLAYWRIGHT BACKDOOR YÜKLEME BAŞARILI! 🚀");
@@ -347,6 +449,10 @@ async function uploadToYouTubeStudio() {
         console.log(" Durum: PRIVATE (Gizli) - API Kotası Kullanılmadı!");
         console.log(" Not: YouTube Studio'dan manuel olarak 'Herkese Açık' yapabilirsin.");
         console.log("============================================================\n");
+    } catch (uploadErr) {
+        await page.screenshot({ path: '/tmp/yt_studio_error.png' }).catch(() => {});
+        console.error("[-] Son URL:", page.url());
+        throw uploadErr;
     } finally {
         await context.close();
         if (fs.existsSync(HAR_PATH)) {
