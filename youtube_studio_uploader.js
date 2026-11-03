@@ -591,14 +591,6 @@ async function uploadToYouTubeStudio() {
         await fillContentEditable(page, 'ytcp-social-suggestions-textbox#description-textarea', description);
         await page.waitForTimeout(800);
 
-        // Kota koruması: YouTube günlük yükleme limiti dolduysa boşuna uğraşma (kapak yüklendikten SONRA)
-        if (await detectDailyUploadLimit(page)) {
-            console.error('⏭️ YÜKLEME ATLANDI: YouTube günlük yükleme kotanı dolmuş (limit gece yarısı sıfırlanır).');
-            writeAuthStatus('skipped_daily_limit', { title, thumbnail: thumbnailPrompt, channelUrl: page.url() });
-            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'daily_limit.png') }).catch(() => {});
-            process.exit(42);
-        }
-
         // --- FAZ 11: AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor ---
         console.log('[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...');
         let thumbPath = null;
@@ -624,6 +616,14 @@ async function uploadToYouTubeStudio() {
                     try { fs.unlinkSync(thumbPath); } catch (_) {}
                 }
             }
+        }
+
+        // Kota koruması: YouTube günlük yükleme limiti dolduysa boşuna uğraşma (kapak yüklendikten SONRA)
+        if (await detectDailyUploadLimit(page)) {
+            console.error('⏭️ YÜKLEME ATLANDI: YouTube günlük yükleme kotanı dolmuş (limit gece yarısı sıfırlanır).');
+            writeAuthStatus('skipped_daily_limit', { title, thumbnail: thumbnailPrompt, channelUrl: page.url() });
+            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'daily_limit.png') }).catch(() => {});
+            process.exit(42);
         }
 
         // Çocuklara özel değil (Zorunlu YouTube Studio alanı!)
