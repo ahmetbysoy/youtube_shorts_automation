@@ -47,15 +47,19 @@ Projeyi yeni bir çalışma alanında (workspace) devraldığında ilk olarak `g
    - GitHub Personal Access Token (`GITHUB_TOKEN`) ve ajanlar arası işlem notu. Kural gereği token'ı yalnızca geçici olarak bellekte/komutta kullan, `.git/config` içine kalıcı yazma ve işlem bitince `github_erisim.json` içindeki `note` alanını güncelle.
 
 ### B. GitHub Repository Secrets Envanteri (`ahmetbysoy/youtube_shorts_automation`)
-Depoda şu an tanımlı ve aktif 12 gizli anahtar (Secret) bulunmaktadır:
-- **Matris Kanalları (Aktif Kullanımda):**
-  - `ENV_FILE_1`, `COOKIES_JSON_1`, `STORAGE_STATE_JSON_1`
-  - `ENV_FILE_2`, `COOKIES_JSON_2`, `STORAGE_STATE_JSON_2`
-  - `ENV_FILE_3`, `COOKIES_JSON_3`, `STORAGE_STATE_JSON_3`
+Depoda şu an tanımlı ve aktif **33 gizli anahtar (Secret)** bulunmaktadır:
+- **10'lu Matris Kanalları (`1..10` — Aktif Kullanımda):**
+  - `ENV_FILE_1` .. `ENV_FILE_10`
+  - `COOKIES_JSON_1` .. `COOKIES_JSON_10`
+  - `STORAGE_STATE_JSON_1` .. `STORAGE_STATE_JSON_10`
 - **Tekil / Yedek Geriye Dönük Uyumluluk:**
   - `ENV_FILE`, `COOKIES_JSON`, `STORAGE_STATE_JSON`
 
-> **Yeni Kanal Ekleme (Çoklu Hesap):** Şu an 3 matris hattı aynı doğrulanmış oturumla çakışmasız 3 farklı video üretip yayınlamaktadır. Kullanıcı 2. ve 3. Gmail/YouTube hesaplarını açtığında kodda **sıfır değişiklik** gerekir; yalnızca `ENV_FILE_2`/`COOKIES_JSON_2`/`STORAGE_STATE_JSON_2` ve `_3` secret değerleri yeni kanalların verileriyle güncellenir.
+> **14 Günlük Cookie Rotasyonu (`scripts/rotate_cookies.py`):** Google'ın bulut IP'lerinde oturumu düşürmemesi için her 14 günde bir yerelde `node youtube_studio_uploader.js` çalıştırılıp taze `cookies.json` ve `storage_state.json` alındıktan sonra tek komutla tüm kanallara (veya belirli bir kanala) basılır:
+> ```bash
+> GITHUB_TOKEN="..." python scripts/rotate_cookies.py --channels 1-10
+> ```
+> **Yeni Bağımsız Kanallar Ekleme:** 2'den 10'a kadar yeni Gmail/YouTube hesapları açıldığında kodda **sıfır değişiklik** gerekir; ilgili hesabın oturum dosyalarıyla `python scripts/rotate_cookies.py --channels 2 --env-file .env.ch2 --cookies-file cookies_ch2.json --state-file state_ch2.json` çalıştırmak yeterlidir.
 
 ---
 

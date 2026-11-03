@@ -186,6 +186,114 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
             "pacific ocean waves",
         ],
     },
+    {
+        "topic": "Bilim",
+        "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
+        "description": "Yerçekimsiz ortamda ağlayan bir astronotun gözyaşlarına ne olur? #uzay #bilim #astronot #shorts",
+        "hook": "Uluslararası Uzay İstasyonu'nda ağlamaya başlasaydınız gözyaşlarınızın yanaklarınızdan aşağı akmayacağını biliyor muydunuz?",
+        "script_text": (
+            "Uluslararası Uzay İstasyonu'nda ağlamaya başlasaydınız gözyaşlarınızın yanaklarınızdan aşağı akmayacağını biliyor muydunuz? "
+            "Dünya'da gözyaşlarımızın süzülmesini sağlayan şey yerçekimidir; ancak yörüngedeki mikro yerçekimi ortamında sıvılar aşağı düşemez. "
+            "Bunun yerine suyun yüzey gerilimi devreye girer ve gözyaşlarınız gözünüzün tam üzerinde şeffaf bir su balonu gibi büyümeye başlar. "
+            "Balon yeterince büyüdüğünde ise bir havluyla silmezseniz yüzünüzden kopup kabinin içinde süzülen minik bir küreye dönüşür."
+        ),
+        "visual_keywords": [
+            "astronaut space station",
+            "water droplet zero gravity",
+            "earth orbit view",
+            "spacecraft interior",
+        ],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
+        "description": "1932 Büyük Emu Savaşı'nda makineli tüfekli askerler neden kaybetti? #tarih #ilginçbilgiler #shorts",
+        "hook": "Modern makineli tüfeklerle donatılmış gerçek bir ordunun, uçamayan kuşlara karşı resmen savaş kaybettiğini duymuş muydunuz?",
+        "script_text": (
+            "Modern makineli tüfeklerle donatılmış gerçek bir ordunun, uçamayan kuşlara karşı resmen savaş kaybettiğini duymuş muydunuz? "
+            "Bin dokuz yüz otuz iki yılında Avustralya'da yirmi bin emu kuşu tarım arazilerini istila edince hükümet bölgeye makineli tüfekli askerler gönderdi. "
+            "Ancak saatte elli kilometre hızla koşabilen emular, ateş açıldığı anda küçük gruplara ayrılarak tam bir gerilla taktiği uyguladı. "
+            "Binlerce mermi harcanmasına rağmen sürüler durdurulamadı ve ordu geri çekilince tarihe Büyük Emu Savaşı kuşların zaferiyle geçti."
+        ),
+        "visual_keywords": [
+            "emu bird running outback",
+            "australian desert landscape",
+            "vintage military history",
+            "wheat field sunset",
+        ],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
+        "description": "Evrenin en yoğun cisimleri olan nötron yıldızları nasıl oluşur? #evren #uzay #bilim #shorts",
+        "hook": "Sadece bir küp şeker büyüklüğündeki bir maddenin Dünya'daki tüm arabaların toplamından daha ağır olabileceğini hayal edebilir misiniz?",
+        "script_text": (
+            "Sadece bir küp şeker büyüklüğündeki bir maddenin Dünya'daki tüm arabaların toplamından daha ağır olabileceğini hayal edebilir misiniz? "
+            "Dev bir yıldız ömrünü tamamlayıp süpernova olarak patladığında çekirdeği kendi içine o kadar korkunç bir kuvvetle çöker ki atomların içindeki boşluk bile yok olur. "
+            "Ortaya çıkan nötron yıldızı sadece yirmi kilometre çapındadır ama Güneş'ten bile daha fazla kütleye sahiptir. "
+            "Öyle ki bu yıldızdan alacağınız tek bir çay kaşığı madde Dünya üzerinde yaklaşık altı milyar ton ağırlığında olurdu."
+        ),
+        "visual_keywords": [
+            "supernova explosion nebula",
+            "neutron star pulsar space",
+            "cosmos galaxy stars",
+            "astrophysics dark universe",
+        ],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Üç Kalpli ve Mavi Kanlı Uzaylı Canlı: Ahtapot! #Shorts",
+        "description": "Ahtapotların neden 3 kalbi, 9 beyni ve mavi kanı vardır? #doğa #bilim #okyanus #shorts",
+        "hook": "Okyanuslarımızda üç kalbi, dokuz beyni ve masmavi kanı olan gerçek bir canlı yaşadığını biliyor muydunuz?",
+        "script_text": (
+            "Okyanuslarımızda üç kalbi, dokuz beyni ve masmavi kanı olan gerçek bir canlı yaşadığını biliyor muydunuz? "
+            "Ahtapotların iki kalbi sadece solungaçlarına kan pompalarken üçüncü kalbi tüm vücuduna oksijen taşır. "
+            "Kanlarında demir yerine bakır bazlı hemosiyanin bulunduğu için dondurucu derinliklerde bile hayatta kalmalarını sağlayan mavi bir kan dolaşır. "
+            "Üstelik merkezi beyninin yanında sekiz kolunun her birinde bağımsız karar verebilen ayrı birer sinir merkezi vardır."
+        ),
+        "visual_keywords": [
+            "octopus underwater coral",
+            "deep sea marine life",
+            "ocean reef tentacles",
+            "blue underwater light",
+        ],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+        "description": "Zaman algımızı altüst eden Kleopatra ve Mısır Piramitleri gerçeği! #tarih #mısır #ilginçbilgiler #shorts",
+        "hook": "Mısır Kraliçesi Kleopatra'nın yaşadığı dönemin, piramitlerin inşasından çok Ay'a ilk insanın ayak basmasına daha yakın olduğunu biliyor muydunuz?",
+        "script_text": (
+            "Mısır Kraliçesi Kleopatra'nın yaşadığı dönemin, piramitlerin inşasından çok Ay'a ilk insanın ayak basmasına daha yakın olduğunu biliyor muydunuz? "
+            "Büyük Gize Piramidi milattan önce yaklaşık iki bin beş yüz altmış yılında tamamlandı. "
+            "Kleopatra ise bundan tam iki bin beş yüz yıl sonra, milattan önce otuz yılında hayatını kaybetti. "
+            "Kleopatra'nın ölümünden bin dokuz yüz altmış dokuzdaki Apollo on bir Ay görevine kadar geçen süre ise sadece iki bin yıldır!"
+        ),
+        "visual_keywords": [
+            "egyptian pyramids desert",
+            "moon landing astronaut",
+            "ancient egypt hieroglyphs",
+            "starry night desert",
+        ],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Hiç Bozulmayan 3 Bin Yıllık Antik Mısır Balı! #Shorts",
+        "description": "Firavun mezarlarından çıkan 3000 yıllık bal neden hâlâ yenilebilir durumda? #bilim #tarih #ilginçbilgiler #shorts",
+        "hook": "Üç bin yıl boyunca karanlık bir mezarda bekleyen bir yiyeceğin bugün bile bozulmadan yenebileceğini duymuş muydunuz?",
+        "script_text": (
+            "Üç bin yıl boyunca karanlık bir mezarda bekleyen bir yiyeceğin bugün bile bozulmadan yenebileceğini duymuş muydunuz? "
+            "Arkeologlar Antik Mısır firavunlarının mezarlarını açtığında mühürlü küplerin içinde binlerce yıllık doğal bal buldu ve bal hâlâ yenilebilir durumdaydı. "
+            "Bunun sırrı balın neredeyse hiç su içermemesi, yüksek asidik yapısı ve arıların eklediği özel enzimlerin bakteri üremesini tamamen durdurmasıdır. "
+            "Kapağı hava almayacak şekilde kapalı tutulduğunda doğal bal kimyasal olarak asla bozulmayan nadir besinlerden biridir."
+        ),
+        "visual_keywords": [
+            "golden honey jar",
+            "honeycomb bees nature",
+            "ancient egyptian tomb",
+            "archaeology artifacts",
+        ],
+    },
 ]
 
 
@@ -415,11 +523,11 @@ def call_gemini_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[
 
 
 def pick_fallback_scenario(recent_titles: list[str]) -> dict[str, Any]:
-    """Yedek Senaryo Havuzu: Paralel matris kanallarında çakışmasız ve deterministik seçim yapar."""
+    """Yedek Senaryo Havuzu: 10'lu paralel matris kanallarında çakışmasız ve deterministik seçim yapar."""
     matrix_ch = os.environ.get("MATRIX_CHANNEL_ID", "").strip()
     if matrix_ch.isdigit():
         day_index = datetime.now(timezone.utc).timetuple().tm_yday
-        slot = (day_index * 3 + (int(matrix_ch) - 1)) % len(FALLBACK_SCENARIOS)
+        slot = (day_index * 10 + (int(matrix_ch) - 1)) % len(FALLBACK_SCENARIOS)
         return validate_and_normalize_scenario(FALLBACK_SCENARIOS[slot], f"local-fallback-matrix-{matrix_ch}")
     unused = [item for item in FALLBACK_SCENARIOS if item["title"] not in recent_titles]
     chosen = random.choice(unused if unused else FALLBACK_SCENARIOS)

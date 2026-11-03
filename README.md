@@ -17,7 +17,7 @@ Python, FFmpeg ve Node.js Playwright tabanlı; **sıfır API kotası**, **sıfı
 | **Faz 4** | `src/youtube_upload/youtube_uploader.py` | Resumable API yükleme ve onay kuyruğu altyapısı (`22/22` birim testi) | ✅ |
 | **Faz 5** | `youtube_studio_uploader.js` | API kotasını (`10.000 birim`) tamamen aşan Playwright Chromium YouTube Studio yükleyicisi + kalıcı oturum (`cookies.json`, `storage_state.json`) | ✅ |
 | **Faz 6** | `main.py`, `.github/workflows/daily_shorts.yml` | Tüm fazları tek komutta zincirleyen Ana Orkestratör ve GitHub Actions `ubuntu-latest` + `Xvfb` bulut otomasyonu | ✅ |
-| **Faz 7** | `daily_shorts.yml`, `youtube_studio_uploader.js` | Doğrudan **`PUBLIC` (Herkese Açık)** otomatik yayın ve `matrix.channel_id: ['1', '2', '3']` ile aynı anda **3 paralel bulut sunucusunda** çakışmasız üretim | ✅ |
+| **Faz 7** | `daily_shorts.yml`, `youtube_studio_uploader.js`, `scripts/rotate_cookies.py` | Doğrudan **`PUBLIC` (Herkese Açık)** otomatik yayın, `matrix.channel_id: ['1'..'10']` ile **10 paralel bulut üretim hattı** ve 14 günlük otomatik Cookie/StorageState rotasyon aracı | ✅ |
 
 ---
 

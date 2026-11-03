@@ -326,7 +326,7 @@ async function uploadToYouTubeStudio() {
     const headlessMode = process.env.HEADLESS === 'true' ? true : !hasDisplay;
     const matrixChannelId = (process.env.MATRIX_CHANNEL_ID || '').trim();
     if (matrixChannelId && Number(matrixChannelId) > 1) {
-        const staggerMs = (Number(matrixChannelId) - 1) * 15000;
+        const staggerMs = (Number(matrixChannelId) - 1) * 10000;
         console.log(`[*] Matris Kanal #${matrixChannelId}: Paralel oturum çakışmasını önlemek için ${staggerMs / 1000}s kademeli başlatma...`);
         await new Promise(r => setTimeout(r, staggerMs));
     }

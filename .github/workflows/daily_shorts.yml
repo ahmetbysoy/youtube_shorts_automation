@@ -6,6 +6,11 @@ on:
     - cron: '0 15 * * *'
   workflow_dispatch: # GitHub arayüzünden tek tıkla manuel tetikleme izni
 
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
 jobs:
   build-and-upload:
     runs-on: ubuntu-latest
@@ -13,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false # Bir kanal patlarsa diğerleri durmasın, üretime devam etsin!
       matrix:
-        channel_id: ['1', '2', '3'] # Aynı anda 3 paralel üretim hattı
+        channel_id: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] # Aynı anda 10 paralel üretim hattı
 
     steps:
       - name: Depoyu Çek (Checkout)
