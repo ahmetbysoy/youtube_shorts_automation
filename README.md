@@ -1,64 +1,65 @@
-# YouTube Shorts Automation — proje temeli
+# YouTube Shorts Automation — Sıfır Maliyetli İçerik Fabrikası
 
-Python 3.13 için hazırlanmış, henüz harici servislere bağlanmayan modüler proje iskeleti.
+Python 3.13 ve FFmpeg tabanlı, modüler, hata toleranslı ve sıfır maliyetli YouTube Shorts otomasyon altyapısı.
 
-## Bu aşamada ne var?
+## Mevcut Durum (Tamamlanan Fazlar)
 
-- `config/`: ortam değişkenlerine dayalı ayarlar ve video sabitleri.
-- `src/content_generation/`: sonraki aşamada senaryo, ses ve içerik üretimi.
-- `src/youtube_upload/`: sonraki aşamada OAuth ve private yükleme.
-- `src/media_processing/`: sonraki aşamada FFmpeg, kadraj ve altyazı.
-- `src/utils/`: sonraki aşamada günlük, durum kaydı ve yedekleme.
-- `tests/`: yapılandırma, dizinler, paket importları, FFmpeg ve Chromium smoke testleri.
-- `main.py --check`: API çağrısı yapmadan yerel paketleri ve araçları kontrol eder.
-- `requirements.txt`: Python 3.13 için seçilmiş doğrudan bağımlılıklar.
-- `requirements.lock.txt`: doğrulanan ortamın tüm paket sürümleri.
-- `docs/setup/INSTALLATION_REPORT.md`: istenen komutların tam çıktıları ve ilk kurulum hataları.
+- **Proje İskeleti & Doğrulama (`config/`, `tests/`, `main.py`):** Ortam değişkenlerine dayalı yapılandırma, dikey (1080×1920, 9:16) sabitler ve sistem/bağımlılık testleri.
+- **Faz 1 — YouTube OAuth2 & Private Yükleme (`youtube_auth.py`, `upload_test.py`, `src/youtube_upload/`):**
+  - Google'ın kaldırdığı `run_console()` yerine bulut/headless uyumlu **Loopback URL Kopyalama + PKCE (`code_verifier`)** akışı.
+  - Süresi dolan `access_token`'ı `refresh_token` ile otomatik yenileyen, kesintiye dayanıklı (`resumable` + exponential backoff) ve **`privacyStatus="private"` zorunlu güvenlik kilitli** yükleyici.
+- **Faz 2 — İçerik ve Seslendirme Motoru (`content_engine.py`, `src/content_generation/`):**
+  - **Çok Katmanlı LLM Zinciri:** Groq Free API (`llama-3.3-70b-versatile`) -> Google Gemini Free API (`gemini-2.5-flash`) -> Doğrulanmış Çevrimdışı Yedek Senaryo Havuzu (`FALLBACK_SCENARIOS`).
+  - **Gerçeklik Çapası:** Türkçe Wikipedia REST API üzerinden kaynak doğrulama ve `.used_topics.json` ile konu tekrarı engelleme.
+  - **TTS & Milisaniye Senkronlu Altyazı:** `edge-tts` (`tr-TR-AhmetNeural` / `tr-TR-EmelNeural`) `WordBoundary` akışıyla Whisper'a gerek kalmadan 2-3 kelimelik dinamik Shorts `.srt` ve `word_timestamps` üretimi (+ `gTTS` yedeği).
+- **Örnek Çıktılar (`samples/`):** Faz 1 ve Faz 2 test üretimleri (`test.mp4`, `voiceover.mp3`, `voiceover.srt`, `script.json`, `script.txt`).
+- **Sıradaki Fazlar:**
+  - *Faz 3:* `src/media_processing/` — Pexels/Pixabay dikey stok video çekimi, FFmpeg Ken Burns, ses miksajı ve dinamik altyazı gömme.
+  - *Faz 4:* GitHub Actions CI/CD cron otomasyonu ve Secrets entegrasyonu.
 
-**Henüz video üretim hattı, OAuth akışı, YouTube yüklemesi, GitHub Actions işi veya otomatik public yayınlama uygulanmadı.** Harici servislerin çalışırlığı bu kurulumla garanti edilmez.
+---
 
-## Yeniden kurulum — Debian 13 / Python 3.13
-
-Sistem araçları için yönetici yetkisi gerekir:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y ffmpeg tree
-```
-
-Proje dizininde:
+## Kurulum — Debian 13 / Ubuntu / Python 3.13
 
 ```bash
+sudo apt-get update && sudo apt-get install -y ffmpeg tree
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
-playwright install chromium
-# Gerekli sistem kütüphaneleri eksikse, yönetici yetkisiyle:
-sudo "$(pwd)/.venv/bin/python" -m playwright install-deps chromium
+pip install -r requirements.txt
 ```
 
-Aynı transitif sürümleri kurmak istersen ilk kurulumda `requirements.txt` yerine `requirements.lock.txt` kullan. Lock dosyası Linux/x86_64 ve Python 3.13 ortamında üretilmiştir; başka platformlarda yeniden çözümlenmelidir.
+## Kullanım
 
-## Doğrulama
+### Faz 1: YouTube OAuth2 Yetkilendirme & Private Test Yüklemesi
 
 ```bash
-source .venv/bin/activate
-python -m pip check
-python -m unittest discover -s tests -v
-python main.py --check --json setup_reports/environment.json
-ffmpeg -version
+# 1. Headless ortamda yetkilendirme linki üret:
+python youtube_auth.py --generate-url
+
+# 2. Tarayıcıda onay sonrası yönlendirilen http://localhost:8080/?code=... adresini takas et:
+python youtube_auth.py --exchange "http://localhost:8080/?state=...&code=..."
+
+# 3. Private yükleme paketini kota harcamadan doğrula (Dry-Run):
+python upload_test.py --video samples/test.mp4 --dry-run
+
+# 4. Canlı Private test yüklemesi:
+python upload_test.py --video samples/test.mp4
 ```
 
-Tarayıcı testi yalnızca yerel bir HTML sayfası açar; harici HTTP/HTTPS isteklerini engeller. FFmpeg testi geçici bir H.264/AAC videosu üretir ve siler. `main.py --check` tarayıcı başlatmaz; tarayıcı çalışırlığı unittest içindedir.
+### Faz 2: Senaryo, Seslendirme ve Altyazı Üretimi
 
-## Gizli bilgiler
+```bash
+# Ortam değişkenlerini (.env) yapılandırıp çalıştırın (anahtar yoksa otomatik fallback çalışır):
+python content_engine.py --concept "İlginç Bilgiler ve Tarih" --voice ahmet
+```
 
-`.env.example` yalnızca örnektir. Gerçek anahtarlar `.env` içinde veya çalışma ortamının secret store'unda tutulmalıdır. `.env`, `secrets/`, client secret ve token dosyaları `.gitignore` kapsamındadır. Bunları Drive veya GitHub yedeğine ekleme. OAuth ve public yayınlama ayrı kullanıcı onayı gerektirir.
+## Testler
 
-## Kullanım sınırları
+```bash
+python -m unittest discover -s tests/ -p "test_scaffold.py" -v
+python -m unittest discover -s tests/ -p "test_faz1_faz2.py" -v
+```
 
-API kotası aşılınca bekleme/ertesi güne kuyruklama veya sağlayıcının izin verdiği alternatif kullanılır. Tarayıcı otomasyonu kota atlatmak için kullanılmaz. Yalnızca kullanım hakkına sahip olunan medya işlenir.
+## Gizli Bilgiler & Güvenlik
 
-## Sonraki iş
-
-Google Cloud projesi, YouTube Data API v3 ve OAuth istemcisini **kullanıcının kendi hesabında** yapılandırmak. Bu kurulum görevi sırasında hiçbir Google Cloud kaynağı oluşturulmadı.
+`.env.example` yalnızca şablondur. Gerçek API anahtarları `.env` dosyasında veya GitHub Secrets üzerinde tutulmalıdır. `.env`, `secrets/`, `client_secret*.json`, `*token*.json` ve `.oauth_state.json` dosyaları `.gitignore` ile koruma altındadır; asla depoya eklenmez.

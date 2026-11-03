@@ -1,0 +1,397 @@
+{
+  "generated_at": "2026-11-02T07:53:30.888022+00:00",
+  "llm_provider": "local-fallback-pool",
+  "tts_engine": "edge-tts:tr-TR-AhmetNeural",
+  "topic": "Tarih",
+  "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+  "description": "Avrupa'yı titreten Napolyon Bonapart yüzlerce tavşandan neden kaçmak zorunda kaldı? #tarih #ilginçbilgiler #shorts",
+  "hook": "Avrupa'yı dize getiren Napolyon Bonapart'ın, hayatının en tuhaf yenilgisini bir tavşan sürüsünden aldığını duymuş muydunuz?",
+  "script_text": "Avrupa'yı dize getiren Napolyon Bonapart'ın, hayatının en tuhaf yenilgisini bir tavşan sürüsünden aldığını duymuş muydunuz? Bin sekiz yüz yedi yılında imzalanan barış antlaşmasını kutlamak isteyen Napolyon, görkemli bir tavşan avı düzenletti. Ancak kurmayları yabani tavşan yerine çiftliklerde insan elinde büyümüş üç bin evcil tavşan toplamıştı. Kafesler açıldığında tavşanlar kaçmak yerine Napolyon'u yemek getiren bakıcıları sandı ve dev bir dalga halinde imparatorun üzerine hücum etti. Koca imparator, çaresizce saltanat arabasına binip savaş alanından kaçmak zorunda kaldı.",
+  "word_count": 75,
+  "audio_file": "voiceover.mp3",
+  "srt_file": "voiceover.srt",
+  "audio_duration_sec": 38.88,
+  "visual_keywords": [
+    "rabbits running field",
+    "napoleon vintage painting",
+    "royal horse carriage",
+    "european forest autumn"
+  ],
+  "word_timestamps": [
+    {
+      "word": "Avrupa'yı",
+      "start_ms": 98.1,
+      "end_ms": 831.3
+    },
+    {
+      "word": "dize",
+      "start_ms": 831.2,
+      "end_ms": 1095.6
+    },
+    {
+      "word": "getiren",
+      "start_ms": 1095.7,
+      "end_ms": 1492.3
+    },
+    {
+      "word": "Napolyon",
+      "start_ms": 1492.3,
+      "end_ms": 1985.1
+    },
+    {
+      "word": "Bonapart'ın,",
+      "start_ms": 1985.1,
+      "end_ms": 2706.3
+    },
+    {
+      "word": "hayatının",
+      "start_ms": 2874.5,
+      "end_ms": 3487.5
+    },
+    {
+      "word": "en",
+      "start_ms": 3511.5,
+      "end_ms": 3691.8
+    },
+    {
+      "word": "tuhaf",
+      "start_ms": 3703.8,
+      "end_ms": 4040.3
+    },
+    {
+      "word": "yenilgisini",
+      "start_ms": 4040.4,
+      "end_ms": 4641.4
+    },
+    {
+      "word": "bir",
+      "start_ms": 4653.4,
+      "end_ms": 4809.6
+    },
+    {
+      "word": "tavşan",
+      "start_ms": 4809.6,
+      "end_ms": 5278.4
+    },
+    {
+      "word": "sürüsünden",
+      "start_ms": 5278.4,
+      "end_ms": 5831.3
+    },
+    {
+      "word": "aldığını",
+      "start_ms": 5831.2,
+      "end_ms": 6215.8
+    },
+    {
+      "word": "duymuş",
+      "start_ms": 6215.9,
+      "end_ms": 6588.5
+    },
+    {
+      "word": "muydunuz?",
+      "start_ms": 6600.5,
+      "end_ms": 7117.3
+    },
+    {
+      "word": "Bin",
+      "start_ms": 8209.1,
+      "end_ms": 8341.3
+    },
+    {
+      "word": "sekiz",
+      "start_ms": 8605.8,
+      "end_ms": 8978.4
+    },
+    {
+      "word": "yüz",
+      "start_ms": 8978.4,
+      "end_ms": 9134.6
+    },
+    {
+      "word": "yedi",
+      "start_ms": 9134.6,
+      "end_ms": 9350.9
+    },
+    {
+      "word": "yılında",
+      "start_ms": 9351.0,
+      "end_ms": 9675.5
+    },
+    {
+      "word": "imzalanan",
+      "start_ms": 9675.5,
+      "end_ms": 10336.5
+    },
+    {
+      "word": "barış",
+      "start_ms": 10336.5,
+      "end_ms": 10685.0
+    },
+    {
+      "word": "antlaşmasını",
+      "start_ms": 10685.1,
+      "end_ms": 11382.2
+    },
+    {
+      "word": "kutlamak",
+      "start_ms": 11382.2,
+      "end_ms": 11814.9
+    },
+    {
+      "word": "isteyen",
+      "start_ms": 11826.9,
+      "end_ms": 12223.5
+    },
+    {
+      "word": "Napolyon,",
+      "start_ms": 12223.5,
+      "end_ms": 12836.5
+    },
+    {
+      "word": "görkemli",
+      "start_ms": 12968.8,
+      "end_ms": 13521.7
+    },
+    {
+      "word": "bir",
+      "start_ms": 13521.6,
+      "end_ms": 13653.8
+    },
+    {
+      "word": "tavşan",
+      "start_ms": 13653.8,
+      "end_ms": 14086.5
+    },
+    {
+      "word": "avı",
+      "start_ms": 14086.5,
+      "end_ms": 14266.8
+    },
+    {
+      "word": "düzenletti.",
+      "start_ms": 14266.8,
+      "end_ms": 14927.8
+    },
+    {
+      "word": "Ancak",
+      "start_ms": 16033.7,
+      "end_ms": 16706.8
+    },
+    {
+      "word": "kurmayları",
+      "start_ms": 16706.8,
+      "end_ms": 17283.7
+    },
+    {
+      "word": "yabani",
+      "start_ms": 17283.7,
+      "end_ms": 17692.3
+    },
+    {
+      "word": "tavşan",
+      "start_ms": 17692.3,
+      "end_ms": 18185.1
+    },
+    {
+      "word": "yerine",
+      "start_ms": 18185.1,
+      "end_ms": 18521.6
+    },
+    {
+      "word": "çiftliklerde",
+      "start_ms": 18521.6,
+      "end_ms": 19242.8
+    },
+    {
+      "word": "insan",
+      "start_ms": 19254.8,
+      "end_ms": 19675.5
+    },
+    {
+      "word": "elinde",
+      "start_ms": 19675.5,
+      "end_ms": 19976.0
+    },
+    {
+      "word": "büyümüş",
+      "start_ms": 19988.0,
+      "end_ms": 20384.6
+    },
+    {
+      "word": "üç",
+      "start_ms": 20384.6,
+      "end_ms": 20504.8
+    },
+    {
+      "word": "bin",
+      "start_ms": 20528.8,
+      "end_ms": 20685.0
+    },
+    {
+      "word": "evcil",
+      "start_ms": 20685.1,
+      "end_ms": 20973.6
+    },
+    {
+      "word": "tavşan",
+      "start_ms": 20973.5,
+      "end_ms": 21430.3
+    },
+    {
+      "word": "toplamıştı.",
+      "start_ms": 21430.3,
+      "end_ms": 22055.3
+    },
+    {
+      "word": "Kafesler",
+      "start_ms": 23209.1,
+      "end_ms": 24026.4
+    },
+    {
+      "word": "açıldığında",
+      "start_ms": 24026.5,
+      "end_ms": 24567.3
+    },
+    {
+      "word": "tavşanlar",
+      "start_ms": 24567.3,
+      "end_ms": 25228.3
+    },
+    {
+      "word": "kaçmak",
+      "start_ms": 25228.4,
+      "end_ms": 25673.1
+    },
+    {
+      "word": "yerine",
+      "start_ms": 25673.1,
+      "end_ms": 25973.6
+    },
+    {
+      "word": "Napolyon'u",
+      "start_ms": 25973.5,
+      "end_ms": 26550.4
+    },
+    {
+      "word": "yemek",
+      "start_ms": 26550.5,
+      "end_ms": 26839.0
+    },
+    {
+      "word": "getiren",
+      "start_ms": 26851.0,
+      "end_ms": 27271.7
+    },
+    {
+      "word": "bakıcıları",
+      "start_ms": 27271.6,
+      "end_ms": 27812.5
+    },
+    {
+      "word": "sandı",
+      "start_ms": 27812.5,
+      "end_ms": 28269.3
+    },
+    {
+      "word": "ve",
+      "start_ms": 28485.6,
+      "end_ms": 28605.8
+    },
+    {
+      "word": "dev",
+      "start_ms": 28617.8,
+      "end_ms": 28870.2
+    },
+    {
+      "word": "bir",
+      "start_ms": 28882.2,
+      "end_ms": 29038.4
+    },
+    {
+      "word": "dalga",
+      "start_ms": 29038.5,
+      "end_ms": 29375.0
+    },
+    {
+      "word": "halinde",
+      "start_ms": 29375.0,
+      "end_ms": 29783.7
+    },
+    {
+      "word": "imparatorun",
+      "start_ms": 29783.7,
+      "end_ms": 30420.7
+    },
+    {
+      "word": "üzerine",
+      "start_ms": 30420.7,
+      "end_ms": 30805.3
+    },
+    {
+      "word": "hücum",
+      "start_ms": 30805.3,
+      "end_ms": 31141.8
+    },
+    {
+      "word": "etti.",
+      "start_ms": 31141.8,
+      "end_ms": 31442.3
+    },
+    {
+      "word": "Koca",
+      "start_ms": 32548.1,
+      "end_ms": 32908.7
+    },
+    {
+      "word": "imparator,",
+      "start_ms": 32944.7,
+      "end_ms": 33581.7
+    },
+    {
+      "word": "çaresizce",
+      "start_ms": 33786.0,
+      "end_ms": 34387.0
+    },
+    {
+      "word": "saltanat",
+      "start_ms": 34387.0,
+      "end_ms": 34903.8
+    },
+    {
+      "word": "arabasına",
+      "start_ms": 34903.8,
+      "end_ms": 35444.7
+    },
+    {
+      "word": "binip",
+      "start_ms": 35444.7,
+      "end_ms": 35709.1
+    },
+    {
+      "word": "savaş",
+      "start_ms": 35709.1,
+      "end_ms": 36069.7
+    },
+    {
+      "word": "alanından",
+      "start_ms": 36069.7,
+      "end_ms": 36538.5
+    },
+    {
+      "word": "kaçmak",
+      "start_ms": 36538.5,
+      "end_ms": 36959.2
+    },
+    {
+      "word": "zorunda",
+      "start_ms": 36959.1,
+      "end_ms": 37343.7
+    },
+    {
+      "word": "kaldı.",
+      "start_ms": 37343.8,
+      "end_ms": 37728.4
+    }
+  ]
+}

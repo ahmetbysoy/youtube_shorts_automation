@@ -11,6 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 @dataclass(frozen=True)
 class Settings:
     groq_api_key: str = ""
+    gemini_api_key: str = ""
     pexels_api_key: str = ""
     pixabay_api_key: str = ""
     output_dir: Path = PROJECT_ROOT / "output"
@@ -25,6 +26,7 @@ class Settings:
         """Read settings without making network requests or requiring secrets."""
         return cls(
             groq_api_key=os.getenv("GROQ_API_KEY", ""),
+            gemini_api_key=os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", "")),
             pexels_api_key=os.getenv("PEXELS_API_KEY", ""),
             pixabay_api_key=os.getenv("PIXABAY_API_KEY", ""),
             output_dir=Path(os.getenv("OUTPUT_DIR", str(PROJECT_ROOT / "output"))),

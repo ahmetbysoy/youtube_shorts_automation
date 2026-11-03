@@ -7,6 +7,8 @@ __pycache__/
 secrets/
 client_secret*.json
 *token*.json
+.oauth_state.json
+.used_topics.json
 credentials.json
 settings.yaml
 .pytest_cache/
