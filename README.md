@@ -62,4 +62,10 @@ python -m unittest discover -s tests/ -p "test_faz1_faz2.py" -v
 
 ## Gizli Bilgiler & Güvenlik
 
-`.env.example` yalnızca şablondur. Gerçek API anahtarları `.env` dosyasında veya GitHub Secrets üzerinde tutulmalıdır. `.env`, `secrets/`, `client_secret*.json`, `*token*.json` ve `.oauth_state.json` dosyaları `.gitignore` ile koruma altındadır; asla depoya eklenmez.
+`.env.example` yalnızca şablondur. Gerçek API anahtarları `.env` dosyasında veya GitHub Secrets üzerinde tutulmalıdır. `.env`, `secrets/`, `client_secret*.json`, `*token*.json`, `cookies.json`, `storage_state.json` ve `*.har` dosyaları `.gitignore` ile koruma altındadır; asla depoya eklenmez.
+
+## Faz 5: Node.js + Playwright YouTube Studio "Backdoor" Mimarisi
+
+YouTube Data API v3 günlük kota sınırına (`10.000 birim`) takılmamak için `youtube_studio_uploader.js` modülü Node.js ve Playwright Chromium üzerinden doğrudan YouTube Studio (`studio.youtube.com`) arayüzünü otomatikleştirir.
+İlk giriş sonrasında tarayıcı profili, `cookies.json`, `storage_state.json` ve `session.har` oturum artefaktları `0600` izinle yerel diskte saklanarak sonraki çalışmalarda yeniden şifre/2FA gerektirmeden oturum sürdürülür.
+Üretilen `output/final_short.mp4` ve `script.json` verileri okunarak video sıfır API kotası tüketimiyle doğrudan **Gizli (Private)** modda kanala yüklenir.
