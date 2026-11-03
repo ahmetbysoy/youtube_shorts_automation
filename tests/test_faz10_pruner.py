@@ -49,7 +49,7 @@ class TestFaz10AutoPruner(unittest.TestCase):
         yml = PRUNER_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("cron: '0 * * * *'", yml)
         # Faz 11: matris artik sabit 10 kanal degil, AYRI hesapli (benzersiz) kanallardan olusur.
-        self.assertIn('needs.channel-map.outputs.distinct_matrix', yml)
+        self.assertIn('needs.channel-map.outputs.distinct_csv', yml)
         self.assertIn('max-parallel: 1', yml)
         self.assertIn("fail-fast: false", yml)
         self.assertIn("pruner-studio-lock", yml)
