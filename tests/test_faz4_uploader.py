@@ -37,6 +37,7 @@ class TestFaz4YouTubeUploader(unittest.TestCase):
                     "token_uri": "https://oauth2.googleapis.com/token",
                     "client_id": "cid",
                     "client_secret": "csec",
+                    "expiry": "2099-01-01T00:00:00Z",
                     "scopes": [
                         "https://www.googleapis.com/auth/youtube.upload",
                         "https://www.googleapis.com/auth/youtube.force-ssl",
