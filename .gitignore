@@ -28,6 +28,7 @@ npm-debug.log*
 logs/*.log
 logs/*.log.*
 logs/*.json
+logs/*.png
 setup_reports/*.log
 __pycache__/
 *.py[cod]

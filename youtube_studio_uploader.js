@@ -156,17 +156,25 @@ async function performGoogleLogin(page) {
             return;
         }
 
-        if (currentUrl.includes('gds.google.com')) {
-            console.log("[*] Google ara bilgilendirme ekranı (gds.google.com) geçiliyor...");
-            const cancelBtn = page.locator('button:has-text("İptal"), button:has-text("Cancel")').first();
-            if (await cancelBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-                await cancelBtn.click().catch(() => {});
-                await page.waitForTimeout(3000);
-            } else {
-                await page.goto('https://studio.youtube.com/', { waitUntil: 'domcontentloaded', timeout: 45000 });
-                await page.waitForTimeout(3000);
+        if (
+            currentUrl.includes('gds.google.com') ||
+            currentUrl.includes('myaccount.google.com') ||
+            (currentUrl.includes('youtube.com') && !currentUrl.includes('studio.youtube.com'))
+        ) {
+            console.log(`[*] Oturum sonrası Google ara ekranı algılandı (${currentUrl.slice(0, 65)}...), doğrudan YouTube Studio'ya geçiliyor...`);
+            const skipInterstitial = page.locator(
+                'button:has-text("İptal"), button:has-text("Cancel"), button:has-text("Şimdi değil"), button:has-text("Not now"), button:has-text("Daha sonra"), button:has-text("Atla"), button:has-text("Skip")'
+            ).first();
+            if (await skipInterstitial.isVisible({ timeout: 2000 }).catch(() => false)) {
+                await skipInterstitial.click().catch(() => {});
+                await page.waitForTimeout(2500);
             }
-            continue;
+            await page.goto('https://studio.youtube.com/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+            await page.waitForTimeout(4000);
+            if (await isAuthenticatedInStudio(page)) {
+                writeAuthStatus('authenticated', { url: page.url() });
+                return;
+            }
         }
 
         const skipBtns = [
@@ -484,7 +492,9 @@ async function uploadToYouTubeStudio() {
         console.log(" Not: YouTube Studio'dan manuel olarak 'Herkese Açık' yapabilirsin.");
         console.log("============================================================\n");
     } catch (uploadErr) {
-        await page.screenshot({ path: '/tmp/yt_studio_error.png' }).catch(() => {});
+        const errShot = path.join(BASE_DIR, 'logs', 'studio_error.png');
+        fs.mkdirSync(path.dirname(errShot), { recursive: true });
+        await page.screenshot({ path: errShot }).catch(() => {});
         console.error("[-] Son URL:", page.url());
         throw uploadErr;
     } finally {
