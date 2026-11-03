@@ -216,3 +216,39 @@ cron (schedule)  ──(çalışıyorsa)──>  doğrudan çalışır
 - Tetikleyici kontrolü: `GET /repos/{repo}/actions/workflows/{file}/runs?event=schedule&per_page=1`
 - `workflow_dispatch` **GITHUB_TOKEN ile tetiklenebilir** (GitHub'ın "GITHUB_TOKEN olayları yeni çalıştırma oluşturmaz" kuralının istisnasıdır).
 - `[skip ci]` içeren commit mesajları zamanlayıcıyı sessizce atladığı için otomatik commit mesajlarında **kullanılmaz**.
+
+---
+
+## 8. Faz 11 — Sıralı Üretim ve Kanal Benzersizlik Katmanı
+
+```
+daily_shorts.yml
+   │
+   ├─ job: channel-map ── scripts/channel_map.sh
+   │      ├─ 10 kanalın cookies+state SHA256 hash'i
+   │      ├─ aynı hash = aynı hesap  → AYIKLANIR (günlük kota korunur)
+   │      ├─ çıktı: distinct_csv=1,3,7   next_channel=1   distinct_count=3
+   │      └─ NOT: GitHub "[ ] { }" içeren job output'unu "secret" sanıp ATAR
+   │              → matris virgüllü liste olarak taşınır, iş akışında
+   │                fromJSON(format('["{0}"]', join(distinct_csv, '","'))) ile çevrilir
+   │
+   ├─ job: build-and-upload   (max-parallel: 1 → TEK video tamamlanmadan diğeri başlamaz)
+   │      video → başlık/açıklama(CTA+hashtag) → AI kapak → tags → görünürlük → YAYIN(PUBLIC)
+   │
+   └─ job: cron-kick
+          ├─ önceki turun kotaya takılıp takılmadığı loglar kontrol edilir
+          ├─ kota doluysa  → sonraki deneme 4 saat sonra (boşuna üretim yok)
+          ├─ kota yoksa    → sonraki 15 dakikalık dilim
+          └─ TEK kanal tetikler (target_channel = sıradaki benzersiz kanal)
+```
+
+### 8.1 Neden "10 kanal" yerine "1 kanal" üretim?
+GitHub Secrets'taki `COOKIES_JSON_1..10` **aynı hesabın** oturumudur (hash testi ile doğrulandı:
+10 kanalın 10'u da `hash a4ae91d03ee1`). 10 paralel job aynı kanala 10 video yüklemeye
+çalışır → ilk birkaç video yayınlanır, kalanı günlük kota uyarısıyla atlanır (boşuna CPU/Harita).
+Benzersizlik katmanı bunu otomatik olarak engeller: **1 ayrı hesap = 1 kanal üretim**.
+
+### 8.2 Sıralı Tam Döngü garantisi
+`max-parallel: 1` sayesinde matris job'ları tek tek çalışır. Bir video için:
+`içerik → ses → video → başlık → açıklama (affiliate CTA + CTA + 3 hashtag) → AI kapak →
+video tags → çocuk güvenliği → görünürlük(PUBLIC) → YAYIN` tamamlanmadan diğer kanal başlamaz.

@@ -168,3 +168,28 @@ GitHub'ın `schedule` tetikleyicisi bu depoda **hiç otomatik tetiklenmemişti**
 2. **Otomatik commit mesajlarındaki `[skip ci]` kaldırıldı** — HEAD commit mesajında `[skip ci]` varsa zamanlayıcı sessizce atlanır.
 3. **`cron-kick` job'ı (zincir):** Her çalıştırmanın sonunda zamanlayıcı canlı mı kontrol edilir (API: `?event=schedule`); **ölüyse** iş akışı `workflow_dispatch` ile kendini bir sonraki 15 dakikalık dilime yeniden tetikler. Böylece üretim zinciri zamanlayıcıdan bağımsız çalışır.
 4. `.github/workflows/cron_probe.yml`: 5 dakikada bir "PROBE OK" atan nabız iş akışı (zamanlayıcı sağlık teşhisi).
+
+### 5) Kanal Sırası + "Aynı Hesap" Koruması (Faz 11 düzeltmesi)
+
+Daha önce 10 kanal **aynı anda** çalışıyordu ve 10 secret'in tamamı **aynı YouTube hesabını**
+işaret ettiği için kanalın günlük yükleme kotası 10 katına kadar harcanıyordu.
+
+| Sorun | Çözüm |
+| :--- | :--- |
+| 10 paralel job, aynı kanal | `max-parallel: 1` + zincir **tek kanal** tetikler (dizi kanal sırası) |
+| 10 secret = aynı hesap | `scripts/channel_map.sh` → aynı hesabı işaret eden kanallar **ayıklanır** |
+| Kota doluyken boşuna üretim | Zincir, kotaya takılan turdan sonra **4 saat** bekler (15 dk değil) |
+| GitHub matris çıktısını siliyordu | Matris `distinct_csv` (virgüllü liste) olarak taşınır, iş akışında JSON'a çevrilir |
+
+**Kanal haritası job'u** her çalıştırmada hangi kanalların AYRI hesap olduğunu loglar:
+```
+[AYRI HESAP] Kanal 1 (hash a4ae91d03ee1) -> uretime dahil.
+[AYNI HESAP] Kanal 2 = Kanal 1 (hash a4ae91d03ee1) -> atlandi (gunluk kota korunuyor).
+...
+[*] Benzersiz kanallar: 1
+[*] Siradaki kanal (rotasyon 17): 1
+```
+
+> ⚠️ **Kanal kurulumu:** `COOKIES_JSON_1..10` şu anda **tek hesabı** gösteriyor. Gerçek 10 kanal için
+> her kanalın **ayrı bir YouTube hesabı** (ayrı `cookies.json` + `storage_state.json`) olmalı.
+> Ayrı hesaplar girildikçe `channel_map.sh` otomatik olarak üretime alır (matris büyür).

@@ -204,3 +204,38 @@ PRUNE_ONLY_VIDEO_IDS=<VIDEO_ID> xvfb-run -a node prune_low_performers.js
 
 ### 8.4 Doğrulama
 `python -m unittest discover -s tests` → **40/40 OK** (Faz 11 testleri: `tests/test_faz11_viral_metadata.py`).
+
+---
+
+## 9. Faz 11 — Operasyon Düzeltmesi: "10 kanal aynı anda" ve "boşuna iş yükü"
+
+### 9.1 Tespit (canlı kanıt)
+- Eski kurguda `target_channel: "all"` ile 10 matris job'ı **aynı anda** açılıyordu
+  (`max-parallel` yoktu) ve 10 secret'in tamamı **aynı hesabı** işaret ediyordu
+  (`channel-map` job logu: `hash a4ae91d03ee1` × 10).
+- Sonuç: kanalın **günlük yükleme kotası** tek turda tükeniyor, geri kalan 9 video boşuna
+  üretiliyor (içerik + TTS + FFmpeg + Studio oturumu).
+
+### 9.2 Uygulanan düzeltmeler
+| Değişiklik | Dosya |
+| :--- | :--- |
+| `max-parallel: 1` (kanal sırası, tam döngü) | `daily_shorts.yml`, `hourly_pruner.yml` |
+| Aynı hesabı işaret eden kanalları ayıklama | `scripts/channel_map.sh` |
+| Matris çıktısını virgüllü listeye taşıma (GitHub "secret" filtresi) | `channel_map.sh` + workflow `fromJSON(format(...))` |
+| Zincir artık **tek kanal** tetikler (`all` değil) | `cron-kick` job'ları |
+| Kota sonrası 4 saat bekleme (boşuna üretim yok) | `daily_shorts.yml` → `cron-kick` |
+| `permissions: actions: write` (pruner zinciri için) | `hourly_pruner.yml` |
+
+### 9.3 Sıradaki gerçek iş: **kanalları kurmak**
+10 kanalın her biri **ayrı bir YouTube hesabı** olmalı:
+1. Her hesapla Studio'da giriş yap → `cookies.json` + `storage_state.json` üret (yerel `headless: false`).
+2. `scripts/rotate_cookies.py` ile ilgili GitHub Secret'ına yaz (`COOKIES_JSON_N` + `STORAGE_STATE_JSON_N`).
+3. `channel_map.sh` otomatik olarak "benzersiz" listeye ekler; matris büyür, üretim sırayla dağılır.
+
+### 9.4 Doğrulama (canlı CI)
+- Run #17 (`41732696912`) → **tek** `build-and-upload (1)` job'ı (10 değil).
+- Log kanıtları (aynı job içinde, sırayla):
+  `Etkileşim CTA (açıklama üstü): ...` → `Trend hashtag'ler: #muz #radyoaktif #besin` →
+  `[*] Kapak görseli 1080x1920 olarak hazırlandı (74 KB).` → `[+] Kapak resmi başarıyla yüklendi.` →
+  `⏭️ ATLANDI ... YouTube günlük yükleme kotanı doldu.`
+- `cron-kick`: `[KOTA] ... sonraki deneme 4 saat sonra.` → `Zincir tetiklendi -> kanal 1, dilim 1793760470.`
