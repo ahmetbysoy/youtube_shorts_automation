@@ -1,20 +1,30 @@
-.venv/
-__pycache__/
-*.py[cod]
+# Hassas Ortam ve OAuth 2.0 Dosyaları (ASLA Git'e eklenmez!)
 .env
 .env.*
 !.env.example
-secrets/
-client_secret*.json
+token.json
 *token*.json
+client_secret.json
+client_secret*.json
+credentials.json
 .oauth_state.json
 .used_topics.json
-credentials.json
+secrets/
 settings.yaml
-.pytest_cache/
+
+# Loglar, Sanal Ortam ve Önbellekler
+*.log
 logs/*.log
 logs/*.log.*
+setup_reports/*.log
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+.pytest_cache/
+.DS_Store
+
+# Üretim Çıktıları
 output/*
 !output/.gitkeep
-setup_reports/*.log
 !output/README.md
