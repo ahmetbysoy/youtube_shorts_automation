@@ -19,10 +19,10 @@ jobs:
       - name: Depoyu Çek (Checkout)
         uses: actions/checkout@v4
 
-      - name: Sistem Paketlerini Kur (FFmpeg & Fontlar)
+      - name: Sistem Paketlerini Kur (FFmpeg, Fontlar & Xvfb Sanal Ekran)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-liberation fonts-dejavu-core libass9
+          sudo apt-get install -y ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core libass9 xvfb
 
       - name: Python 3.11 Kur
         uses: actions/setup-python@v5
@@ -75,11 +75,10 @@ jobs:
 
       - name: Ana Orkestratörü Ateşle (Kanal ${{ matrix.channel_id }} - PUBLIC Auto-Publish)
         env:
-          HEADLESS: "true"
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
         run: |
-          python main.py
+          xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py
 
       - name: Üretilen Videoyu ve Logları Yedekle (Artifact - Kanal ${{ matrix.channel_id }})
         if: always()
