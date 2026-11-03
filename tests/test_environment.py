@@ -1,21 +1,30 @@
-"""Offline smoke tests for installed dependencies and media tools."""
+"""Offline smoke tests for installed dependencies, media tools, and Faz 6 orchestrator."""
+import importlib
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 from config.constants import VIDEO_HEIGHT, VIDEO_WIDTH
 from config.settings import PROJECT_ROOT
-from main import inspect_environment
+from main import run_step
 
 
 class EnvironmentTests(unittest.TestCase):
     def test_all_required_python_modules_import(self):
-        report = inspect_environment()
-        failures = {name: value for name, value in report["packages"].items() if not value["ok"]}
-        self.assertEqual(failures, {})
+        required = [
+            "dotenv", "requests", "edge_tts", "gtts",
+            "googleapiclient", "google_auth_oauthlib", "playwright",
+        ]
+        for mod in required:
+            self.assertIsNotNone(importlib.import_module(mod))
+
+    def test_orchestrator_run_step_returns_true_on_zero_exit(self):
+        ok = run_step("Smoke Echo Test", [sys.executable, "-c", "print('[INFO] orchestrator ok')"])
+        self.assertTrue(ok)
 
     @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "Media tools not installed")
     def test_ffmpeg_encodes_vertical_h264_aac(self):

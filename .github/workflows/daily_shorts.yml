@@ -1,0 +1,61 @@
+name: Daily Shorts Money Printer
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Her gün UTC 12:00 (TR 15:00)
+  workflow_dispatch: # Manuel tetikleme için
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install System Dependencies (FFmpeg, Fonts, Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-montserrat xvfb
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Node Dependencies & Playwright
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Setup Environment & Secrets
+        env:
+          SECRET_ENV_FILE: ${{ secrets.ENV_FILE }}
+          SECRET_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+        run: |
+          printf '%s\n' "$SECRET_ENV_FILE" > .env
+          printf '%s\n' "$SECRET_COOKIES_JSON" > cookies.json
+          chmod 600 .env cookies.json
+
+      - name: Run Orchestrator (Main Pipeline)
+        run: |
+          xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py
+
+      - name: Upload Output Artifacts (Logs & Final Video)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shorts-output-${{ github.run_number }}
+          path: |
+            logs/
+            output/final_short.mp4
+            pending_approval.json

@@ -1,88 +1,95 @@
-"""Local environment check. This entry point does not call external services."""
-from __future__ import annotations
-
-import argparse
-import importlib
-import json
-import platform
-import shutil
-import subprocess
+#!/usr/bin/env python3
+"""
+FAZ 6: ANA ORKESTRASYON MOTORU (main.py)
+Uçtan uca otomasyon: İçerik -> Montaj -> YouTube Backdoor Yükleme.
+Sıfır hata toleransı, tam loglama, gerçek dünya çalışması.
+"""
+import os
 import sys
-from importlib.metadata import PackageNotFoundError, version
+import logging
+import subprocess
 from pathlib import Path
+from dotenv import load_dotenv
 
-MODULES = {
-    "google-api-python-client": "googleapiclient.discovery",
-    "google-auth-oauthlib": "google_auth_oauthlib.flow",
-    "google-auth-httplib2": "google_auth_httplib2",
-    "edge-tts": "edge_tts",
-    "moviepy": "moviepy",
-    "ffmpeg-python": "ffmpeg",
-    "opencv-python": "cv2",
-    "Pillow": "PIL.Image",
-    "playwright": "playwright.sync_api",
-    "selenium": "selenium.webdriver",
-    "pydrive2": "pydrive2.auth",
-    "python-dotenv": "dotenv",
-    "aiohttp": "aiohttp",
-    "requests": "requests",
-    "beautifulsoup4": "bs4",
-    "yt-dlp": "yt_dlp",
-}
+# Yollar
+BASE_DIR = Path(__file__).resolve().parent
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
 
+# .env yükle
+load_dotenv(BASE_DIR / ".env")
 
-def inspect_environment() -> dict:
-    packages = {}
-    for distribution, module in MODULES.items():
-        try:
-            importlib.import_module(module)
-        except Exception as exc:
-            packages[distribution] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-        else:
-            try:
-                installed_version = version(distribution)
-            except PackageNotFoundError:
-                installed_version = "unknown"
-            packages[distribution] = {"ok": True, "version": installed_version}
+# Loglama
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - [%(levelname)s] - %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_DIR / "orchestrator.log", encoding="utf-8"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
-    tools = {}
-    for tool, flag in (("ffmpeg", "-version"), ("ffprobe", "-version"), ("tree", "--version")):
-        executable = shutil.which(tool)
-        if executable:
-            result = subprocess.run([executable, flag], capture_output=True, text=True, check=False)
-            tools[tool] = {
-                "ok": result.returncode == 0,
-                "path": executable,
-                "version": (result.stdout or result.stderr).splitlines()[0] if (result.stdout or result.stderr) else "",
-            }
-        else:
-            tools[tool] = {"ok": False, "error": "Not found on PATH"}
+def run_step(step_name: str, command: list) -> bool:
+    logging.info(f"[*] BAŞLATILIYOR: {step_name}")
+    try:
+        result = subprocess.run(
+            command,
+            cwd=BASE_DIR,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        logging.info(f"[+] BAŞARILI: {step_name}")
+        if result.stdout:
+            for line in result.stdout.splitlines():
+                if "INFO" in line or "BAŞARILI" in line or "🚀" in line:
+                    logging.info(f"  -> {line.strip()}")
+        return True
+    except subprocess.CalledProcessError as e:
+        logging.error(f"[-] KRİTİK HATA: {step_name}")
+        logging.error(f"Stdout: {e.stdout}")
+        logging.error(f"Stderr: {e.stderr}")
+        return False
 
-    return {
-        "python": platform.python_version(),
-        "platform": platform.platform(),
-        "packages": packages,
-        "tools": tools,
-        "ok": all(item["ok"] for item in packages.values()) and all(item["ok"] for item in tools.values()),
-    }
+def main():
+    logging.info("="*70)
+    logging.info(" 🚀 YOUTUBE SHORTS OTOMASYON ORKESTRATÖRÜ BAŞLATILIYOR 🚀")
+    logging.info("="*70)
 
+    # 1. Adım: İçerik Üretimi
+    step1_ok = run_step(
+        "FAZ 2: İçerik ve Ses Üretimi",
+        [sys.executable, str(BASE_DIR / "content_engine.py"), "--force-fallback"]
+    )
+    if not step1_ok:
+        logging.error("İçerik üretimi başarısız. Orkestrasyon durduruldu.")
+        sys.exit(1)
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="Check the local environment without network requests")
-    parser.add_argument("--json", type=Path, help="Also write the check result to a JSON file")
-    args = parser.parse_args()
-    if not args.check:
-        parser.print_help()
-        return 0
-    report = inspect_environment()
-    rendered = json.dumps(report, ensure_ascii=False, indent=2)
-    print(rendered)
-    if args.json:
-        args.json.parent.mkdir(parents=True, exist_ok=True)
-        args.json.write_text(rendered + "\n", encoding="utf-8")
-    return 0 if report["ok"] else 1
+    # 2. Adım: Medya İşleme ve Montaj
+    step2_ok = run_step(
+        "FAZ 3: FFmpeg Montaj ve Altyazı",
+        [sys.executable, str(BASE_DIR / "src" / "media_processing" / "media_processor.py")]
+    )
+    if not step2_ok:
+        logging.error("Medya işleme başarısız. Orkestrasyon durduruldu.")
+        sys.exit(1)
 
+    # 3. Adım: YouTube Backdoor Yükleme
+    cookies_path = BASE_DIR / "cookies.json"
+    if not cookies_path.exists():
+        logging.warning("[!] UYARI: cookies.json bulunamadı! İlk headless çalıştırmada 2FA hatası alabilir.")
+    
+    step3_ok = run_step(
+        "FAZ 5: Playwright YouTube Studio Yükleme",
+        ["node", str(BASE_DIR / "youtube_studio_uploader.js")]
+    )
+    if not step3_ok:
+        logging.error("YouTube yükleme başarısız. Orkestrasyon durduruldu.")
+        sys.exit(1)
+
+    logging.info("="*70)
+    logging.info(" ✅ TÜM FAZLAR BAŞARIYLA TAMAMLANDI. PARA MAKİNESİ ÇALIŞIYOR. ✅")
+    logging.info("="*70)
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
