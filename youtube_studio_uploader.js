@@ -1,5 +1,6 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 require('dotenv').config();
 
@@ -9,7 +10,7 @@ const SCRIPT_PATH = path.join(BASE_DIR, 'script.json');
 const COOKIES_PATH = path.join(BASE_DIR, 'cookies.json');
 const STORAGE_STATE_PATH = path.join(BASE_DIR, 'storage_state.json');
 const HAR_PATH = path.join(BASE_DIR, 'session.har');
-const PROFILE_DIR = path.join(BASE_DIR, 'browser_profile');
+const PROFILE_DIR = path.join(os.tmpdir(), 'yt_studio_browser_profile');
 const AUTH_STATUS_PATH = path.join(BASE_DIR, 'logs', 'auth_status.json');
 const CODE_INPUT_FILE = '/tmp/yt_2fa_code.txt';
 
