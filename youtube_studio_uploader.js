@@ -319,7 +319,18 @@ async function uploadToYouTubeStudio() {
 
     const scriptData = JSON.parse(fs.readFileSync(SCRIPT_PATH, 'utf8'));
     const title = (scriptData.title || 'İlginç Bilgi #Shorts').slice(0, 100);
-    const description = (scriptData.description || '').slice(0, 4900);
+    const rawDescription = (scriptData.description || '').trim();
+    const affiliateCta = (scriptData.affiliate_cta || '').trim();
+    const affiliateLink = (scriptData.affiliate_link || '').trim();
+    let finalDescription = rawDescription;
+    if (affiliateCta && !rawDescription.startsWith(affiliateCta)) {
+        finalDescription = (!affiliateLink || !rawDescription.includes(affiliateLink))
+            ? `${affiliateCta}\n\n${rawDescription}`.trim()
+            : rawDescription;
+    } else if (!affiliateCta && affiliateLink && !rawDescription.includes(affiliateLink)) {
+        finalDescription = `İncele: ${affiliateLink}\n\n${rawDescription}`.trim();
+    }
+    const description = finalDescription.slice(0, 4900);
     const tags = 'shorts,ilginçbilgiler,tarih,bilim';
 
     const hasDisplay = Boolean(process.env.DISPLAY);

@@ -50,6 +50,8 @@ DEFAULT_TXT_OUT = Path("script.txt")
 DEFAULT_JSON_OUT = Path("script.json")
 DEFAULT_SRT_OUT = Path("voiceover.srt")
 HISTORY_FILE = Path(".used_topics.json")
+ANALYTICS_FEEDBACK_FILE = Path("analytics_feedback.json")
+DEFAULT_AFFILIATE_FALLBACK_URL = "https://www.youtube.com/@mentansiytas?sub_confirmation=1"
 
 SUPPORTED_VOICES = {
     "ahmet": "tr-TR-AhmetNeural",
@@ -530,6 +532,54 @@ def save_recent_title(title: str) -> None:
     )
 
 
+def classify_content_niche(topic: str, title: str, script_text: str = "") -> str:
+    """Senaryonun alt nişini ('Uzay', 'Tarih', 'Bilim') anahtar kelimelerle tespit eder."""
+    combined = f"{topic} {title} {script_text}".lower()
+    space_tokens = (
+        "uzay", "gezegen", "güneş", "venüs", "neptün", "uranüs", "yıldız",
+        "nötron", "voyager", "astronot", "galaksi", "samanyolu", "ay'a", "tunguska",
+    )
+    history_tokens = (
+        "tarih", "savaş", "antik", "napolyon", "göbeklitepe", "pompeii",
+        "kleopatra", "firavun", "mısır", "antikythera", "zanzibar", "krakatoa", "emu",
+    )
+    if any(tok in combined for tok in space_tokens):
+        return "Uzay"
+    if any(tok in combined for tok in history_tokens):
+        return "Tarih"
+    return "Bilim"
+
+
+def resolve_affiliate_offer(topic: str, title: str, script_text: str = "") -> tuple[str, str]:
+    """
+    Faz 9 Monetizasyon Tuzağı: Videonun konusuna göre tıklanma oranı yüksek
+    affiliate linkini ve açıklamanın en üstüne yerleşecek harekete geçirici metni (CTA) üretir.
+    """
+    niche = classify_content_niche(topic, title, script_text)
+    default_url = os.environ.get("AFFILIATE_URL_DEFAULT", "").strip() or DEFAULT_AFFILIATE_FALLBACK_URL
+
+    if niche == "Uzay":
+        url = os.environ.get("AFFILIATE_URL_SPACE", "").strip() or default_url
+        return url, f"Bu teleskobu incele: {url}"
+    if niche == "Tarih":
+        url = os.environ.get("AFFILIATE_URL_HISTORY", "").strip() or default_url
+        return url, f"Bu kitabı oku: {url}"
+
+    url = os.environ.get("AFFILIATE_URL_SCIENCE", "").strip() or default_url
+    return url, f"Bu bilim setini incele: {url}"
+
+
+def load_analytics_feedback(feedback_path: Path = ANALYTICS_FEEDBACK_FILE) -> dict[str, Any]:
+    """Faz 9 Analitik Geri Bildirim Döngüsü: analytics_scraper.js tarafından üretilen veriyi okur."""
+    if not feedback_path.exists():
+        return {}
+    try:
+        data = json.loads(feedback_path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
 def fetch_wikipedia_grounding(recent_titles: list[str]) -> dict[str, str] | None:
     """Ücretsiz Türkçe Wikipedia REST API'den doğrulanmış gerçek bilgi özeti çeker."""
     candidates = [t for t in WIKI_SEED_TOPICS if not any(t[:6].lower() in r.lower() for r in recent_titles)]
@@ -579,12 +629,22 @@ def build_llm_prompts(
     concept: str,
     recent_titles: list[str],
     wiki_fact: dict[str, str] | None = None,
+    analytics_feedback: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
     avoid_clause = (
         f"Daha önce işlenen şu başlıklardan KESİNLİKLE farklı olmalı: {', '.join(recent_titles[-8:])}."
         if recent_titles
         else ""
     )
+
+    feedback_clause = ""
+    if analytics_feedback:
+        directive = str(analytics_feedback.get("optimization_directive", "")).strip()
+        discarded = analytics_feedback.get("discarded_topics") or []
+        if directive:
+            feedback_clause += f"\nANALİTİK OPTİMİZASYON EMRİ: {directive}\n"
+        if discarded:
+            feedback_clause += f"Düşük performans nedeniyle şu konuları Tercih ETME: {', '.join(str(x) for x in discarded)}.\n"
 
     fact_block = ""
     if wiki_fact:
@@ -612,6 +672,7 @@ def build_llm_prompts(
     user_prompt = (
         f"Konsept: {concept}.\n"
         f"{avoid_clause}\n"
+        f"{feedback_clause}"
         f"{fact_block}\n"
         "Lütfen tam olarak aşağıdaki JSON şemasında üretim yap:\n"
         "{\n"
@@ -660,13 +721,23 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
     if not isinstance(keywords, list) or not keywords:
         keywords = ["ancient history", "archaeology discovery", "cinematic museum"]
 
+    topic_val = str(raw_data.get("topic", "Tarih")).strip()
+    raw_desc = str(
+        raw_data.get("description", f"{title} #ilginçbilgiler #tarih #bilim #shorts")
+    ).strip()
+    affiliate_link, affiliate_cta = resolve_affiliate_offer(topic_val, title, script_text)
+    if affiliate_link not in raw_desc:
+        enriched_desc = f"{affiliate_cta}\n\n{raw_desc}"
+    else:
+        enriched_desc = raw_desc
+
     return {
         "provider": provider_name,
-        "topic": str(raw_data.get("topic", "Tarih")).strip(),
+        "topic": topic_val,
         "title": title[:100],
-        "description": str(
-            raw_data.get("description", f"{title} #ilginçbilgiler #tarih #bilim #shorts")
-        ).strip(),
+        "description": enriched_desc,
+        "affiliate_link": affiliate_link,
+        "affiliate_cta": affiliate_cta,
         "hook": sanitize_for_tts(str(raw_data.get("hook", ""))) or script_text.split(".")[0],
         "script_text": script_text,
         "word_count": word_count,
@@ -721,17 +792,47 @@ def call_gemini_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[
     return validate_and_normalize_scenario(extract_json_object(content), "gemini:gemini-2.5-flash")
 
 
-def pick_fallback_scenario(recent_titles: list[str], channel_id: str = "1") -> dict[str, Any]:
-    """Yedek Senaryo Havuzu: 15 dakikalık döngülerde ve 10'lu matriste sıfır çakışmalı seçim yapar."""
+def pick_fallback_scenario(
+    recent_titles: list[str],
+    channel_id: str = "1",
+    analytics_feedback: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Yedek Senaryo Havuzu: 15dk benzersizlik garantisi + Faz 9 analitik kazanan konu (%80 ağırlık) seçimi."""
     effective_ch = str(channel_id or os.environ.get("MATRIX_CHANNEL_ID") or "1").strip() or "1"
+    pool = list(FALLBACK_SCENARIOS)
+
+    winning_topic = str((analytics_feedback or {}).get("winning_topic", "")).strip()
+    discarded_topics = {str(x).strip() for x in ((analytics_feedback or {}).get("discarded_topics") or [])}
+    boost_active = bool((analytics_feedback or {}).get("boost_active", False))
+
+    if discarded_topics:
+        filtered = [
+            item for item in pool
+            if classify_content_niche(item["topic"], item["title"], item["script_text"]) not in discarded_topics
+        ]
+        if len(filtered) >= 10:
+            pool = filtered
+
     if effective_ch.isdigit():
         now_utc = datetime.now(timezone.utc)
         slot_15m = int(now_utc.timestamp()) // 900
-        # len(FALLBACK_SCENARIOS)=23 (asal sayı), gcd(10, 23)=1 -> 10 kanal ve ardışık 15dk dilimlerinde %100 benzersiz!
-        slot = (slot_15m * 10 + (int(effective_ch) - 1)) % len(FALLBACK_SCENARIOS)
-        return validate_and_normalize_scenario(FALLBACK_SCENARIOS[slot], f"local-fallback-matrix-{effective_ch}")
-    unused = [item for item in FALLBACK_SCENARIOS if item["title"] not in recent_titles]
-    chosen = random.choice(unused if unused else FALLBACK_SCENARIOS)
+        # Analitik boost aktifse 5 zaman diliminin 4'ünde (%80) kazanan niş havuzuna öncelik ver
+        if boost_active and winning_topic and (slot_15m % 5 != 4):
+            winners = [
+                item for item in pool
+                if classify_content_niche(item["topic"], item["title"], item["script_text"]) == winning_topic
+            ]
+            if winners:
+                w_slot = (slot_15m * 3 + (int(effective_ch) - 1)) % len(winners)
+                return validate_and_normalize_scenario(
+                    winners[w_slot], f"local-fallback-analytics-boost-{winning_topic.lower()}-{effective_ch}"
+                )
+
+        slot = (slot_15m * 10 + (int(effective_ch) - 1)) % len(pool)
+        return validate_and_normalize_scenario(pool[slot], f"local-fallback-matrix-{effective_ch}")
+
+    unused = [item for item in pool if item["title"] not in recent_titles]
+    chosen = random.choice(unused if unused else pool)
     return validate_and_normalize_scenario(chosen, "local-fallback-pool")
 
 
@@ -740,7 +841,7 @@ def generate_scenario(
     force_fallback: bool = False,
     channel_id: str = "1",
 ) -> dict[str, Any]:
-    """Çok katmanlı hata toleranslı ve 15 dakikalık benzersiz tohumlamalı senaryo üretim yöneticisi."""
+    """Çok katmanlı hata toleranslı, 15dk tohumlamalı ve Faz 9 analitik beslemeli senaryo üretim yöneticisi."""
     effective_channel_id = str(channel_id or os.environ.get("MATRIX_CHANNEL_ID") or "1").strip() or "1"
     now = datetime.now(timezone.utc)
     unique_seed_str = f"{effective_channel_id}_{now.strftime('%j_%H_%M')}"
@@ -749,10 +850,15 @@ def generate_scenario(
     print(f"[INFO] Faz 8 Benzersizlik Tohumu (Seed): {unique_seed_str} (kanal={effective_channel_id})")
 
     recent_titles = load_recent_titles()
+    analytics_feedback = load_analytics_feedback()
+    if analytics_feedback.get("optimization_directive"):
+        print(f"[INFO] Faz 9 Analitik Geri Bildirim Aktif: {analytics_feedback['optimization_directive']}")
 
     if force_fallback:
         print("[BİLGİ] '--force-fallback' aktif: Yerel yedek senaryo havuzu kullanılıyor.")
-        scenario = pick_fallback_scenario(recent_titles, channel_id=effective_channel_id)
+        scenario = pick_fallback_scenario(
+            recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
+        )
         save_recent_title(scenario["title"])
         return scenario
 
@@ -763,7 +869,9 @@ def generate_scenario(
         wiki_fact = fetch_wikipedia_grounding(recent_titles)
         if wiki_fact:
             print(f"[KAYNAK] Doğrulanmış Wikipedia referansı alındı: {wiki_fact['title']}")
-        system_prompt, user_prompt = build_llm_prompts(concept, recent_titles, wiki_fact=wiki_fact)
+        system_prompt, user_prompt = build_llm_prompts(
+            concept, recent_titles, wiki_fact=wiki_fact, analytics_feedback=analytics_feedback
+        )
 
         # 1. Katman: Groq API (Birincil Tercih)
         if groq_key:
@@ -792,7 +900,9 @@ def generate_scenario(
 
     # 3. Katman: Garantili Yedek Havuz (Asla çökmez)
     try:
-        scenario = pick_fallback_scenario(recent_titles, channel_id=effective_channel_id)
+        scenario = pick_fallback_scenario(
+            recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
+        )
         save_recent_title(scenario["title"])
         return scenario
     except Exception as exc:
@@ -1004,6 +1114,8 @@ def run_content_pipeline(
         "topic": scenario["topic"],
         "title": scenario["title"],
         "description": scenario["description"],
+        "affiliate_link": scenario["affiliate_link"],
+        "affiliate_cta": scenario["affiliate_cta"],
         "hook": scenario["hook"],
         "script_text": script_text,
         "word_count": scenario["word_count"],

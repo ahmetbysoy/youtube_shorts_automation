@@ -19,6 +19,7 @@ Python, FFmpeg ve Node.js Playwright tabanlı; **sıfır API kotası**, **sıfı
 | **Faz 6** | `main.py`, `.github/workflows/daily_shorts.yml` | Tüm fazları tek komutta zincirleyen Ana Orkestratör ve GitHub Actions `ubuntu-latest` + `Xvfb` bulut otomasyonu | ✅ |
 | **Faz 7** | `daily_shorts.yml`, `youtube_studio_uploader.js`, `scripts/rotate_cookies.py` | Doğrudan **`PUBLIC` (Herkese Açık)** otomatik yayın, `matrix.channel_id: ['1'..'10']` ile **10 paralel bulut üretim hattı** ve 14 günlük otomatik Cookie/StorageState rotasyon aracı | ✅ |
 | **Faz 8** | `content_engine.py`, `media_processor.py`, `main.py`, `daily_shorts.yml` | **15-Minute Blitzkrieg Sniper Modu:** MD5/zaman tabanlı 15dk benzersizlik garantisi (`23` asal senaryo havuzu), mobil-optimize sinematik FFmpeg (`unsharp` + `eq` + `MarginV=250`) ve `concurrency` kuyruk kilidi | ✅ |
+| **Faz 9** | `content_engine.py`, `youtube_studio_uploader.js`, `analytics_scraper.js`, `daily_analytics.yml` | **Monetizasyon & Analitik Geri Bildirim Döngüsü:** Konu bazlı otomatik `affiliate_link` / CTA enjeksiyonu (açıklamanın en üst satırı) ve her sabah YouTube Studio izlenme/AVD verisini kazıyıp kazanan nişi (`%80` ağırlıkla) besleyen otonom analitik döngüsü | ✅ |
 
 ---
 

@@ -1,0 +1,71 @@
+name: Morning Analytics Feedback Loop (Faz 9)
+
+on:
+  schedule:
+    # Her sabah Türkiye saatiyle 09:00'da (UTC 06:00) son 24 saatin kazanan konularını analiz eder
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrape-and-optimize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Sistem Paketlerini Kur (Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Node.js 20 & Playwright Kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Playwright Chromium Yükle
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Oturum Bilgilerini Enjekte Et
+        env:
+          CHANNEL_ENV_FILE: ${{ secrets.ENV_FILE_1 }}
+          CHANNEL_COOKIES_JSON: ${{ secrets.COOKIES_JSON_1 }}
+          CHANNEL_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON_1 }}
+          FALLBACK_ENV_FILE: ${{ secrets.ENV_FILE }}
+          FALLBACK_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+          FALLBACK_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+        run: |
+          umask 077
+          printf '%s\n' "${CHANNEL_ENV_FILE:-$FALLBACK_ENV_FILE}" > .env
+          printf '%s\n' "${CHANNEL_COOKIES_JSON:-$FALLBACK_COOKIES_JSON}" > cookies.json
+          if [ -n "${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}" ]; then
+            printf '%s\n' "${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}" > storage_state.json
+          fi
+
+      - name: YouTube Studio Analitik Kazıyıcıyı Çalıştır (Faz 9)
+        run: |
+          xvfb-run -a --server-args="-screen 0 1366x900x24" node analytics_scraper.js
+
+      - name: Güncel Analitik Geri Bildirimini Depoya Kaydet
+        run: |
+          if [ -f analytics_feedback.json ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add analytics_feedback.json
+            git diff --staged --quiet || git commit -m "Faz 9 Auto-Analytics: Günlük kazanan konu geri bildirimi güncellendi [skip ci]"
+            git push origin main
+          fi
+
+      - name: Analitik Raporunu Yedekle (Artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analytics-feedback-${{ github.run_number }}
+          path: analytics_feedback.json
+          retention-days: 14

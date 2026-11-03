@@ -44,12 +44,14 @@ Bu doküman, `youtube_shorts_automation` boru hattındaki modüllerin iç yapıs
 ```text
 youtube_shorts_automation/
 ├── .github/workflows/
-│   └── daily_shorts.yml           # Faz 6–7: 3'lü Matris GitHub Actions CI/CD iş akışı
+│   ├── daily_shorts.yml           # Faz 6–8: 15dk Blitzkrieg 10'lu Matris üretim ve PUBLIC yayın akışı
+│   └── daily_analytics.yml        # Faz 9: Sabah 09:00 TSİ YouTube Studio analitik kazıma ve geri besleme akışı
 ├── AI_HANDOFF.md                  # Yapay zeka devir teslim ve operasyon kılavuzu
 ├── README.md                      # Genel proje özeti ve kurulum rehberi
-├── main.py                        # Faz 6: Ana orkestratör (Faz 2 -> Faz 3 -> Faz 5 zinciri)
-├── content_engine.py              # Faz 2: LLM/Fallback senaryo + edge-tts ses + SRT üretici
-├── youtube_studio_uploader.js     # Faz 5 & 7: Playwright YouTube Studio PUBLIC yükleyici
+├── main.py                        # Faz 6–8: Ana orkestratör (--channel_id destekli)
+├── content_engine.py              # Faz 2, 8 & 9: 15dk Seed + Affiliate CTA + Analitik beslemeli içerik motoru
+├── youtube_studio_uploader.js     # Faz 5, 7 & 9: Playwright YouTube Studio PUBLIC + Affiliate yükleyici
+├── analytics_scraper.js           # Faz 9: YouTube Studio İzlenme & AVD kazıyıcı -> analytics_feedback.json
 ├── youtube_auth.py                # Faz 1: OAuth2 PKCE konsol/loopback yetkilendirme aracı
 ├── upload_test.py                 # Faz 1: Resmi YouTube Data API v3 test yükleyicisi
 ├── assets/

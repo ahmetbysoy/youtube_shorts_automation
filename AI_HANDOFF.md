@@ -21,6 +21,7 @@ Proje; Türkçe YouTube Shorts içeriklerini **senaryo -> seslendirme (`edge-tts
 | **Faz 6 (Orkestratör & CI)** | ✅ Tamamlandı | `main.py` uçtan uca orkestrasyon + GitHub Actions bulut otomasyonu |
 | **Faz 7 (PUBLIC & Matris)** | ✅ Tamamlandı | Doğrudan **`PUBLIC` (Herkese Açık)** yayın + `matrix.channel_id: ['1'..'10']` paralel bulut matrisi |
 | **Faz 8 (15dk Sniper Modu)** | ✅ Tamamlandı | `cron: '*/15 * * * *'` + `concurrency` kilidi, MD5 zaman tohumlaması (`23` asal senaryo havuzu ile 15dk sıfır tekrar) ve mobil-optimize FFmpeg (`unsharp`, `eq`, `FontSize=56`, `MarginV=250`) |
+| **Faz 9 (Monetizasyon & Analitik)** | ✅ Tamamlandı | Konu bazlı `affiliate_link` + CTA enjeksiyonu (`AFFILIATE_URL_SPACE/HISTORY/SCIENCE`, açıklamanın 1. satırı) ve `analytics_scraper.js` + `daily_analytics.yml` ile kazanan konuları `%80` ağırlıkla besleyen geri bildirim döngüsü |
 
 ### Canlı Yayınlanmış Videolar (Kanıt Envanteri)
 
