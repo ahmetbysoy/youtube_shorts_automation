@@ -313,16 +313,23 @@ async function fillContentEditable(page, containerSelector, value) {
 // ============================================================================
 
 /** YouTube'un gunluk yukleme kotasinin dolup dolmadigini sayfa uzerinden kontrol eder. */
-async function detectDailyUploadLimit(page) {
-    const markers = /günlük yükleme sınırına ulaşıldı|daily upload limit|upload limit reached|yükleme limiti/i;
-    try {
-        const bodyText = await page.locator('body').innerText({ timeout: 5000 });
-        if (markers.test(bodyText)) return true;
-    } catch (_) {}
-    const errorVisible = await page.locator(
-        'ytcp-error, [class*="error-tip-container"], ytcp-video-upload-progress'
-    ).first().innerText({ timeout: 3000 }).catch(() => '');
-    return markers.test(errorVisible || '');
+async function detectDailyUploadLimit(page, retries = 4, waitMs = 4000) {
+    // Studio bu uyariyi birkac saniye gecikmeli basabiliyor -> birkac kez yeniden yokla.
+    const markers = /günlük\s+yükleme\s+(sınır|limit)|yükleme\s+(sınırına\s+ulaşıldı|limiti)|daily\s+upload\s+limit|upload\s+limit\s+reached/i;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const bodyText = await page.locator('body').innerText({ timeout: 5000 });
+            if (markers.test(bodyText || '')) return true;
+        } catch (_) {}
+        try {
+            const errorVisible = await page.locator(
+                'ytcp-error, [class*="error-tip-container"], ytcp-video-upload-progress, [class*="ytcp-errors"]'
+            ).first().innerText({ timeout: 3000 }).catch(() => '');
+            if (markers.test(errorVisible || '')) return true;
+        } catch (_) {}
+        if (attempt < retries) await page.waitForTimeout(waitMs).catch(() => {});
+    }
+    return false;
 }
 
 /** Betikten gelen alanlari guvenli sekilde okur. */
@@ -764,6 +771,14 @@ async function uploadToYouTubeStudio() {
         fs.mkdirSync(path.dirname(errShot), { recursive: true });
         await page.screenshot({ path: errShot }).catch(() => {});
         console.error("[-] Son URL:", page.url());
+        // Kota doluysa bu bir HATA degil, planli bir atlama (exit 42)
+        try {
+            if (await detectDailyUploadLimit(page, 3, 3000)) {
+                console.error('⏭️ YÜKLEME ATLANDI: YouTube günlük yükleme kotanı dolmuş (limit gece yarısı sıfırlanır).');
+                writeAuthStatus('skipped_daily_limit', { title: title || '', channelUrl: page.url() });
+                process.exit(42);
+            }
+        } catch (_) {}
         throw uploadErr;
     } finally {
         await context.close();
