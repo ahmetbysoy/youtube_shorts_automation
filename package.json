@@ -1,0 +1,20 @@
+{
+  "name": "youtube_shorts_automation",
+  "version": "1.0.0",
+  "description": "Python 3.13 ve FFmpeg tabanlı, modüler, hata toleranslı ve sıfır maliyetli YouTube Shorts otomasyon altyapısı.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "playwright": "^1.64.1"
+  }
+}

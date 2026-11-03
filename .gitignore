@@ -1,4 +1,4 @@
-# Hassas Ortam ve OAuth 2.0 Dosyaları (ASLA Git'e eklenmez!)
+# Hassas Ortam, OAuth 2.0 ve Tarayıcı Oturum Dosyaları (ASLA Git'e eklenmez!)
 .env
 .env.*
 !.env.example
@@ -7,10 +7,21 @@ token.json
 client_secret.json
 client_secret*.json
 credentials.json
+cookies.json
+*cookies*.json
+storage_state.json
+*storage_state*.json
+*.har
+browser_profile/
+.playwright-session/
 .oauth_state.json
 .used_topics.json
 secrets/
 settings.yaml
+
+# Node.js Bağımlılıkları
+node_modules/
+npm-debug.log*
 
 # Loglar, Sanal Ortam ve Önbellekler
 *.log
