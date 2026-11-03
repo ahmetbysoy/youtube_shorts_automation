@@ -1,10 +1,20 @@
-name: Daily Shorts Money Printer
+name: 15-Minute Blitzkrieg Money Printer
 
 on:
   schedule:
-    # Her gün Türkiye saatiyle 18:00'de (UTC 15:00) otomatik çalışır
-    - cron: '0 15 * * *'
-  workflow_dispatch: # GitHub arayüzünden tek tıkla manuel tetikleme izni
+    - cron: '*/15 * * * *' # Her 15 dakikada bir tetiklenir
+  workflow_dispatch:
+    inputs:
+      target_channel:
+        description: "Test edilecek tekil kanal ID (ör: 1) veya tüm matris için 'all'"
+        required: false
+        default: 'all'
+        type: string
+
+# Çakışmayı önlemek için hayati ayar
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -16,9 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
-      fail-fast: false # Bir kanal patlarsa diğerleri durmasın, üretime devam etsin!
+      fail-fast: false
       matrix:
-        channel_id: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] # Aynı anda 10 paralel üretim hattı
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON('["1","2","3","4","5","6","7","8","9","10"]') }}
 
     steps:
       - name: Depoyu Çek (Checkout)
@@ -78,12 +88,13 @@ jobs:
 
           python -c "import json; c=json.load(open('cookies.json')); print(f'[OK] Kanal ${{ matrix.channel_id }} cookies.json doğrulandı ({len(c)} çerez)')"
 
-      - name: Ana Orkestratörü Ateşle (Kanal ${{ matrix.channel_id }} - PUBLIC Auto-Publish)
+      - name: Run Orchestrator (Main Pipeline)
         env:
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
         run: |
-          xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py
+          # Kanal ID'sini orkestratöre geçiriyoruz ki benzersiz tohum oluşsun
+          xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py --channel_id ${{ matrix.channel_id }}
 
       - name: Üretilen Videoyu ve Logları Yedekle (Artifact - Kanal ${{ matrix.channel_id }})
         if: always()

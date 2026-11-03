@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-FAZ 6: ANA ORKESTRASYON MOTORU (main.py)
-Uçtan uca otomasyon: İçerik -> Montaj -> YouTube Backdoor Yükleme.
+FAZ 6–8: ANA ORKESTRASYON MOTORU (main.py)
+Uçtan uca otomasyon: Benzersiz İçerik (15dk Seed) -> Mobil-Optimize Montaj -> YouTube Studio PUBLIC Yayın.
 Sıfır hata toleransı, tam loglama, gerçek dünya çalışması.
 """
+import argparse
 import os
 import sys
 import logging
@@ -29,12 +30,16 @@ logging.basicConfig(
     ]
 )
 
-def run_step(step_name: str, command: list) -> bool:
+def run_step(step_name: str, command: list, env_overrides: dict | None = None) -> bool:
     logging.info(f"[*] BAŞLATILIYOR: {step_name}")
+    step_env = os.environ.copy()
+    if env_overrides:
+        step_env.update(env_overrides)
     try:
         result = subprocess.run(
             command,
             cwd=BASE_DIR,
+            env=step_env,
             check=True,
             capture_output=True,
             text=True
@@ -42,7 +47,7 @@ def run_step(step_name: str, command: list) -> bool:
         logging.info(f"[+] BAŞARILI: {step_name}")
         if result.stdout:
             for line in result.stdout.splitlines():
-                if "INFO" in line or "BAŞARILI" in line or "🚀" in line:
+                if any(tok in line for tok in ("INFO", "BAŞARILI", "🚀", "unsharp", "eq=", "Başlık", "Link :", "Durum:")):
                     logging.info(f"  -> {line.strip()}")
         return True
     except subprocess.CalledProcessError as e:
@@ -52,44 +57,60 @@ def run_step(step_name: str, command: list) -> bool:
         return False
 
 def main():
-    logging.info("="*70)
-    logging.info(" 🚀 YOUTUBE SHORTS OTOMASYON ORKESTRATÖRÜ BAŞLATILIYOR 🚀")
-    logging.info("="*70)
+    parser = argparse.ArgumentParser(description="YouTube Shorts Otomasyon Ana Orkestratörü")
+    parser.add_argument(
+        "--channel_id",
+        type=str,
+        default=os.environ.get("MATRIX_CHANNEL_ID", "1"),
+        help="Matrix kanal ID'si",
+    )
+    args = parser.parse_args()
 
-    # 1. Adım: İçerik Üretimi
+    os.environ["MATRIX_CHANNEL_ID"] = str(args.channel_id)
+    step_env = {"MATRIX_CHANNEL_ID": str(args.channel_id)}
+
+    logging.info("=" * 70)
+    logging.info(" 🚀 YOUTUBE SHORTS OTOMASYON ORKESTRATÖRÜ BAŞLATILIYOR 🚀")
+    logging.info("=" * 70)
+    logging.info(f"[*] KANAL ID: {args.channel_id} için işlem başlatılıyor.")
+
+    # 1. Adım: İçerik Üretimi (15dk Benzersizlik Tohumu ile)
     step1_ok = run_step(
         "FAZ 2: İçerik ve Ses Üretimi",
-        [sys.executable, str(BASE_DIR / "content_engine.py"), "--force-fallback"]
+        [sys.executable, str(BASE_DIR / "content_engine.py"), "--force-fallback", "--channel_id", args.channel_id],
+        env_overrides=step_env,
     )
     if not step1_ok:
         logging.error("İçerik üretimi başarısız. Orkestrasyon durduruldu.")
         sys.exit(1)
 
-    # 2. Adım: Medya İşleme ve Montaj
+    # 2. Adım: Mobil-Optimize Medya İşleme ve Montaj (unsharp + eq + MarginV=250)
     step2_ok = run_step(
         "FAZ 3: FFmpeg Montaj ve Altyazı",
-        [sys.executable, str(BASE_DIR / "src" / "media_processing" / "media_processor.py")]
+        [sys.executable, str(BASE_DIR / "src" / "media_processing" / "media_processor.py")],
+        env_overrides=step_env,
     )
     if not step2_ok:
         logging.error("Medya işleme başarısız. Orkestrasyon durduruldu.")
         sys.exit(1)
 
-    # 3. Adım: YouTube Backdoor Yükleme
+    # 3. Adım: YouTube Studio PUBLIC Yükleme
     cookies_path = BASE_DIR / "cookies.json"
     if not cookies_path.exists():
         logging.warning("[!] UYARI: cookies.json bulunamadı! İlk headless çalıştırmada 2FA hatası alabilir.")
-    
+
     step3_ok = run_step(
         "FAZ 5: Playwright YouTube Studio Yükleme",
-        ["node", str(BASE_DIR / "youtube_studio_uploader.js")]
+        ["node", str(BASE_DIR / "youtube_studio_uploader.js")],
+        env_overrides=step_env,
     )
     if not step3_ok:
         logging.error("YouTube yükleme başarısız. Orkestrasyon durduruldu.")
         sys.exit(1)
 
-    logging.info("="*70)
+    logging.info("=" * 70)
     logging.info(" ✅ TÜM FAZLAR BAŞARIYLA TAMAMLANDI. PARA MAKİNESİ ÇALIŞIYOR. ✅")
-    logging.info("="*70)
+    logging.info("=" * 70)
 
 if __name__ == "__main__":
     main()

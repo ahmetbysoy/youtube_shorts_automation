@@ -19,7 +19,8 @@ Proje; Türkçe YouTube Shorts içeriklerini **senaryo -> seslendirme (`edge-tts
 | **Faz 1–4 (Motorlar)** | ✅ Tamamlandı | İçerik/TTS (`content_engine.py`), Montaj (`src/media_processing/media_processor.py`), OAuth/API yedek modülü (`src/youtube_upload/`) |
 | **Faz 5 (Studio Backdoor)** | ✅ Tamamlandı | `youtube_studio_uploader.js` (Playwright Chromium + kalıcı çerez/storageState oturumu) |
 | **Faz 6 (Orkestratör & CI)** | ✅ Tamamlandı | `main.py` uçtan uca orkestrasyon + GitHub Actions bulut otomasyonu |
-| **Faz 7 (PUBLIC & Matris)** | ✅ Tamamlandı | Doğrudan **`PUBLIC` (Herkese Açık)** yayın + `matrix.channel_id: ['1', '2', '3']` ile 3 paralel bulut sunucusu (Run `#41693452172` -> 3/3 Yeşil ✅) |
+| **Faz 7 (PUBLIC & Matris)** | ✅ Tamamlandı | Doğrudan **`PUBLIC` (Herkese Açık)** yayın + `matrix.channel_id: ['1'..'10']` paralel bulut matrisi |
+| **Faz 8 (15dk Sniper Modu)** | ✅ Tamamlandı | `cron: '*/15 * * * *'` + `concurrency` kilidi, MD5 zaman tohumlaması (`23` asal senaryo havuzu ile 15dk sıfır tekrar) ve mobil-optimize FFmpeg (`unsharp`, `eq`, `FontSize=56`, `MarginV=250`) |
 
 ### Canlı Yayınlanmış Videolar (Kanıt Envanteri)
 

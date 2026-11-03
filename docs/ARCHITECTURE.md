@@ -109,9 +109,9 @@ youtube_shorts_automation/
 
 ## 4. FFmpeg Montaj Mimarisi (`src/media_processing/media_processor.py`)
 
-- **Çözünürlük ve Kare Hızı:** `1080x1920` (`setsar=1`, `30 fps`, `yuv420p`, `libx264`, `-preset veryfast`, `-crf 23`).
+- **Çözünürlük ve Mobil-Optimize Sinematik Filtreler (Faz 8):** `1080x1920` (`setsar=1`, `30 fps`, `yuv420p`, `libx264`, `-preset fast`, `-crf 23`), keskinleştirme (`unsharp=5:5:1.0:5:5:0.0`), canlı renk/kontrast patlaması (`eq=contrast=1.15:saturation=1.2:brightness=0.05`) ve dinamik `zoompan=z='min(zoom+0.0015,1.5)':d=1`.
 - **Bellek Dostu Döngü:** FFmpeg `loop` filtresi yerine girdi seviyesinde `-stream_loop` + `-t` kullanılarak bulut sunucularında RAM taşması (OOM) tamamen engellenir.
-- **Altyazı Stili (`output/final.ass`):** `voiceover.srt` blokları en fazla 3 kelimelik vurucu parçalara bölünür; merkez-alt hizalı (`Alignment=2`, `MarginV=380`), kalın sarı/beyaz dolgulu, siyah dış konturlu (`Outline=5`) ve `\fscx85\fscy85\t(0,90,\fscx105\fscy105)\t(90,150,\fscx100\fscy100)` pop-animasyonlu `.ass` katmanı videoya gömülür.
+- **Altyazı Stili (`output/final.ass` & `force_style`):** YouTube mobil arayüz butonlarının altında kalmaması için güvenli bölgeye (`FontName=Montserrat-Bold,FontSize=56,PrimaryColour=&H0000FFFF,Outline=5,Shadow=3,Alignment=2,MarginV=250`) konumlandırılır.
 - **Ses Miksajı:** Seslendirme (`1.0` ses seviyesi) + arka plan müziği (`0.12` ses seviyesi, son 1.5 saniyede `afade=t=out`) `amix=inputs=2:duration=first` ile birleştirilir.
 
 ---

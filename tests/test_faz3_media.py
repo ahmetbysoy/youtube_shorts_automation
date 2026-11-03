@@ -43,7 +43,8 @@ class TestFaz3MediaProcessor(unittest.TestCase):
             text = ass_p.read_text(encoding="utf-8")
             self.assertIn("PlayResX: 1080", text)
             self.assertIn("PlayResY: 1920", text)
-            self.assertIn("Style: Default,Montserrat,72,&H0000FFFF", text)
+            self.assertIn("Style: Default,Montserrat-Bold,56,&H0000FFFF", text)
+            self.assertIn(",250,1", text)
             self.assertIn("Napolyon Bonapart'ın,", text)
             self.assertEqual(text.count("Dialogue: 0,"), 2)
 

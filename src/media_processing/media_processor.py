@@ -303,7 +303,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Montserrat,72,&H0000FFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,1.5,0,1,6,3,2,70,70,340,1
+Style: Default,Montserrat-Bold,56,&H0000FFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,1.5,0,1,5,3,2,70,70,250,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -361,11 +361,13 @@ def assemble_video_ffmpeg(
         else:
             cmd.extend(["-stream_loop", "-1", "-t", f"{seg_dur:.2f}", "-i", str(clip_path.resolve())])
 
-        frames_per_seg = max(30, int(round(seg_dur * 30)))
         v_filter_parts.append(
-            f"[{idx}:v]fps=30,scale=1080:1920:force_original_aspect_ratio=increase,"
+            f"[{idx}:v]fps=30,"
+            f"scale=1080:1920:force_original_aspect_ratio=increase,"
             f"crop=1080:1920,setsar=1,format=yuv420p,"
-            f"zoompan=z='1.0+0.14*(on/{frames_per_seg})':d=1:"
+            f"unsharp=5:5:1.0:5:5:0.0,"
+            f"eq=contrast=1.15:saturation=1.2:brightness=0.05,"
+            f"zoompan=z='min(zoom+0.0015,1.5)':d=1:"
             f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30,"
             f"trim=duration={seg_dur:.2f},setpts=PTS-STARTPTS[v{idx}]"
         )
@@ -390,8 +392,13 @@ def assemble_video_ffmpeg(
         audio_filter = f"[{vo_idx}:a]volume=1.0[a_out]"
 
     escaped_ass = _escape_ffmpeg_filter_path(ass_path)
-    concat_chain = f"{''.join(concat_inputs)}concat=n={len(scenes)}:v=1:a=0,ass='{escaped_ass}'[v_sub]"
-    filter_complex = ";".join(v_filter_parts + [concat_chain, audio_filter])
+    concat_chain = f"{''.join(concat_inputs)}concat=n={len(scenes)}:v=1:a=0[v_scaled]"
+    sub_chain = (
+        f"[v_scaled]subtitles='{escaped_ass}':"
+        f"force_style='FontName=Montserrat-Bold,FontSize=56,PrimaryColour=&H0000FFFF,"
+        f"OutlineColour=&H00000000,Outline=5,Shadow=3,Alignment=2,MarginV=250'[v_sub]"
+    )
+    filter_complex = ";".join(v_filter_parts + [concat_chain, sub_chain, audio_filter])
 
     cmd.extend([
         "-filter_complex", filter_complex,
@@ -408,8 +415,9 @@ def assemble_video_ffmpeg(
         str(output_path.resolve()),
     ])
 
+    print("[INFO] FFmpeg Mobil-Optimize Cinematic filtre zinciri aktif: unsharp=5:5:1.0:5:5:0.0 | eq=contrast=1.15:saturation=1.2:brightness=0.05 | FontSize=56,MarginV=250")
     print("[INFO] FFmpeg render başlatılıyor...")
-    print(f"[CMD] {' '.join(cmd)}")
+    print(f"[INFO] [CMD] {' '.join(cmd)}")
 
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)

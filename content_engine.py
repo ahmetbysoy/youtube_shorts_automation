@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 import random
@@ -294,6 +295,204 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
             "archaeology artifacts",
         ],
     },
+    {
+        "topic": "Bilim",
+        "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
+        "description": "Neptün ve Uranüs'ün atmosferinde gerçekten elmas yağmuru mu yağıyor? #uzay #bilim #gezegenler #shorts",
+        "hook": "Güneş sistemimizde gökyüzünden su yerine gerçek elmasların yağdığı iki dev gezegen olduğunu biliyor muydunuz?",
+        "script_text": (
+            "Güneş sistemimizde gökyüzünden su yerine gerçek elmasların yağdığı iki dev gezegen olduğunu biliyor muydunuz? "
+            "Buz devleri Uranüs ve Neptün'ün derin atmosferlerinde korkunç bir basınç ve binlerce derecelik sıcaklık hakimdir. "
+            "Bu ekstrem koşullar atmosferdeki metan gazını parçalayarak saf karbon atomlarını birbirine kenetler ve milyonlarca karatlık katı elmas kristallerine dönüştürür. "
+            "Laboratuvar ortamında lazer deneyleriyle de kanıtlanan bu olay sonucunda oluşan elmaslar tıpkı dolu taneleri gibi gezegenin çekirdeğine doğru yağar."
+        ),
+        "visual_keywords": [
+            "planet neptune space",
+            "sparkling diamond crystal",
+            "deep cosmos nebula",
+            "blue ice planet",
+        ],
+    },
+    {
+        "topic": "Tarih",
+        "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+        "description": "Deniz dibindeki batıktan çıkan 2000 yıllık bronz bilgisayar bilim dünyasını nasıl şaşkına çevirdi? #tarih #bilim #arkeoloji #shorts",
+        "hook": "Günümüzden tam iki bin yıl önce Antik Yunan'da gökyüzünü hesaplayan mekanik bir bilgisayar yapıldığını biliyor muydunuz?",
+        "script_text": (
+            "Günümüzden tam iki bin yıl önce Antik Yunan'da gökyüzünü hesaplayan mekanik bir bilgisayar yapıldığını biliyor muydunuz? "
+            "Bin dokuz yüz bir yılında sünger avcıları Ege Denizi'ndeki bir Roma batığında paslanmış bronz dişlilerden oluşan gizemli bir kutu buldu. "
+            "Röntgen taramalarıyla incelenen Antikythera Düzeneği'nin içinde otuzdan fazla hassas dişli çark olduğu ortaya çıktı. "
+            "Bu inanılmaz cihaz Güneş ve Ay tutulmalarını on yıllar öncesinden günü gününe hesaplayabiliyordu ve benzer karmaşıklıkta bir mekanizma ancak bin dört yüz yıl sonra tekrar yapılabildi."
+        ),
+        "visual_keywords": [
+            "ancient bronze gears clockwork",
+            "underwater shipwreck ocean",
+            "solar eclipse space",
+            "museum artifact history",
+        ],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Uzay Boşluğunda Metaller Kendi Kendine Kaynar! #Shorts",
+        "description": "Soğuk kaynak (Cold Welding) uzay araçları için neden büyük bir tehlikedir? #uzay #fizik #bilim #shorts",
+        "hook": "Uzay boşluğunda iki pürüzsüz metal parçasını birbirine değdirirseniz hiçbir ısı olmadan tek parça halinde kaynayacağını biliyor muydunuz?",
+        "script_text": (
+            "Uzay boşluğunda iki pürüzsüz metal parçasını birbirine değdirirseniz hiçbir ısı olmadan tek parça halinde kaynayacağını biliyor muydunuz? "
+            "Dünya'da metallerin yüzeyinde havadaki oksijen sayesinde gözle görülmeyen ince bir oksit tabakası bulunur ve bu tabaka metallerin birleşmesini engeller. "
+            "Ancak uzay vakumunda hava olmadığı için koruyucu tabaka bulunmaz ve aynı tür iki temiz metal temas ettiği anda atomlar hangi parçaya ait olduğunu ayırt edemez. "
+            "Soğuk kaynak adı verilen bu doğa olayı yüzünden uydulardaki hareketli parçalar özel kaplamalarla korunmak zorundadır."
+        ),
+        "visual_keywords": [
+            "satellite orbit earth",
+            "astronaut spacewalk repair",
+            "metal sparks engineering",
+            "outer space stars",
+        ],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Muzlar Aslında Radyoaktiftir! #Shorts",
+        "description": "Her gün yediğimiz muzun içinde neden doğal radyasyon bulunur? #bilim #sağlık #ilginçbilgiler #shorts",
+        "hook": "Mutfağınızdaki masum bir muzun aslında ölçülebilir düzeyde radyasyon yaydığını duymuş muydunuz?",
+        "script_text": (
+            "Mutfağınızdaki masum bir muzun aslında ölçülebilir düzeyde radyasyon yaydığını duymuş muydunuz? "
+            "Muz potasyum açısından son derece zengin bir meyvedir ve doğadaki potasyumun çok küçük bir kısmı doğal olarak radyoaktif olan Potasyum kırk izotopundan oluşur. "
+            "Hatta nükleer fizikçiler günlük hayattaki çok düşük radyasyon miktarlarını anlatmak için Muz Eşdeğer Dozu adlı gayriresmi bir ölçü birimi bile kullanır. "
+            "Elbette korkmanıza hiç gerek yok çünkü tehlikeli bir radyasyon dozuna ulaşmak için tek oturuşta on milyon muz yemeniz gerekirdi."
+        ),
+        "visual_keywords": [
+            "yellow bananas fruit",
+            "science laboratory microscope",
+            "atomic physics visualization",
+            "tropical banana tree",
+        ],
+    },
+    {
+        "topic": "Tarih",
+        "title": "1908 Tunguska Patlaması: 80 Milyon Ağaç Bir Anda Yıkıldı! #Shorts",
+        "description": "Sibirya semalarında krater bile bırakmadan patlayan gizemli göktaşı! #tarih #uzay #bilim #shorts",
+        "hook": "Bin dokuz yüz sekiz yılında Sibirya'da krater bile açmadan seksen milyon ağacı aynı anda dümdüz eden dev patlamayı biliyor muydunuz?",
+        "script_text": (
+            "Bin dokuz yüz sekiz yılında Sibirya'da krater bile açmadan seksen milyon ağacı aynı anda dümdüz eden dev patlamayı biliyor muydunuz? "
+            "Otuz Haziran sabahı gökyüzünde Güneş kadar parlak mavi bir ateş topu belirdi ve yerden sekiz kilometre yüksekte korkunç bir güçle infilak etti. "
+            "Tunguska Olayı olarak tarihe geçen bu hava patlaması iki bin kilometrekarelik ormanı kibrit çöpü gibi devirdi ve şok dalgası Londra'daki sismograflardan bile ölçüldü. "
+            "Eğer bu göktaşı Dünya'ya sadece dört saat daha geç çarpsaydı doğrudan kalabalık bir Avrupa kentinin üzerine düşebilirdi."
+        ),
+        "visual_keywords": [
+            "meteor fireball sky",
+            "pine forest aerial siberia",
+            "asteroid approaching earth",
+            "shockwave clouds sunset",
+        ],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Uzay Boşluğunda Hayatta Kalabilen Tek Canlı: Su Ayısı! #Shorts",
+        "description": "Tardigradlar kaynar suya, radyasyona ve uzay vakumuna nasıl dayanıyor? #bilim #doğa #uzay #shorts",
+        "hook": "Hem kaynar suda hem mutlak sıfıra yakın dondurucu soğukta hem de uzay boşluğunda yaşayabilen mikroskobik bir süper canlı tanıyor musunuz?",
+        "script_text": (
+            "Hem kaynar suda hem mutlak sıfıra yakın dondurucu soğukta hem de uzay boşluğunda yaşayabilen mikroskobik bir süper canlı tanıyor musunuz? "
+            "Su ayısı olarak bilinen tardigradlar ölümcül bir tehlikeyle karşılaştığında vücudundaki suyun yüzde doksan dokuzunu dışarı atıp cam benzeri bir koruma kalkanına bürünür. "
+            "Avrupa Uzay Ajansı bu canlıları korumasız şekilde açık uzay boşluğuna bıraktığında ölümcül kozmik radyasyona rağmen hayatta kalıp Dünya'ya döndüklerinde üremeye devam ettiler. "
+            "Otuz yıl boyunca tek damla su ve yiyecek olmadan uyku modunda bekleyip yeniden canlanabiliyorlar."
+        ),
+        "visual_keywords": [
+            "microscopic biology cells",
+            "green moss forest",
+            "outer space earth view",
+            "laboratory petri dish",
+        ],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Uzaylılara Gönderilen Altın Mektup: Voyager Plağı! #Shorts",
+        "description": "Güneş sistemini terk eden Voyager uzay aracındaki Altın Plak'ta Türkçe hangi mesaj var? #uzay #tarih #bilim #shorts",
+        "hook": "Şu anda yıldızlararası karanlıkta ilerleyen Voyager uzay aracında uzaylılar için kaydedilmiş Türkçe bir ses mesajı olduğunu biliyor muydunuz?",
+        "script_text": (
+            "Şu anda yıldızlararası karanlıkta ilerleyen Voyager uzay aracında uzaylılar için kaydedilmiş Türkçe bir ses mesajı olduğunu biliyor muydunuz? "
+            "Bin dokuz yüz yetmiş yedide fırlatılan Voyager ikizlerine Dünya dışı zeki yaşamın bir gün bulması umuduyla bakır üzeri altın kaplama birer plak yerleştirildi. "
+            "Bu plağın içinde yağmur sesleri, insan kalp atışı, fotoğraflar ve elli beş farklı dilde selamlama kaydı bulunuyor. "
+            "Türkçe kayıtta ise uzayın sonsuzluğuna şu sıcak cümle yankılanıyor: Sabah şerifleriniz hayrolsun ey dünyanın dışındaki varlıklar!"
+        ),
+        "visual_keywords": [
+            "space probe deep space",
+            "golden vinyl record",
+            "milky way stars galaxy",
+            "rocket launch night",
+        ],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Güneş Işığı Dünya'ya Gelene Kadar 8 Dakika Geçmiş Olur! #Shorts",
+        "description": "Gökyüzüne baktığımızda aslında neden sürekli geçmişi görüyoruz? #fizik #uzay #bilim #shorts",
+        "hook": "Şu anda Güneş aniden yok olsaydı Dünya'da yaşayan hiç kimsenin bunu sekiz dakika yirmi saniye boyunca fark etmeyeceğini biliyor muydunuz?",
+        "script_text": (
+            "Şu anda Güneş aniden yok olsaydı Dünya'da yaşayan hiç kimsenin bunu sekiz dakika yirmi saniye boyunca fark etmeyeceğini biliyor muydunuz? "
+            "Işık saniyede üç yüz bin kilometre gibi akılalmaz bir hızla hareket etse bile Güneş ile Dünya arasındaki yüz elli milyon kilometrelik mesafeyi aşması zaman alır. "
+            "Bu yüzden yüzünüze vuran her Güneş ışığı aslında Güneş'ten sekiz dakika önce yola çıkmıştır. "
+            "Gece gökyüzündeki yıldızlara baktığınızda ise binlerce yıl öncesinin görüntüsünü izleyen canlı bir zaman makinesine dönüşürsünüz."
+        ),
+        "visual_keywords": [
+            "sunlight rays clouds",
+            "glowing sun solar flare",
+            "night sky milky way",
+            "earth sunrise space",
+        ],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
+        "description": "MS 79 yılında Vezüv Yanardağı Roma kenti Pompeii'yi nasıl zaman kapsülüne çevirdi? #tarih #arkeoloji #ilginçbilgiler #shorts",
+        "hook": "Koca bir Roma şehrinin tek bir günde altı metre volkanik külün altına gömülüp bin yedi yüz yıl boyunca unutulduğunu biliyor muydunuz?",
+        "script_text": (
+            "Koca bir Roma şehrinin tek bir günde altı metre volkanik külün altına gömülüp bin yedi yüz yıl boyunca unutulduğunu biliyor muydunuz? "
+            "Milattan sonra yetmiş dokuz yılında İtalya'daki Vezüv Yanardağı korkunç bir gürültüyle patladığında gökyüzüne otuz kilometre yüksekliğinde kor bir kül sütunu püskürttü. "
+            "Ardından gelen kavurucu piroklastik akıntılar Pompeii kentini öylesine hızlı kapladı ki fırındaki ekmeklerden duvar yazılarına kadar her şey olduğu gibi korundu. "
+            "Yüzyıllar sonra kazılar başladığında antik kentin günlük yaşamı adeta dondurulmuş bir zaman kapsülü gibi gün yüzüne çıktı."
+        ),
+        "visual_keywords": [
+            "volcano eruption lava smoke",
+            "ancient roman ruins columns",
+            "archaeology stone street",
+            "dramatic dark clouds",
+        ],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Dünya'daki Ağaç Sayısı Samanyolu'ndaki Yıldızlardan Fazladır! #Shorts",
+        "description": "Bilim insanlarının uydu verileriyle yaptığı şaşırtıcı ağaç ve yıldız karşılaştırması! #doğa #uzay #bilim #shorts",
+        "hook": "Dünya üzerindeki ağaçların sayısının koca Samanyolu Galaksisi'ndeki tüm yıldızlardan katbekat fazla olduğunu söylesem inanır mıydınız?",
+        "script_text": (
+            "Dünya üzerindeki ağaçların sayısının koca Samanyolu Galaksisi'ndeki tüm yıldızlardan katbekat fazla olduğunu söylesem inanır mıydınız? "
+            "Astronomların hesaplamalarına göre içinde yaşadığımız Samanyolu Galaksisi'nde yüz milyar ile dört yüz milyar arasında yıldız bulunuyor. "
+            "Ancak uydu görüntüleri ve saha ölçümleriyle yapılan küresel doğa araştırması gezegenimizde tam üç trilyon ağaç yaşadığını ortaya koydu. "
+            "Yani mavi gezegenimizde Samanyolu'ndaki her bir yıldıza karşılık neredeyse on adet gerçek ağaç kök salmış durumda."
+        ),
+        "visual_keywords": [
+            "green forest canopy aerial",
+            "milky way galaxy night",
+            "tall pine trees sunlight",
+            "planet earth from space",
+        ],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
+        "description": "4800 kilometre uzaktan duyulan ve Dünya'nın çevresini 4 kez dolaşan ses dalgası! #tarih #doğa #bilim #shorts",
+        "hook": "Tarihte kaydedilmiş en yüksek sesin dört bin sekiz yüz kilometre uzaktan bile top atışı gibi duyulduğunu biliyor muydunuz?",
+        "script_text": (
+            "Tarihte kaydedilmiş en yüksek sesin dört bin sekiz yüz kilometre uzaktan bile top atışı gibi duyulduğunu biliyor muydunuz? "
+            "Bin sekiz yüz seksen üç yılında Endonezya'daki Krakatoa Yanardağı patladığında ortaya çıkan ses dalgası altmış beş kilometre uzaktaki denizcilerin kulak zarlarını patlattı. "
+            "Bu korkunç gürültü Hint Okyanusu'nu aşarak Avustralya'dan bile net biçimde duyuldu. "
+            "Üstelik patlamanın yarattığı atmosferik basınç dalgası o kadar güçlüydü ki Dünya'nın çevresini tam dört kez dolaşarak barometre kayıtlarına geçti."
+        ),
+        "visual_keywords": [
+            "volcanic island ocean smoke",
+            "stormy ocean giant waves",
+            "lightning volcano night",
+            "sunset red sky clouds",
+        ],
+    },
 ]
 
 
@@ -522,25 +721,38 @@ def call_gemini_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[
     return validate_and_normalize_scenario(extract_json_object(content), "gemini:gemini-2.5-flash")
 
 
-def pick_fallback_scenario(recent_titles: list[str]) -> dict[str, Any]:
-    """Yedek Senaryo Havuzu: 10'lu paralel matris kanallarında çakışmasız ve deterministik seçim yapar."""
-    matrix_ch = os.environ.get("MATRIX_CHANNEL_ID", "").strip()
-    if matrix_ch.isdigit():
-        day_index = datetime.now(timezone.utc).timetuple().tm_yday
-        slot = (day_index * 10 + (int(matrix_ch) - 1)) % len(FALLBACK_SCENARIOS)
-        return validate_and_normalize_scenario(FALLBACK_SCENARIOS[slot], f"local-fallback-matrix-{matrix_ch}")
+def pick_fallback_scenario(recent_titles: list[str], channel_id: str = "1") -> dict[str, Any]:
+    """Yedek Senaryo Havuzu: 15 dakikalık döngülerde ve 10'lu matriste sıfır çakışmalı seçim yapar."""
+    effective_ch = str(channel_id or os.environ.get("MATRIX_CHANNEL_ID") or "1").strip() or "1"
+    if effective_ch.isdigit():
+        now_utc = datetime.now(timezone.utc)
+        slot_15m = int(now_utc.timestamp()) // 900
+        # len(FALLBACK_SCENARIOS)=23 (asal sayı), gcd(10, 23)=1 -> 10 kanal ve ardışık 15dk dilimlerinde %100 benzersiz!
+        slot = (slot_15m * 10 + (int(effective_ch) - 1)) % len(FALLBACK_SCENARIOS)
+        return validate_and_normalize_scenario(FALLBACK_SCENARIOS[slot], f"local-fallback-matrix-{effective_ch}")
     unused = [item for item in FALLBACK_SCENARIOS if item["title"] not in recent_titles]
     chosen = random.choice(unused if unused else FALLBACK_SCENARIOS)
     return validate_and_normalize_scenario(chosen, "local-fallback-pool")
 
 
-def generate_scenario(concept: str = "İlginç Bilgiler ve Tarih", force_fallback: bool = False) -> dict[str, Any]:
-    """Çok katmanlı hata toleranslı (`try-except`) senaryo üretim yöneticisi."""
+def generate_scenario(
+    concept: str = "İlginç Bilgiler ve Tarih",
+    force_fallback: bool = False,
+    channel_id: str = "1",
+) -> dict[str, Any]:
+    """Çok katmanlı hata toleranslı ve 15 dakikalık benzersiz tohumlamalı senaryo üretim yöneticisi."""
+    effective_channel_id = str(channel_id or os.environ.get("MATRIX_CHANNEL_ID") or "1").strip() or "1"
+    now = datetime.now(timezone.utc)
+    unique_seed_str = f"{effective_channel_id}_{now.strftime('%j_%H_%M')}"
+    unique_hash = int(hashlib.md5(unique_seed_str.encode()).hexdigest(), 16)
+    random.seed(unique_hash)
+    print(f"[INFO] Faz 8 Benzersizlik Tohumu (Seed): {unique_seed_str} (kanal={effective_channel_id})")
+
     recent_titles = load_recent_titles()
 
     if force_fallback:
         print("[BİLGİ] '--force-fallback' aktif: Yerel yedek senaryo havuzu kullanılıyor.")
-        scenario = pick_fallback_scenario(recent_titles)
+        scenario = pick_fallback_scenario(recent_titles, channel_id=effective_channel_id)
         save_recent_title(scenario["title"])
         return scenario
 
@@ -580,7 +792,7 @@ def generate_scenario(concept: str = "İlginç Bilgiler ve Tarih", force_fallbac
 
     # 3. Katman: Garantili Yedek Havuz (Asla çökmez)
     try:
-        scenario = pick_fallback_scenario(recent_titles)
+        scenario = pick_fallback_scenario(recent_titles, channel_id=effective_channel_id)
         save_recent_title(scenario["title"])
         return scenario
     except Exception as exc:
@@ -755,6 +967,7 @@ def run_content_pipeline(
     voice_choice: str = "tr-TR-AhmetNeural",
     rate: str = "+4%",
     force_fallback: bool = False,
+    channel_id: str = "1",
     audio_out: Path = DEFAULT_AUDIO_OUT,
     txt_out: Path = DEFAULT_TXT_OUT,
     json_out: Path = DEFAULT_JSON_OUT,
@@ -765,7 +978,7 @@ def run_content_pipeline(
     resolved_voice = SUPPORTED_VOICES.get(voice_choice, "tr-TR-AhmetNeural")
 
     # 1. Senaryo Üretimi
-    scenario = generate_scenario(concept=concept, force_fallback=force_fallback)
+    scenario = generate_scenario(concept=concept, force_fallback=force_fallback, channel_id=channel_id)
     script_text = scenario["script_text"]
 
     # 2. Seslendirme & Kelime Bazlı Zaman Damgaları
@@ -831,6 +1044,12 @@ def main() -> None:
         action="store_true",
         help="API çağrısını atlayıp çevrimdışı yedek senaryo havuzunu test eder.",
     )
+    parser.add_argument(
+        "--channel_id",
+        type=str,
+        default=os.environ.get("MATRIX_CHANNEL_ID", "1"),
+        help="Matrix kanal ID'si (varsayılan: 1)",
+    )
     args = parser.parse_args()
 
     result = run_content_pipeline(
@@ -838,6 +1057,7 @@ def main() -> None:
         voice_choice=args.voice,
         rate=args.rate,
         force_fallback=args.force_fallback,
+        channel_id=args.channel_id,
     )
 
     print("\n" + "=" * 74)
