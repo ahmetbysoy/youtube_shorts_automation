@@ -1,0 +1,88 @@
+{
+  "python": "3.13.16",
+  "platform": "Linux-6.1.158+-x86_64-with-glibc2.41",
+  "packages": {
+    "google-api-python-client": {
+      "ok": true,
+      "version": "2.201.0"
+    },
+    "google-auth-oauthlib": {
+      "ok": true,
+      "version": "1.5.0"
+    },
+    "google-auth-httplib2": {
+      "ok": true,
+      "version": "0.4.4"
+    },
+    "edge-tts": {
+      "ok": true,
+      "version": "7.3.1"
+    },
+    "moviepy": {
+      "ok": true,
+      "version": "2.2.1"
+    },
+    "ffmpeg-python": {
+      "ok": true,
+      "version": "0.2.0"
+    },
+    "opencv-python": {
+      "ok": true,
+      "version": "4.14.0.94"
+    },
+    "Pillow": {
+      "ok": true,
+      "version": "11.3.0"
+    },
+    "playwright": {
+      "ok": true,
+      "version": "1.64.1"
+    },
+    "selenium": {
+      "ok": true,
+      "version": "4.52.0"
+    },
+    "pydrive2": {
+      "ok": true,
+      "version": "1.21.3"
+    },
+    "python-dotenv": {
+      "ok": true,
+      "version": "1.2.4"
+    },
+    "aiohttp": {
+      "ok": true,
+      "version": "3.14.5"
+    },
+    "requests": {
+      "ok": true,
+      "version": "2.34.2"
+    },
+    "beautifulsoup4": {
+      "ok": true,
+      "version": "4.15.0"
+    },
+    "yt-dlp": {
+      "ok": true,
+      "version": "2026.10.26"
+    }
+  },
+  "tools": {
+    "ffmpeg": {
+      "ok": true,
+      "path": "/usr/bin/ffmpeg",
+      "version": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers"
+    },
+    "ffprobe": {
+      "ok": true,
+      "path": "/usr/bin/ffprobe",
+      "version": "ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers"
+    },
+    "tree": {
+      "ok": true,
+      "path": "/usr/bin/tree",
+      "version": "tree v2.2.1 © 1996 - 2024 by Steve Baker, Thomas Moore, Francesc Rocher, Florian Sesser, Kyosuke Tokoro"
+    }
+  },
+  "ok": true
+}

@@ -1,0 +1,51 @@
+youtube_shorts_automation
+|-- .env.example
+|-- .gitignore
+|-- README.md
+|-- config
+|   |-- __init__.py
+|   |-- constants.py
+|   `-- settings.py
+|-- docs
+|   |-- ARCHITECTURE.md
+|   `-- setup
+|       |-- DEPENDENCY_DECISIONS.md
+|       |-- INSTALLATION_REPORT.md
+|       `-- requirements.requested.txt
+|-- logs
+|   `-- README.md
+|-- main.py
+|-- output
+|   |-- .gitkeep
+|   `-- README.md
+|-- requirements.lock.txt
+|-- requirements.txt
+|-- setup_reports
+|   |-- 01-pip-requested.log
+|   |-- 02-apt-tools.log
+|   |-- 03-pypi-metadata.json
+|   |-- 04-pip-compatible.log
+|   |-- 05-playwright-install.log
+|   |-- 06-ffmpeg-version.txt
+|   |-- 07-validation.log
+|   |-- 08-tree.txt
+|   |-- 09-environment-check.log
+|   |-- 10-playwright-system-deps.log
+|   |-- 11-validation-final.log
+|   `-- environment.json
+|-- src
+|   |-- __init__.py
+|   |-- content_generation
+|   |   `-- __init__.py
+|   |-- media_processing
+|   |   `-- __init__.py
+|   |-- utils
+|   |   `-- __init__.py
+|   `-- youtube_upload
+|       `-- __init__.py
+`-- tests
+    |-- __init__.py
+    |-- test_environment.py
+    `-- test_scaffold.py
+
+13 directories, 36 files
