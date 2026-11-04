@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T15:36:53.532Z",
+  "started_at": "2026-11-04T15:39:14.358Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,28 +14,28 @@
       "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 18.275533333333332
+      "ageMinutes": 20.622633333333333
     },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 26.525533333333332
+      "ageMinutes": 28.872633333333333
     },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 33.37553333333334
+      "ageMinutes": 35.722633333333334
     },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 47.958866666666665
+      "ageMinutes": 50.30596666666667
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -46,7 +46,7 @@
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 734,
+      "views": 735,
       "reason": "performanslı"
     },
     {
@@ -69,6 +69,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:37:25.443Z",
+  "finished_at": "2026-11-04T15:39:45.690Z",
   "deleted_count": 0
 }
