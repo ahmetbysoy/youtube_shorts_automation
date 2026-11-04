@@ -5,10 +5,12 @@ Uçtan uca otomasyon: Benzersiz İçerik (15dk Seed) -> Mobil-Optimize Montaj ->
 Sıfır hata toleransı, tam loglama, gerçek dünya çalışması.
 """
 import argparse
+import json
 import os
 import sys
 import logging
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -29,6 +31,46 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
+
+def write_status(status: str, channel_id: str, **extra) -> None:
+    """Tek satirlik kosu durumu -> logs/run_status.json (CI ozeti + artifact)."""
+    payload = {
+        "status": status,
+        "channel_id": str(channel_id),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    payload.update(extra)
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        (LOG_DIR / "run_status.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        logging.info(f"[*] RUN DURUMU: {status} {payload}")
+    except Exception as exc:  # pragma: no cover - dosya yazma hatasi uretimi durdurmaz
+        logging.warning(f"[!] run_status.json yazilamadi: {exc}")
+
+
+def _published_video_info() -> dict:
+    """Yayinlanan video bilgisini topla (id + URL + baslik)."""
+    info: dict = {}
+    vid_file = LOG_DIR / "channel_video_id.txt"
+    if vid_file.exists():
+        info["video_id"] = vid_file.read_text(encoding="utf-8").strip()
+    auth_file = LOG_DIR / "auth_status.json"
+    if auth_file.exists():
+        try:
+            auth = json.loads(auth_file.read_text(encoding="utf-8"))
+            info.setdefault("video_id", auth.get("videoId") or auth.get("video_id") or "")
+            info.setdefault("url", auth.get("videoUrl") or auth.get("url") or "")
+            info.setdefault("title", auth.get("title") or "")
+            info.setdefault("visibility", auth.get("visibility") or "PUBLIC")
+        except Exception:
+            pass
+    vid = info.get("video_id")
+    if vid and not info.get("url"):
+        info["url"] = f"https://youtube.com/shorts/{vid}"
+    return {k: v for k, v in info.items() if v}
+
 
 def run_step(step_name: str, command: list, env_overrides: dict | None = None) -> bool:
     logging.info(f"[*] BAŞLATILIYOR: {step_name}")
@@ -88,6 +130,7 @@ def main():
     logging.info(" 🚀 YOUTUBE SHORTS OTOMASYON ORKESTRATÖRÜ BAŞLATILIYOR 🚀")
     logging.info("=" * 70)
     logging.info(f"[*] KANAL ID: {args.channel_id} için işlem başlatılıyor.")
+    write_status("started", args.channel_id)
 
     # 1. Adım: İçerik Üretimi (15dk Benzersizlik Tohumu ile)
     step1_ok = run_step(
@@ -97,6 +140,7 @@ def main():
     )
     if not step1_ok:
         logging.error("İçerik üretimi başarısız. Orkestrasyon durduruldu.")
+        write_status("error", args.channel_id, stage="content")
         sys.exit(1)
 
     # 2. Adım: Mobil-Optimize Medya İşleme ve Montaj (unsharp + eq + MarginV=250)
@@ -107,6 +151,7 @@ def main():
     )
     if not step2_ok:
         logging.error("Medya işleme başarısız. Orkestrasyon durduruldu.")
+        write_status("error", args.channel_id, stage="media")
         sys.exit(1)
 
     # 3. Adım: YouTube Studio PUBLIC Yükleme
@@ -121,7 +166,15 @@ def main():
     )
     if not step3_ok:
         logging.error("YouTube yükleme başarısız. Orkestrasyon durduruldu.")
+        write_status("error", args.channel_id, stage="upload")
         sys.exit(1)
+
+    published = _published_video_info()
+    if published:
+        write_status("uploaded", args.channel_id, **published)
+    else:
+        # exit code 42 = gunkluk yukleme kotasi doldu -> planli atlama
+        write_status("quota_skipped", args.channel_id, stage="upload")
 
     logging.info("=" * 70)
     logging.info(" ✅ TÜM FAZLAR BAŞARIYLA TAMAMLANDI. PARA MAKİNESİ ÇALIŞIYOR. ✅")

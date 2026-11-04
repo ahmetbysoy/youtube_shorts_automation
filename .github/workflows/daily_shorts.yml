@@ -114,6 +114,13 @@ jobs:
             sleep "$DELAY"
           fi
 
+      - name: "Uretim Kapisi (Watchdog: Zincir aktifse bu kosu bekci)"
+        id: gate
+        run: |
+          PRODUCE=$(bash scripts/production_gate.sh "${{ github.event_name }}")
+          echo "produce=${PRODUCE}" >> "$GITHUB_OUTPUT"
+          echo "[GATE] produce=${PRODUCE}"
+
       - name: Sistem Paketlerini Kur (FFmpeg, Fontlar & Xvfb Sanal Ekran)
         run: |
           sudo apt-get update
@@ -141,6 +148,7 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Gizli Anahtarları ve Kanal Çerezlerini Enjekte Et (Kanal ${{ matrix.channel_id }})
+        if: ${{ steps.gate.outputs.produce == 'true' }}
         env:
           CHANNEL_ENV_FILE: ${{ secrets[format('ENV_FILE_{0}', matrix.channel_id)] }}
           CHANNEL_COOKIES_JSON: ${{ secrets[format('COOKIES_JSON_{0}', matrix.channel_id)] }}
@@ -169,6 +177,7 @@ jobs:
           python -c "import json; c=json.load(open('cookies.json')); print(f'[OK] Kanal ${{ matrix.channel_id }} cookies.json doğrulandı ({len(c)} çerez)')"
 
       - name: Run Orchestrator (Main Pipeline)
+        if: ${{ steps.gate.outputs.produce == 'true' }}
         env:
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
@@ -221,7 +230,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [channel-map, build-and-upload]
-    if: always()
+    # IPTAL EDILEN kosu yeni kosu TETIKLEMEZ (iptal firtinasinin koku).
+    # onceki davranis: if: always() -> #34 iptal -> #35 dogdu -> #35 iptal -> #36 ...
+    if: ${{ !cancelled() }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       NEXT_CHANNEL: ${{ needs.channel-map.outputs.next_channel }}
@@ -261,16 +272,23 @@ jobs:
           if [ -n "$LAST" ]; then
             LAST_EPOCH=$(date -u -d "$LAST" +%s)
             AGE=$(( NOW - LAST_EPOCH ))
-            if [ "$AGE" -lt 1500 ]; then
-              echo "[OK] GitHub zamanlayicisi CANLI (son schedule calistirmasi ${AGE} saniye once) -> zincir tetiklenmiyor."
-              exit 0
-            fi
-            echo "[UYARI] Zamanlayici ${AGE} saniye once calismis -> zincir devam ettiriliyor."
+            echo "[BILGI] Son schedule calistirmasi ${AGE} saniye once (zamanlayici seyrek + gecikmeli)."
           else
-            echo "[UYARI] Hic zamanlanmis calistirma yok -> zincir devam ettiriliyor."
+            echo "[BILGI] Hic zamanlanmis calistirma yok."
+          fi
+          echo "[BILGI] Tek uretim mekanizmasi ZINCIR; cron yalnizca bekci (watchdog) olarak calisir."
+
+
+          # --- 3) AKTIF KOSU KONTROLU: baska bir kosu varsa zincir TETIKLENMEZ ---
+          # (Ayni anda iki kosu = Studio oturum/cerez cakismasi + iptal firtinasi)
+          ACTIVE_COUNT=$(bash scripts/active_runs_count.sh "${WORKFLOW}" 2>/dev/null || echo 0)
+          ACTIVE_COUNT="${ACTIVE_COUNT:-0}"
+          if [ "${ACTIVE_COUNT}" -gt 0 ]; then
+            echo "[OK] Aktif kosu sayisi: ${ACTIVE_COUNT} -> zincir TETIKLENMEDI (cakisma onlendi)."
+            exit 0
           fi
 
-          # --- 3) Siradaki kanal (ayri hesaplar arasinda donusum) ---
+          # --- 4) Siradaki kanal (ayri hesaplar arasinda donusum) ---
           TARGET_CHANNEL="${NEXT_CHANNEL:-1}"
           echo "[*] Benzersiz (ayri hesap) kanal sayisi: ${DISTINCT_COUNT:-1}"
           echo "[*] Siradaki kanal: ${TARGET_CHANNEL}"
