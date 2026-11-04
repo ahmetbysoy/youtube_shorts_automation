@@ -55,16 +55,25 @@ echo "[*] Siradaki kanal (rotasyon ${RUN_NUMBER}): ${NEXT}"
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "distinct_csv=${MATRIX}" >> "$GITHUB_OUTPUT"
-  # JSON ARRAY: GitHub ifadelerinde join() ARRAY bekler, string degil.
-  # distinct_csv="1,2" -> distinct_json='["1","2"]' (matrix dogrudan fromJSON ile)
-  JSON_ARRAY="["
+  # --- MASKING TESTI (gecici): farkli output bicimleri ---
+  JSON_QUOTED="["
+  JSON_PLAIN="["
   SEP=""
   for CH in "${ORDER[@]}"; do
-    JSON_ARRAY="${JSON_ARRAY}${SEP}\"${CH}\""
+    JSON_QUOTED="${JSON_QUOTED}${SEP}\"${CH}\""
+    JSON_PLAIN="${JSON_PLAIN}${SEP}${CH}"
     SEP=","
   done
-  JSON_ARRAY="${JSON_ARRAY}]"
-  echo "distinct_json=${JSON_ARRAY}" >> "$GITHUB_OUTPUT"
+  JSON_QUOTED="${JSON_QUOTED}]"
+  JSON_PLAIN="${JSON_PLAIN}]"
+  echo "tst_quoted=${JSON_QUOTED}" >> "$GITHUB_OUTPUT"
+  echo "tst_plain=${JSON_PLAIN}" >> "$GITHUB_OUTPUT"
+  echo "tst_csv=${MATRIX}" >> "$GITHUB_OUTPUT"
+  echo "tst_single=1" >> "$GITHUB_OUTPUT"
+  # NOT: JSON array ("[\"1\"]") GitHub tarafindan secret sanilip MASKELENIR
+  # ("Skip output ... may contain secret") ve output ATILIR -> matris bos kalir.
+  # Bu yuzden output duz string (virgulle) tutulur; workflow tarafinda
+  # fromJSON(format('["{0}"]', join(split(distinct_csv, ','), '","'))) ile ARRAY'e cevrilir.
   echo "next_channel=${NEXT}" >> "$GITHUB_OUTPUT"
   echo "distinct_count=${#ORDER[@]}" >> "$GITHUB_OUTPUT"
 fi

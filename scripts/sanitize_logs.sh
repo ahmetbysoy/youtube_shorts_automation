@@ -27,13 +27,18 @@ echo "[*] Artifact guvenlik denetimi: ${LOGS_DIR}"
 # 1) Hassas dosyalari kaldir
 find "${LOGS_DIR}" -type f \( \
   -iname "*cookie*" -o -iname "*storage_state*" -o -iname "*.env" -o -iname "*token*" \
-  -o -iname "*credential*" -o -iname "*auth*cookie*" \
+  -o -iname "*credential*" -o -iname "*session*" -o -iname "*.key" -o -iname "*.pem" \
 \) -print -delete 2>/dev/null | while read -r F; do
   echo "::warning::Artifact'tan hassas dosya cikarildi: ${F}"
 done
 
+# auth_status.json gibi durum dosyalari SILINMEZ (video id + baslik icerir,
+# sifre icermez) ama icerik taramasindan gecer ve asagida listelenir.
+echo "[*] Auth/durum dosyalari (sifre taramasi yapilir, silinmez):"
+find "${LOGS_DIR}" -type f \( -iname "*auth*" -o -iname "*status*" \) -printf "  - %p\n" 2>/dev/null
+
 # 2) Gizli kalip taramasi (Google/YouTube cerez + bearer token kaliplari)
-PATTERNS='SIDCC|SAPISID|HSID|SSID|APISID|__Secure-[A-Z0-9_]+|Bearer [A-Za-z0-9._-]{20,}|AIza[0-9A-Za-z_-]{30,}|"refresh_token"|"access_token"|"client_secret"|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+PATTERNS='SIDCC|SAPISID|HSID|SSID|APISID|__Secure-[A-Z0-9_]+|Bearer [A-Za-z0-9._-]{20,}|AIza[0-9A-Za-z_-]{30,}|"refresh_token"|"access_token"|"client_secret"|"id_token"|"session_id"|"authToken"|-----BEGIN [A-Z ]*PRIVATE KEY-----'
 
 while IFS= read -r -d '' F; do
   if grep -qE "${PATTERNS}" "$F" 2>/dev/null; then

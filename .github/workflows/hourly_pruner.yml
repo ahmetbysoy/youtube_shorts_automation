@@ -34,7 +34,6 @@ jobs:
     timeout-minutes: 5
     outputs:
       distinct_csv: ${{ steps.map.outputs.distinct_csv }}
-      distinct_json: ${{ steps.map.outputs.distinct_json }}
       next_channel: ${{ steps.map.outputs.next_channel }}
       distinct_count: ${{ steps.map.outputs.distinct_count }}
     steps:
@@ -75,7 +74,9 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(needs.channel-map.outputs.distinct_json) }}
+        # distinct_csv duz stringtir ("1" veya "1,2"); JSON dizi GitHub tarafindan
+        # secret sanilip maskelenir. split() dizi verir, join() dizi bekler.
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', join(split(needs.channel-map.outputs.distinct_csv, ','), '","'))) }}
 
     # 10 kanallı matris aynı YouTube Studio oturumunu paylaşabildiği için
     # temizlik işleri sıraya alınır (aynı anda çakışma olmaz).
@@ -102,7 +103,7 @@ jobs:
           npm install playwright
           npx playwright install --with-deps chromium
 
-      - name: Oturum Bilgilerini Enjekte Et (Kanal #{{ matrix.channel_id }})
+      - name: Oturum Bilgilerini Enjekte Et (Kanal ${{ matrix.channel_id }})
         env:
           CHANNEL_ENV_FILE: ${{ secrets[format('ENV_FILE_{0}', matrix.channel_id)] }}
           CHANNEL_COOKIES_JSON: ${{ secrets[format('COOKIES_JSON_{0}', matrix.channel_id)] }}

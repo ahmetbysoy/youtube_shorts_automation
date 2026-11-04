@@ -47,7 +47,10 @@ jobs:
     timeout-minutes: 5
     outputs:
       distinct_csv: ${{ steps.map.outputs.distinct_csv }}
-      distinct_json: ${{ steps.map.outputs.distinct_json }}
+      tst_quoted: ${{ steps.map.outputs.tst_quoted }}
+      tst_plain: ${{ steps.map.outputs.tst_plain }}
+      tst_csv: ${{ steps.map.outputs.tst_csv }}
+      tst_single: ${{ steps.map.outputs.tst_single }}
       next_channel: ${{ steps.map.outputs.next_channel }}
       distinct_count: ${{ steps.map.outputs.distinct_count }}
     steps:
@@ -94,7 +97,9 @@ jobs:
       # diger kanal BASLAMAZ. Ayni anda 10 kanal calismaz.
       max-parallel: 1
       matrix:
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(needs.channel-map.outputs.distinct_json) }}
+        # distinct_csv duz stringtir ("1" veya "1,2"); JSON dizi GitHub tarafindan
+        # secret sanilip maskelenir. split() dizi verir, join() dizi bekler.
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', join(split(needs.channel-map.outputs.distinct_csv, ','), '","'))) }}
 
     steps:
       - name: Depoyu Çek (Checkout)
@@ -191,7 +196,9 @@ jobs:
           xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py --channel_id ${{ matrix.channel_id }}
 
       - name: "Kanal Hijyeni (Faz 12.5): Banner + About + Sabitlenmiş Yorum"
-        if: always()
+        # Gate 'false' dediyse (bekci kosusu) calisma: .env yok -> About metni
+        # e-posta olmadan yazilir ve KANAL HAKKINDA alani yanlislikla ezilirdi.
+        if: ${{ always() && steps.gate.outputs.produce != 'false' }}
         env:
           YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ' }}
           AFFILIATE_URL_DEFAULT: ${{ vars.AFFILIATE_URL_DEFAULT }}

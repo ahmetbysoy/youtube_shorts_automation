@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   scrape-and-optimize:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Depoyu Çek (Checkout)
@@ -59,7 +59,8 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add analytics_feedback.json
             git diff --staged --quiet || git commit -m "Faz 9 Auto-Analytics: Günlük kazanan konu geri bildirimi güncellendi"
-            git push origin main
+            git pull --rebase origin main || true
+            git push origin main || echo "Push atlandı (eşzamanlı güncelleme)"
           fi
 
       - name: Analitik Raporunu Yedekle (Artifact)
