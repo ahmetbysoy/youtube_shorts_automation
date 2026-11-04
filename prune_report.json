@@ -1,48 +1,55 @@
 {
-  "started_at": "2026-11-04T16:03:13.139Z",
+  "started_at": "2026-11-04T16:05:16.413Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
   "scanned": 10,
-  "targets": [],
-  "deleted": [],
+  "targets": [
+    {
+      "videoId": "3h5vxr0wBk4",
+      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "views": 2,
+      "ageMinutes": 62,
+      "ageSource": "rss"
+    }
+  ],
+  "deleted": [
+    {
+      "videoId": "3h5vxr0wBk4",
+      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "views": 2
+    }
+  ],
   "protected": [
     {
       "videoId": "S3h-Xn3VXvQ",
       "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
-      "views": 0,
+      "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": -476.76435
+      "ageMinutes": 2.0545666666666667
     },
     {
       "videoId": "9YdUbSypzp8",
       "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
-      "views": 0,
+      "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 20.268983333333335
+      "ageMinutes": 22.32355
     },
     {
       "videoId": "Ih3_oeAmbGs",
       "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
-      "views": 0,
+      "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 44.60231666666667
+      "ageMinutes": 46.65688333333333
     },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1,
+      "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 52.85231666666667
-    },
-    {
-      "videoId": "3h5vxr0wBk4",
-      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 0,
-      "reason": "çok-yeni",
-      "ageMinutes": 59.70231666666667
+      "ageMinutes": 54.90688333333333
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -76,6 +83,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T16:03:48.441Z",
-  "deleted_count": 0
+  "finished_at": "2026-11-04T16:06:13.495Z",
+  "deleted_count": 1
 }
