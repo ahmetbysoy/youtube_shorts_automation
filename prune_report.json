@@ -1,60 +1,46 @@
 {
-  "started_at": "2026-11-04T16:05:16.413Z",
+  "started_at": "2026-11-04T16:07:13.617Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 10,
-  "targets": [
-    {
-      "videoId": "3h5vxr0wBk4",
-      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 2,
-      "ageMinutes": 62,
-      "ageSource": "rss"
-    }
-  ],
-  "deleted": [
-    {
-      "videoId": "3h5vxr0wBk4",
-      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 2
-    }
-  ],
+  "scanned": 9,
+  "targets": [],
+  "deleted": [],
   "protected": [
     {
       "videoId": "S3h-Xn3VXvQ",
       "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 2.0545666666666667
+      "ageMinutes": 7.87695
     },
     {
       "videoId": "9YdUbSypzp8",
       "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 22.32355
+      "ageMinutes": 24.27695
     },
     {
       "videoId": "Ih3_oeAmbGs",
       "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 46.65688333333333
+      "ageMinutes": 48.610283333333335
     },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 54.90688333333333
+      "ageMinutes": 56.860283333333335
     },
     {
       "videoId": "BlrZMXlIbU0",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
-      "views": 465,
+      "views": 466,
       "reason": "performanslı"
     },
     {
@@ -83,6 +69,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T16:06:13.495Z",
-  "deleted_count": 1
+  "finished_at": "2026-11-04T16:07:46.284Z",
+  "deleted_count": 0
 }
