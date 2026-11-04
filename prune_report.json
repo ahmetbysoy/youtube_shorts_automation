@@ -1,6 +1,6 @@
 {
-  "started_at": "2026-11-04T19:34:57.790Z",
-  "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
+  "started_at": "2026-11-04T19:36:31.906Z",
+  "channel_id": "",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
@@ -30,7 +30,7 @@
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1140,
+      "views": 1141,
       "reason": "performanslı"
     },
     {
@@ -41,6 +41,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T19:35:30.095Z",
+  "finished_at": "2026-11-04T19:36:54.718Z",
   "deleted_count": 0
 }
