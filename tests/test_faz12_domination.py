@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import sys
 import unittest
 from pathlib import Path
 
@@ -140,6 +141,24 @@ class TestFaz12CronThrottle(unittest.TestCase):
         yml = DAILY_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("cron-kick:", yml)
         self.assertIn("actions/workflows/${WORKFLOW}/dispatches", yml)
+
+    def test_slot_step_is_coprime_so_topics_rotate(self) -> None:
+        """(slot * CARPAN) % len(pool) sabit kalinca ayni konu arka arkaya secilir."""
+        sys.path.insert(0, str(PROJECT_ROOT))
+        from content_engine import _coprime_step  # noqa: E402
+        import math  # noqa: E402
+
+        for size in (3, 5, 7, 10, 12, 20):
+            step = _coprime_step(size)
+            self.assertEqual(math.gcd(step, size), 1, f"step {step} ve {size} asal degil")
+            slots = {(s * step) % size for s in range(size)}
+            self.assertEqual(len(slots), size, f"boyut {size} icin tum konular kullanilmiyor")
+
+        # Canli hata: len=3, carpim=3 -> hep 0 (ayni konu)
+        old_slots = {(s * 3) % 3 for s in range(6)}
+        self.assertEqual(len(old_slots), 1, "eski formul bu boyutta sabit kalir")
+        new_slots = {(s * _coprime_step(3)) % 3 for s in range(6)}
+        self.assertEqual(len(new_slots), 3, "yeni formul konulari dagitmali")
 
     def test_visibility_tab_transition_is_resilient(self) -> None:
         """Kapuk yuklemesinden sonra "İleri" pasif kalirsa gorusurluk sekmesine gecmeli."""

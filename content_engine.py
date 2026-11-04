@@ -32,6 +32,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import math
 import os
 import random
 import re
@@ -1089,17 +1090,37 @@ def pick_fallback_scenario(
                 if classify_content_niche(item["topic"], item["title"], item["script_text"]) == winning_topic
             ]
             if winners:
-                w_slot = (slot_15m * 3 + (int(effective_ch) - 1)) % len(winners)
+                # FAZ 12.6: carpim sabit kalinca (len(winners)==3 -> *3) slot DAIMA ayni
+                # kalir ve ayni konu arka arkaya yayinlanir. Asal adim kullaniyoruz.
+                w_step = _coprime_step(len(winners))
+                w_slot = (slot_15m * w_step + (int(effective_ch) - 1) * w_step) % len(winners)
                 return validate_and_normalize_scenario(
                     winners[w_slot], f"local-fallback-analytics-boost-{winning_topic.lower()}-{effective_ch}"
                 )
 
-        slot = (slot_15m * 10 + (int(effective_ch) - 1)) % len(pool)
+        step = _coprime_step(len(pool))
+        slot = (slot_15m * step + (int(effective_ch) - 1) * step) % len(pool)
         return validate_and_normalize_scenario(pool[slot], f"local-fallback-matrix-{effective_ch}")
 
     unused = [item for item in pool if item["title"] not in recent_titles]
     chosen = random.choice(unused if unused else pool)
     return validate_and_normalize_scenario(chosen, "local-fallback-pool")
+
+
+def _coprime_step(size: int) -> int:
+    """Havuz boyutuyla aralarinda asal adim dondurur.
+
+    Neden: (slot * CARPAN) % len(pool) formulu, CARPAN ile len(pool) aralarinda
+    asal degilse sabit sonuc verir (orn. len=3, CARPAN=3 -> hep 0) ve ayni konu
+    arka arkaya secilir. gcd(step, size)==1 olan adim, slot ilerledikce konuyu
+    dondurerek (round-robin) farkli konulara dagitir.
+    """
+    if size <= 1:
+        return 1
+    step = 1
+    while math.gcd(step, size) != 1:
+        step += 1
+    return step
 
 
 def generate_scenario(
