@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T18:36:54.053Z",
+  "started_at": "2026-11-04T18:38:21.198Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,7 +14,7 @@
       "title": "1908 Tunguska Patlaması: 80 Milyon Ağaç Bir Anda Yıkıldı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 48.13421666666667
+      "ageMinutes": 49.58663333333333
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -48,6 +48,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T18:37:25.266Z",
+  "finished_at": "2026-11-04T18:38:53.124Z",
   "deleted_count": 0
 }
