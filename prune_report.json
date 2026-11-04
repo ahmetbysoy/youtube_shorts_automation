@@ -1,41 +1,27 @@
 {
-  "started_at": "2026-11-04T16:44:44.506Z",
+  "started_at": "2026-11-04T16:46:44.329Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 8,
-  "targets": [
-    {
-      "videoId": "9YdUbSypzp8",
-      "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
-      "views": 2,
-      "ageMinutes": 62,
-      "ageSource": "rss"
-    }
-  ],
-  "deleted": [
-    {
-      "videoId": "9YdUbSypzp8",
-      "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
-      "views": 2
-    }
-  ],
+  "scanned": 7,
+  "targets": [],
+  "deleted": [],
   "protected": [
     {
       "videoId": "02v2Qcxp-lI",
       "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 25.858433333333334
+      "ageMinutes": 27.855483333333332
     },
     {
       "videoId": "S3h-Xn3VXvQ",
       "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 45.39176666666667
+      "ageMinutes": 47.38881666666666
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -69,6 +55,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T16:45:36.437Z",
-  "deleted_count": 1
+  "finished_at": "2026-11-04T16:47:18.270Z",
+  "deleted_count": 0
 }
