@@ -1,21 +1,28 @@
 {
-  "started_at": "2026-11-04T18:46:33.930Z",
+  "started_at": "2026-11-04T18:53:38.756Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
   "scanned": 6,
-  "targets": [],
-  "deleted": [],
-  "protected": [
+  "targets": [
     {
       "videoId": "RxI6r5csezo",
       "title": "1908 Tunguska Patlaması: 80 Milyon Ağaç Bir Anda Yıkıldı! #Shorts",
       "views": 0,
-      "reason": "çok-yeni",
-      "ageMinutes": 57.798833333333334
-    },
+      "ageMinutes": 65,
+      "ageSource": "rss"
+    }
+  ],
+  "deleted": [
+    {
+      "videoId": "RxI6r5csezo",
+      "title": "1908 Tunguska Patlaması: 80 Milyon Ağaç Bir Anda Yıkıldı! #Shorts",
+      "views": 0
+    }
+  ],
+  "protected": [
     {
       "videoId": "BlrZMXlIbU0",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
@@ -25,7 +32,7 @@
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 762,
+      "views": 763,
       "reason": "performanslı"
     },
     {
@@ -37,7 +44,7 @@
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1136,
+      "views": 1138,
       "reason": "performanslı"
     },
     {
@@ -48,6 +55,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T18:47:07.645Z",
-  "deleted_count": 0
+  "finished_at": "2026-11-04T18:54:21.442Z",
+  "deleted_count": 1
 }
