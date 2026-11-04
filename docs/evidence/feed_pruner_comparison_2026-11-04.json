@@ -1,0 +1,31 @@
+{
+  "report_finished_at": "2026-11-04T16:59:00.094Z",
+  "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
+  "report_scanned": 8,
+  "report_protected_count": 8,
+  "report_deleted_count": 0,
+  "protected_video_ids": [
+    "8_bf4eAz3a0",
+    "02v2Qcxp-lI",
+    "S3h-Xn3VXvQ",
+    "BlrZMXlIbU0",
+    "pg39JuqqA40",
+    "atw6R7iSY88",
+    "A2F4P7BLB8A",
+    "3SFUI9fSYSU"
+  ],
+  "feed_captured_at": "2026-11-04T16:59:49.367938+00:00",
+  "feed_video_ids": [
+    "02v2Qcxp-lI",
+    "S3h-Xn3VXvQ",
+    "BlrZMXlIbU0",
+    "pg39JuqqA40",
+    "atw6R7iSY88",
+    "A2F4P7BLB8A",
+    "3SFUI9fSYSU"
+  ],
+  "report_protected_not_in_feed": [
+    "8_bf4eAz3a0"
+  ],
+  "note": "Karşılaştırma farklı zamanlarda alınan iki anlık görüntüye dayanır; akıştaki eksikliğin nedeni kesin olarak belirlenmemiştir."
+}

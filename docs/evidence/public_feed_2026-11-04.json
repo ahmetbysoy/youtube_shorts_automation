@@ -1,0 +1,51 @@
+{
+  "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
+  "source": "https://www.youtube.com/feeds/videos.xml?channel_id=UCBZVbwc7s7TeUCcOaN58oHQ",
+  "captured_at": "2026-11-04T16:59:49.367938+00:00",
+  "limitations": "Herkese açık Atom akışı sınırlı/gecikmeli olabilir; tüm kanal veya tüm yayın geçmişi değildir.",
+  "count": 7,
+  "videos": [
+    {
+      "video_id": "02v2Qcxp-lI",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "published": "2026-11-04T16:18:53+00:00",
+      "url": "https://www.youtube.com/watch?v=02v2Qcxp-lI"
+    },
+    {
+      "video_id": "S3h-Xn3VXvQ",
+      "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
+      "published": "2026-11-04T15:59:21+00:00",
+      "url": "https://www.youtube.com/watch?v=S3h-Xn3VXvQ"
+    },
+    {
+      "video_id": "BlrZMXlIbU0",
+      "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "published": "2026-11-04T02:03:25+00:00",
+      "url": "https://www.youtube.com/watch?v=BlrZMXlIbU0"
+    },
+    {
+      "video_id": "pg39JuqqA40",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "published": "2026-11-04T01:03:41+00:00",
+      "url": "https://www.youtube.com/watch?v=pg39JuqqA40"
+    },
+    {
+      "video_id": "atw6R7iSY88",
+      "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+      "published": "2026-11-03T18:27:22+00:00",
+      "url": "https://www.youtube.com/watch?v=atw6R7iSY88"
+    },
+    {
+      "video_id": "A2F4P7BLB8A",
+      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "published": "2026-11-03T18:27:19+00:00",
+      "url": "https://www.youtube.com/watch?v=A2F4P7BLB8A"
+    },
+    {
+      "video_id": "3SFUI9fSYSU",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "published": "2026-11-03T18:27:11+00:00",
+      "url": "https://www.youtube.com/watch?v=3SFUI9fSYSU"
+    }
+  ]
+}

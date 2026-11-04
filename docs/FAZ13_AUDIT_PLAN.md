@@ -50,6 +50,8 @@ Bu belge **canlı TODO**'dur: her adım bitince `[x]` işaretlenir, commit + pus
 
 **Durum: tasarım / henüz uygulanmadı.** `.used_topics.json` Git tarafından izlenmiyor; CI çalışma ortamı yeni oluşturulduğunda bu dosya kalıcı değil. Sayısal kanal kimliği için slot seçimi geçmiş başlık filtresini de kullanmıyor. Bu bulgular mevcut koddan doğrulandı; Mariana tekrarının tek nedeninin bunlar olduğu ve kesin kaç saatte tekrarlandığı kanıtlanmış değil.
 
+- [x] Gerçek kanalın herkese açık akışından doğrulanabilir anlık görüntü alındı (`scripts/audit_public_feed.py`, `docs/evidence/public_feed_2026-11-04.json`).
+- [x] Akış ve Studio pruner raporu karşılaştırıldı: akış 7, rapor 8 korunan video; `8_bf4eAz3a0` akışta yok (`docs/evidence/feed_pruner_comparison_2026-11-04.json`). Zamanlar farklı; eksiklik nedeni kesin değil. Akış tek başına eksiksiz geçmiş olarak kullanılmaz.
 - [ ] Gerçek kanal ve video kimliğiyle, yalnızca yayını doğrulanan kayıtları kalıcı geçmişe yaz; zaman ve başlık uydurma. Eski kayıtları kanalın gerçek verilerinden çıkar; eksik kayıtlar açıkça belirtilsin.
 - [ ] Geçmişin koşular arasında güncel kalması, aynı kanalda eşzamanlı yayınların yarışı, hata/iptal ve Git push çakışmaları için güvenli iş akışı tasarla; kayıt okunamazsa sessizce boş varsayma.
 - [ ] Türkçe normalizasyonu ve konu/anahtar sözcük benzerliğiyle farklı başlıklı tekrarları reddet; yeni açıyı yalnızca benzerlik skoru ile kanıtlanmış sayma.
