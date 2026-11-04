@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T17:33:56.921Z",
+  "started_at": "2026-11-04T17:36:55.130Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,21 +14,21 @@
       "title": "Uzay Boşluğunda Metaller Kendi Kendine Kaynar! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 15.048683333333333
+      "ageMinutes": 18.018833333333333
     },
     {
       "videoId": "T_yIHvyUY2Y",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 30.732016666666667
+      "ageMinutes": 33.70216666666666
     },
     {
       "videoId": "8_bf4eAz3a0",
       "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
-      "views": 0,
+      "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 43.89868333333333
+      "ageMinutes": 46.868833333333335
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -62,6 +62,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T17:34:28.374Z",
+  "finished_at": "2026-11-04T17:37:26.926Z",
   "deleted_count": 0
 }
