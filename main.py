@@ -52,6 +52,8 @@ def run_step(step_name: str, command: list, env_overrides: dict | None = None) -
                     # Faz 11: viral metadata + AI kapak kanitlari CI logunda gorunsun
                     "AI ile dikkat", "Kapak resmi", "Kapak görseli", "Etkileşim CTA",
                     "Trend hashtag", "YÜKLEME ATLANDI", "günlük yükleme",
+                    # Faz 12: silahlandirilmis kapak + zorunlu basari satiri
+                    "SİLAHLANDIRILMIŞ", "KAPAK RESMİ", "Yayınlanan video ID",
                 )
                 if any(tok in line for tok in show_tokens):
                     logging.info(f"  -> {line.strip()}")

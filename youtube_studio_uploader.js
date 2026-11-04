@@ -798,7 +798,8 @@ async function uploadToYouTubeStudio() {
 
         // FAZ 12.5: Yayinlanan video ID'sini kaydet (sabitlenmis yorum adimi kullanir)
         try {
-            const vidMatch = String(videoUrl || '').match(/[?&]v=([A-Za-z0-9_-]{6,})/);
+            const vidMatch = String(videoUrl || '').match(/[?&]v=([A-Za-z0-9_-]{6,})/) ||
+                             String(videoUrl || '').match(/\/shorts\/([A-Za-z0-9_-]{6,})/);
             const publishedId = vidMatch ? vidMatch[1] : '';
             if (publishedId) {
                 fs.mkdirSync(path.join(BASE_DIR, 'logs'), { recursive: true });
