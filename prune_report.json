@@ -1,6 +1,6 @@
 {
-  "started_at": "2026-11-04T19:36:31.906Z",
-  "channel_id": "",
+  "started_at": "2026-11-04T19:37:52.086Z",
+  "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
@@ -41,6 +41,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T19:36:54.718Z",
+  "finished_at": "2026-11-04T19:38:23.170Z",
   "deleted_count": 0
 }
