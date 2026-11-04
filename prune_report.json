@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T16:50:12.700Z",
+  "started_at": "2026-11-04T16:51:49.793Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,26 +14,26 @@
       "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": -429.77166666666665
+      "ageMinutes": 1.6182166666666666
     },
     {
       "videoId": "02v2Qcxp-lI",
       "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 31.328333333333333
+      "ageMinutes": 32.94655
     },
     {
       "videoId": "S3h-Xn3VXvQ",
       "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 50.861666666666665
+      "ageMinutes": 52.47988333333333
     },
     {
       "videoId": "BlrZMXlIbU0",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
-      "views": 470,
+      "views": 471,
       "reason": "performanslı"
     },
     {
@@ -62,6 +62,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T16:50:43.381Z",
+  "finished_at": "2026-11-04T16:52:21.920Z",
   "deleted_count": 0
 }
