@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T01:08:53.465Z",
+  "started_at": "2026-11-04T01:10:21.536Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,7 +14,7 @@
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 5.33055
+      "ageMinutes": 6.7984
     },
     {
       "videoId": "atw6R7iSY88",
@@ -36,6 +36,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T01:09:25.661Z",
+  "finished_at": "2026-11-04T01:10:52.556Z",
   "deleted_count": 0
 }
