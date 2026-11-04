@@ -1,122 +1,62 @@
 {
-  "started_at": "2026-11-04T15:02:40.974Z",
+  "started_at": "2026-11-04T15:05:24.707Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 16,
+  "scanned": 11,
   "targets": [
     {
-      "videoId": "yxB3JHbJZvE",
-      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "videoId": "Bh_Lba_nJh8",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 0,
-      "ageMinutes": 89,
-      "ageSource": "rss"
-    },
-    {
-      "videoId": "VVBdfC0z8kk",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 1,
-      "ageMinutes": 102,
-      "ageSource": "rss"
-    },
-    {
-      "videoId": "Nww6ZSF1FBE",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 1,
-      "ageMinutes": 104,
-      "ageSource": "rss"
-    },
-    {
-      "videoId": "tfhm30kJo90",
-      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 0,
-      "ageMinutes": 112,
-      "ageSource": "rss"
-    },
-    {
-      "videoId": "0oLFqMrK-MY",
-      "title": "Adsız",
-      "views": 0,
-      "ageMinutes": 117,
-      "ageSource": "rss"
-    },
-    {
-      "videoId": "7ONnF2kUeis",
-      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 2,
-      "ageMinutes": 388,
+      "ageMinutes": 62,
       "ageSource": "rss"
     }
   ],
   "deleted": [
     {
-      "videoId": "yxB3JHbJZvE",
-      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "videoId": "Bh_Lba_nJh8",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 0
-    },
-    {
-      "videoId": "VVBdfC0z8kk",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 1
-    },
-    {
-      "videoId": "Nww6ZSF1FBE",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 1
-    },
-    {
-      "videoId": "tfhm30kJo90",
-      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 0
-    },
-    {
-      "videoId": "0oLFqMrK-MY",
-      "title": "Adsız",
-      "views": 0
-    },
-    {
-      "videoId": "7ONnF2kUeis",
-      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 2
     }
   ],
   "protected": [
+    {
+      "videoId": "3h5vxr0wBk4",
+      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": -534.57155
+    },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 13.749566666666666
+      "ageMinutes": 16.47845
     },
     {
       "videoId": "DC6ZIGtOsqc",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 28.966233333333335
+      "ageMinutes": 31.695116666666667
     },
     {
       "videoId": "HCfoHJym2xM",
       "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 43.8829
+      "ageMinutes": 46.611783333333335
     },
     {
       "videoId": "eyWPXbYhNlo",
       "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 53.3329
-    },
-    {
-      "videoId": "Bh_Lba_nJh8",
-      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
-      "views": 0,
-      "reason": "çok-yeni",
-      "ageMinutes": 59.2329
+      "ageMinutes": 56.06178333333333
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -150,6 +90,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:04:22.390Z",
-  "deleted_count": 6
+  "finished_at": "2026-11-04T15:06:06.699Z",
+  "deleted_count": 1
 }
