@@ -243,3 +243,70 @@ olmazsa `Kapak resmi / Thumbnail` butonu + `filechooser` yedeği. Başarı logu:
 | Sabitlenmiş yorum | `ytd-comment-simplebox-renderer` → `İşlem menüsü` → "Sabitle" | ✅ yazıldı & sabitlendi (`#pinned-comment-badge`) |
 
 Hepsi `scripts/channel_hygiene.js` ile yapılır; **hata olursa yayınlama akışı bozulmaz**.
+
+
+---
+
+## Faz 12.6 — Denetim İslahları (Ekip Denetimi, 04.11.2026)
+
+Ekip denetimi 5 bulgu getirdi. Her bulgu için **neden** + **nasıl doğrulandı** kaydı:
+
+### 1) İptal fırtınası (asıl dert) — DÜZELTİLDİ
+**Kök neden:** `cron-kick` job'ı `if: always()` ile çalışıyordu. İptal edilen bir koşu
+bile yeni bir zincir koşusu tetikliyordu → #34 iptal → #35 doğdu → #35 iptal → #36…
+Ayrıca GitHub `schedule` olayı ile zincir **aynı anda** iki video üretiyordu.
+
+| Önlem | Nerede |
+| :--- | :--- |
+| `if: always()` → `if: ${{ !cancelled() }}` (iptal edilen koşu yeni koşu doğurmaz) | `daily_shorts.yml`, `hourly_pruner.yml` |
+| Tetiklemeden önce aktif koşu kontrolü (`scripts/active_runs_count.sh`) | `cron-kick` |
+| Cron artık **bekçi (watchdog)**: zincir aktifse üretim yapmaz (`scripts/production_gate.sh`) | `build-and-upload` |
+| Zincir koşuları ayrı concurrency grubunda (`chain=1`) → elle/schedule koşusu yayını iptal etmez | `concurrency.group` |
+
+**Doğrulama:** zincir kırıkken zincir yeni koşu üretmiyor; `schedule` koşusu aktif zincir
+varsa `produce=false` ile üretimi atlıyor; 57/57 unittest + actionlint temiz.
+
+### 2) Ubuntu 26.04 geçişi — SABİTLENDİ
+GitHub 19 Ekim–19 Kasım 2026 arasında `ubuntu-latest` → 26.04'e geçiyor. Bu repo
+`libass9`, `fonts-*`, `xvfb` ve `playwright install --with-deps` kullanıyor.
+
+- Ana workflow'lar: `runs-on: ubuntu-24.04` (resmî öneri)
+- Yeni `.github/workflows/ubuntu_26_test.yml`: `ubuntu-26.04` imajında paket kurulumu,
+  Playwright, **altyazı montaj testi** (FontSize=56 / MarginV=250) ve birim testleri.
+  (Geçiş öncesi ölçüm; kanal/yayın yapmaz.)
+- `.github/actionlint.yaml`: actionlint'in etiket listesi 26.04'ü bilmiyor → ignore.
+
+### 3) Node 20 uyarıları — YÜKSELTİLDİ
+`action.yml → runs.using` doğrulandı (v4/v5 = node20, v6/v7 = node24):
+
+| Action | Eski | Yeni | Breaking change etkisi |
+| :--- | :--- | :--- | :--- |
+| actions/checkout | v4 (node20) | **v7** (node24) | fork-PR engeli (kullanmıyoruz) + ESM → etkisiz |
+| actions/setup-python | v5 (node20) | **v7** (node24) | `pip-install` input'u kaldırıldı (kullanmıyoruz) → etkisiz |
+| actions/setup-node | v4 (node20) | **v7** (node24) | yeni output'lar, sahte `NODE_AUTH_TOKEN` kaldırıldı → etkisiz |
+| actions/upload-artifact | v4 (node20) | **v7** (node24) | `archive:false` opsiyonel (varsayılan zip aynı) → etkisiz |
+
+### 4) Koddan okunduğu buglar — DÜZELTİLDİ
+- `ARGS` artık **bash array** (`ARGS=(--banner ... --about "$ABOUT_TEXT")` + `"${ARGS[@]}"`).
+  Önceden `$ARGS` boşluklu metni (e-posta) birden fazla argümana bölüyordu.
+- Hata `|| echo` ile yutulmuyor → `::warning::Kanal hijyeni başarısız (rc=…)` annotation'ı.
+- `${{ inputs.slot_epoch }}` artık **env** (`SLOT_EPOCH`) ile geçiliyor (script injection riski yok).
+- **actionlint bulgusu:** `join(distinct_csv, '","')` → GitHub ifadelerinde `join()` ARRAY
+  bekler, `distinct_csv` STRING'dir (tek kanalda tesadüfen çalışıyordu). Artık
+  `scripts/channel_map.sh` → `distinct_json='["1"]'` üretiyor, matrix `fromJSON(distinct_json)`.
+
+### 5) Artifact güvenliği — EKLENDİ
+`scripts/sanitize_logs.sh`: artifact'a girmeden önce `logs/` içinden
+cookie/storage_state/token dosyaları **silinir**, kalan dosyalardaki
+`SIDCC/SAPISID/HSID/SSID/__Secure-*`/`Bearer …`/`AIza…`/`refresh_token` kalıpları
+**redakte** edilir ve `::warning::` üretilir.
+
+### 6) Tek satırlık durum bildirimi — EKLENDİ
+`scripts/run_summary.py` → `::notice::Kanal 1: YÜKLENDİ | Video: … | https://…`
+(+ GitHub Step Summary tablosu). `scripts/pruner_summary.py` → pruner özeti.
+
+### Tek üretim mekanizması: ZİNCİR
+GitHub `schedule` olayı **best-effort**: 13 saatte sadece **2 kez** ve 4–6 dk gecikmeyle
+tetiklendi (#28 01:51, #29 08:31). Bu yüzden:
+- **Zincir (cron-kick) = asıl motor** (15 dk'da bir, kendini devam ettiren).
+- **Cron = bekçi**: yalnızca zincir ölüyse devreye girer.

@@ -269,3 +269,31 @@ PRUNE_ONLY_VIDEO_IDS=<VIDEO_ID> xvfb-run -a node prune_low_performers.js
 - Studio'daki "Branding" sayfası (`/editing/branding`) **hata veriyor**; banner artık `/editing/profile` üzerinden yükleniyor.
 - `youtube.upload` OAuth kapsamı yorum yazmaya yetmez; bu yüzden yorum **tarayıcı oturumuyla** yazılıyor.
 - Banner + About her turda idempotent olarak çalışır (güncelleme, üstüne yazma).
+
+
+---
+
+## 11. Faz 12.6 — Denetim Dönemi: Ne Değişti, Ne Öğrenildi
+
+### Öğrenilenler (kalıcı bilgi)
+1. **`if: always()` + `cancel-in-progress: true` = iptal fırtınası.** `always()` olan bir
+   job, iptal edilen koşudan bile yeni koşu doğurur. Kendini devam ettiren zincirlerde
+   bu **her iptalin yeni bir iptal doğurması** demektir → `if: ${{ !cancelled() }}` şart.
+2. **GitHub `schedule` olayı güvenilir bir zamanlayıcı değildir** (13 saatte 2 kez, gecikmeli).
+   "Scheduler ölü" ölçümü (`total_count=0`) bir günlük gözlemdir; sürekli doğrulama gerekir.
+   Tek üretim mekanizması seçilmeli (bizde: zincir; cron = bekçi).
+3. **`join()` GitHub ifadelerinde ARRAY bekler.** `join(string, sep)` sessizce yanlış
+   matris üretir; `fromJSON(json_array)` kullan.
+4. **actionlint gerçek bir linter**: `runs.using` (node20→node24) ve tip hatalarını bulur.
+5. **Bash dizi (array) `ARGS=(...)` + `"${ARGS[@]}"`**: metin değerli argümanları böler.
+
+### Dosya envanteri (yeni)
+| Dosya | İşlev |
+| :--- | :--- |
+| `scripts/active_runs_count.sh` | Aktif (queued/in_progress) koşu sayısı (kendisi hariç) |
+| `scripts/production_gate.sh` | Watchdog kapısı: schedule koşusu zincir aktifse atlar |
+| `scripts/sanitize_logs.sh` | Artifact öncesi gizli veri temizliği |
+| `scripts/run_summary.py` | Tek satırlık run özeti (+ Step Summary) |
+| `scripts/pruner_summary.py` | Pruner tek satırlık özeti |
+| `.github/workflows/ubuntu_26_test.yml` | Ubuntu 26.04 geçiş probe'u |
+| `.github/actionlint.yaml` | actionlint yapılandırması (26.04 etiketi) |
