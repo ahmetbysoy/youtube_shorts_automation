@@ -145,7 +145,7 @@ class TestFaz12CronThrottle(unittest.TestCase):
         """Zincir koşusu AYRI concurrency grubunda olmali; aksi halde yayin yarida kesiliyor."""
         yml = DAILY_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("inputs.chain", yml)
-        self.assertIn("'chain\\':\\'1'", yml.replace('"', "'"))
+        self.assertIn('chain\\\":\\\"1', yml)
         # Studio oturum kilidi
         self.assertIn("studio-upload-lock", yml)
 
