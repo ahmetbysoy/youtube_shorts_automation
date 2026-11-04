@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T19:59:54.616Z",
+  "started_at": "2026-11-04T20:01:27.135Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -41,6 +41,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T20:00:26.562Z",
+  "finished_at": "2026-11-04T20:01:59.178Z",
   "deleted_count": 0
 }
