@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T15:07:15.549Z",
+  "started_at": "2026-11-04T15:08:55.698Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,35 +14,35 @@
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 1.8473666666666666
+      "ageMinutes": 3.5165166666666665
     },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 18.325816666666668
+      "ageMinutes": 19.994966666666667
     },
     {
       "videoId": "DC6ZIGtOsqc",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 33.54248333333334
+      "ageMinutes": 35.21163333333333
     },
     {
       "videoId": "HCfoHJym2xM",
       "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
-      "views": 0,
+      "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 48.45915
+      "ageMinutes": 50.1283
     },
     {
       "videoId": "eyWPXbYhNlo",
       "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 57.90915
+      "ageMinutes": 59.5783
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -76,6 +76,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:07:47.324Z",
+  "finished_at": "2026-11-04T15:09:28.786Z",
   "deleted_count": 0
 }
