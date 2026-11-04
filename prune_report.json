@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T17:10:50.533Z",
+  "started_at": "2026-11-04T17:12:25.991Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,21 +14,21 @@
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 6.844766666666667
+      "ageMinutes": 8.435733333333333
     },
     {
       "videoId": "8_bf4eAz3a0",
       "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 20.79221666666667
+      "ageMinutes": 22.383183333333335
     },
     {
       "videoId": "02v2Qcxp-lI",
       "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 51.95888333333333
+      "ageMinutes": 53.54985
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -62,6 +62,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T17:11:21.872Z",
+  "finished_at": "2026-11-04T17:12:57.571Z",
   "deleted_count": 0
 }
