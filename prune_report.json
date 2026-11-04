@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T18:00:01.879Z",
+  "started_at": "2026-11-04T18:01:39.141Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,21 +14,21 @@
       "title": "1908 Tunguska Patlaması: 80 Milyon Ağaç Bir Anda Yıkıldı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 11.26465
+      "ageMinutes": 12.885683333333333
     },
     {
       "videoId": "IkPV6Kph57k",
       "title": "Uzay Boşluğunda Metaller Kendi Kendine Kaynar! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 41.13131666666666
+      "ageMinutes": 42.75235
     },
     {
       "videoId": "T_yIHvyUY2Y",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 56.81465
+      "ageMinutes": 58.43568333333333
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -62,6 +62,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T18:00:35.475Z",
+  "finished_at": "2026-11-04T18:02:11.781Z",
   "deleted_count": 0
 }
