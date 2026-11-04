@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T18:10:43.587Z",
+  "started_at": "2026-11-04T18:12:14.441Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,14 +14,14 @@
       "title": "1908 Tunguska Patlaması: 80 Milyon Ağaç Bir Anda Yıkıldı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 21.959783333333334
+      "ageMinutes": 23.474016666666667
     },
     {
       "videoId": "IkPV6Kph57k",
       "title": "Uzay Boşluğunda Metaller Kendi Kendine Kaynar! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 51.82645
+      "ageMinutes": 53.34068333333333
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -55,6 +55,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T18:11:15.351Z",
+  "finished_at": "2026-11-04T18:12:47.296Z",
   "deleted_count": 0
 }
