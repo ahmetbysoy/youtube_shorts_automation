@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T15:52:18.887Z",
+  "started_at": "2026-11-04T15:55:18.386Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,28 +14,28 @@
       "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 9.364783333333333
+      "ageMinutes": 12.356433333333333
     },
     {
       "videoId": "Ih3_oeAmbGs",
       "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 33.698116666666664
+      "ageMinutes": 36.689766666666664
     },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 41.948116666666664
+      "ageMinutes": 44.939766666666664
     },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 48.798116666666665
+      "ageMinutes": 51.789766666666665
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -46,7 +46,7 @@
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 737,
+      "views": 739,
       "reason": "performanslı"
     },
     {
@@ -69,6 +69,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:52:59.205Z",
+  "finished_at": "2026-11-04T15:55:50.961Z",
   "deleted_count": 0
 }
