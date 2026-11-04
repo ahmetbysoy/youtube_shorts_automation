@@ -1,48 +1,62 @@
 {
-  "started_at": "2026-11-04T15:15:49.347Z",
+  "started_at": "2026-11-04T15:19:03.000Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 10,
-  "targets": [],
-  "deleted": [],
+  "scanned": 11,
+  "targets": [
+    {
+      "videoId": "HCfoHJym2xM",
+      "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
+      "views": 1,
+      "ageMinutes": 60,
+      "ageSource": "rss"
+    }
+  ],
+  "deleted": [
+    {
+      "videoId": "HCfoHJym2xM",
+      "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
+      "views": 1
+    }
+  ],
   "protected": [
+    {
+      "videoId": "Ih3_oeAmbGs",
+      "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": 0.43333333333333335
+    },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 5.455783333333334
+      "ageMinutes": 8.683333333333334
     },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 12.305783333333334
+      "ageMinutes": 15.533333333333333
     },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 26.889116666666666
+      "ageMinutes": 30.116666666666667
     },
     {
       "videoId": "DC6ZIGtOsqc",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 42.105783333333335
-    },
-    {
-      "videoId": "HCfoHJym2xM",
-      "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
-      "views": 1,
-      "reason": "çok-yeni",
-      "ageMinutes": 57.02245
+      "ageMinutes": 45.333333333333336
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -53,7 +67,7 @@
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 725,
+      "views": 726,
       "reason": "performanslı"
     },
     {
@@ -76,6 +90,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:16:21.072Z",
-  "deleted_count": 0
+  "finished_at": "2026-11-04T15:19:45.128Z",
+  "deleted_count": 1
 }
