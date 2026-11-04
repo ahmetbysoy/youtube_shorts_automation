@@ -1,48 +1,62 @@
 {
-  "started_at": "2026-11-04T15:08:55.698Z",
+  "started_at": "2026-11-04T15:10:53.481Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 10,
-  "targets": [],
-  "deleted": [],
+  "scanned": 11,
+  "targets": [
+    {
+      "videoId": "eyWPXbYhNlo",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "views": 0,
+      "ageMinutes": 62,
+      "ageSource": "rss"
+    }
+  ],
+  "deleted": [
+    {
+      "videoId": "eyWPXbYhNlo",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "views": 0
+    }
+  ],
   "protected": [
+    {
+      "videoId": "vCiN4YNe0SI",
+      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": -529.0919833333334
+    },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 3.5165166666666665
+      "ageMinutes": 5.479566666666667
     },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 19.994966666666667
+      "ageMinutes": 21.958016666666666
     },
     {
       "videoId": "DC6ZIGtOsqc",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 35.21163333333333
+      "ageMinutes": 37.174683333333334
     },
     {
       "videoId": "HCfoHJym2xM",
       "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 50.1283
-    },
-    {
-      "videoId": "eyWPXbYhNlo",
-      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
-      "views": 0,
-      "reason": "çok-yeni",
-      "ageMinutes": 59.5783
+      "ageMinutes": 52.09135
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -65,7 +79,7 @@
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1129,
+      "views": 1130,
       "reason": "performanslı"
     },
     {
@@ -76,6 +90,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:09:28.786Z",
-  "deleted_count": 0
+  "finished_at": "2026-11-04T15:11:37.607Z",
+  "deleted_count": 1
 }
