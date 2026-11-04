@@ -1,64 +1,39 @@
 {
-  "scraped_at": "2026-11-03T19:49:17.558Z",
+  "scraped_at": "2026-11-04T13:45:03.843Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 6,
-  "winning_topic": "Bilim",
-  "boost_active": true,
-  "outperformance_ratio": 3.37,
-  "discarded_topics": [
-    "Uzay"
-  ],
-  "optimization_directive": "Önceki gün en yüksek performansı 'Bilim' gösterdi, yeni senaryoların %80'i Bilim/Fizik odaklı olsun.",
+  "winning_topic": "Tarih",
+  "boost_active": false,
+  "outperformance_ratio": 1,
+  "discarded_topics": [],
+  "optimization_directive": "Tüm konularda dengeli yüksek dopaminli kanca (hook) üretimine devam et.",
   "topic_scores": [
     {
-      "niche": "Bilim",
-      "video_count": 2,
-      "avg_views": 87.5,
-      "avg_view_duration_sec": 0,
-      "avg_score": 87.5
-    },
-    {
       "niche": "Tarih",
-      "video_count": 3,
-      "avg_views": 26,
+      "video_count": 2,
+      "avg_views": 1,
       "avg_view_duration_sec": 0,
-      "avg_score": 26
+      "avg_score": 1
     },
     {
-      "niche": "Uzay",
-      "video_count": 1,
-      "avg_views": 2,
+      "niche": "Bilim",
+      "video_count": 4,
+      "avg_views": 0,
       "avg_view_duration_sec": 0,
-      "avg_score": 2
+      "avg_score": 0
     }
   ],
   "recent_videos": [
     {
-      "videoId": "Y6cCy07CIS8",
-      "title": "Güneş Işığı Dünya'ya Gelene Kadar 8 Dakika Geçmiş Olur! #Shorts",
-      "niche": "Uzay",
-      "views": 2,
-      "avgViewDurationSec": 0,
-      "compositeScore": 2
-    },
-    {
-      "videoId": "UmhrPrW5y6g",
-      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "videoId": "yxB3JHbJZvE",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "niche": "Bilim",
-      "views": 1,
+      "views": 0,
       "avgViewDurationSec": 0,
-      "compositeScore": 1
+      "compositeScore": 0
     },
     {
-      "videoId": "6qDAYQ3ZdVw",
-      "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
-      "niche": "Tarih",
-      "views": 1,
-      "avgViewDurationSec": 0,
-      "compositeScore": 1
-    },
-    {
-      "videoId": "uXy84Ga48sg",
+      "videoId": "VVBdfC0z8kk",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "niche": "Tarih",
       "views": 1,
@@ -66,20 +41,36 @@
       "compositeScore": 1
     },
     {
-      "videoId": "atw6R7iSY88",
-      "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+      "videoId": "Nww6ZSF1FBE",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "niche": "Tarih",
-      "views": 76,
+      "views": 1,
       "avgViewDurationSec": 0,
-      "compositeScore": 76
+      "compositeScore": 1
     },
     {
-      "videoId": "A2F4P7BLB8A",
-      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "videoId": "tfhm30kJo90",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "niche": "Bilim",
-      "views": 174,
+      "views": 0,
       "avgViewDurationSec": 0,
-      "compositeScore": 174
+      "compositeScore": 0
+    },
+    {
+      "videoId": "0oLFqMrK-MY",
+      "title": "Adsız",
+      "niche": "Bilim",
+      "views": 0,
+      "avgViewDurationSec": 0,
+      "compositeScore": 0
+    },
+    {
+      "videoId": "",
+      "title": "final short",
+      "niche": "Bilim",
+      "views": 0,
+      "avgViewDurationSec": 0,
+      "compositeScore": 0
     }
   ]
 }
