@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T19:03:03.391Z",
+  "started_at": "2026-11-04T19:13:06.626Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -18,7 +18,7 @@
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 763,
+      "views": 764,
       "reason": "performanslı"
     },
     {
@@ -30,7 +30,7 @@
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1138,
+      "views": 1139,
       "reason": "performanslı"
     },
     {
@@ -41,6 +41,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T19:03:35.457Z",
+  "finished_at": "2026-11-04T19:13:47.884Z",
   "deleted_count": 0
 }
