@@ -16,12 +16,20 @@ on:
         required: false
         default: ''
         type: string
+      chain:
+        description: "1 = zincir (kendi kendini devam ettiren) çalıştırma. Zincir koşuları AYRI concurrency grubundadır; elle/schedule çalıştırmalar zincirin YAYININI iptal etmez."
+        required: false
+        default: '0'
+        type: string
 
 # FAZ 12: Tıkanan/eski job'ı iptal et, en günceli çalıştır (kuyruk tıkanmasın).
 # NOT: zincir (cron-kick) tetiklemesi POST'u tamamladıktan SONRA iptal olur,
 # bu yüzden kendi kendini devam ettiren zincir bozulmaz.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # FAZ 12: Iptal (throttle kacinigi) sadece AYNI grup icinde gecerli.
+  # Zincir koşuları 'chain=1' ile AYRI grupta calisir -> zincir, devam eden
+  # YAYINI iptal etmez (onceki fazda yayin yarida kesiliyordu).
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.chain || '0' }}
   cancel-in-progress: true
 
 permissions:
@@ -75,6 +83,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: channel-map
+    # Studio oturum kilidi: ayni anda tek oturum acilir (cerez/cerez catismasi olmasin)
+    concurrency:
+      group: studio-upload-lock
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       # Kanal sirasi: BIR video TAMAMEN (kapak + baslik + hashtag + yayin) bitmeden
@@ -267,5 +279,5 @@ jobs:
           curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches" \
-            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"${TARGET_CHANNEL}\",\"slot_epoch\":\"${NEXT_SLOT}\"}}"
+            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"${TARGET_CHANNEL}\",\"slot_epoch\":\"${NEXT_SLOT}\",\"chain\":\"1\"}}"
           echo "[*] Zincir tetiklendi -> kanal ${TARGET_CHANNEL}, dilim ${NEXT_SLOT}."
