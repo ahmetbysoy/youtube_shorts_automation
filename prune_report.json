@@ -1,34 +1,48 @@
 {
-  "started_at": "2026-11-04T16:17:26.943Z",
+  "started_at": "2026-11-04T16:19:02.496Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 8,
-  "targets": [],
-  "deleted": [],
+  "scanned": 9,
+  "targets": [
+    {
+      "videoId": "Ih3_oeAmbGs",
+      "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
+      "views": 1,
+      "ageMinutes": 60,
+      "ageSource": "rss"
+    }
+  ],
+  "deleted": [
+    {
+      "videoId": "Ih3_oeAmbGs",
+      "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
+      "views": 1
+    }
+  ],
   "protected": [
+    {
+      "videoId": "02v2Qcxp-lI",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": -460.94173333333333
+    },
     {
       "videoId": "S3h-Xn3VXvQ",
       "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 14.230066666666668
+      "ageMinutes": 19.6916
     },
     {
       "videoId": "9YdUbSypzp8",
       "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 34.49905
-    },
-    {
-      "videoId": "Ih3_oeAmbGs",
-      "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
-      "views": 1,
-      "reason": "çok-yeni",
-      "ageMinutes": 58.83238333333333
+      "ageMinutes": 36.0916
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -39,7 +53,7 @@
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 742,
+      "views": 744,
       "reason": "performanslı"
     },
     {
@@ -62,6 +76,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T16:17:58.525Z",
-  "deleted_count": 0
+  "finished_at": "2026-11-04T16:19:47.123Z",
+  "deleted_count": 1
 }
