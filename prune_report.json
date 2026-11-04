@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T15:50:41.039Z",
+  "started_at": "2026-11-04T15:52:18.887Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,28 +14,28 @@
       "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 7.733983333333334
+      "ageMinutes": 9.364783333333333
     },
     {
       "videoId": "Ih3_oeAmbGs",
       "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 32.06731666666666
+      "ageMinutes": 33.698116666666664
     },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 40.31731666666666
+      "ageMinutes": 41.948116666666664
     },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 47.167316666666665
+      "ageMinutes": 48.798116666666665
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -69,6 +69,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:51:13.483Z",
+  "finished_at": "2026-11-04T15:52:59.205Z",
   "deleted_count": 0
 }
