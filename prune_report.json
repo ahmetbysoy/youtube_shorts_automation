@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T15:14:13.828Z",
+  "started_at": "2026-11-04T15:15:49.347Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,35 +14,35 @@
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 3.8638
+      "ageMinutes": 5.455783333333334
     },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 10.7138
+      "ageMinutes": 12.305783333333334
     },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 25.297133333333335
+      "ageMinutes": 26.889116666666666
     },
     {
       "videoId": "DC6ZIGtOsqc",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 40.5138
+      "ageMinutes": 42.105783333333335
     },
     {
       "videoId": "HCfoHJym2xM",
       "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 55.43046666666667
+      "ageMinutes": 57.02245
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -65,7 +65,7 @@
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1130,
+      "views": 1131,
       "reason": "performanslı"
     },
     {
@@ -76,6 +76,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:14:45.741Z",
+  "finished_at": "2026-11-04T15:16:21.072Z",
   "deleted_count": 0
 }
