@@ -143,7 +143,7 @@ class TestFaz12CronThrottle(unittest.TestCase):
 
     def test_visibility_tab_transition_is_resilient(self) -> None:
         """Kapuk yuklemesinden sonra "İleri" pasif kalirsa gorusurluk sekmesine gecmeli."""
-        src = UPLOADER.read_text(encoding="utf-8")
+        src = UPLOADER_JS.read_text(encoding="utf-8")
         self.assertIn("PUBLIC_RADIO_SEL", src)
         self.assertIn("isEnabled()", src)
         # eski tek-seferlik 3 deneme yerine dongu + bekleme
