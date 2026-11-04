@@ -21,6 +21,11 @@ on:
         required: false
         default: '0'
         type: string
+      force_local_thumbnail:
+        description: "1 = AI kapak servisini atla, yerel yedek kapak (PIL) ile yayinla (rate-limit yolunun CANLI kaniti)."
+        required: false
+        default: '0'
+        type: string
 
 # FAZ 12: Tıkanan/eski job'ı iptal et, en günceli çalıştır (kuyruk tıkanmasın).
 # NOT: zincir (cron-kick) tetiklemesi POST'u tamamladıktan SONRA iptal olur,
@@ -186,6 +191,7 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
+          FORCE_LOCAL_THUMBNAIL: ${{ inputs.force_local_thumbnail || '0' }}
         run: |
           # Tek video: icerik -> ses -> video -> kapak -> baslik/hashtag -> YAYIN (PUBLIC)
           # Tamami bitmeden sonraki kanal/kullanici devreye girmez (max-parallel: 1).

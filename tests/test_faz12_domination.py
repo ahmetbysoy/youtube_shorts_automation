@@ -16,6 +16,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 UPLOADER_JS = PROJECT_ROOT / "youtube_studio_uploader.js"
 HYGIENE_JS = PROJECT_ROOT / "scripts" / "channel_hygiene.js"
 BANNER_PY = PROJECT_ROOT / "scripts" / "generate_banner.py"
+FALLBACK_PY = PROJECT_ROOT / "scripts" / "generate_fallback_thumbnail.py"
 DAILY_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "daily_shorts.yml"
 
 
@@ -252,6 +253,41 @@ class TestFaz12ChannelHygiene(unittest.TestCase):
         self.assertIn("Kanal Hijyeni (Faz 12.5)", yml)
         self.assertIn("scripts/channel_hygiene.js", yml)
         self.assertIn("scripts/generate_banner.py", yml)
+
+
+class TestForceLocalThumbnailLiveProof(unittest.TestCase):
+    """Islah 11: rate-limit yolunun CANLI kaniti icin zorlanabilir yedek kapak dali."""
+
+    def test_uploader_supports_force_local_thumbnail_flag(self) -> None:
+        source = UPLOADER_JS.read_text(encoding="utf-8")
+        self.assertIn("FORCE_LOCAL_THUMBNAIL", source)
+        self.assertIn("forceLocalThumbnail", source)
+        # Zorlanan modda AI kapak ATLANIR, dogrudan yerel yedek uretece gecilir
+        self.assertIn("AI kapak atlandi, yerel yedek kapak kullanilacak", source)
+
+    def test_workflow_exposes_force_local_thumbnail_input(self) -> None:
+        yml = DAILY_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("force_local_thumbnail:", yml)
+        self.assertIn("FORCE_LOCAL_THUMBNAIL: ${{ inputs.force_local_thumbnail || '0' }}", yml)
+
+    def test_fallback_generator_is_standalone_and_deterministic(self) -> None:
+        if not shutil.which("python3"):
+            self.skipTest("python3 yok")
+        try:
+            from PIL import Image  # noqa: F401
+        except Exception:
+            self.skipTest("Pillow yok")
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "fallback.png"
+            result = subprocess.run(
+                ["python3", str(FALLBACK_PY), "--title", "Test Basligi", "--out", str(out)],
+                capture_output=True, text=True, timeout=180,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(out.exists())
+            from PIL import Image
+            with Image.open(out) as img:
+                self.assertEqual(img.size, (1080, 1920))
 
 
 if __name__ == "__main__":

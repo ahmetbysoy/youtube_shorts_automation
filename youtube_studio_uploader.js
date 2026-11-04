@@ -657,10 +657,16 @@ async function uploadToYouTubeStudio() {
         console.log('[*] SİLAHLANDIRILMIŞ AI KAPAK (THUMBNAIL) ÜRETİLİYOR VE YÜKLENİYOR...');
     console.log('[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...');
         let thumbPath = null;
-        try {
-            thumbPath = await generateAiThumbnail(thumbnailPrompt);
-        } catch (thumbErr) {
-            console.log(`[!] Kapak üretimi başarısız: ${thumbErr.message}`);
+        // FAZ 12.6 / Islah 11: canli test modu -> AI kapak atlanir, yerel yedek kapak dogrudan kullanilir.
+        const forceLocalThumbnail = String(process.env.FORCE_LOCAL_THUMBNAIL || '0') === '1';
+        if (forceLocalThumbnail) {
+            console.log('[!] FORCE_LOCAL_THUMBNAIL=1 -> AI kapak atlandi, yerel yedek kapak kullanilacak (canli kanit modu).');
+        } else {
+            try {
+                thumbPath = await generateAiThumbnail(thumbnailPrompt);
+            } catch (thumbErr) {
+                console.log(`[!] Kapak üretimi başarısız: ${thumbErr.message}`);
+            }
         }
         if (!thumbPath) {
             // FAZ 12.6: AI kapak servisi rate limit verdi (HTTP 402) -> YEREL yedek kapak
