@@ -207,7 +207,7 @@ Wikipedia). Bot koruması veren kaynaklar (Britannica 403) kullanılmadı.
 
 Testler: `tests/test_faz13_trust.py` (79 testin tamamı yeşil).
 
-### 13.3 — Kapakta Konu Nesnesi Görünür (denetim bulgusu 2)
+### 13.3 — Kapak iyileştirmesi (konu uygunluğu doğrulama bekliyor)
 
 Denetim: "Nötron yıldızı" kapağı bitiş kartıydı (konu görseli yok), "Denizanası"
 çok karanlıktı, "Antikythera"da asıl mekanizma görünmüyordu.
@@ -218,7 +218,9 @@ Denetim: "Nötron yıldızı" kapağı bitiş kartıydı (konu görseli yok), "D
 | Yedek kapak (`scripts/generate_fallback_thumbnail.py`) | Artık **video karesi + başlık kompoziti**: ffmpeg ile videodan 5 aday kare alınır, en kontrastlı kare seçilir, 1080×1920'e kırpılır, üstüne siyah konturlu sarı başlık + kırmızı konu rozeti + konuya işaret eden sarı ok + kırmızı "ABONE OL" butonu çizilir. Video yoksa eski metin kartına düşülür. |
 | `content_engine.build_thumbnail_prompt()` | Prompt "the single main subject fills the frame, large, bright and instantly recognizable; no text, no watermark, no logo, no end card" ile güçlendirildi. |
 
-Testler: `tests/test_faz13_trust.py::TestFaz13ThumbnailSubject` (gerçek ffmpeg video karesi üretip renk farkını doğruluyor).
+Testler: `tests/test_faz13_trust.py::TestFaz13ThumbnailSubject` gerçek ffmpeg karesi ve renk farkını kontrol eder. **En yüksek kontrast, konu nesnesinin görünür olduğunu veya karede bitiş kartı/metin bulunmadığını kanıtlamaz.** Run #58, 13.3 öncesi yerel yedek kapağa aittir; yeni algoritma ve Studio sonucu için canlı doğrulama gereklidir.
+
+13.4 tekrar koruması henüz uygulanmadı: `.used_topics.json` CI koşuları arasında kalıcı değildir ve sayısal kanal seçim yolu geçmişi kontrol etmez. Gerçek yayın geçmişi, güvenli kalıcılık, tüm seçim yolları ve havuz tükendiğinde güvenli durdurma planı için `docs/FAZ13_AUDIT_PLAN.md` belgesine bakın.
 
 ### 2b) Yerel Yedek Kapak (Islah 10 — AI servis rate-limit yedeği)
 

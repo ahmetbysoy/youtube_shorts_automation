@@ -13,7 +13,7 @@ Bu belge **canlı TODO**'dur: her adım bitince `[x]` işaretlenir, commit + pus
 | # | Denetim bulgusu | Kök neden (kodda) | Aksiyon | Durum |
 | :-- | :--- | :--- | :--- | :-- |
 | 1 | "Bu teleskobu incele / bu kitabı oku" ama link **abone** linki (yanıltıcı) | `content_engine.py::resolve_affiliate_offer` varsayılan URL'i **kanal abone linki**; CTA metni ürün iddiası içeriyor | Ürün linki yokken dürüst CTA: "Benzer videolar için abone ol"; LLM'in uydurduğu ürün iddialı hook'lar sanitize edilir | ✅ 13.1 |
-| 2 | Kapaklar "bitiş kartı / yanlış kare" (konu nesnesi yok) | YouTube otomatik kare seçimi (AI kapak 402'de düşüyor) + yedek kapak **metin kartı**ydı | AI kapak başarısızsa **video karesi + başlık kompoziti** üretilir (konu görünür); AI prompt "subject fills frame" | ✅ 13.3 |
+| 2 | Kapaklar "bitiş kartı / yanlış kare" (konu nesnesi yok) | AI kapak başarısız olabilir; otomatik kare seçimi de ilgisiz kare getirebilir | Video karesi ve başlık kompoziti uygulandı; konu uygunluğu ve Studio görüntüsü henüz kanıtlanmadı | ⚠️ 13.3 doğrulama bekliyor |
 | 3 | "Nötron yıldızı 6 milyar ton" → NASA ~1 milyar ton | Promptta doğrulama/iddia disiplini yok, kaynak satırı yok | `source_line` zorunlu (LLM + küratörlü kaynak haritası), abartılı rakam yasağı, nötron yıldızı gerçeği | ✅ 13.2 |
 | 4 | Mariana Çukuru iki kez yayımlandı | `.used_topics.json` yalnızca **tam başlık eşitliğine** bakıyor | Konu/anahtar kelime benzerliği ile tekrar reddi (Yeni açı şart) | ⏳ 13.4 |
 | 5 | AI içerik beyanı (altered/synthetic) yok | Yükleme ekranında beyan kutusu işaretlenmiyor | Studio'da beyan kutusu otomatik işaretlenir + log kanıtı | ⏳ 13.5 |
@@ -34,7 +34,7 @@ Bu belge **canlı TODO**'dur: her adım bitince `[x]` işaretlenir, commit + pus
 
 ## 2. FAZ 13.2 — Kaynak satırı + rakam/iddia doğrulama
 
-- [x] `source_line` şeması (LLM) + küratörlü kaynak haritası (`content_engine.py::KNOWLEDGE_SOURCES`) → 23/23 senaryoda canlı doğrulanmış kaynak.
+- [x] `source_line` şeması (LLM) + küratörlü kaynak haritası (`content_engine.py::KNOWLEDGE_SOURCES`) → 23/23 senaryoya kaynak eklenmiş; URL erişimi kontrol edildi. HTTP 200 tek başına her iddiayı doğrulamaz.
 - [x] Açıklama sırası: [1] abone/CTA → [2] etkileşim CTA → [3] gövde → [4] `Kaynak:` → [5] 3 hashtag.
 - [x] Prompt kuralları: abartılı/şişirilmiş rakam yasak; sayısal iddialar kaynakla eşleşmeli (havuz metinleri kaynaklı olarak düzeltildi).
 - [x] Nötron yıldızı gerçeği: NASA ~1 milyar ton ("çay kaşığı") → başlık+metin düzeltildi (1 Milyar Ton).
@@ -43,13 +43,19 @@ Bu belge **canlı TODO**'dur: her adım bitince `[x]` işaretlenir, commit + pus
 
 - [x] `scripts/generate_fallback_thumbnail.py` → **video karesi + başlık kompoziti** (ffmpeg kare + PIL metin) + konu rozeti + yukarı bakan ok.
 - [x] AI kapak promptu: "single clear subject filling the frame", "no text, no end card".
-- [x] Zorunlu teslim satırı korunur (`KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!`) — run #58 canlı kanıtı.
+- [x] Zorunlu teslim satırı korunur (`KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!`). Run #58 önceki yerel yedeği kanıtlar; **13.3 sonrası yeni kare algoritmasını kanıtlamaz**.
+- [ ] Gerçek video örneklerinde konunun görünürlüğü, bitiş kartı/yazı kontrolleri ve Studio’da kapağın görünmesi doğrulanacak. Kontrast seçimi bu şartları tek başına garanti etmez.
 
 ## 4. FAZ 13.4 — Tekrar koruması (konu bazlı)
 
-- [ ] `.used_topics.json` → `{title, topic, keywords, ts}` kayıtları.
-- [ ] Benzerlik: başlık+konu token örtüşmesi > eşik → yeni konu seç, aynısını tekrar yayımlama.
-- [ ] "Mariana Çukuru" tekrarı canlı olarak engellendi (kanıt: yeni konu farklı).
+**Durum: tasarım / henüz uygulanmadı.** `.used_topics.json` Git tarafından izlenmiyor; CI çalışma ortamı yeni oluşturulduğunda bu dosya kalıcı değil. Sayısal kanal kimliği için slot seçimi geçmiş başlık filtresini de kullanmıyor. Bu bulgular mevcut koddan doğrulandı; Mariana tekrarının tek nedeninin bunlar olduğu ve kesin kaç saatte tekrarlandığı kanıtlanmış değil.
+
+- [ ] Gerçek kanal ve video kimliğiyle, yalnızca yayını doğrulanan kayıtları kalıcı geçmişe yaz; zaman ve başlık uydurma. Eski kayıtları kanalın gerçek verilerinden çıkar; eksik kayıtlar açıkça belirtilsin.
+- [ ] Geçmişin koşular arasında güncel kalması, aynı kanalda eşzamanlı yayınların yarışı, hata/iptal ve Git push çakışmaları için güvenli iş akışı tasarla; kayıt okunamazsa sessizce boş varsayma.
+- [ ] Türkçe normalizasyonu ve konu/anahtar sözcük benzerliğiyle farklı başlıklı tekrarları reddet; yeni açıyı yalnızca benzerlik skoru ile kanıtlanmış sayma.
+- [ ] Tüm seçenekler kullanılmışsa tekrarı otomatik seçmek yerine yayını durdur ve uyar; LLM, analitik boost ve fallback yollarının tümünü koru.
+- [ ] Birim ve entegrasyon testleri, sonra gerçek CI ve kanal üzerinde kanıt. Geçmişe sahte/varsayımsal kayıt yazma.
+- [ ] Mariana tekrarının engellendiğine dair gerçek CI kanıtı.
 
 ## 5. FAZ 13.5 — AI içerik beyanı (altered/synthetic)
 

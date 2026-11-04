@@ -227,12 +227,13 @@ Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olama
 | Rakam/iddia | Nötron yıldızı 1 milyar ton (NASA), denizanası biyolojik geri yaşlanma (fiziksel ölümsüz değil), Göbeklitepe ~11.000 yıl (UNESCO), Antikythera "en az bin yıl" (Smithsonian). |
 | Testler | `tests/test_faz13_trust.py` → toplam 79 test yeşil. |
 
-### FAZ 13.3 — Kapak: Konu Nesnesi Görünür
+### FAZ 13.3 — Kapak: Kare Seçimi (Konu Uygunluğu Doğrulama Bekliyor)
 
-- Yedek kapak artık **videodan konu karesi** üzerine kurulur (`--video output/final_short.mp4 --topic "<Konu>"`).
+- Yedek kapak artık **videodan seçilen bir kare** üzerine kurulur (`--video output/final_short.mp4 --topic "<Konu>"`).
 - Kare seçimi: ffprobe ile süre bulunur → %22–78 aralığında 5 aday kare → en yüksek kontrastlı (grayscale stddev) kare seçilir → 1080×1920'e merkezden kırpılır.
 - Video yoksa/ffmpeg yoksa metin kartına düşülür (zorunlu kapak teslimi yine de yapılır).
-- Log kanıtı: `[*] Yerel yedek kapak hazir (128 KB (konu kareli)).`
+- Run #58, 13.3 öncesindeki yerel yedeği kanıtlar; yeni kare seçiminin canlı Studio sonucu henüz kanıtlanmadı. Kontrast ölçümü konu görünürlüğü, yazısız kare veya bitiş kartı dışlama garantisi değildir.
+- 13.4 henüz uygulanmadı: `.used_topics.json` ignore edildiğinden CI koşularında kalıcı değil; sayısal kanal seçimi eski başlıkları kontrol etmiyor. Ayrıntılı güvenli uygulama ve gerçek veri şartları için `docs/FAZ13_AUDIT_PLAN.md`.
 
 ## 9. Faz 11 — Operasyon Düzeltmesi: "10 kanal aynı anda" ve "boşuna iş yükü"
 
