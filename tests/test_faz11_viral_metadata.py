@@ -178,7 +178,7 @@ class TestFaz11ViralMetadata(unittest.TestCase):
 
         pruner = PRUNER_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("max-parallel: 1", pruner)
-        self.assertIn("needs.channel-map.outputs.distinct_csv", pruner)
+        self.assertIn("needs.channel-map.outputs.distinct_json", pruner)
         self.assertIn("actions: write", pruner)
 
     def test_probe_workflow_exists_for_scheduler_health(self) -> None:
