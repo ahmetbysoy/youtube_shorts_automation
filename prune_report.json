@@ -1,55 +1,41 @@
 {
-  "started_at": "2026-11-04T15:34:57.225Z",
+  "started_at": "2026-11-04T15:36:53.532Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 10,
-  "targets": [
-    {
-      "videoId": "DC6ZIGtOsqc",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 0,
-      "ageMinutes": 61,
-      "ageSource": "rss"
-    }
-  ],
-  "deleted": [
-    {
-      "videoId": "DC6ZIGtOsqc",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 0
-    }
-  ],
+  "scanned": 9,
+  "targets": [],
+  "deleted": [],
   "protected": [
     {
       "videoId": "Ih3_oeAmbGs",
       "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 16.337083333333332
+      "ageMinutes": 18.275533333333332
     },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 24.587083333333332
+      "ageMinutes": 26.525533333333332
     },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 31.437083333333334
+      "ageMinutes": 33.37553333333334
     },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 46.02041666666667
+      "ageMinutes": 47.958866666666665
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -83,6 +69,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:35:51.135Z",
-  "deleted_count": 1
+  "finished_at": "2026-11-04T15:37:25.443Z",
+  "deleted_count": 0
 }
