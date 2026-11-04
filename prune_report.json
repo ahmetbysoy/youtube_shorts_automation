@@ -1,15 +1,67 @@
 {
-  "started_at": "2026-11-04T16:55:08.664Z",
-  "channel_id": "",
+  "started_at": "2026-11-04T16:56:27.564Z",
+  "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 0,
+  "scanned": 8,
   "targets": [],
   "deleted": [],
-  "protected": [],
+  "protected": [
+    {
+      "videoId": "8_bf4eAz3a0",
+      "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": 6.247733333333334
+    },
+    {
+      "videoId": "02v2Qcxp-lI",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "views": 1,
+      "reason": "çok-yeni",
+      "ageMinutes": 37.57606666666667
+    },
+    {
+      "videoId": "S3h-Xn3VXvQ",
+      "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
+      "views": 2,
+      "reason": "çok-yeni",
+      "ageMinutes": 57.1094
+    },
+    {
+      "videoId": "BlrZMXlIbU0",
+      "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "views": 471,
+      "reason": "performanslı"
+    },
+    {
+      "videoId": "pg39JuqqA40",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "views": 755,
+      "reason": "performanslı"
+    },
+    {
+      "videoId": "atw6R7iSY88",
+      "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+      "views": 156,
+      "reason": "performanslı"
+    },
+    {
+      "videoId": "A2F4P7BLB8A",
+      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "views": 1134,
+      "reason": "performanslı"
+    },
+    {
+      "videoId": "3SFUI9fSYSU",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "views": 1193,
+      "reason": "performanslı"
+    }
+  ],
   "errors": [],
-  "finished_at": "2026-11-04T16:55:27.563Z",
+  "finished_at": "2026-11-04T16:56:58.540Z",
   "deleted_count": 0
 }
