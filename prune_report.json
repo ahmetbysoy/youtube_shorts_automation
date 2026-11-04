@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T01:03:33.632Z",
+  "started_at": "2026-11-04T01:04:54.426Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,7 +14,7 @@
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": -1376.4228
+      "ageMinutes": 1.3465666666666667
     },
     {
       "videoId": "atw6R7iSY88",
@@ -31,11 +31,11 @@
     {
       "videoId": "3SFUI9fSYSU",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 1065,
+      "views": 1104,
       "reason": "performanslı"
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T01:04:05.403Z",
+  "finished_at": "2026-11-04T01:05:25.139Z",
   "deleted_count": 0
 }
