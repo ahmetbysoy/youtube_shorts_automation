@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T15:45:33.904Z",
+  "started_at": "2026-11-04T15:47:26.601Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,40 +14,40 @@
       "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 2.615066666666667
+      "ageMinutes": 4.49335
     },
     {
       "videoId": "Ih3_oeAmbGs",
       "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 26.9484
+      "ageMinutes": 28.82668333333333
     },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 35.1984
+      "ageMinutes": 37.076683333333335
     },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 42.0484
+      "ageMinutes": 43.92668333333334
     },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 56.63173333333334
+      "ageMinutes": 58.510016666666665
     },
     {
       "videoId": "BlrZMXlIbU0",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
-      "views": 459,
+      "views": 461,
       "reason": "performanslı"
     },
     {
@@ -76,6 +76,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:46:07.400Z",
+  "finished_at": "2026-11-04T15:47:57.715Z",
   "deleted_count": 0
 }
