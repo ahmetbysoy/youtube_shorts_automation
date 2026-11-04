@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T00:58:59.630Z",
+  "started_at": "2026-11-04T01:00:39.974Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -18,17 +18,17 @@
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1070,
+      "views": 1091,
       "reason": "performanslı"
     },
     {
       "videoId": "3SFUI9fSYSU",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 1023,
+      "views": 1065,
       "reason": "performanslı"
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T00:59:33.468Z",
+  "finished_at": "2026-11-04T01:01:12.681Z",
   "deleted_count": 0
 }
