@@ -49,7 +49,10 @@ class TestFaz10AutoPruner(unittest.TestCase):
         yml = PRUNER_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("cron: '7 * * * *'", yml)
         # Faz 11: matris artik sabit 10 kanal degil, AYRI hesapli (benzersiz) kanallardan olusur.
-        self.assertIn('needs.channel-map.outputs.distinct_csv', yml)
+        # Matrix, dogrusal JSON array olan distinct_json ciktisini kullanir
+        # (actionlint: join(string) hataliydi -> join ARRAY bekler)
+        self.assertIn('needs.channel-map.outputs.distinct_json', yml)
+        self.assertIn('distinct_json: ${{ steps.map.outputs.distinct_json }}', yml)
         self.assertIn('max-parallel: 1', yml)
         self.assertIn("fail-fast: false", yml)
         self.assertIn("pruner-studio-lock", yml)

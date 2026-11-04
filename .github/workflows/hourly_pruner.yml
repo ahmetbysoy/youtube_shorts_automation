@@ -30,15 +30,16 @@ permissions:
 jobs:
   # Kanal haritasi: ayni hesabi isaret eden kanallar ayiklanir (bosuna tarama olmasin).
   channel-map:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       distinct_csv: ${{ steps.map.outputs.distinct_csv }}
+      distinct_json: ${{ steps.map.outputs.distinct_json }}
       next_channel: ${{ steps.map.outputs.next_channel }}
       distinct_count: ${{ steps.map.outputs.distinct_count }}
     steps:
       - name: Depoyu Çek (Checkout)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Kanal Benzersizlik Analizi
         id: map
@@ -67,14 +68,14 @@ jobs:
           bash scripts/channel_map.sh
 
   prune-videos:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs: channel-map
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', join(needs.channel-map.outputs.distinct_csv, '","'))) }}
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(needs.channel-map.outputs.distinct_json) }}
 
     # 10 kanallı matris aynı YouTube Studio oturumunu paylaşabildiği için
     # temizlik işleri sıraya alınır (aynı anda çakışma olmaz).
@@ -84,7 +85,7 @@ jobs:
 
     steps:
       - name: Depoyu Çek (Checkout)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Sistem Paketlerini Kur (Xvfb)
         run: |
@@ -92,7 +93,7 @@ jobs:
           sudo apt-get install -y xvfb
 
       - name: Node.js 20 Kur
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
 
@@ -140,7 +141,7 @@ jobs:
 
       - name: Temizlik Raporunu Yedekle (Artifact)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prune-report-${{ matrix.channel_id }}-${{ github.run_number }}
           path: |
@@ -151,7 +152,7 @@ jobs:
 
   # CRON KILIDI KIRMA: Saatlik zamanlayıcı çalışmıyorsa zincir kendini tetikler.
   cron-kick:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     needs: [channel-map, prune-videos]
     if: always()

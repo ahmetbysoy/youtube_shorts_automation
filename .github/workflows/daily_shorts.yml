@@ -43,15 +43,16 @@ jobs:
   # Sadece AYRI hesaplara sahip kanallar üretime girer.
   # ---------------------------------------------------------------------------
   channel-map:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       distinct_csv: ${{ steps.map.outputs.distinct_csv }}
+      distinct_json: ${{ steps.map.outputs.distinct_json }}
       next_channel: ${{ steps.map.outputs.next_channel }}
       distinct_count: ${{ steps.map.outputs.distinct_count }}
     steps:
       - name: Depoyu Çek (Checkout)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Kanal Benzersizlik Analizi
         id: map
@@ -80,7 +81,7 @@ jobs:
           bash scripts/channel_map.sh
 
   build-and-upload:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs: channel-map
     # Studio oturum kilidi: ayni anda tek oturum acilir (cerez/cerez catismasi olmasin)
@@ -93,11 +94,11 @@ jobs:
       # diger kanal BASLAMAZ. Ayni anda 10 kanal calismaz.
       max-parallel: 1
       matrix:
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', join(needs.channel-map.outputs.distinct_csv, '","'))) }}
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(needs.channel-map.outputs.distinct_json) }}
 
     steps:
       - name: Depoyu Çek (Checkout)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: "Zincir Zaman Dilimi Beklemesi (15dk kanalizasyonu)"
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.slot_epoch != '' }}
@@ -127,13 +128,13 @@ jobs:
           sudo apt-get install -y ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core libass9 xvfb
 
       - name: Python 3.11 Kur
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
           cache: 'pip'
 
       - name: Node.js 20 Kur
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
 
@@ -212,7 +213,7 @@ jobs:
 
       - name: Üretilen Videoyu ve Logları Yedekle (Artifact - Kanal ${{ matrix.channel_id }})
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: shorts-output-channel-${{ matrix.channel_id }}-${{ github.run_number }}
           path: |
@@ -227,7 +228,7 @@ jobs:
   # ÖNEMLİ: Zincir TEK kanal tetikler (dizi kanal sirasi), "all" DEĞIL.
   # ---------------------------------------------------------------------------
   cron-kick:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     needs: [channel-map, build-and-upload]
     # IPTAL EDILEN kosu yeni kosu TETIKLEMEZ (iptal firtinasinin koku).

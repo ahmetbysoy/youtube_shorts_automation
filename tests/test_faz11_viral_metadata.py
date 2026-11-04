@@ -169,8 +169,8 @@ class TestFaz11ViralMetadata(unittest.TestCase):
         """10 kanal ayni anda calismamali: max-parallel: 1 + zincir tek kanal tetikler."""
         daily = DAILY_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("max-parallel: 1", daily)
-        self.assertIn("needs.channel-map.outputs.distinct_csv", daily)
-        self.assertIn("join(needs.channel-map.outputs.distinct_csv", daily)
+        self.assertIn("needs.channel-map.outputs.distinct_json", daily)
+        self.assertIn("fromJSON(needs.channel-map.outputs.distinct_json)", daily)
         self.assertIn("scripts/channel_map.sh", daily)
         # Zincir "all" DEGIL, tek kanal tetiklemeli
         self.assertIn("${TARGET_CHANNEL}", daily)

@@ -1,0 +1,76 @@
+name: Ubuntu 26.04 Gecis Testi (Gecis Oncesi Deneme)
+
+# NEDEN: GitHub 19 Ekim - 19 Kasim 2026 arasinda `ubuntu-latest` imajini
+# Ubuntu 26.04'e kademeli tasiyor. Bu repo `libass9` (altyazi), `fonts-*`,
+# `xvfb` ve `playwright install --with-deps` kullaniyor; 26.04'te
+# kurulum/montaj kirilmasi mumkun. Ana workflow'lar `ubuntu-24.04` ile
+# sabitlendi; bu workflow 26.04'te ayni adimlari deneyerek gecis riskini
+# OLCER (kanal/yayin YAPMAZ - sadece ortam dogrulamasi).
+on:
+  workflow_dispatch:
+  schedule:
+    # Gunde bir (saat 03:17 - asal olmayan dakika)
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  ubuntu-26-probe:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 25
+    steps:
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v7
+
+      - name: "Sistem Bilgisi"
+        run: |
+          echo "### Ubuntu 26.04 Probe" >> "$GITHUB_STEP_SUMMARY"
+          echo "- OS: $(. /etc/os-release && echo "$PRETTY_NAME")" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Kernel: $(uname -r)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Arch: $(uname -m)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "FFmpeg + Font + Xvfb Kurulumu (26.04)"
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core libass9 xvfb
+          echo "ffmpeg: $(ffmpeg -version | head -1)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "Python + Node Kurulumu (Node 24 major'lar)"
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: "Node Kurulumu"
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+
+      - name: "Python Bagimliliklari"
+        run: pip install -r requirements.txt
+
+      - name: "Playwright + Chromium (--with-deps)"
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+          npx playwright --version
+
+      - name: "Altyazi Montaj Testi (libass9 + FontSize=56 + MarginV=250)"
+        run: |
+          set -euo pipefail
+          ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=2 -vf \
+            "drawtext=fontfile=/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf:text='TEST':fontcolor=yellow:fontsize=56:x=(w-text_w)/2:y=h-250" \
+            -t 2 -r 30 /tmp/probe.mp4
+          test -s /tmp/probe.mp4
+          ls -la /tmp/probe.mp4
+          echo "- Altyazi montaj testi: BASARILI" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "Birim Testleri"
+        run: python -m unittest discover -s tests
+
+      - name: "Probe Ozeti"
+        run: |
+          echo "### Sonuc" >> "$GITHUB_STEP_SUMMARY"
+          echo "Ubuntu 26.04 uyumlu (paketler, playwright, altyazi montaji, testler)." >> "$GITHUB_STEP_SUMMARY"

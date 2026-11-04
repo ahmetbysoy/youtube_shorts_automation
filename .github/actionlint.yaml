@@ -1,0 +1,12 @@
+# actionlint yapilandirmasi (v1.7.12)
+#
+# NEDEN: actionlint'in gomulu etiket listesi Ubuntu 26.04'u icermiyor
+# (GitHub 17.09.2026'da duyurdu: `runs-on: ubuntu-26.04`).
+# Bu repo 26.04 gecisini ayri bir test workflow'u ile dogruluyor
+# (.github/workflows/ubuntu_26_test.yml), ana workflow'lar ubuntu-24.04'te sabitli.
+#
+# Bu dosya actionlint'in kendi config dosyasidir; workflow'a etki etmez.
+paths:
+  .github/workflows/ubuntu_26_test.yml:
+    ignore:
+      - 'label "ubuntu-26.04" is unknown'

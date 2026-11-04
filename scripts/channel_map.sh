@@ -55,6 +55,16 @@ echo "[*] Siradaki kanal (rotasyon ${RUN_NUMBER}): ${NEXT}"
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "distinct_csv=${MATRIX}" >> "$GITHUB_OUTPUT"
+  # JSON ARRAY: GitHub ifadelerinde join() ARRAY bekler, string degil.
+  # distinct_csv="1,2" -> distinct_json='["1","2"]' (matrix dogrudan fromJSON ile)
+  JSON_ARRAY="["
+  SEP=""
+  for CH in "${ORDER[@]}"; do
+    JSON_ARRAY="${JSON_ARRAY}${SEP}\"${CH}\""
+    SEP=","
+  done
+  JSON_ARRAY="${JSON_ARRAY}]"
+  echo "distinct_json=${JSON_ARRAY}" >> "$GITHUB_OUTPUT"
   echo "next_channel=${NEXT}" >> "$GITHUB_OUTPUT"
   echo "distinct_count=${#ORDER[@]}" >> "$GITHUB_OUTPUT"
 fi
