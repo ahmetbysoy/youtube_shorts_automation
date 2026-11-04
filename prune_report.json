@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T19:52:22.944Z",
+  "started_at": "2026-11-04T19:53:54.929Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -18,13 +18,13 @@
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 761,
+      "views": 762,
       "reason": "performanslı"
     },
     {
       "videoId": "atw6R7iSY88",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
-      "views": 156,
+      "views": 153,
       "reason": "performanslı"
     },
     {
@@ -41,6 +41,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T19:52:55.041Z",
+  "finished_at": "2026-11-04T19:54:26.630Z",
   "deleted_count": 0
 }
