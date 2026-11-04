@@ -1,20 +1,58 @@
 {
-  "started_at": "2026-11-04T01:10:21.536Z",
+  "started_at": "2026-11-04T08:41:21.582Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 4,
-  "targets": [],
-  "deleted": [],
+  "scanned": 8,
+  "targets": [
+    {
+      "videoId": "0fuVcgPIvx8",
+      "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "views": 0,
+      "ageMinutes": 394,
+      "ageSource": "rss"
+    },
+    {
+      "videoId": "ppioB87b0MU",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "views": 0,
+      "ageMinutes": 428,
+      "ageSource": "rss"
+    }
+  ],
+  "deleted": [
+    {
+      "videoId": "0fuVcgPIvx8",
+      "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "views": 0
+    },
+    {
+      "videoId": "ppioB87b0MU",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "views": 0
+    }
+  ],
   "protected": [
     {
-      "videoId": "pg39JuqqA40",
+      "videoId": "7ONnF2kUeis",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 6.7984
+      "ageMinutes": 6.426366666666667
+    },
+    {
+      "videoId": "BlrZMXlIbU0",
+      "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "views": 394,
+      "reason": "performanslı"
+    },
+    {
+      "videoId": "pg39JuqqA40",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "views": 637,
+      "reason": "performanslı"
     },
     {
       "videoId": "atw6R7iSY88",
@@ -25,17 +63,17 @@
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1100,
+      "views": 1120,
       "reason": "performanslı"
     },
     {
       "videoId": "3SFUI9fSYSU",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 1136,
+      "views": 1188,
       "reason": "performanslı"
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T01:10:52.556Z",
-  "deleted_count": 0
+  "finished_at": "2026-11-04T08:42:17.820Z",
+  "deleted_count": 2
 }
