@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T15:43:54.576Z",
+  "started_at": "2026-11-04T15:45:33.904Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,35 +14,35 @@
       "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": -496.07373333333334
+      "ageMinutes": 2.615066666666667
     },
     {
       "videoId": "Ih3_oeAmbGs",
       "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 25.292933333333334
+      "ageMinutes": 26.9484
     },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 33.54293333333333
+      "ageMinutes": 35.1984
     },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 40.39293333333333
+      "ageMinutes": 42.0484
     },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 54.97626666666667
+      "ageMinutes": 56.63173333333334
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -76,6 +76,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:44:26.432Z",
+  "finished_at": "2026-11-04T15:46:07.400Z",
   "deleted_count": 0
 }
