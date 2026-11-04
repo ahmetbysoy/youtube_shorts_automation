@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T16:51:49.793Z",
+  "started_at": "2026-11-04T16:53:19.523Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,21 +14,21 @@
       "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 1.6182166666666666
+      "ageMinutes": 3.1137166666666665
     },
     {
       "videoId": "02v2Qcxp-lI",
       "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 32.94655
+      "ageMinutes": 34.44205
     },
     {
       "videoId": "S3h-Xn3VXvQ",
       "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 52.47988333333333
+      "ageMinutes": 53.97538333333333
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -39,7 +39,7 @@
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 752,
+      "views": 755,
       "reason": "performanslı"
     },
     {
@@ -62,6 +62,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T16:52:21.920Z",
+  "finished_at": "2026-11-04T16:54:02.257Z",
   "deleted_count": 0
 }
