@@ -102,8 +102,11 @@ jobs:
 
       - name: "Zincir Zaman Dilimi Beklemesi (15dk kanalizasyonu)"
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.slot_epoch != '' }}
+        env:
+          # input dogrudan shell'e gomulmez (script injection / quoting riski)
+          SLOT_EPOCH: ${{ inputs.slot_epoch }}
         run: |
-          TARGET="${{ inputs.slot_epoch }}"
+          TARGET="${SLOT_EPOCH:-}"
           NOW=$(date -u +%s)
           if ! [[ "$TARGET" =~ ^[0-9]+$ ]]; then
             echo "[*] slot_epoch gecersiz, bekleme yok."
@@ -206,10 +209,20 @@ jobs:
           if [ -z "$VIDEO_ID" ] && [ -f logs/auth_status.json ]; then
             VIDEO_ID=$(python3 -c "import json;d=json.load(open('logs/auth_status.json'));print(d.get('videoId') or d.get('video_id') or '')" 2>/dev/null || true)
           fi
-          ARGS="--banner assets/banner.png --about \"$ABOUT_TEXT\""
-          if [ -n "$VIDEO_ID" ]; then ARGS="$ARGS --pin $VIDEO_ID"; fi
-          echo "[*] Kanal hijyeni çalıştırılıyor: $ARGS"
-          timeout 600 xvfb-run -a --server-args="-screen 0 1660x950x24" node scripts/channel_hygiene.js $ARGS || echo "[!] Kanal hijyeni başarısız (yayınlama etkilenmedi)."
+          # bash ARRAY: metin degerli argumanlar (e-posta, aciklama) parcalanmaz
+          ARGS=(--banner assets/banner.png --about "$ABOUT_TEXT")
+          if [ -n "$VIDEO_ID" ]; then ARGS+=(--pin "$VIDEO_ID"); fi
+          echo "[*] Kanal hijyeni çalıştırılıyor: ${ARGS[*]}"
+          if timeout 600 xvfb-run -a --server-args="-screen 0 1660x950x24" node scripts/channel_hygiene.js "${ARGS[@]}"; then
+            echo "[+] Kanal hijyeni BAŞARILI."
+          else
+            HYGIENE_RC=$?
+            echo "::warning::Kanal hijyeni başarısız (rc=${HYGIENE_RC}). Yayınlama etkilenmedi."
+          fi
+
+      - name: "Artifact Guvenlik Denetimi (cerez/token redakte)"
+        if: always()
+        run: bash scripts/sanitize_logs.sh logs
 
       - name: Üretilen Videoyu ve Logları Yedekle (Artifact - Kanal ${{ matrix.channel_id }})
         if: always()
@@ -221,6 +234,10 @@ jobs:
             script.json
             logs/
           retention-days: 7
+
+      - name: "Run Durum Özeti (Tek Satır Bildirim)"
+        if: always()
+        run: python scripts/run_summary.py logs/run_status.json
 
   # ---------------------------------------------------------------------------
   # CRON KILIDI KIRMA: GitHub'ın 'schedule' tetikleyicisi throttle/yok sayılabiliyor.

@@ -150,12 +150,17 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+      - name: "Temizlik Özeti (Tek Satır)"
+        if: always()
+        run: python scripts/pruner_summary.py prune_report.json
+
   # CRON KILIDI KIRMA: Saatlik zamanlayıcı çalışmıyorsa zincir kendini tetikler.
   cron-kick:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     needs: [channel-map, prune-videos]
-    if: always()
+    # IPTAL EDILEN kosu yeni kosu TETIKLEMEZ (iptal firtinasinin koku)
+    if: ${{ !cancelled() }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       NEXT_CHANNEL: ${{ needs.channel-map.outputs.next_channel }}
@@ -177,6 +182,15 @@ jobs:
             fi
           fi
           NEXT_SLOT=$(( (NOW / 3600 + 1) * 3600 ))
+
+          # AKTIF KOSU KONTROLU: baska bir pruner kosusu varsa zincir TETIKLENMEZ
+          ACTIVE_COUNT=$(bash scripts/active_runs_count.sh "${WORKFLOW}" 2>/dev/null || echo 0)
+          ACTIVE_COUNT="${ACTIVE_COUNT:-0}"
+          if [ "${ACTIVE_COUNT}" -gt 0 ]; then
+            echo "[OK] Aktif kosu sayisi: ${ACTIVE_COUNT} -> zincir TETIKLENMEDI (cakisma onlendi)."
+            exit 0
+          fi
+
           TARGET_CHANNEL="${NEXT_CHANNEL:-1}"
           echo "[*] Benzersiz (ayri hesap) kanal sayisi: ${DISTINCT_COUNT:-1}"
           echo "[*] Siradaki kanal: ${TARGET_CHANNEL}"
