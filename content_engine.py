@@ -76,11 +76,77 @@ WIKI_SEED_TOPICS = [
     "Krakatoa",
 ]
 
+# --- FAZ 13.2: dogrulanmis kurumsal kaynak haritasi -------------------------
+# Tum URL'ler 2026-11-04'te canli HTTP 200 ile dogrulanmistir.
+KNOWLEDGE_SOURCES: dict[str, str] = {
+    "zanzibar": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/İngiliz-Zanzibar_Savaşı",
+    "venus": "NASA Science — https://science.nasa.gov/venus/",
+    "jellyfish": "Smithsonian Magazine — https://www.smithsonianmag.com/smart-news/immortal-jellyfish-could-spur-discoveries-about-human-aging-180980702/",
+    "napoleon": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Napolyon_Bonaparte",
+    "gobeklitepe": "UNESCO — https://whc.unesco.org/en/list/1572/",
+    "mariana": "NOAA — https://oceanservice.noaa.gov/facts/oceandepth.html",
+    "iss": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Uzay_istasyonu",
+    "emu": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Emu_Savaşı",
+    "neutron": "NASA — https://svs.gsfc.nasa.gov/11260/",
+    "octopus": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Ahtapot",
+    "cleopatra": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Kleopatra",
+    "honey": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Bal",
+    "neptune": "NASA Science — https://science.nasa.gov/neptune/",
+    "antikythera": "Smithsonian Magazine — https://www.smithsonianmag.com/smart-news/ancient-astronomical-calculator-even-older-we-thought-180953472/",
+    "vacuum": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Vakum",
+    "banana": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Muz",
+    "tunguska": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Tunguska_olayı",
+    "tardigrade": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Su_ayısı",
+    "voyager": "NASA — https://science.nasa.gov/mission/voyager-1/",
+    "sunlight": "NASA Science — https://science.nasa.gov/sun/facts/",
+    "pompeii": "UNESCO — https://whc.unesco.org/en/list/829/",
+    "trees": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Ağaç",
+    "krakatoa": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Krakatoa",
+}
+
+# Konu metninden kaynak anahtar kelimesini bulur (basit, sirali eslesme).
+_SOURCE_KEY_HINTS: tuple[tuple[str, str], ...] = (
+    ("zanzibar", "zanzibar"), ("38 dakika", "zanzibar"),
+    ("venus", "venus"), ("venüs", "venus"),
+    ("denizanası", "jellyfish"), ("turritopsis", "jellyfish"), ("ölümsüz", "jellyfish"),
+    ("napolyon", "napoleon"), ("tavşan", "napoleon"),
+    ("göbeklitepe", "gobeklitepe"), ("gobeklitepe", "gobeklitepe"),
+    ("mariana", "mariana"),
+    ("uzay istasyonu", "iss"), ("gözyaş", "iss"), ("ağlarsanız", "iss"),
+    ("emu", "emu"), ("devekuşu", "emu"),
+    ("nötron", "neutron"), ("neutron", "neutron"),
+    ("ahtapot", "octopus"),
+    ("kleopatra", "cleopatra"),
+    ("mısır balı", "honey"), ("balı", "honey"),
+    ("neptün", "neptune"), ("uranüs", "neptune"), ("elmas yağmuru", "neptune"),
+    ("antikythera", "antikythera"),
+    ("metal", "vacuum"), ("kayn", "vacuum"),
+    ("muz", "banana"),
+    ("tunguska", "tunguska"),
+    ("su ayısı", "tardigrade"), ("tardigrade", "tardigrade"),
+    ("voyager", "voyager"), ("altın plak", "voyager"), ("altın plak", "voyager"),
+    ("güneş ışığı", "sunlight"), ("8 dakika", "sunlight"),
+    ("pompeii", "pompeii"),
+    ("ağaç", "trees"),
+    ("krakatoa", "krakatoa"),
+)
+
+
+def match_source_by_topic(topic: str = "", title: str = "") -> str:
+    """Konu/baslik metninden dogrulanmis kaynak satiri bulur (bos = kaynak yok)."""
+    combined = f"{topic} {title}".lower()
+    for hint, key in _SOURCE_KEY_HINTS:
+        if hint in combined and key in KNOWLEDGE_SOURCES:
+            return KNOWLEDGE_SOURCES[key]
+    return ""
+
+
 # API kesintisi, kota aşımı veya anahtar bulunmaması durumunda devreye giren yedek senaryo havuzu
 FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Tarih",
         "title": "Tarihin En Kısa Savaşı Sadece 38 Dakika Sürdü! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/İngiliz-Zanzibar_Savaşı",
         "description": "1896 yılındaki İngiliz-Zanzibar Savaşı neden sadece 38 dakika sürdü? #tarih #ilginçbilgiler #shorts",
         "hook": "Tarihte bir çay molasından bile daha kısa, sadece otuz sekiz dakika süren gerçek bir savaş olduğunu biliyor muydunuz?",
         "script_text": (
@@ -100,6 +166,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Bilim",
         "title": "Venüs'te Bir Gün, Bir Yıldan Daha Uzundur! #Shorts",
+        "source": "NASA Science — https://science.nasa.gov/venus/",
         "description": "Güneş sisteminin en tuhaf gezegeni Venüs'te zaman neden ters işliyor? #bilim #uzay #ilginçbilgiler #shorts",
         "hook": "Doğum gününüzü her gün kutlayabileceğiniz bir gezegen var deseydim inanır mıydınız?",
         "script_text": (
@@ -118,15 +185,16 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     },
     {
         "topic": "İlginç Bilgiler",
-        "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-        "description": "Biyolojik olarak ölümsüz olan Turritopsis dohrnii nasıl yeniden doğuyor? #bilim #doğa #ilginçbilgiler #shorts",
-        "hook": "Dünya üzerinde biyolojik olarak ölümsüz olan gerçek bir canlı yaşadığını biliyor muydunuz?",
+        "title": "Yaşlanmayı Geri Alan Denizanası: Turritopsis! #Shorts",
+        "source": "Smithsonian Magazine — https://www.smithsonianmag.com/smart-news/immortal-jellyfish-could-spur-discoveries-about-human-aging-180980702/",
+        "description": "Biyolojik olarak yaşlanmayı geri alabilen Turritopsis dohrnii nasıl yeniden doğuyor? #bilim #doğa #ilginçbilgiler #shorts",
+        "hook": "Biyolojik olarak yaşlanmayı geri alabilen gerçek bir canlı olduğunu biliyor muydunuz?",
         "script_text": (
-            "Dünya üzerinde biyolojik olarak ölümsüz olan gerçek bir canlı yaşadığını biliyor muydunuz? "
+            "Biyolojik olarak yaşlanmayı geri alabilen gerçek bir canlı olduğunu biliyor muydunuz? "
             "Akdeniz sularında da yaşayan ve serçe parmağınızın tırnağından bile küçük olan bu özel denizanası, yaşlandığında ya da yaralandığında ölmek yerine zamanı geriye sarar. "
             "Hücrelerini tamamen dönüştürerek tıpkı bir kelebeğin tekrar tırtıla dönüşmesi gibi bebeklik evresine geri döner. "
-            "Bir avcı tarafından yenmediği sürece bu döngüyü sonsuza kadar tekrarlayabilir. "
-            "Bilim insanları şimdi insan yaşlanmasını durdurmak için bu minik canlının genetik şifresini inceliyor."
+            "Fiziksel olarak ölümsüz değildir; yaşlanmayı biyolojik anlamda geri alabilir ve bir avcı tarafından yenmediği sürece bu döngüyü tekrarlayabilir. "
+            "Bilim insanları bu minik canlının genetik şifresini inceleyerek insan yaşlanmasına karşı tedavi umudu arıyor; şu an için doğrulanmış bir tedavi yok."
         ),
         "visual_keywords": [
             "glowing jellyfish underwater",
@@ -138,12 +206,13 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Tarih",
         "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Napolyon_Bonaparte",
         "description": "Avrupa'yı titreten Napolyon Bonapart yüzlerce tavşandan neden kaçmak zorunda kaldı? #tarih #ilginçbilgiler #shorts",
         "hook": "Avrupa'yı dize getiren Napolyon Bonapart'ın, hayatının en tuhaf yenilgisini bir tavşan sürüsünden aldığını duymuş muydunuz?",
         "script_text": (
             "Avrupa'yı dize getiren Napolyon Bonapart'ın, hayatının en tuhaf yenilgisini bir tavşan sürüsünden aldığını duymuş muydunuz? "
             "Bin sekiz yüz yedi yılında imzalanan barış antlaşmasını kutlamak isteyen Napolyon, görkemli bir tavşan avı düzenletti. "
-            "Ancak kurmayları yabani tavşan yerine çiftliklerde insan elinde büyümüş üç bin evcil tavşan toplamıştı. "
+            "Ancak kurmayları yabani tavşan yerine çiftliklerde insan elinde büyümüş binlerce evcil tavşan toplamıştı. "
             "Kafesler açıldığında tavşanlar kaçmak yerine Napolyon'u yemek getiren bakıcıları sandı ve dev bir dalga halinde imparatorun üzerine hücum etti. "
             "Koca imparator, çaresizce saltanat arabasına binip savaş alanından kaçmak zorunda kaldı."
         ),
@@ -157,11 +226,12 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Tarih",
         "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+        "source": "UNESCO — https://whc.unesco.org/en/list/1572/",
         "description": "Şanlıurfa'daki Göbeklitepe insanlık tarihini nasıl baştan yazdı? #göbeklitepe #tarih #ilginçbilgiler #shorts",
         "hook": "Mısır piramitlerinden bile tam yedi bin yıl daha eski dev bir tapınağın Türkiye topraklarında olduğunu biliyor muydunuz?",
         "script_text": (
             "Mısır piramitlerinden bile tam yedi bin yıl daha eski dev bir tapınağın Türkiye topraklarında olduğunu biliyor muydunuz? "
-            "Şanlıurfa yakınlarındaki Göbeklitepe, günümüzden yaklaşık on iki bin yıl önce, insanlar henüz yerleşik tarıma bile geçmemişken inşa edildi. "
+            "Şanlıurfa yakınlarındaki Göbeklitepe, günümüzden yaklaşık on bir bin yıl önce (UNESCO'ya göre MÖ 9600–8200), insanlar henüz yerleşik tarıma bile geçmemişken inşa edildi. "
             "Ağırlığı on altı tonu bulan T biçimli dev taş sütunların üzerine tilki, yılan ve akbaba kabartmaları ustalıkla işlenmişti. "
             "Tekerleğin ve metal aletlerin olmadığı bir çağda bu dev kayaların nasıl taşındığı hâlâ arkeolojinin en büyük gizemlerinden biri olarak duruyor."
         ),
@@ -175,6 +245,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Bilim",
         "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+        "source": "NOAA — https://oceanservice.noaa.gov/facts/oceandepth.html",
         "description": "Okyanusun 11 kilometre altındaki Mariana Çukuru'nda neler yaşıyor? #bilim #okyanus #ilginçbilgiler #shorts",
         "hook": "Everest Dağı'nı alıp okyanusun en derin noktasına koysaydınız, zirvesinin hâlâ iki kilometre su altında kalacağını biliyor muydunuz?",
         "script_text": (
@@ -193,6 +264,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Bilim",
         "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Uzay_istasyonu",
         "description": "Yerçekimsiz ortamda ağlayan bir astronotun gözyaşlarına ne olur? #uzay #bilim #astronot #shorts",
         "hook": "Uluslararası Uzay İstasyonu'nda ağlamaya başlasaydınız gözyaşlarınızın yanaklarınızdan aşağı akmayacağını biliyor muydunuz?",
         "script_text": (
@@ -210,14 +282,15 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     },
     {
         "topic": "Tarih",
-        "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
-        "description": "1932 Büyük Emu Savaşı'nda makineli tüfekli askerler neden kaybetti? #tarih #ilginçbilgiler #shorts",
-        "hook": "Modern makineli tüfeklerle donatılmış gerçek bir ordunun, uçamayan kuşlara karşı resmen savaş kaybettiğini duymuş muydunuz?",
+        "title": "Avustralya Ordusunun Emularına Karşı Başarısız Operasyonu! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Emu_Savaşı",
+        "description": "1932'deki 'Büyük Emu Savaşı' (resmî bir savaş değil, popüler bir lakap) neden başarısız oldu? #tarih #ilginçbilgiler #shorts",
+        "hook": "Modern makineli tüfeklerle donatılmış gerçek bir ordunun, uçamayan kuşlara karşı başarısız bir operasyona girmesini duymuş muydunuz?",
         "script_text": (
-            "Modern makineli tüfeklerle donatılmış gerçek bir ordunun, uçamayan kuşlara karşı resmen savaş kaybettiğini duymuş muydunuz? "
+            "Modern makineli tüfeklerle donatılmış gerçek bir ordunun, uçamayan kuşlara karşı başarısız bir operasyona girmesini duymuş muydunuz? "
             "Bin dokuz yüz otuz iki yılında Avustralya'da yirmi bin emu kuşu tarım arazilerini istila edince hükümet bölgeye makineli tüfekli askerler gönderdi. "
             "Ancak saatte elli kilometre hızla koşabilen emular, ateş açıldığı anda küçük gruplara ayrılarak tam bir gerilla taktiği uyguladı. "
-            "Binlerce mermi harcanmasına rağmen sürüler durdurulamadı ve ordu geri çekilince tarihe Büyük Emu Savaşı kuşların zaferiyle geçti."
+            "Binlerce mermi harcanmasına rağmen sürüler durdurulamadı ve ordu geri çekildi. Bu harekât resmî bir savaş değildi; 'Büyük Emu Savaşı' diye popüler bir lakap aldı."
         ),
         "visual_keywords": [
             "emu bird running outback",
@@ -228,14 +301,15 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     },
     {
         "topic": "Bilim",
-        "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
+        "title": "Bir Çay Kaşığı Nötron Yıldızı 1 Milyar Ton Çeker! #Shorts",
+        "source": "NASA — https://svs.gsfc.nasa.gov/11260/",
         "description": "Evrenin en yoğun cisimleri olan nötron yıldızları nasıl oluşur? #evren #uzay #bilim #shorts",
-        "hook": "Sadece bir küp şeker büyüklüğündeki bir maddenin Dünya'daki tüm arabaların toplamından daha ağır olabileceğini hayal edebilir misiniz?",
+        "hook": "Sadece bir çay kaşığı nötron yıldızı maddesinin Dünya'da yaklaşık bir milyar ton ağırlığında olabileceğini hayal edebilir misiniz?",
         "script_text": (
-            "Sadece bir küp şeker büyüklüğündeki bir maddenin Dünya'daki tüm arabaların toplamından daha ağır olabileceğini hayal edebilir misiniz? "
+            "Sadece bir çay kaşığı nötron yıldızı maddesinin Dünya'da yaklaşık bir milyar ton ağırlığında olabileceğini hayal edebilir misiniz? "
             "Dev bir yıldız ömrünü tamamlayıp süpernova olarak patladığında çekirdeği kendi içine o kadar korkunç bir kuvvetle çöker ki atomların içindeki boşluk bile yok olur. "
             "Ortaya çıkan nötron yıldızı sadece yirmi kilometre çapındadır ama Güneş'ten bile daha fazla kütleye sahiptir. "
-            "Öyle ki bu yıldızdan alacağınız tek bir çay kaşığı madde Dünya üzerinde yaklaşık altı milyar ton ağırlığında olurdu."
+            "Öyle ki bu yıldızdan alacağınız tek bir çay kaşığı madde, NASA'nın aktardığına göre Dünya üzerinde yaklaşık bir milyar ton ağırlığında olurdu."
         ),
         "visual_keywords": [
             "supernova explosion nebula",
@@ -247,6 +321,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "İlginç Bilgiler",
         "title": "Üç Kalpli ve Mavi Kanlı Uzaylı Canlı: Ahtapot! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Ahtapot",
         "description": "Ahtapotların neden 3 kalbi, 9 beyni ve mavi kanı vardır? #doğa #bilim #okyanus #shorts",
         "hook": "Okyanuslarımızda üç kalbi, dokuz beyni ve masmavi kanı olan gerçek bir canlı yaşadığını biliyor muydunuz?",
         "script_text": (
@@ -265,6 +340,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Tarih",
         "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Kleopatra",
         "description": "Zaman algımızı altüst eden Kleopatra ve Mısır Piramitleri gerçeği! #tarih #mısır #ilginçbilgiler #shorts",
         "hook": "Mısır Kraliçesi Kleopatra'nın yaşadığı dönemin, piramitlerin inşasından çok Ay'a ilk insanın ayak basmasına daha yakın olduğunu biliyor muydunuz?",
         "script_text": (
@@ -283,6 +359,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Bilim",
         "title": "Hiç Bozulmayan 3 Bin Yıllık Antik Mısır Balı! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Bal",
         "description": "Firavun mezarlarından çıkan 3000 yıllık bal neden hâlâ yenilebilir durumda? #bilim #tarih #ilginçbilgiler #shorts",
         "hook": "Üç bin yıl boyunca karanlık bir mezarda bekleyen bir yiyeceğin bugün bile bozulmadan yenebileceğini duymuş muydunuz?",
         "script_text": (
@@ -301,6 +378,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Bilim",
         "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
+        "source": "NASA Science — https://science.nasa.gov/neptune/",
         "description": "Neptün ve Uranüs'ün atmosferinde gerçekten elmas yağmuru mu yağıyor? #uzay #bilim #gezegenler #shorts",
         "hook": "Güneş sistemimizde gökyüzünden su yerine gerçek elmasların yağdığı iki dev gezegen olduğunu biliyor muydunuz?",
         "script_text": (
@@ -319,13 +397,14 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Tarih",
         "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+        "source": "Smithsonian Magazine — https://www.smithsonianmag.com/smart-news/ancient-astronomical-calculator-even-older-we-thought-180953472/",
         "description": "Deniz dibindeki batıktan çıkan 2000 yıllık bronz bilgisayar bilim dünyasını nasıl şaşkına çevirdi? #tarih #bilim #arkeoloji #shorts",
         "hook": "Günümüzden tam iki bin yıl önce Antik Yunan'da gökyüzünü hesaplayan mekanik bir bilgisayar yapıldığını biliyor muydunuz?",
         "script_text": (
             "Günümüzden tam iki bin yıl önce Antik Yunan'da gökyüzünü hesaplayan mekanik bir bilgisayar yapıldığını biliyor muydunuz? "
             "Bin dokuz yüz bir yılında sünger avcıları Ege Denizi'ndeki bir Roma batığında paslanmış bronz dişlilerden oluşan gizemli bir kutu buldu. "
             "Röntgen taramalarıyla incelenen Antikythera Düzeneği'nin içinde otuzdan fazla hassas dişli çark olduğu ortaya çıktı. "
-            "Bu inanılmaz cihaz Güneş ve Ay tutulmalarını on yıllar öncesinden günü gününe hesaplayabiliyordu ve benzer karmaşıklıkta bir mekanizma ancak bin dört yüz yıl sonra tekrar yapılabildi."
+            "Bu inanılmaz cihaz Güneş ve Ay tutulmalarını on yıllar öncesinden günü gününe hesaplayabiliyordu ve Smithsonian'ın aktardığına göre benzer bir mekanizma en az bin yıl daha üretilmedi."
         ),
         "visual_keywords": [
             "ancient bronze gears clockwork",
@@ -337,6 +416,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "İlginç Bilgiler",
         "title": "Uzay Boşluğunda Metaller Kendi Kendine Kaynar! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Vakum",
         "description": "Soğuk kaynak (Cold Welding) uzay araçları için neden büyük bir tehlikedir? #uzay #fizik #bilim #shorts",
         "hook": "Uzay boşluğunda iki pürüzsüz metal parçasını birbirine değdirirseniz hiçbir ısı olmadan tek parça halinde kaynayacağını biliyor muydunuz?",
         "script_text": (
@@ -355,6 +435,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Bilim",
         "title": "Muzlar Aslında Radyoaktiftir! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Muz",
         "description": "Her gün yediğimiz muzun içinde neden doğal radyasyon bulunur? #bilim #sağlık #ilginçbilgiler #shorts",
         "hook": "Mutfağınızdaki masum bir muzun aslında ölçülebilir düzeyde radyasyon yaydığını duymuş muydunuz?",
         "script_text": (
@@ -373,6 +454,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Tarih",
         "title": "1908 Tunguska Patlaması: 80 Milyon Ağaç Bir Anda Yıkıldı! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Tunguska_olayı",
         "description": "Sibirya semalarında krater bile bırakmadan patlayan gizemli göktaşı! #tarih #uzay #bilim #shorts",
         "hook": "Bin dokuz yüz sekiz yılında Sibirya'da krater bile açmadan seksen milyon ağacı aynı anda dümdüz eden dev patlamayı biliyor muydunuz?",
         "script_text": (
@@ -391,6 +473,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Bilim",
         "title": "Uzay Boşluğunda Hayatta Kalabilen Tek Canlı: Su Ayısı! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Su_ayısı",
         "description": "Tardigradlar kaynar suya, radyasyona ve uzay vakumuna nasıl dayanıyor? #bilim #doğa #uzay #shorts",
         "hook": "Hem kaynar suda hem mutlak sıfıra yakın dondurucu soğukta hem de uzay boşluğunda yaşayabilen mikroskobik bir süper canlı tanıyor musunuz?",
         "script_text": (
@@ -409,6 +492,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Tarih",
         "title": "Uzaylılara Gönderilen Altın Mektup: Voyager Plağı! #Shorts",
+        "source": "NASA — https://science.nasa.gov/mission/voyager-1/",
         "description": "Güneş sistemini terk eden Voyager uzay aracındaki Altın Plak'ta Türkçe hangi mesaj var? #uzay #tarih #bilim #shorts",
         "hook": "Şu anda yıldızlararası karanlıkta ilerleyen Voyager uzay aracında uzaylılar için kaydedilmiş Türkçe bir ses mesajı olduğunu biliyor muydunuz?",
         "script_text": (
@@ -427,6 +511,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Bilim",
         "title": "Güneş Işığı Dünya'ya Gelene Kadar 8 Dakika Geçmiş Olur! #Shorts",
+        "source": "NASA Science — https://science.nasa.gov/sun/facts/",
         "description": "Gökyüzüne baktığımızda aslında neden sürekli geçmişi görüyoruz? #fizik #uzay #bilim #shorts",
         "hook": "Şu anda Güneş aniden yok olsaydı Dünya'da yaşayan hiç kimsenin bunu sekiz dakika yirmi saniye boyunca fark etmeyeceğini biliyor muydunuz?",
         "script_text": (
@@ -445,6 +530,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Tarih",
         "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
+        "source": "UNESCO — https://whc.unesco.org/en/list/829/",
         "description": "MS 79 yılında Vezüv Yanardağı Roma kenti Pompeii'yi nasıl zaman kapsülüne çevirdi? #tarih #arkeoloji #ilginçbilgiler #shorts",
         "hook": "Koca bir Roma şehrinin tek bir günde altı metre volkanik külün altına gömülüp bin yedi yüz yıl boyunca unutulduğunu biliyor muydunuz?",
         "script_text": (
@@ -463,6 +549,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "İlginç Bilgiler",
         "title": "Dünya'daki Ağaç Sayısı Samanyolu'ndaki Yıldızlardan Fazladır! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Ağaç",
         "description": "Bilim insanlarının uydu verileriyle yaptığı şaşırtıcı ağaç ve yıldız karşılaştırması! #doğa #uzay #bilim #shorts",
         "hook": "Dünya üzerindeki ağaçların sayısının koca Samanyolu Galaksisi'ndeki tüm yıldızlardan katbekat fazla olduğunu söylesem inanır mıydınız?",
         "script_text": (
@@ -481,6 +568,7 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
     {
         "topic": "Tarih",
         "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Krakatoa",
         "description": "4800 kilometre uzaktan duyulan ve Dünya'nın çevresini 4 kez dolaşan ses dalgası! #tarih #doğa #bilim #shorts",
         "hook": "Tarihte kaydedilmiş en yüksek sesin dört bin sekiz yüz kilometre uzaktan bile top atışı gibi duyulduğunu biliyor muydunuz?",
         "script_text": (
@@ -551,6 +639,84 @@ def classify_content_niche(topic: str, title: str, script_text: str = "") -> str
     return "Bilim"
 
 
+# --- FAZ 13.1: aciklama guvenligi (urun iddiasi vs gercek link) ----------------
+CHANNEL_INTERNAL_URL_MARKERS = ("youtube.com", "youtu.be", "sub_confirmation")
+# Turkce ek toleransi: "teleskobu", "kitabı", "kitipleri", "bilim setini" gibi
+# yazimlari da yakalar (basit alt dizgi eslesmesi YETMEZDI).
+PRODUCT_CLAIM_PATTERNS = (
+    r"\btelesko\w*",
+    r"\bkit(?:ab|ap|ip)\w*",
+    r"\bbilim\s*set\w*",
+    r"\bsat[ıi]n\s*al\b",
+    r"\bindir\w*",
+    r"\bka[şs]if\w*",
+    r"\bk[âa]ğıt\w*",
+    r"\b[üu]r[üu]n\w*",
+    r"\bhediye\w*",
+    r"\bsipari[şs]\w*",
+    r"\bkampanya\w*",
+    r"\bf[ıi]rsat\w*",
+    r"\bal[ıi]şveri[şs]\w*",
+    r"\b(?:shop|store)\w*",
+    r"\bsaat\w*",
+    r"\bkamera\w*",
+    r"\btelefon\w*",
+    r"\bmikrosko\w*",
+)
+URL_RE = re.compile(r"https?://[^\s<>\"')\]]+", re.IGNORECASE)
+HONEST_SUBSCRIBE_CTA = "Benzer videolar için abone ol"
+
+
+def is_channel_internal_url(url: str) -> bool:
+    """Link gercek bir URUN sayfasi mi, yoksa kanalin kendi abone linki mi?
+
+    FAZ 13.1 denetim bulgusu: "Bu teleskobu incele" metni abone linkine
+    baglaninca aciklama yaniltici oluyor. Urun linki yokken urun iddiasi
+    uretilmez.
+    """
+    u = (url or "").strip().lower()
+    if not u:
+        return True
+    return any(marker in u for marker in CHANNEL_INTERNAL_URL_MARKERS)
+
+
+def sanitize_affiliate_hook(hook: str, affiliate_link: str) -> tuple[str, str]:
+    """LLM'in yazdigi ilk satiri guvenli hale getirir.
+
+    - Hook icindeki HER URL gercek affiliate linkiyle degistirilir (uydurma link).
+    - Link kanalin kendi abone linkiyse ve metin urun iddiasi iceriyorsa
+      durust CTA'ya ("Benzer videolar için abone ol") cevrilir.
+    Doner: (temiz_hook, uygulanan_duzeltmeler)
+    """
+    raw = (hook or "").strip()
+    notes: list[str] = []
+    if not raw:
+        return "", ""
+    if affiliate_link:
+        for found in URL_RE.findall(raw):
+            if found.strip() != affiliate_link.strip():
+                notes.append("uydurma_link")
+                raw = raw.replace(found, affiliate_link)
+    if is_channel_internal_url(affiliate_link):
+        low = raw.lower()
+        hits = [pat for pat in PRODUCT_CLAIM_PATTERNS if re.search(pat, low)]
+        if hits:
+            notes.append("urun_iddiasi")
+            raw = f"{HONEST_SUBSCRIBE_CTA}: {affiliate_link}"
+    return raw.strip(), ",".join(sorted(set(notes)))
+
+
+# --- FAZ 13.2: kaynak satiri (her aciklamada en az bir dogrulanabilir kaynak) ---
+def build_source_line(explicit_source: str = "", topic: str = "", title: str = "") -> str:
+    """Aciklamaya eklenecek 'Kaynak: <kurum> — <URL>' satiri."""
+    src_text = (explicit_source or "").strip()
+    if not src_text:
+        src_text = match_source_by_topic(topic, title)
+    if not src_text:
+        return ""
+    return f"Kaynak: {src_text}"
+
+
 def resolve_affiliate_offer(topic: str, title: str, script_text: str = "") -> tuple[str, str]:
     """
     Faz 9 Monetizasyon Tuzağı: Videonun konusuna göre tıklanma oranı yüksek
@@ -561,13 +727,19 @@ def resolve_affiliate_offer(topic: str, title: str, script_text: str = "") -> tu
 
     if niche == "Uzay":
         url = os.environ.get("AFFILIATE_URL_SPACE", "").strip() or default_url
-        return url, f"Bu teleskobu incele: {url}"
-    if niche == "Tarih":
+        product_label = "Bu teleskobu incele"
+    elif niche == "Tarih":
         url = os.environ.get("AFFILIATE_URL_HISTORY", "").strip() or default_url
-        return url, f"Bu kitabı oku: {url}"
+        product_label = "Bu kitabı oku"
+    else:
+        url = os.environ.get("AFFILIATE_URL_SCIENCE", "").strip() or default_url
+        product_label = "Bu bilim setini incele"
 
-    url = os.environ.get("AFFILIATE_URL_SCIENCE", "").strip() or default_url
-    return url, f"Bu bilim setini incele: {url}"
+    # FAZ 13.1: link kanalin kendi abone linkiyse URUN IDDIASI uretilmez.
+    if is_channel_internal_url(url):
+        return url, f"{HONEST_SUBSCRIBE_CTA}: {url}"
+    # Gercek urun/affiliate linki varsa urun metni + acik affiliate beyani.
+    return url, f"{product_label}: {url} (Bu bir affiliate bağlantısıdır.)"
 
 
 def load_analytics_feedback(feedback_path: Path = ANALYTICS_FEEDBACK_FILE) -> dict[str, Any]:
@@ -972,11 +1144,17 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
 
     # --- FAZ 12: affiliate_hook (LLM'in yazdigi tiklama zorlayan ilk satir) ---
     affiliate_hook = str(raw_data.get("affiliate_hook", "") or "").strip()
+    trust_notes: list[str] = []
     if affiliate_hook:
         # "[LINK]" placeholder'ini gercek affiliate linki ile degistir
         affiliate_hook = affiliate_hook.replace("[LINK]", affiliate_link).replace("[link]", affiliate_link)
         if affiliate_link and affiliate_link not in affiliate_hook:
             affiliate_hook = f"{affiliate_hook} {affiliate_link}".strip()
+        # FAZ 13.1: urun iddialari + uydurma linkler temizlenir
+        affiliate_hook, hook_notes = sanitize_affiliate_hook(affiliate_hook, affiliate_link)
+        if hook_notes:
+            trust_notes.append(f"cta:{hook_notes}")
+            print(f"[GUVENLIK] CTA guvenlik duzeltmesi uygulandi ({hook_notes})")
         affiliate_hook = affiliate_hook[:300].strip()
     else:
         affiliate_hook = ""
@@ -991,7 +1169,19 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
     else:
         aff_block = ""
 
-    blocks = [aff_block, cta_line, base_desc, " ".join(viral_hashtags)]
+    # --- FAZ 13.2: kaynak satiri (dogrulanabilir, aciklamada gorunur) ---
+    source_line = build_source_line(
+        str(raw_data.get("source", "") or ""), topic_val, title
+    )
+    if source_line:
+        print(f"[KAYNAK] Kaynak satiri eklendi: {source_line}")
+    else:
+        trust_notes.append("kaynak_yok")
+        print("[GUVENLIK] UYARI: kaynak satiri bulunamadi (aciklama kaynagsiz kalabilir)")
+
+    # SIRA: [1] Affiliate/abone hook -> [2] Etkileşim CTA -> [3] Govde
+    #       -> [4] Kaynak -> [5] Tam 3 hashtag
+    blocks = [aff_block, cta_line, base_desc, source_line, " ".join(viral_hashtags)]
     enriched_desc = "\n\n".join([b for b in blocks if b]).strip()
 
     return {
@@ -1002,6 +1192,8 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
         "affiliate_link": affiliate_link,
         "affiliate_cta": affiliate_cta,
         "affiliate_hook": affiliate_hook,
+        "source_line": source_line,
+        "trust_notes": trust_notes,
         "cta_line": cta_line,
         "thumbnail_prompt": thumbnail_prompt,
         "viral_hashtags": viral_hashtags,

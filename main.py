@@ -99,6 +99,8 @@ def run_step(step_name: str, command: list, env_overrides: dict | None = None) -
                     # Faz 12.6: kapak hata/ fallback mesajlari da gorunur olsun
                     "Kapak üretimi", "Kapak resmi yüklenemedi", "Kapak indirme hatası",
                     "Kapak servisi", "Yerel yedek kapak", "rate limit",
+                    # Faz 13: aciklama guvenligi + kaynak satiri kanitlari
+                    "Kaynak:", "KAYNAK", "GUVENLIK", "CTA guvenlik",
                 )
                 if any(tok in line for tok in show_tokens):
                     logging.info(f"  -> {line.strip()}")

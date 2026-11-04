@@ -12,32 +12,32 @@ Bu belge **canlı TODO**'dur: her adım bitince `[x]` işaretlenir, commit + pus
 
 | # | Denetim bulgusu | Kök neden (kodda) | Aksiyon | Durum |
 | :-- | :--- | :--- | :--- | :-- |
-| 1 | "Bu teleskobu incele / bu kitabı oku" ama link **abone** linki (yanıltıcı) | `content_engine.py::resolve_affiliate_offer` varsayılan URL'i **kanal abone linki**; CTA metni ürün iddiası içeriyor | Ürün linki yokken dürüst CTA: "Benzer videolar için abone ol"; LLM'in uydurduğu ürün iddialı hook'lar sanitize edilir | ⏳ 13.1 |
+| 1 | "Bu teleskobu incele / bu kitabı oku" ama link **abone** linki (yanıltıcı) | `content_engine.py::resolve_affiliate_offer` varsayılan URL'i **kanal abone linki**; CTA metni ürün iddiası içeriyor | Ürün linki yokken dürüst CTA: "Benzer videolar için abone ol"; LLM'in uydurduğu ürün iddialı hook'lar sanitize edilir | ✅ 13.1 |
 | 2 | Kapaklar "bitiş kartı / yanlış kare" (konu nesnesi yok) | YouTube otomatik kare seçimi (AI kapak 402'de düşüyor) + yedek kapak **metin kartı**ydı | AI kapak başarısızsa **video karesi + başlık kompoziti** üretilir (konu görünür); AI prompt "subject fills frame" | ⏳ 13.3 |
-| 3 | "Nötron yıldızı 6 milyar ton" → NASA ~1 milyar ton | Promptta doğrulama/iddia disiplini yok, kaynak satırı yok | `source_line` zorunlu (LLM + küratörlü kaynak haritası), abartılı rakam yasağı, nötron yıldızı gerçeği | ⏳ 13.2 |
+| 3 | "Nötron yıldızı 6 milyar ton" → NASA ~1 milyar ton | Promptta doğrulama/iddia disiplini yok, kaynak satırı yok | `source_line` zorunlu (LLM + küratörlü kaynak haritası), abartılı rakam yasağı, nötron yıldızı gerçeği | ✅ 13.2 |
 | 4 | Mariana Çukuru iki kez yayımlandı | `.used_topics.json` yalnızca **tam başlık eşitliğine** bakıyor | Konu/anahtar kelime benzerliği ile tekrar reddi (Yeni açı şart) | ⏳ 13.4 |
 | 5 | AI içerik beyanı (altered/synthetic) yok | Yükleme ekranında beyan kutusu işaretlenmiyor | Studio'da beyan kutusu otomatik işaretlenir + log kanıtı | ⏳ 13.5 |
 | 6 | "Şablon hissi" / inauthentic risk | Tekrarlanan açılış/CTA kalıpları | Açılış + CTA rotasyon havuzları, son 3 kalıbın tekrarı engellenir | ⏳ 13.6 |
 | 7 | Otomatik altyazı hataları ("11 ket", "Büyük EU") | YouTube kendi ASR'ini kullanıyor | Ürettiğimiz `voiceover.srt` YouTube'a **caption track** olarak yüklenir | ⏳ 13.6 |
 | 8 | Profil görseli jenerik (pembe zemin + beyaz "m") | Marka görseli üretilmemiş | Banner ile uyumlu profil fotoğrafı üretilir + yüklenir | ⏳ 13.7 |
-| 9 | Kaynak gösterimi yok | Açıklamada kaynak satırı şeması yok | Her açıklamada `Kaynak: <kurum> — <URL>` | ⏳ 13.2 |
+| 9 | Kaynak gösterimi yok | Açıklamada kaynak satırı şeması yok | Her açıklamada `Kaynak: <kurum> — <URL>` | ✅ 13.2 |
 
 ---
 
 ## 1. FAZ 13.1 — CTA / Açıklama Güvenliği (yanıltıcı ürün iddiası)
 
-- [ ] `resolve_affiliate_offer()`: URL kanal/abone linki ise CTA "Benzer videolar için abone ol: <url>" olur.
-- [ ] `sanitize_affiliate_hook()`: LLM hook'undaki ürün iddiaları (teleskop/kitap/bilim seti/satın al/indir/kaşif) kanal linkiyle birleşince dürüst metne çevrilir.
-- [ ] Log token'ları: "CTA guvenlik", "urun linki yok".
-- [ ] Testler: `tests/test_faz13_trust.py`.
+- [x] `resolve_affiliate_offer()`: URL kanal/abone linki ise CTA "Benzer videolar için abone ol: <url>" olur.
+- [x] `sanitize_affiliate_hook()`: LLM hook'undaki ürün iddiaları (teleskop/kitap/bilim seti/satın al/indir/kaşif) kanal linkiyle birleşince dürüst metne çevrilir. **Not:** ek toleransı gerekti (`teleskobu`, `kitabı`) → regex tabanlı desenler.
+- [x] Log token'ları: "CTA guvenlik", "urun linki yok" (main.py `show_tokens`).
+- [x] Testler: `tests/test_faz13_trust.py` → toplam **79/79 OK**.
 - [ ] **Mevcut 9 videonun açıklamaları canlı düzeltildi** (`scripts/fix_existing_descriptions.js` + `logs/description_fix_report.json`).
 
 ## 2. FAZ 13.2 — Kaynak satırı + rakam/iddia doğrulama
 
-- [ ] `source_line` şeması (LLM) + küratörlü kaynak haritası (`content_engine.py::KNOWLEDGE_SOURCES`).
-- [ ] Açıklama sırası: [1] abone/CTA → [2] etkileşim CTA → [3] gövde → [4] `Kaynak:` → [5] 3 hashtag.
-- [ ] Prompt kuralları: abartılı/şişirilmiş rakam yasak; sayısal iddialar kaynakla eşleşmeli.
-- [ ] Nötron yıldızı gerçeği: NASA ~1 milyar ton ("çay kaşığı") → birim tutarlılığı kuralı.
+- [x] `source_line` şeması (LLM) + küratörlü kaynak haritası (`content_engine.py::KNOWLEDGE_SOURCES`) → 23/23 senaryoda canlı doğrulanmış kaynak.
+- [x] Açıklama sırası: [1] abone/CTA → [2] etkileşim CTA → [3] gövde → [4] `Kaynak:` → [5] 3 hashtag.
+- [x] Prompt kuralları: abartılı/şişirilmiş rakam yasak; sayısal iddialar kaynakla eşleşmeli (havuz metinleri kaynaklı olarak düzeltildi).
+- [x] Nötron yıldızı gerçeği: NASA ~1 milyar ton ("çay kaşığı") → başlık+metin düzeltildi (1 Milyar Ton).
 
 ## 3. FAZ 13.3 — Kapak: konu nesnesi görünür
 

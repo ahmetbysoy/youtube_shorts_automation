@@ -217,6 +217,16 @@ PRUNE_ONLY_VIDEO_IDS=<VIDEO_ID> xvfb-run -a node prune_low_performers.js
 
 Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olamaz.** AI kapak başarısızsa yerel üretici devreye girer; yükleme yine de `KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!` ile kanıtlanır.
 
+## 8c. FAZ 13 — Kanal Güveni / Kaynak / İddia Düzeltmeleri (Operasyon Notları)
+
+| Konu | Kural |
+| :--- | :--- |
+| CTA | Kanalın kendi abone linki kullanılıyorsa **ürün iddiası yazılmaz** ("Benzer videolar için abone ol"). Gerçek ürün linki varsa `AFFILIATE_URL_SPACE/HISTORY/SCIENCE` env'ine konur ve `(Bu bir affiliate bağlantısıdır.)` beyanı eklenir. |
+| Uydurma link | Açıklamadaki her URL gerçek linkle değiştirilir; LLM'in uydurduğu ürün URL'leri yayınlanmaz. |
+| Kaynak | Her açıklamada `Kaynak: <kurum> — <URL>` satırı. Kaynak haritası `KNOWLEDGE_SOURCES`; 23/23 senaryo canlı HTTP 200 ile doğrulanmış. |
+| Rakam/iddia | Nötron yıldızı 1 milyar ton (NASA), denizanası biyolojik geri yaşlanma (fiziksel ölümsüz değil), Göbeklitepe ~11.000 yıl (UNESCO), Antikythera "en az bin yıl" (Smithsonian). |
+| Testler | `tests/test_faz13_trust.py` → toplam 79 test yeşil. |
+
 ## 9. Faz 11 — Operasyon Düzeltmesi: "10 kanal aynı anda" ve "boşuna iş yükü"
 
 ### 9.1 Tespit (canlı kanıt)

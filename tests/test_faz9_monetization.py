@@ -21,8 +21,8 @@ class TestFaz9MonetizationAndFeedback(unittest.TestCase):
             }
             norm = content_engine.validate_and_normalize_scenario(raw, "unit-test")
             self.assertEqual(norm["affiliate_link"], "https://ornek-magaza.tr/teleskop-pro")
-            self.assertEqual(norm["affiliate_cta"], "Bu teleskobu incele: https://ornek-magaza.tr/teleskop-pro")
-            self.assertTrue(norm["description"].startswith("Bu teleskobu incele: https://ornek-magaza.tr/teleskop-pro\n\n"))
+            self.assertEqual(norm["affiliate_cta"], "Bu teleskobu incele: https://ornek-magaza.tr/teleskop-pro (Bu bir affiliate bağlantısıdır.)")
+            self.assertTrue(norm["description"].startswith("Bu teleskobu incele: https://ornek-magaza.tr/teleskop-pro"))
 
     def test_history_topic_injects_book_affiliate_at_top_of_description(self) -> None:
         with patch.dict(os.environ, {"AFFILIATE_URL_HISTORY": "https://ornek-magaza.tr/antik-tarih-kitabi"}, clear=False):
@@ -35,8 +35,8 @@ class TestFaz9MonetizationAndFeedback(unittest.TestCase):
                 "visual_keywords": ["gobeklitepe", "temple"],
             }
             norm = content_engine.validate_and_normalize_scenario(raw, "unit-test")
-            self.assertEqual(norm["affiliate_cta"], "Bu kitabı oku: https://ornek-magaza.tr/antik-tarih-kitabi")
-            self.assertTrue(norm["description"].startswith("Bu kitabı oku: https://ornek-magaza.tr/antik-tarih-kitabi\n\n"))
+            self.assertEqual(norm["affiliate_cta"], "Bu kitabı oku: https://ornek-magaza.tr/antik-tarih-kitabi (Bu bir affiliate bağlantısıdır.)")
+            self.assertTrue(norm["description"].startswith("Bu kitabı oku: https://ornek-magaza.tr/antik-tarih-kitabi"))
 
     def test_analytics_feedback_injects_directive_into_llm_prompt_and_boosts_winner(self) -> None:
         feedback = {

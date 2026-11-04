@@ -155,6 +155,58 @@ Yedek senaryo havuzu (LLM anahtarı yokken) için 23 başlığın **elle seçilm
 - **Studio'ya yükleme:** `ytcp-thumbnail-uploader input[type="file"]` → özel kapak anında uygulanır (doğrulama: `ytcp-video-custom-still-editor`).
 - Log satırları: `[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...` → `[+] Kapak resmi başarıyla yüklendi.`
 
+## FAZ 13 — Kanal Güveni, Kalite ve Marka Düzeltmeleri (Denetim Tabanlı)
+
+**Tarih:** 2026-11-04 · **Kaynak:** kanal denetimi (herkese açık 9 Shorts, kapaklar, otomatik altyazılar)
+**Canlı TODO:** `docs/FAZ13_AUDIT_PLAN.md`
+
+### 13.1 — Açıklama Güvenliği (ürün iddiası ↔ gerçek link)
+
+Denetim bulgusu: *"Bu teleskobu incele", "Bu kitabı oku", "Bu bilim setini incele"*
+metinleri **abone linkine** bağlandığı için açıklamalar yanıltıcıydı.
+
+Kök neden `content_engine.py::resolve_affiliate_offer()`: varsayılan affiliate URL'i
+kanalın abone linkiydi (`https://www.youtube.com/@mentansiytas?sub_confirmation=1`),
+CTA metni ise ürün iddiasıydı.
+
+| Durum | Davranış |
+| :--- | :--- |
+| Link = kanalın kendi abone linki | CTA: `Benzer videolar için abone ol: <link>` — **ürün iddiası yok** |
+| Link = gerçek ürün/affiliate URL (`AFFILIATE_URL_SPACE/HISTORY/SCIENCE`) | `Bu teleskobu incele: <link> (Bu bir affiliate bağlantısıdır.)` |
+| LLM hook'unda uydurma URL | Gerçek link ile değiştirilir (`uydurma_link`) |
+| LLM hook'unda ürün iddiası + kanal linki | Dürüst CTA'ya çevrilir (`urun_iddiasi`) |
+
+Ürün iddiası tespiti Türkçe ek toleranslıdır (`teleskobu`, `kitabı`, `bilim setini`, `mikroskoba`…).
+
+### 13.2 — Kaynak satırı + iddia/rakam doğrulama
+
+Her açıklamaya doğrulanmış bir kaynak eklenir:
+
+```
+[1] Benzer videolar için abone ol: <link>
+[2] Etkileşim CTA
+[3] Gövde
+[4] Kaynak: NASA — https://svs.gsfc.nasa.gov/11260/
+[5] #hashtag1 #hashtag2 #hashtag3
+```
+
+**Kaynak haritası** (`content_engine.py::KNOWLEDGE_SOURCES`) — 23/23 senaryo için
+2026-11-04'te canlı HTTP 200 ile doğrulandı (NASA, NOAA, UNESCO, Smithsonian,
+Wikipedia). Bot koruması veren kaynaklar (Britannica 403) kullanılmadı.
+
+**Düzeltilen iddialar:**
+
+| Konu | Önce | Sonra | Kaynak |
+| :--- | :--- | :--- | :--- |
+| Nötron yıldızı | 6 milyar ton, "küp şeker" | **1 milyar ton**, tek ölçü: çay kaşığı | NASA SVS 11260 |
+| Denizanası | "asla yaşlanmayan", "sonsuza kadar", "insan yaşlanmasını durdurur" | "yaşlanmayı biyolojik geri alabilir", "fiziksel olarak ölümsüz değildir", "doğrulanmış tedavi yok" | Smithsonian |
+| Emu Savaşı | "devekuşu", "resmen savaş" | "emu", "resmî bir savaş değildi" | Wikipedia (tr) |
+| Göbeklitepe | 12.000 yıl | ~11.000 yıl (MÖ 9600–8200) | UNESCO |
+| Antikythera | "bin dört yüz yıl sonra" | "en az bin yıl daha üretilmedi" | Smithsonian |
+| Napolyon | "üç bin tavşan" | "binlerce evcil tavşan" | Wikipedia (tr) |
+
+Testler: `tests/test_faz13_trust.py` (79 testin tamamı yeşil).
+
 ### 2b) Yerel Yedek Kapak (Islah 10 — AI servis rate-limit yedeği)
 
 `image.pollinations.ai` kota/rate-limit verdiğinde (HTTP 402/429) **zorunlu kapak teslimi düşmez**:
