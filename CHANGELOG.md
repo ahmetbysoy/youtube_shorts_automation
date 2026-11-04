@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2026-11-04 — FAZ 13.4 kaynaklı gözlem geçmişi
+
+- Atom akışı ve Studio pruner raporunu kanal/video ID, kaynak ve gözlem zamanı ile birleştiren salt-okunur araç eklendi; gerçek olmayan yayın zamanı üretilmez.
+- Gerçek Studio raporunda `BlrZMXlIbU0` ve `T_yIHvyUY2Y` Antikythera başlığıyla ayrı kayıtlar. Gözlem anlık görüntüdür, üretim koruması henüz yoktur.
+- Gerçek anlık görüntülerle 4 yeni test; toplam 87/87 test geçti. Canlı yayın veya engelleme kanıtı değildir.
+
 ## 2026-11-04 — FAZ 13.4 gerçek veri hazırlığı
 
 - Kamuya açık YouTube Atom akışını kanal/video kimliği ve zaman doğrulamasıyla okuyan salt-okunur denetim betiği eklendi.

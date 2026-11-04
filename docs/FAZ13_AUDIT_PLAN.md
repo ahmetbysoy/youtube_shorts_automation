@@ -53,11 +53,13 @@ Bu belge **canlı TODO**'dur: her adım bitince `[x]` işaretlenir, commit + pus
 - [x] Gerçek kanalın herkese açık akışından doğrulanabilir anlık görüntü alındı (`scripts/audit_public_feed.py`, `docs/evidence/public_feed_2026-11-04.json`).
 - [x] Akış ve Studio pruner raporu karşılaştırıldı: akış 7, rapor 8 korunan video; `8_bf4eAz3a0` akışta yok (`docs/evidence/feed_pruner_comparison_2026-11-04.json`). Zamanlar farklı; eksiklik nedeni kesin değil. Akış tek başına eksiksiz geçmiş olarak kullanılmaz.
 - [x] Gerçek akış başlıkları ve 23 senaryonun token örtüşmesi salt-okunur incelendi (`scripts/audit_repeat_candidates.py`; `docs/evidence/repeat_candidates_2026-11-04.json`). Mariana tam başlık örtüşmesi 1.000; farklı başlıklı denizanası 0.125: salt Jaccard eşiğinin bu tekrarı kaçırabileceği görüldü. Sayılar karşılaştırmadan çıkarılır; rakam değişikliği yeni açı kanıtı değildir.
-- [ ] Gerçek kanal ve video kimliğiyle, yalnızca yayını doğrulanan kayıtları kalıcı geçmişe yaz; zaman ve başlık uydurma. Eski kayıtları kanalın gerçek verilerinden çıkar; eksik kayıtlar açıkça belirtilsin.
+- [x] Kanal kimliği eşleşen gerçek Atom/Studio anlık görüntülerini kaynak ve gözlem zamanıyla birleştiren salt-okunur geçmiş oluşturucu eklendi (`scripts/build_verified_history.py`); örnek çıktı `docs/evidence/observed_history_2026-11-04_1711.json`. Studio gözlem zamanı yayın tarihi değildir; eksik tarihler uydurulmaz.
+- [x] Gerçek Studio raporunda Antikythera tekrarına rastlandı: `BlrZMXlIbU0` ve `T_yIHvyUY2Y`, aynı başlıkla 17:11:21 UTC raporunda listeleniyor (`docs/evidence/pruner_report_2026-11-04_1711.json`).
+- [ ] Gerçek kanal ve video kimliğiyle, yalnızca yayını doğrulanan kayıtları kalıcı geçmişe yaz; zaman ve başlık uydurma. Üretime bağlı, koşular arası kalıcı bir kayıt mekanizması henüz yok. Eski kayıtları kanalın gerçek verilerinden çıkar; eksik kayıtlar açıkça belirtilsin.
 - [ ] Geçmişin koşular arasında güncel kalması, aynı kanalda eşzamanlı yayınların yarışı, hata/iptal ve Git push çakışmaları için güvenli iş akışı tasarla; kayıt okunamazsa sessizce boş varsayma.
 - [ ] Türkçe normalizasyonu ve konu/anahtar sözcük benzerliğiyle farklı başlıklı tekrarları reddet; yeni açıyı yalnızca benzerlik skoru ile kanıtlanmış sayma.
 - [ ] Tüm seçenekler kullanılmışsa tekrarı otomatik seçmek yerine yayını durdur ve uyar; LLM, analitik boost ve fallback yollarının tümünü koru.
-- [ ] Birim ve entegrasyon testleri, sonra gerçek CI ve kanal üzerinde kanıt. Geçmişe sahte/varsayımsal kayıt yazma.
+- [ ] Üretim tekrar koruması için birim ve entegrasyon testleri, sonra gerçek CI ve kanal üzerinde kanıt. Kaynaklı geçmişin gerçek görüntülerle 4 testi yazıldı (genel test kümesi 87/87). Geçmişe sahte/varsayımsal kayıt yazma.
 - [ ] Mariana tekrarının engellendiğine dair gerçek CI kanıtı.
 
 ## 5. FAZ 13.5 — AI içerik beyanı (altered/synthetic)

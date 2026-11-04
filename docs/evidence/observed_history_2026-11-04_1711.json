@@ -1,0 +1,154 @@
+{
+  "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
+  "feed_captured_at": "2026-11-04T16:59:49.367938+00:00",
+  "report_finished_at": "2026-11-04T17:11:21.872Z",
+  "report_errors": [],
+  "limitations": "Yalnızca iki anlık görüntüde gözlemlenen kayıtlar; tam yayın geçmişi değildir. Studio gözlem zamanı yayın tarihi değildir. Durumlar zaman içinde değişebilir.",
+  "record_count": 9,
+  "records": [
+    {
+      "video_id": "02v2Qcxp-lI",
+      "latest_observed_title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "observations": [
+        {
+          "source": "youtube_atom",
+          "observed_at": "2026-11-04T16:59:49.367938+00:00",
+          "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+          "published_at": "2026-11-04T16:18:53+00:00"
+        },
+        {
+          "source": "studio_pruner_report",
+          "observed_at": "2026-11-04T17:11:21.872Z",
+          "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+          "report_group": "protected"
+        }
+      ]
+    },
+    {
+      "video_id": "3SFUI9fSYSU",
+      "latest_observed_title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "observations": [
+        {
+          "source": "youtube_atom",
+          "observed_at": "2026-11-04T16:59:49.367938+00:00",
+          "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+          "published_at": "2026-11-03T18:27:11+00:00"
+        },
+        {
+          "source": "studio_pruner_report",
+          "observed_at": "2026-11-04T17:11:21.872Z",
+          "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+          "report_group": "protected"
+        }
+      ]
+    },
+    {
+      "video_id": "8_bf4eAz3a0",
+      "latest_observed_title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
+      "observations": [
+        {
+          "source": "studio_pruner_report",
+          "observed_at": "2026-11-04T17:11:21.872Z",
+          "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
+          "report_group": "protected"
+        }
+      ]
+    },
+    {
+      "video_id": "A2F4P7BLB8A",
+      "latest_observed_title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "observations": [
+        {
+          "source": "youtube_atom",
+          "observed_at": "2026-11-04T16:59:49.367938+00:00",
+          "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+          "published_at": "2026-11-03T18:27:19+00:00"
+        },
+        {
+          "source": "studio_pruner_report",
+          "observed_at": "2026-11-04T17:11:21.872Z",
+          "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+          "report_group": "protected"
+        }
+      ]
+    },
+    {
+      "video_id": "BlrZMXlIbU0",
+      "latest_observed_title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "observations": [
+        {
+          "source": "youtube_atom",
+          "observed_at": "2026-11-04T16:59:49.367938+00:00",
+          "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+          "published_at": "2026-11-04T02:03:25+00:00"
+        },
+        {
+          "source": "studio_pruner_report",
+          "observed_at": "2026-11-04T17:11:21.872Z",
+          "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+          "report_group": "protected"
+        }
+      ]
+    },
+    {
+      "video_id": "S3h-Xn3VXvQ",
+      "latest_observed_title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
+      "observations": [
+        {
+          "source": "youtube_atom",
+          "observed_at": "2026-11-04T16:59:49.367938+00:00",
+          "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
+          "published_at": "2026-11-04T15:59:21+00:00"
+        }
+      ]
+    },
+    {
+      "video_id": "T_yIHvyUY2Y",
+      "latest_observed_title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "observations": [
+        {
+          "source": "studio_pruner_report",
+          "observed_at": "2026-11-04T17:11:21.872Z",
+          "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+          "report_group": "protected"
+        }
+      ]
+    },
+    {
+      "video_id": "atw6R7iSY88",
+      "latest_observed_title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+      "observations": [
+        {
+          "source": "youtube_atom",
+          "observed_at": "2026-11-04T16:59:49.367938+00:00",
+          "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+          "published_at": "2026-11-03T18:27:22+00:00"
+        },
+        {
+          "source": "studio_pruner_report",
+          "observed_at": "2026-11-04T17:11:21.872Z",
+          "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+          "report_group": "protected"
+        }
+      ]
+    },
+    {
+      "video_id": "pg39JuqqA40",
+      "latest_observed_title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "observations": [
+        {
+          "source": "youtube_atom",
+          "observed_at": "2026-11-04T16:59:49.367938+00:00",
+          "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+          "published_at": "2026-11-04T01:03:41+00:00"
+        },
+        {
+          "source": "studio_pruner_report",
+          "observed_at": "2026-11-04T17:11:21.872Z",
+          "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+          "report_group": "protected"
+        }
+      ]
+    }
+  ]
+}
