@@ -55,21 +55,6 @@ echo "[*] Siradaki kanal (rotasyon ${RUN_NUMBER}): ${NEXT}"
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "distinct_csv=${MATRIX}" >> "$GITHUB_OUTPUT"
-  # --- MASKING TESTI (gecici): farkli output bicimleri ---
-  JSON_QUOTED="["
-  JSON_PLAIN="["
-  SEP=""
-  for CH in "${ORDER[@]}"; do
-    JSON_QUOTED="${JSON_QUOTED}${SEP}\"${CH}\""
-    JSON_PLAIN="${JSON_PLAIN}${SEP}${CH}"
-    SEP=","
-  done
-  JSON_QUOTED="${JSON_QUOTED}]"
-  JSON_PLAIN="${JSON_PLAIN}]"
-  echo "tst_quoted=${JSON_QUOTED}" >> "$GITHUB_OUTPUT"
-  echo "tst_plain=${JSON_PLAIN}" >> "$GITHUB_OUTPUT"
-  echo "tst_csv=${MATRIX}" >> "$GITHUB_OUTPUT"
-  echo "tst_single=1" >> "$GITHUB_OUTPUT"
   # NOT: JSON array ("[\"1\"]") GitHub tarafindan secret sanilip MASKELENIR
   # ("Skip output ... may contain secret") ve output ATILIR -> matris bos kalir.
   # Bu yuzden output duz string (virgulle) tutulur; workflow tarafinda

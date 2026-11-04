@@ -297,3 +297,15 @@ PRUNE_ONLY_VIDEO_IDS=<VIDEO_ID> xvfb-run -a node prune_low_performers.js
 | `scripts/pruner_summary.py` | Pruner tek satırlık özeti |
 | `.github/workflows/ubuntu_26_test.yml` | Ubuntu 26.04 geçiş probe'u |
 | `.github/actionlint.yaml` | actionlint yapılandırması (26.04 etiketi) |
+
+
+## 12. Ölçülmüş GitHub Actions tuzakları (2026-11-04 denetim dönemi)
+
+| Tuzak | Kanıt | Çözüm |
+| :--- | :--- | :--- |
+| **Output maskeleme**: köşeli parantezli output değerleri atılır | run 41851410202: `["1"]` ve `[1]` → "may contain secret"; `1` → ayarlandı | Çıktıları düz string tut (`distinct_csv`) |
+| **`split()` yok** | dispatch 422: "Unrecognized function: 'split'" | `join(csv, '","')` + `format` + `fromJSON` (runtime doğrulandı) |
+| **`if: always()` + kendini devam ettiren zincir** = iptal fırtınası | #34→#35→#36→#37→#38 | `if: ${{ !cancelled() }}` + aktif koşu kontrolü |
+| **"İleri" butonu pasif** (kontroller sürerken) → görünürlük sekmesi açılmıyor | run #41: `locator.waitFor` timeout + `logs/studio_error.png` | Buton enabled olana kadar bekle + tekrar dene |
+| **Slot çarpımı sabit kalırsa** aynı konu arka arkaya | #43 ve #44 aynı konu ("Kleopatra") | Havuz boyutuyla **aralarında asal** adım (`_coprime_step`) |
+| `actionlint` etiket listesi güncel değil | `ubuntu-26.04 is unknown` | `.github/actionlint.yaml` ignore + gerekçe |

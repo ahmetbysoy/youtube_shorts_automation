@@ -169,8 +169,11 @@ class TestFaz11ViralMetadata(unittest.TestCase):
         """10 kanal ayni anda calismamali: max-parallel: 1 + zincir tek kanal tetikler."""
         daily = DAILY_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("max-parallel: 1", daily)
-        self.assertIn("needs.channel-map.outputs.distinct_json", daily)
-        self.assertIn("fromJSON(needs.channel-map.outputs.distinct_json)", daily)
+        self.assertIn("needs.channel-map.outputs.distinct_csv", daily)
+        self.assertIn(
+            'fromJSON(format(\'["{0}"]\', join(needs.channel-map.outputs.distinct_csv, \'","\')))',
+            daily,
+        )
         self.assertIn("scripts/channel_map.sh", daily)
         # Zincir "all" DEGIL, tek kanal tetiklemeli
         self.assertIn("${TARGET_CHANNEL}", daily)
@@ -178,13 +181,15 @@ class TestFaz11ViralMetadata(unittest.TestCase):
 
         pruner = PRUNER_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("max-parallel: 1", pruner)
-        self.assertIn("needs.channel-map.outputs.distinct_json", pruner)
+        self.assertIn("needs.channel-map.outputs.distinct_csv", pruner)
         self.assertIn("actions: write", pruner)
 
     def test_probe_workflow_exists_for_scheduler_health(self) -> None:
         self.assertTrue(PROBE_WORKFLOW.exists())
         probe = PROBE_WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("cron: '*/5 * * * *'", probe)
+        # FAZ 12.6: '*/5' -> ayda ~8.640 job yerine saatlik saglik sinyali
+        self.assertIn("cron: '17 * * * *'", probe)
+        self.assertNotIn("*/5 * * * *", probe)
         self.assertIn("PROBE OK", probe)
 
 

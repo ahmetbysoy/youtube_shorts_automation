@@ -310,3 +310,34 @@ GitHub `schedule` olayı **best-effort**: 13 saatte sadece **2 kez** ve 4–6 dk
 tetiklendi (#28 01:51, #29 08:31). Bu yüzden:
 - **Zincir (cron-kick) = asıl motor** (15 dk'da bir, kendini devam ettiren).
 - **Cron = bekçi**: yalnızca zincir ölüyse devreye girer.
+
+
+### 7) GitHub output maskeleme tuzağı (CI'da ölçüldü) — ÖNEMLİ
+`channel-map` job'ının çıktısı **düz string** olmak zorunda. GitHub, **köşeli parantez
+içeren** output değerlerini secret sanıp maskeliyor ve outputu **atıyor**:
+
+| Output değeri | Sonuç (run 41851410202, channel-map job) |
+| :--- | :--- |
+| `["1"]` (tırnaklı JSON dizi) | `Skip output ... since it may contain secret` ✗ |
+| `[1]` (sade JSON dizi) | `Skip output ... since it may contain secret` ✗ |
+| `1` (düz string) | `Set output 'distinct_csv'` ✓ |
+
+Bu yüzden `distinct_json` çıktısı **kullanılamaz**; matris şu ifadeyle kurulur
+(runtime'da doğrulandı: schedule koşuları #28/#29 bu ifadeyle video üretti):
+```yaml
+channel_id: ${{ fromJSON(format('["{0}"]', join(needs.channel-map.outputs.distinct_csv, '","'))) }}
+```
+> `split()` **GitHub ifade dilinde yoktur** — `workflow_dispatch` 422 ile reddedilir
+> ("Unrecognized function: 'split'"). actionlint de uyarır.
+
+### 8) Ek denetim düzeltmeleri (2. tur)
+| Bulgu | Durum |
+| :--- | :--- |
+| `hourly_pruner.yml` → `#{{ matrix.channel_id }}` yazım hatası | ✅ düzeltildi (`${{ }}`) |
+| `cron_probe.yml` → `*/5` (ayda ~8.640 job) | ✅ saatliğe çekildi (`17 * * * *`) |
+| `daily_analytics.yml` → push öncesi rebase yok | ✅ `git pull --rebase` eklendi |
+| `sanitize_logs.sh` → dar dosya kalıpları | ✅ `*session*`, `*.key`, `*.pem`, `id_token`, `session_id` eklendi |
+| Hijyeni adımı `if: always()` → gate `produce=false` iken About metnini ezip **kanal hakkında alanını bozabilirdi** | ✅ gate'e bağlandı |
+| `actions/checkout@v7` "yok" iddiası | ❌ **yanlış** — v7.0.1 (20.07.2026) mevcut, `runs.using: node24`; CI'da fiilen çalıştı (#43/#44 başarılı) |
+| `ubuntu-26.04` runner "yok" iddiası | ❌ **yanlış** — 17.09.2026 changelog'u duyurdu; `ubuntu_26_test.yml` iki kez 26.04'te **başarıyla** çalıştı (ffmpeg 8.0.1, altyazı montajı OK, 57 test OK) |
+| `requirements.txt` "pinler bulunamaz" iddiası | ❌ **yanlış** — zaten tam pin (`==`) ve her CI koşusunda başarıyla kuruluyor |

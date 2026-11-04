@@ -47,10 +47,6 @@ jobs:
     timeout-minutes: 5
     outputs:
       distinct_csv: ${{ steps.map.outputs.distinct_csv }}
-      tst_quoted: ${{ steps.map.outputs.tst_quoted }}
-      tst_plain: ${{ steps.map.outputs.tst_plain }}
-      tst_csv: ${{ steps.map.outputs.tst_csv }}
-      tst_single: ${{ steps.map.outputs.tst_single }}
       next_channel: ${{ steps.map.outputs.next_channel }}
       distinct_count: ${{ steps.map.outputs.distinct_count }}
     steps:
