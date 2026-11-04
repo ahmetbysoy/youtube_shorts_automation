@@ -76,7 +76,7 @@ jobs:
       matrix:
         # distinct_csv duz stringtir ("1" veya "1,2"); JSON dizi GitHub tarafindan
         # secret sanilip maskelenir. split() dizi verir, join() dizi bekler.
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', join(split(needs.channel-map.outputs.distinct_csv, ','), '","'))) }}
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', join(needs.channel-map.outputs.distinct_csv, '","'))) }}
 
     # 10 kanallı matris aynı YouTube Studio oturumunu paylaşabildiği için
     # temizlik işleri sıraya alınır (aynı anda çakışma olmaz).

@@ -10,3 +10,18 @@ paths:
   .github/workflows/ubuntu_26_test.yml:
     ignore:
       - 'label "ubuntu-26.04" is unknown'
+
+  # join() fonksiyonu GitHub ifade dilinde ARRAY bekler; bizim distinct_csv
+  # cikti DUZ STRING ("1") ve GitHub runtime'da string'i tek elemanli diziye
+  # cevirip birlestirir (Kanit: schedule kosulari #28/#29 bu ifadeyle video
+  # uretti). JSON dizi seklinde output vermek ise GitHub tarafindan "may
+  # contain secret" diye MASKELENIR ve output ATILIR (Kanit: run #44 logu).
+  # Bu nedenle bu tip uyarisi kasitli olarak susturulur.
+  .github/workflows/daily_shorts.yml:
+    ignore:
+      - 'function "join\(array<string>\) -> string" takes 1 parameters but 2 arguments are given'
+      - '"string" cannot be assigned to "array<string>"'
+  .github/workflows/hourly_pruner.yml:
+    ignore:
+      - 'function "join\(array<string>\) -> string" takes 1 parameters but 2 arguments are given'
+      - '"string" cannot be assigned to "array<string>"'
