@@ -1,34 +1,48 @@
 {
-  "started_at": "2026-11-04T17:17:24.888Z",
+  "started_at": "2026-11-04T17:18:55.561Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 8,
-  "targets": [],
-  "deleted": [],
+  "scanned": 9,
+  "targets": [
+    {
+      "videoId": "02v2Qcxp-lI",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "views": 1,
+      "ageMinutes": 60,
+      "ageSource": "rss"
+    }
+  ],
+  "deleted": [
+    {
+      "videoId": "02v2Qcxp-lI",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "views": 1
+    }
+  ],
   "protected": [
+    {
+      "videoId": "IkPV6Kph57k",
+      "title": "Uzay Boşluğunda Metaller Kendi Kendine Kaynar! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": -401.0573166666667
+    },
     {
       "videoId": "T_yIHvyUY2Y",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 14.198133333333333
+      "ageMinutes": 15.70935
     },
     {
       "videoId": "8_bf4eAz3a0",
       "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 27.3648
-    },
-    {
-      "videoId": "02v2Qcxp-lI",
-      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
-      "views": 1,
-      "reason": "çok-yeni",
-      "ageMinutes": 58.53146666666667
+      "ageMinutes": 28.87601666666667
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -62,6 +76,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T17:17:57.361Z",
-  "deleted_count": 0
+  "finished_at": "2026-11-04T17:19:36.672Z",
+  "deleted_count": 1
 }
