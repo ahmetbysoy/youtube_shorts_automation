@@ -52,6 +52,7 @@ Bu belge **canlı TODO**'dur: her adım bitince `[x]` işaretlenir, commit + pus
 
 - [x] Gerçek kanalın herkese açık akışından doğrulanabilir anlık görüntü alındı (`scripts/audit_public_feed.py`, `docs/evidence/public_feed_2026-11-04.json`).
 - [x] Akış ve Studio pruner raporu karşılaştırıldı: akış 7, rapor 8 korunan video; `8_bf4eAz3a0` akışta yok (`docs/evidence/feed_pruner_comparison_2026-11-04.json`). Zamanlar farklı; eksiklik nedeni kesin değil. Akış tek başına eksiksiz geçmiş olarak kullanılmaz.
+- [x] Gerçek akış başlıkları ve 23 senaryonun token örtüşmesi salt-okunur incelendi (`scripts/audit_repeat_candidates.py`; `docs/evidence/repeat_candidates_2026-11-04.json`). Mariana tam başlık örtüşmesi 1.000; farklı başlıklı denizanası 0.125: salt Jaccard eşiğinin bu tekrarı kaçırabileceği görüldü. Sayılar karşılaştırmadan çıkarılır; rakam değişikliği yeni açı kanıtı değildir.
 - [ ] Gerçek kanal ve video kimliğiyle, yalnızca yayını doğrulanan kayıtları kalıcı geçmişe yaz; zaman ve başlık uydurma. Eski kayıtları kanalın gerçek verilerinden çıkar; eksik kayıtlar açıkça belirtilsin.
 - [ ] Geçmişin koşular arasında güncel kalması, aynı kanalda eşzamanlı yayınların yarışı, hata/iptal ve Git push çakışmaları için güvenli iş akışı tasarla; kayıt okunamazsa sessizce boş varsayma.
 - [ ] Türkçe normalizasyonu ve konu/anahtar sözcük benzerliğiyle farklı başlıklı tekrarları reddet; yeni açıyı yalnızca benzerlik skoru ile kanıtlanmış sayma.

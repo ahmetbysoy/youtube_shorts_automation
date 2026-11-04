@@ -1,0 +1,118 @@
+{
+  "snapshot_captured_at": "2026-11-04T16:59:49.367938+00:00",
+  "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
+  "feed_videos": 7,
+  "pool_size": 23,
+  "limitations": "Başlık token örtüşmesi yalnızca ipucudur; eşanlam, ekler ve yeni açı güvenilir biçimde anlaşılamaz. Eksik akış verisi kaçırılmış tekrar demektir. Otomatik karar verilmez.",
+  "candidates_with_any_title_overlap": [
+    {
+      "candidate_title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "best_match": {
+        "video_id": "BlrZMXlIbU0",
+        "published_title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+        "jaccard": 1.0,
+        "common_tokens": [
+          "antikythera",
+          "bilgisayar",
+          "duzenegi"
+        ]
+      }
+    },
+    {
+      "candidate_title": "Bir Çay Kaşığı Nötron Yıldızı 1 Milyar Ton Çeker! #Shorts",
+      "best_match": {
+        "video_id": "S3h-Xn3VXvQ",
+        "published_title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
+        "jaccard": 1.0,
+        "common_tokens": [
+          "ceker",
+          "kasigi",
+          "notron",
+          "yildizi"
+        ]
+      }
+    },
+    {
+      "candidate_title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "best_match": {
+        "video_id": "A2F4P7BLB8A",
+        "published_title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+        "jaccard": 1.0,
+        "common_tokens": [
+          "cukuru",
+          "everest",
+          "karanlik",
+          "mariana",
+          "ucurum",
+          "yutan"
+        ]
+      }
+    },
+    {
+      "candidate_title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "best_match": {
+        "video_id": "02v2Qcxp-lI",
+        "published_title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+        "jaccard": 1.0,
+        "common_tokens": [
+          "inis",
+          "kleopatra",
+          "piramitlerden",
+          "yakindi"
+        ]
+      }
+    },
+    {
+      "candidate_title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "best_match": {
+        "video_id": "3SFUI9fSYSU",
+        "published_title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+        "jaccard": 1.0,
+        "common_tokens": [
+          "karsi",
+          "napolyon",
+          "ordusuna",
+          "tavsan",
+          "tuhaf",
+          "yenilgisi"
+        ]
+      }
+    },
+    {
+      "candidate_title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+      "best_match": {
+        "video_id": "atw6R7iSY88",
+        "published_title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
+        "jaccard": 1.0,
+        "common_tokens": [
+          "eski",
+          "gobeklitepe",
+          "piramitlerden",
+          "tapinak"
+        ]
+      }
+    },
+    {
+      "candidate_title": "Yaşlanmayı Geri Alan Denizanası: Turritopsis! #Shorts",
+      "best_match": {
+        "video_id": "pg39JuqqA40",
+        "published_title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+        "jaccard": 0.125,
+        "common_tokens": [
+          "denizanasi"
+        ]
+      }
+    },
+    {
+      "candidate_title": "Avustralya Ordusunun Emularına Karşı Başarısız Operasyonu! #Shorts",
+      "best_match": {
+        "video_id": "3SFUI9fSYSU",
+        "published_title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+        "jaccard": 0.0909,
+        "common_tokens": [
+          "karsi"
+        ]
+      }
+    }
+  ]
+}

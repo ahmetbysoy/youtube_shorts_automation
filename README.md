@@ -222,7 +222,7 @@ Testler: `tests/test_faz13_trust.py::TestFaz13ThumbnailSubject` gerçek ffmpeg k
 
 13.4 tekrar koruması henüz uygulanmadı: `.used_topics.json` CI koşuları arasında kalıcı değildir ve sayısal kanal seçim yolu geçmişi kontrol etmez. Gerçek yayın geçmişi, güvenli kalıcılık, tüm seçim yolları ve havuz tükendiğinde güvenli durdurma planı için `docs/FAZ13_AUDIT_PLAN.md` belgesine bakın.
 
-Gerçek veri hazırlığı: `python3 scripts/audit_public_feed.py --channel-id UCBZVbwc7s7TeUCcOaN58oHQ` kamuya açık Atom akışının anlık görüntüsünü üretir. 4 Kasım ölçümünde akışta 7 video, Studio pruner raporunda 8 korunan video vardı; eksik görünen kayıt ve zamanlar `docs/evidence/` altında. Akış gecikmeli/sınırlı olabilir, tüm yayın geçmişi sayılmaz; bu betik yayın yapmaz ve tekrar korumasını etkinleştirmez.
+Gerçek veri hazırlığı: `python3 scripts/audit_public_feed.py --channel-id UCBZVbwc7s7TeUCcOaN58oHQ` kamuya açık Atom akışının anlık görüntüsünü üretir. 4 Kasım ölçümünde akışta 7 video, Studio pruner raporunda 8 korunan video vardı; eksik görünen kayıt ve zamanlar `docs/evidence/` altında. Akış gecikmeli/sınırlı olabilir, tüm yayın geçmişi sayılmaz; bu betik yayın yapmaz ve tekrar korumasını etkinleştirmez. `scripts/audit_repeat_candidates.py docs/evidence/public_feed_2026-11-04.json` karşılaştırması, Mariana için 1.000 fakat aynı denizanası konusu için 0.125 başlık Jaccard skoru verdi; tek eşik güvenilir değildir. Bu da yalnızca rapordur, üretimi etkilemez.
 
 ### 2b) Yerel Yedek Kapak (Islah 10 — AI servis rate-limit yedeği)
 
