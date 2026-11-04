@@ -1,62 +1,48 @@
 {
-  "started_at": "2026-11-04T15:05:24.707Z",
+  "started_at": "2026-11-04T15:07:15.549Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 11,
-  "targets": [
-    {
-      "videoId": "Bh_Lba_nJh8",
-      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
-      "views": 0,
-      "ageMinutes": 62,
-      "ageSource": "rss"
-    }
-  ],
-  "deleted": [
-    {
-      "videoId": "Bh_Lba_nJh8",
-      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
-      "views": 0
-    }
-  ],
+  "scanned": 10,
+  "targets": [],
+  "deleted": [],
   "protected": [
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": -534.57155
+      "ageMinutes": 1.8473666666666666
     },
     {
       "videoId": "oyN7UFqbgVo",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 16.47845
+      "ageMinutes": 18.325816666666668
     },
     {
       "videoId": "DC6ZIGtOsqc",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 31.695116666666667
+      "ageMinutes": 33.54248333333334
     },
     {
       "videoId": "HCfoHJym2xM",
       "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 46.611783333333335
+      "ageMinutes": 48.45915
     },
     {
       "videoId": "eyWPXbYhNlo",
       "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 56.06178333333333
+      "ageMinutes": 57.90915
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -90,6 +76,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:06:06.699Z",
-  "deleted_count": 1
+  "finished_at": "2026-11-04T15:07:47.324Z",
+  "deleted_count": 0
 }
