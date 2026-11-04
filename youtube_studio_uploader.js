@@ -693,16 +693,32 @@ async function uploadToYouTubeStudio() {
         }
 
         console.log("[*] Görünürlük ayarı 'Herkese Açık' (Public) ekranına ilerleniyor...");
-        for (let step = 0; step < 3; step++) {
-            const nextBtn = page.locator('ytcp-button#next-button').first();
-            if (await nextBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-                await nextBtn.click({ force: true });
-                await page.waitForTimeout(1500);
+        // FAZ 12.6: Kapak yuklemesinden sonra diyalog "Ayrıntılar" sekmesine doner ve
+        // "İleri" butonu video kontrolleri surerken PASIF kalir. Buton ENABLED olana
+        // kadar tekrar denenir (onceki tek seferlik zorla tiklama 25 sn timeout veriyordu).
+        const PUBLIC_RADIO_SEL = 'tp-yt-paper-radio-button[name="PUBLIC"], #public-radio-button, input[value="PUBLIC"]';
+        for (let attempt = 0; attempt < 18; attempt++) {
+            const radioNow = page.locator(PUBLIC_RADIO_SEL).first();
+            if (await radioNow.isVisible({ timeout: 1500 }).catch(() => false)) {
+                console.log(`[*] Görünürlük sekmesi açıldı (deneme ${attempt + 1}).`);
+                break;
             }
+            const nextBtn = page.locator('ytcp-button#next-button').first();
+            if (await nextBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+                const enabled = await nextBtn.isEnabled().catch(() => false);
+                if (enabled) {
+                    await nextBtn.click({ force: true }).catch(() => {});
+                    console.log(`[*] "İleri" tıklandı (deneme ${attempt + 1}).`);
+                } else {
+                    const progressText = await page.locator('ytcp-video-upload-progress').innerText().catch(() => '');
+                    console.log(`[*] "İleri" pasif (kontroller sürüyor): ${progressText.replace(/\s+/g, ' ').trim().slice(0, 60)} - bekleniyor...`);
+                }
+            }
+            await page.waitForTimeout(5000);
         }
 
         // Herkese Açık (PUBLIC) seçeneğini işaretle - Faz 7 Tam Otonom Yayın!
-        const publicRadio = page.locator('tp-yt-paper-radio-button[name="PUBLIC"], #public-radio-button, input[value="PUBLIC"]').first();
+        const publicRadio = page.locator(PUBLIC_RADIO_SEL).first();
         await publicRadio.scrollIntoViewIfNeeded().catch(() => {});
         try {
             await publicRadio.waitFor({ state: 'visible', timeout: 25000 });

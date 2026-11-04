@@ -141,6 +141,15 @@ class TestFaz12CronThrottle(unittest.TestCase):
         self.assertIn("cron-kick:", yml)
         self.assertIn("actions/workflows/${WORKFLOW}/dispatches", yml)
 
+    def test_visibility_tab_transition_is_resilient(self) -> None:
+        """Kapuk yuklemesinden sonra "İleri" pasif kalirsa gorusurluk sekmesine gecmeli."""
+        src = UPLOADER.read_text(encoding="utf-8")
+        self.assertIn("PUBLIC_RADIO_SEL", src)
+        self.assertIn("isEnabled()", src)
+        # eski tek-seferlik 3 deneme yerine dongu + bekleme
+        self.assertIn("for (let attempt = 0; attempt < 18; attempt++)", src)
+        self.assertIn("kontroller sürüyor", src)
+
     def test_chain_runs_do_not_cancel_active_publish(self) -> None:
         """Zincir koşusu AYRI concurrency grubunda olmali; aksi halde yayin yarida kesiliyor."""
         yml = DAILY_WORKFLOW.read_text(encoding="utf-8")
