@@ -1,79 +1,155 @@
 {
-  "started_at": "2026-11-04T08:41:21.582Z",
+  "started_at": "2026-11-04T15:02:40.974Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 8,
+  "scanned": 16,
   "targets": [
     {
-      "videoId": "0fuVcgPIvx8",
-      "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "videoId": "yxB3JHbJZvE",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "views": 0,
-      "ageMinutes": 394,
+      "ageMinutes": 89,
       "ageSource": "rss"
     },
     {
-      "videoId": "ppioB87b0MU",
+      "videoId": "VVBdfC0z8kk",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "views": 1,
+      "ageMinutes": 102,
+      "ageSource": "rss"
+    },
+    {
+      "videoId": "Nww6ZSF1FBE",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "views": 1,
+      "ageMinutes": 104,
+      "ageSource": "rss"
+    },
+    {
+      "videoId": "tfhm30kJo90",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "views": 0,
-      "ageMinutes": 428,
+      "ageMinutes": 112,
+      "ageSource": "rss"
+    },
+    {
+      "videoId": "0oLFqMrK-MY",
+      "title": "Adsız",
+      "views": 0,
+      "ageMinutes": 117,
+      "ageSource": "rss"
+    },
+    {
+      "videoId": "7ONnF2kUeis",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "views": 2,
+      "ageMinutes": 388,
       "ageSource": "rss"
     }
   ],
   "deleted": [
     {
-      "videoId": "0fuVcgPIvx8",
-      "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "videoId": "yxB3JHbJZvE",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "views": 0
     },
     {
-      "videoId": "ppioB87b0MU",
+      "videoId": "VVBdfC0z8kk",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "views": 1
+    },
+    {
+      "videoId": "Nww6ZSF1FBE",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "views": 1
+    },
+    {
+      "videoId": "tfhm30kJo90",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "views": 0
+    },
+    {
+      "videoId": "0oLFqMrK-MY",
+      "title": "Adsız",
+      "views": 0
+    },
+    {
+      "videoId": "7ONnF2kUeis",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "views": 2
     }
   ],
   "protected": [
     {
-      "videoId": "7ONnF2kUeis",
-      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "videoId": "oyN7UFqbgVo",
+      "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 6.426366666666667
+      "ageMinutes": 13.749566666666666
+    },
+    {
+      "videoId": "DC6ZIGtOsqc",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": 28.966233333333335
+    },
+    {
+      "videoId": "HCfoHJym2xM",
+      "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": 43.8829
+    },
+    {
+      "videoId": "eyWPXbYhNlo",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": 53.3329
+    },
+    {
+      "videoId": "Bh_Lba_nJh8",
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": 59.2329
     },
     {
       "videoId": "BlrZMXlIbU0",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
-      "views": 394,
+      "views": 458,
       "reason": "performanslı"
     },
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 637,
+      "views": 725,
       "reason": "performanslı"
     },
     {
       "videoId": "atw6R7iSY88",
       "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
-      "views": 150,
+      "views": 156,
       "reason": "performanslı"
     },
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1120,
+      "views": 1129,
       "reason": "performanslı"
     },
     {
       "videoId": "3SFUI9fSYSU",
       "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "views": 1188,
+      "views": 1197,
       "reason": "performanslı"
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T08:42:17.820Z",
-  "deleted_count": 2
+  "finished_at": "2026-11-04T15:04:22.390Z",
+  "deleted_count": 6
 }
