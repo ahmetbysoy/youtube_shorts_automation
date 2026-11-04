@@ -466,6 +466,27 @@ async function generateAiThumbnail(prompt) {
     return null;
 }
 
+/** AI kapak servisi basarisiz oldugunda yerel yedek kapak uretir. */
+function generateLocalFallbackThumbnail(title) {
+    const outPath = path.join(os.tmpdir(), `yt_thumb_fallback_${Date.now()}.jpg`);
+    const script = path.join(BASE_DIR, 'scripts', 'generate_fallback_thumbnail.py');
+    try {
+        const result = require('child_process').spawnSync(
+            'python3',
+            [script, '--title', String(title || 'BILIM'), '--out', outPath],
+            { encoding: 'utf-8', timeout: 60000 }
+        );
+        if (result.status === 0 && fs.existsSync(outPath) && fs.statSync(outPath).size > 8000) {
+            console.log(`[*] Yerel yedek kapak hazir (${Math.round(fs.statSync(outPath).size / 1024)} KB).`);
+            return outPath;
+        }
+        console.log(`[!] Yerel yedek kapak uretilemedi (${(result.stderr || '').trim().slice(0, 160)})`);
+    } catch (err) {
+        console.log(`[!] Yerel yedek kapak hatasi: ${err.message}`);
+    }
+    return null;
+}
+
 /** YouTube Studio'daki "Küçük resim" (thumbnail) alanına özel kapağı yükler. */
 async function uploadCustomThumbnail(page, thumbPath) {
     const input = page.locator(
@@ -642,8 +663,15 @@ async function uploadToYouTubeStudio() {
             console.log(`[!] Kapak üretimi başarısız: ${thumbErr.message}`);
         }
         if (!thumbPath) {
-            console.log('[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Manuel müdahale gerekebilir)');
-        } else {
+            // FAZ 12.6: AI kapak servisi rate limit verdi (HTTP 402) -> YEREL yedek kapak
+            // (scripts/generate_fallback_thumbnail.py) ile agresif kapak uretilir.
+            console.log('[!] AI kapak servisi basarisiz -> yerel yedek kapak deniyor...');
+            thumbPath = generateLocalFallbackThumbnail(title);
+            if (!thumbPath) {
+                console.log('[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Manuel müdahale gerekebilir)');
+            }
+        }
+        if (thumbPath) {
             try {
                 const thumbResult = await uploadCustomThumbnail(page, thumbPath);
                 if (thumbResult.ok) {

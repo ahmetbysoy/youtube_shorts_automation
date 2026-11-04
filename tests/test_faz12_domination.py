@@ -142,6 +142,40 @@ class TestFaz12CronThrottle(unittest.TestCase):
         self.assertIn("cron-kick:", yml)
         self.assertIn("actions/workflows/${WORKFLOW}/dispatches", yml)
 
+    def test_local_fallback_thumbnail_exists_and_is_1080x1920(self) -> None:
+        """AI kapak servisi rate limit verirse yerel yedek kapak uretilmeli (run #52 kaniti)."""
+        script = PROJECT_ROOT / "scripts" / "generate_fallback_thumbnail.py"
+        self.assertTrue(script.exists(), "yerel yedek kapak scripti yok")
+        src = UPLOADER_JS.read_text(encoding="utf-8")
+        self.assertIn("generateLocalFallbackThumbnail", src)
+        self.assertIn("generate_fallback_thumbnail.py", src)
+
+        # Gercekten 1080x1920 uretebiliyor mu?
+        import subprocess
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "thumb.jpg"
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--title",
+                    "Test Basligi! #Shorts",
+                    "--out",
+                    str(out),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            self.assertTrue(out.exists())
+            from PIL import Image
+
+            with Image.open(out) as img:
+                self.assertEqual(img.size, (1080, 1920))
+
     def test_slot_step_is_coprime_so_topics_rotate(self) -> None:
         """(slot * CARPAN) % len(pool) sabit kalinca ayni konu arka arkaya secilir."""
         sys.path.insert(0, str(PROJECT_ROOT))

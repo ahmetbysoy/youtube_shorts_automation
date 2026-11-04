@@ -96,6 +96,9 @@ def run_step(step_name: str, command: list, env_overrides: dict | None = None) -
                     "Trend hashtag", "YÜKLEME ATLANDI", "günlük yükleme",
                     # Faz 12: silahlandirilmis kapak + zorunlu basari satiri
                     "SİLAHLANDIRILMIŞ", "KAPAK RESMİ", "Yayınlanan video ID",
+                    # Faz 12.6: kapak hata/ fallback mesajlari da gorunur olsun
+                    "Kapak üretimi", "Kapak resmi yüklenemedi", "Kapak indirme hatası",
+                    "Kapak servisi", "Yerel yedek kapak", "rate limit",
                 )
                 if any(tok in line for tok in show_tokens):
                     logging.info(f"  -> {line.strip()}")
