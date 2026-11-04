@@ -1082,14 +1082,16 @@ def derive_viral_hashtags(
 
 
 def build_thumbnail_prompt(topic: str, title: str, visual_keywords: Any = None) -> str:
-    """Faz 11: Kapak icin INGILIZCE, dikey, yuksek kontrastli image-generation promptu."""
+    """Faz 11 + FAZ 13.3: Kapak icin INGILIZCE, dikey, yuksek kontrastli prompt.
+    FAZ 13.3: konu nesnesi cerceveyi doldurur; metin/son karti olmaz."""
     keywords = [str(k).strip() for k in (visual_keywords or []) if str(k).strip()]
     subject = ", ".join(keywords[:2]) if keywords else "dramatic cinematic historical scene"
     niche = str(topic or "documentary").lower()
     return (
         f"Cinematic vertical 9:16 shot of {subject}, hyper-realistic, dramatic lighting, "
         f"high contrast, vivid saturated colors, ultra detailed, 8k, {niche} documentary style, "
-        f"no text, no watermark"
+        f"the single main subject fills the frame, large, bright and instantly recognizable, "
+        f"no text, no watermark, no logo, no end card, no split screen"
     )
 
 

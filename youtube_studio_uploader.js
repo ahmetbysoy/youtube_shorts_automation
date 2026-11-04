@@ -396,8 +396,11 @@ async function generateAiThumbnail(prompt) {
     const STYLE_SUFFIX = [
         'YouTube Shorts thumbnail',
         'vertical 9:16',
+        'single clear subject filling the frame',
+        'subject large and centered, instantly recognizable',
+        'bright well-lit subject, high contrast against the background',
+        'no text, no letters, no logo, no end card, no split screen',
         'hyper-dramatic lighting',
-        'high contrast',
         'vibrant colors',
         'glowing elements',
         'glowing arrows',
@@ -467,17 +470,26 @@ async function generateAiThumbnail(prompt) {
 }
 
 /** AI kapak servisi basarisiz oldugunda yerel yedek kapak uretir. */
-function generateLocalFallbackThumbnail(title) {
+function generateLocalFallbackThumbnail(title, topic) {
     const outPath = path.join(os.tmpdir(), `yt_thumb_fallback_${Date.now()}.jpg`);
     const script = path.join(BASE_DIR, 'scripts', 'generate_fallback_thumbnail.py');
     try {
+        // FAZ 13.3: video karesi (konu nesnesi) + konu rozeti ile uretilir.
+        const args = [
+            script,
+            '--title', String(title || 'BILIM'),
+            '--out', outPath,
+            '--video', String(VIDEO_PATH || ''),
+            '--topic', String(topic || ''),
+        ];
         const result = require('child_process').spawnSync(
             'python3',
-            [script, '--title', String(title || 'BILIM'), '--out', outPath],
-            { encoding: 'utf-8', timeout: 60000 }
+            args,
+            { encoding: 'utf-8', timeout: 120000 }
         );
         if (result.status === 0 && fs.existsSync(outPath) && fs.statSync(outPath).size > 8000) {
-            console.log(`[*] Yerel yedek kapak hazir (${Math.round(fs.statSync(outPath).size / 1024)} KB).`);
+            const detail = (result.stdout || '').match(/\(konu kareli\)|\(metin karti\)/);
+            console.log(`[*] Yerel yedek kapak hazir (${Math.round(fs.statSync(outPath).size / 1024)} KB${detail ? ' ' + detail[0] : ''}).`);
             return outPath;
         }
         console.log(`[!] Yerel yedek kapak uretilemedi (${(result.stderr || '').trim().slice(0, 160)})`);
@@ -672,7 +684,7 @@ async function uploadToYouTubeStudio() {
             // FAZ 12.6: AI kapak servisi rate limit verdi (HTTP 402) -> YEREL yedek kapak
             // (scripts/generate_fallback_thumbnail.py) ile agresif kapak uretilir.
             console.log('[!] AI kapak servisi basarisiz -> yerel yedek kapak deniyor...');
-            thumbPath = generateLocalFallbackThumbnail(title);
+            thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''));
             if (!thumbPath) {
                 console.log('[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Manuel müdahale gerekebilir)');
             }

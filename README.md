@@ -207,6 +207,19 @@ Wikipedia). Bot koruması veren kaynaklar (Britannica 403) kullanılmadı.
 
 Testler: `tests/test_faz13_trust.py` (79 testin tamamı yeşil).
 
+### 13.3 — Kapakta Konu Nesnesi Görünür (denetim bulgusu 2)
+
+Denetim: "Nötron yıldızı" kapağı bitiş kartıydı (konu görseli yok), "Denizanası"
+çok karanlıktı, "Antikythera"da asıl mekanizma görünmüyordu.
+
+| Katman | Değişiklik |
+| :--- | :--- |
+| AI kapak (pollinations) | Stil suffix'ine `single clear subject filling the frame`, `bright well-lit subject`, `no text, no logo, no end card, no split screen` eklendi. |
+| Yedek kapak (`scripts/generate_fallback_thumbnail.py`) | Artık **video karesi + başlık kompoziti**: ffmpeg ile videodan 5 aday kare alınır, en kontrastlı kare seçilir, 1080×1920'e kırpılır, üstüne siyah konturlu sarı başlık + kırmızı konu rozeti + konuya işaret eden sarı ok + kırmızı "ABONE OL" butonu çizilir. Video yoksa eski metin kartına düşülür. |
+| `content_engine.build_thumbnail_prompt()` | Prompt "the single main subject fills the frame, large, bright and instantly recognizable; no text, no watermark, no logo, no end card" ile güçlendirildi. |
+
+Testler: `tests/test_faz13_trust.py::TestFaz13ThumbnailSubject` (gerçek ffmpeg video karesi üretip renk farkını doğruluyor).
+
 ### 2b) Yerel Yedek Kapak (Islah 10 — AI servis rate-limit yedeği)
 
 `image.pollinations.ai` kota/rate-limit verdiğinde (HTTP 402/429) **zorunlu kapak teslimi düşmez**:

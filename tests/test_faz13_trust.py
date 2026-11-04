@@ -172,5 +172,85 @@ class TestFaz13IddiaDogrulama(unittest.TestCase):
         self.assertNotIn("üç bin evcil tavşan", item["script_text"])
 
 
+class TestFaz13ThumbnailSubject(unittest.TestCase):
+    """Denetim bulgusu 2: kapakta konu nesnesi gorunur (bitis karti degil)."""
+
+    FALLBACK_PY = PROJECT_ROOT / "scripts" / "generate_fallback_thumbnail.py"
+
+    def _make_test_video(self, tmp: Path) -> Path:
+        import shutil
+        import subprocess
+
+        if not shutil.which("ffmpeg"):
+            self.skipTest("ffmpeg yok")
+        video = tmp / "clip.mp4"
+        proc = subprocess.run(
+            ["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=green:s=360x640:d=4",
+             "-pix_fmt", "yuv420p", str(video)],
+            capture_output=True, timeout=180,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr.decode()[-400:])
+        return video
+
+    def _run_generator(self, out: Path, video: Path | None = None) -> str:
+        import subprocess
+
+        cmd = ["python3", str(self.FALLBACK_PY), "--title", "Konu Testi",
+               "--out", str(out), "--topic", "Bilim"]
+        if video is not None:
+            cmd += ["--video", str(video)]
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        self.assertEqual(proc.returncode, 0, proc.stderr[-400:])
+        return proc.stdout
+
+    def test_fallback_uses_video_frame_as_subject(self) -> None:
+        import tempfile
+
+        from PIL import Image, ImageStat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            video = self._make_test_video(tmp)
+            with_video = tmp / "with_video.jpg"
+            log = self._run_generator(with_video, video)
+            self.assertIn("konu kareli", log)
+
+            text_only = tmp / "text_only.jpg"
+            self._run_generator(text_only, None)
+
+            with Image.open(with_video) as img:
+                self.assertEqual(img.size, (1080, 1920))
+                mean_video = ImageStat.Stat(img.convert("RGB")).mean
+            with Image.open(text_only) as img:
+                mean_card = ImageStat.Stat(img.convert("RGB")).mean
+            # Yesil video karesi -> kapakta yesil bilesen belirgin sekilde yuksek olmali
+            self.assertGreater(mean_video[1], mean_card[1] + 20)
+
+    def test_generator_without_video_falls_back_to_text_card(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out = Path(tmpdir) / "card.jpg"
+            log = self._run_generator(out, None)
+            self.assertIn("metin karti", log)
+            self.assertTrue(out.exists())
+
+    def test_uploader_passes_video_and_topic_to_generator(self) -> None:
+        source = (PROJECT_ROOT / "youtube_studio_uploader.js").read_text(encoding="utf-8")
+        self.assertIn("'--video'", source)
+        self.assertIn("'--topic'", source)
+        self.assertIn("generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic'", source)
+
+    def test_ai_thumbnail_prompt_requires_subject_in_frame(self) -> None:
+        source = (PROJECT_ROOT / "youtube_studio_uploader.js").read_text(encoding="utf-8")
+        self.assertIn("single clear subject filling the frame", source)
+        self.assertIn("no text, no letters, no logo, no end card", source)
+
+        ce = load_content_engine()
+        prompt = ce.build_thumbnail_prompt("Bilim", "Test", ["neutron star"])
+        self.assertIn("fills the frame", prompt)
+        self.assertIn("no end card", prompt)
+
+
 if __name__ == "__main__":
     unittest.main()
