@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T16:32:07.222Z",
+  "started_at": "2026-11-04T16:33:45.175Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,21 +14,21 @@
       "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 13.078766666666667
+      "ageMinutes": 14.869583333333333
     },
     {
       "videoId": "S3h-Xn3VXvQ",
       "title": "Bir Çay Kaşığı Nötron Yıldızı 6 Milyar Ton Çeker! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 32.77036666666667
+      "ageMinutes": 34.40291666666667
     },
     {
       "videoId": "9YdUbSypzp8",
       "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
       "views": 2,
       "reason": "çok-yeni",
-      "ageMinutes": 49.170366666666666
+      "ageMinutes": 50.80291666666667
     },
     {
       "videoId": "BlrZMXlIbU0",
@@ -39,7 +39,7 @@
     {
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "views": 744,
+      "views": 749,
       "reason": "performanslı"
     },
     {
@@ -62,6 +62,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T16:32:40.367Z",
+  "finished_at": "2026-11-04T16:34:22.037Z",
   "deleted_count": 0
 }
