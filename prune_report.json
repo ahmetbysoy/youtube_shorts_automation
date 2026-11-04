@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-04T15:55:18.386Z",
+  "started_at": "2026-11-04T15:56:48.356Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
@@ -14,33 +14,33 @@
       "title": "Avustralya Ordusunun Devekuşlarına Karşı Savaşı! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 12.356433333333333
+      "ageMinutes": 13.855933333333333
     },
     {
       "videoId": "Ih3_oeAmbGs",
       "title": "Uzayda Ağlarsanız Gözyaşlarınız Düşmez! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 36.689766666666664
+      "ageMinutes": 38.18926666666667
     },
     {
       "videoId": "vCiN4YNe0SI",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 1,
       "reason": "çok-yeni",
-      "ageMinutes": 44.939766666666664
+      "ageMinutes": 46.43926666666667
     },
     {
       "videoId": "3h5vxr0wBk4",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "views": 0,
       "reason": "çok-yeni",
-      "ageMinutes": 51.789766666666665
+      "ageMinutes": 53.28926666666667
     },
     {
       "videoId": "BlrZMXlIbU0",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
-      "views": 461,
+      "views": 462,
       "reason": "performanslı"
     },
     {
@@ -58,7 +58,7 @@
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "views": 1132,
+      "views": 1133,
       "reason": "performanslı"
     },
     {
@@ -69,6 +69,6 @@
     }
   ],
   "errors": [],
-  "finished_at": "2026-11-04T15:55:50.961Z",
+  "finished_at": "2026-11-04T15:57:20.419Z",
   "deleted_count": 0
 }
