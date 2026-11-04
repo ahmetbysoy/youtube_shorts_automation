@@ -200,12 +200,22 @@ PRUNE_ONLY_VIDEO_IDS=<VIDEO_ID> xvfb-run -a node prune_low_performers.js
 - Motor: `https://image.pollinations.ai/prompt/<url-encoded>?width=1080&height=1920&nologo=true&model=flux&seed=<rastgele>` (anahtarsız, ücretsiz; **yoğun saatlerde HTTP 402/429** döner → 4 denemeli geri çekilme var).
 - FFmpeg ile 1080x1920'e ölçeklenir (YouTube minimum genişlik 640 px) ve alt filigran kırpılır.
 - Studio'ya yükleme: `ytcp-thumbnail-uploader input[type="file"]` → `setInputFiles()`.
-- Doğrulama logları: `[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...`, `[+] Kapak resmi başarıyla yüklendi.`, `[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak.`
+- Doğrulama logları: `[*] AI ile dikattan çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...`, `[+] Kapak resmi başarıyla yüklendi.`
+- **Islah 10 (yerel yedek kapak):** AI servis 4 denemede de HTTP 402/429 verirse `generateLocalFallbackThumbnail()` → `scripts/generate_fallback_thumbnail.py` ile PIL tabanlı 1080x1920 kapak üretilir ve yüklenir. Zorunlu satır `KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!` artık asla kaybolmaz.
+- Run #52 kanıtı (2026-11-04): pollinations 4/4 → 402 → `***!*** Kapak resmi yüklenemedi...` (kapak yoktu). Düzeltme Islah 10 (`7f97eb7`) ile push'landı.
 
 ### 8.4 Doğrulama
 `python -m unittest discover -s tests` → **40/40 OK** (Faz 11 testleri: `tests/test_faz11_viral_metadata.py`).
 
 ---
+
+## 8b. Islah 10 — Yerel Yedek Kapak (Rate-Limit Yedeği)
+
+| Sorun | Kanıt | Çözüm |
+| :--- | :--- | :--- |
+| `image.pollinations.ai` HTTP 402 döndürüyor → AI kapak üretilemiyor → zorunlu kapak teslimi düşüyor | Run #52 (`41852106638`): 4/4 deneme 402, log `***!*** Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak.` | `scripts/generate_fallback_thumbnail.py` (PIL, 1080x1920, siyah/sarı/kırmızı banner dili) + `generateLocalFallbackThumbnail()` |
+
+Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olamaz.** AI kapak başarısızsa yerel üretici devreye girer; yükleme yine de `KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!` ile kanıtlanır.
 
 ## 9. Faz 11 — Operasyon Düzeltmesi: "10 kanal aynı anda" ve "boşuna iş yükü"
 

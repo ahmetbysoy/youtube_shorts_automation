@@ -150,10 +150,27 @@ Yedek senaryo havuzu (LLM anahtarı yokken) için 23 başlığın **elle seçilm
 ### 2) Ücretsiz AI Kapak Üretimi + Yükleme (`youtube_studio_uploader.js`)
 
 - **Görsel motoru:** `https://image.pollinations.ai/prompt/<prompt>?width=1080&height=1920&nologo=true&model=flux` (anahtar istemez, ücretsiz).
-- **Rate limit (HTTP 402/429) yönetimi:** 4 deneme / 12s-60s bekleme; başarısız olursa YouTube otomatik kare seçimine düşer (yükleme asla çökmez).
+- **Rate limit (HTTP 402/429) yönetimi:** 4 deneme / 12s-60s bekleme. **Tüm denemeler 402 alırsa artık otomatik kare seçimine düşülmez** → Islah 10: yerel yedek kapak üretilir (bkz. aşağıdaki "Yerel Yedek Kapak").
 - **FFmpeg ile 1080x1920'e ölçekleme** (YouTube minimum genişlik 640 px) + filigran kırpma.
 - **Studio'ya yükleme:** `ytcp-thumbnail-uploader input[type="file"]` → özel kapak anında uygulanır (doğrulama: `ytcp-video-custom-still-editor`).
 - Log satırları: `[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...` → `[+] Kapak resmi başarıyla yüklendi.`
+
+### 2b) Yerel Yedek Kapak (Islah 10 — AI servis rate-limit yedeği)
+
+`image.pollinations.ai` kota/rate-limit verdiğinde (HTTP 402/429) **zorunlu kapak teslimi düşmez**:
+
+1. `youtube_studio_uploader.js` → `generateAiThumbnail()` 4 deneme sonunda `null` döner.
+2. `generateLocalFallbackThumbnail(title)` devreye girer → `python3 scripts/generate_fallback_thumbnail.py "<başlık>"` (PIL, 60 sn timeout).
+3. Üretilen **1080x1920** PNG: siyah/koyu kırmızı gradyan zemin, kırmızı "SON BULMA" bandı, sarı kalın başlık (siyah kontur), sarı ok, kırmızı "ABONE OL" butonu — banner ile aynı görsel dil.
+4. Dosya `logs/fallback_thumbnail.png` olarak kaydedilir ve **Studio'ya zorunlu kapak olarak yüklenir**.
+
+Kanıt (run #52, 2026-11-04): pollinations 4/4 deneme HTTP 402 döndürdü → `***!*** Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak.` (özel kapak yok, zorunlu satır kayboldu).
+Islah 10 sonrası aynı senaryoda beklenen log: `[*] Yerel yedek kapak hazir (PIL): <yol>` → `[+] KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!`
+
+| Dosya | Rol |
+| :--- | :--- |
+| `scripts/generate_fallback_thumbnail.py` | PIL tabanlı yerel 1080x1920 kapak üreticisi (bağımsız, anahtar gerektirmez) |
+| `youtube_studio_uploader.js` → `generateLocalFallbackThumbnail()` | AI kapak null döndüğünde yedeği devreye alır |
 
 ### 3) Günlük Kota Koruması
 
