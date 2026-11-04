@@ -354,10 +354,15 @@ function buildFinalDescription(scriptData) {
         .filter(Boolean)
         .slice(0, 3);
 
+    const affiliateHook = readScenarioField(scriptData, 'affiliate_hook');
+
     const blocks = [];
 
     const top = [];
-    if (affiliateCta) {
+    // FAZ 12 SIRASI: [1] Affiliate hook/CTA+link -> [2] Etkilesim CTA -> [3] Govde -> [4] 3 hashtag
+    if (affiliateHook) {
+        top.push(affiliateHook);
+    } else if (affiliateCta) {
         top.push(affiliateCta);
     } else if (affiliateLink) {
         top.push(`İncele: ${affiliateLink}`);
@@ -387,7 +392,24 @@ async function generateAiThumbnail(prompt) {
     }
 
     const seed = Math.floor(Math.random() * 1e9);
-    const encoded = encodeURIComponent(`${prompt}, vertical 9:16 aspect ratio, highly detailed, vibrant colors, youtube shorts thumbnail style`);
+    // FAZ 12: Silahlandirilmis kapak promptu - CTR (tiklama orani) icin agresif gorsel dili.
+    const STYLE_SUFFIX = [
+        'YouTube Shorts thumbnail',
+        'vertical 9:16',
+        'hyper-dramatic lighting',
+        'high contrast',
+        'vibrant colors',
+        'glowing elements',
+        'glowing arrows',
+        'shocked expression',
+        'mysterious or shocking focal point',
+        '8k resolution',
+        'cinematic',
+        'highly detailed',
+        'unreal engine 5 render',
+        'dramatic shadows'
+    ].join(', ');
+    const encoded = encodeURIComponent(`${prompt}, ${STYLE_SUFFIX}`);
     const url = `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1920&nologo=true&model=flux&seed=${seed}`;
     const rawPath = path.join(os.tmpdir(), `yt_thumb_raw_${Date.now()}.jpg`);
     const finalPath = path.join(os.tmpdir(), `yt_thumb_${Date.now()}.jpg`);
@@ -457,8 +479,27 @@ async function uploadCustomThumbnail(page, thumbPath) {
         return { ok: false, reason: 'kapak dosya alanı bulunamadı' };
     }
 
-    await input.setInputFiles(thumbPath);
+    try {
+        await input.setInputFiles(thumbPath);
+    } catch (directErr) {
+        // Yedek yol: "Kapak resmi" butonu -> file chooser
+        console.log('[!] Doğrudan dosya yükleme başarısız, buton üzerinden deneniyor...');
+        const thumbBtn = page.locator(
+            'button[aria-label="Kapak resmi"], button[aria-label="Thumbnail"], ' +
+            'ytcp-video-thumbnail-editor #custom-thumbnail-button'
+        ).first();
+        await thumbBtn.click({ timeout: 8000 });
+        const [chooser] = await Promise.all([
+            page.waitForEvent('filechooser', { timeout: 10000 }),
+            page.locator('input[type="file"]').last().click({ force: true }).catch(() => {}),
+        ]);
+        await chooser.setFiles(thumbPath);
+    }
     await page.waitForTimeout(5000);
+
+    // "Kaydet" / "Bitti" butonu (bazi Studio surumlerinde gerekli)
+    await page.locator('ytcp-button#done-button, ytcp-button#save-button')
+        .first().click({ timeout: 2500 }).catch(() => {});
 
     // Dogrulama: onizleme gorseli degisti mi? (otomatik secilen kare ile ayni olmamali)
     const applied = await page.evaluate(() => {
@@ -592,7 +633,8 @@ async function uploadToYouTubeStudio() {
         await page.waitForTimeout(800);
 
         // --- FAZ 11: AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor ---
-        console.log('[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...');
+        console.log('[*] SİLAHLANDIRILMIŞ AI KAPAK (THUMBNAIL) ÜRETİLİYOR VE YÜKLENİYOR...');
+    console.log('[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...');
         let thumbPath = null;
         try {
             thumbPath = await generateAiThumbnail(thumbnailPrompt);
@@ -606,6 +648,7 @@ async function uploadToYouTubeStudio() {
                 const thumbResult = await uploadCustomThumbnail(page, thumbPath);
                 if (thumbResult.ok) {
                     console.log('[+] Kapak resmi başarıyla yüklendi.');
+                    console.log('[+] KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!');
                 } else {
                     console.log(`[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Sebep: ${thumbResult.reason})`);
                 }
@@ -752,6 +795,19 @@ async function uploadToYouTubeStudio() {
 
         await persistAllSessionArtifacts(context);
         writeAuthStatus('upload_completed', { title, videoUrl, visibility: 'PUBLIC', matrixChannelId: matrixChannelId || '1', channelUrl: page.url() });
+
+        // FAZ 12.5: Yayinlanan video ID'sini kaydet (sabitlenmis yorum adimi kullanir)
+        try {
+            const vidMatch = String(videoUrl || '').match(/[?&]v=([A-Za-z0-9_-]{6,})/);
+            const publishedId = vidMatch ? vidMatch[1] : '';
+            if (publishedId) {
+                fs.mkdirSync(path.join(BASE_DIR, 'logs'), { recursive: true });
+                fs.writeFileSync(path.join(BASE_DIR, 'logs', 'channel_video_id.txt'), publishedId);
+                console.log(`[*] Yayınlanan video ID: ${publishedId}`);
+            }
+        } catch (idErr) {
+            console.log(`[!] Video ID kaydedilemedi: ${idErr.message}`);
+        }
 
         console.log("\n============================================================");
         console.log(" 🚀 PLAYWRIGHT TAM OTONOM YAYIN (PUBLIC) BAŞARILI! 🚀");

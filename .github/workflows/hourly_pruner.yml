@@ -3,7 +3,8 @@ name: Hourly Low-View Pruner (Ölü Ağırlık Temizleyici - Faz 10)
 on:
   schedule:
     # Her saat başı (XX:00) "ölü ağırlık" videoları taranır ve kalıcı olarak silinir.
-    - cron: '0 * * * *'
+    # FAZ 12: saatlik pruner - asal olmayan dakika (throttle azaltma)
+    - cron: '7 * * * *'
   workflow_dispatch:
     inputs:
       target_channel:

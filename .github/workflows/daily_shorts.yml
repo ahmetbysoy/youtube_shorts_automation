@@ -2,7 +2,8 @@ name: 15-Minute Blitzkrieg Money Printer
 
 on:
   schedule:
-    - cron: '0,15,30,45 * * * *' # GitHub'ın daha iyi algıladığı kesin 15 dakikalık dilimler
+    # FAZ 12: GitHub'ın en az throttle ettiği, asal olmayan dakikalar
+    - cron: '0,13,27,41,55 * * * *'
   workflow_dispatch:
     inputs:
       target_channel:
@@ -16,15 +17,16 @@ on:
         default: ''
         type: string
 
-# Çakışmayı önlemek için hayati ayar
+# FAZ 12: Tıkanan/eski job'ı iptal et, en günceli çalıştır (kuyruk tıkanmasın).
+# NOT: zincir (cron-kick) tetiklemesi POST'u tamamladıktan SONRA iptal olur,
+# bu yüzden kendi kendini devam ettiren zincir bozulmaz.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
   actions: write
-  pull-requests: write
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -162,6 +164,30 @@ jobs:
           # Tek video: icerik -> ses -> video -> kapak -> baslik/hashtag -> YAYIN (PUBLIC)
           # Tamami bitmeden sonraki kanal/kullanici devreye girmez (max-parallel: 1).
           xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py --channel_id ${{ matrix.channel_id }}
+
+      - name: "Kanal Hijyeni (Faz 12.5): Banner + About + Sabitlenmiş Yorum"
+        if: always()
+        env:
+          YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ' }}
+          AFFILIATE_URL_DEFAULT: ${{ vars.AFFILIATE_URL_DEFAULT }}
+        run: |
+          set -uo pipefail
+          mkdir -p logs
+          # Banner (bir kerelik) + About metni
+          if [ ! -f assets/banner.png ]; then
+            python scripts/generate_banner.py --out assets/banner.png || true
+          fi
+          ABOUT_TEXT="Bu kanal, yapay zeka destekli, her gün yeni şok bilgiler sunan bir arşivdir. İş birlikleri için: $(grep -E '^YT_EMAIL=' .env 2>/dev/null | cut -d= -f2- || echo 'iletisim@kanal.com')"
+          # Yeni yayınlanan video varsa sabitlenmiş yorum ekle
+          VIDEO_ID=""
+          if [ -f logs/channel_video_id.txt ]; then VIDEO_ID=$(cat logs/channel_video_id.txt); fi
+          if [ -z "$VIDEO_ID" ] && [ -f logs/auth_status.json ]; then
+            VIDEO_ID=$(python3 -c "import json;d=json.load(open('logs/auth_status.json'));print(d.get('videoId') or d.get('video_id') or '')" 2>/dev/null || true)
+          fi
+          ARGS="--banner assets/banner.png --about \"$ABOUT_TEXT\""
+          if [ -n "$VIDEO_ID" ]; then ARGS="$ARGS --pin $VIDEO_ID"; fi
+          echo "[*] Kanal hijyeni çalıştırılıyor: $ARGS"
+          timeout 600 xvfb-run -a --server-args="-screen 0 1660x950x24" node scripts/channel_hygiene.js $ARGS || echo "[!] Kanal hijyeni başarısız (yayınlama etkilenmedi)."
 
       - name: Üretilen Videoyu ve Logları Yedekle (Artifact - Kanal ${{ matrix.channel_id }})
         if: always()

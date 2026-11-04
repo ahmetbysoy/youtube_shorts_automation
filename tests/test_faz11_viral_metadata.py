@@ -32,12 +32,16 @@ class TestFaz11ViralMetadata(unittest.TestCase):
 
     def test_prompt_requests_cta_thumbnail_and_hashtags(self) -> None:
         system_prompt, user_prompt = content_engine.build_llm_prompts("İlginç Bilgiler", [])
-        self.assertIn("cta_line", system_prompt)
-        self.assertIn("thumbnail_prompt", system_prompt)
-        self.assertIn("viral_hashtags", system_prompt)
+        # FAZ 12: sistem promptu artik alan adlarini degil, kurallari anlatiyor.
+        self.assertIn("HOOK", system_prompt)
+        self.assertIn("CTA", system_prompt)
+        self.assertIn("THUMBNAIL PROMPT", system_prompt)
+        self.assertIn("HASHTAGLAR", system_prompt)
+        # Kullanici promptundaki JSON semasi alanlari korunur
         self.assertIn("cta_line", user_prompt)
         self.assertIn("thumbnail_prompt", user_prompt)
         self.assertIn("viral_hashtags", user_prompt)
+        self.assertIn("affiliate_hook", user_prompt)
         # Prompt JSON şeması hâlâ geçerli olmalı
         self.assertIn('"script_text"', user_prompt)
         self.assertIn('"visual_keywords"', user_prompt)
@@ -91,7 +95,7 @@ class TestFaz11ViralMetadata(unittest.TestCase):
 
     def test_workflows_use_exact_cron_and_have_chain_backup(self) -> None:
         daily = DAILY_WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("cron: '0,15,30,45 * * * *'", daily)
+        self.assertIn("cron: '0,13,27,41,55 * * * *'", daily)
         self.assertIn("permissions:", daily)
         self.assertIn("contents: write", daily)
         self.assertIn("actions: write", daily)
@@ -102,7 +106,7 @@ class TestFaz11ViralMetadata(unittest.TestCase):
         self.assertIn("slot_epoch", daily)
 
         pruner = PRUNER_WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("cron: '0 * * * *'", pruner)
+        self.assertIn("cron: '7 * * * *'", pruner)
         self.assertIn("cron-kick:", pruner)
 
     def test_no_skip_ci_in_auto_commit_messages(self) -> None:

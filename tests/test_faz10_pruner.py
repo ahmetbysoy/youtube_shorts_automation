@@ -47,7 +47,7 @@ class TestFaz10AutoPruner(unittest.TestCase):
     def test_hourly_workflow_schedule_and_matrix(self) -> None:
         self.assertTrue(PRUNER_WORKFLOW.exists(), "hourly_pruner.yml bulunmalı")
         yml = PRUNER_WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("cron: '0 * * * *'", yml)
+        self.assertIn("cron: '7 * * * *'", yml)
         # Faz 11: matris artik sabit 10 kanal degil, AYRI hesapli (benzersiz) kanallardan olusur.
         self.assertIn('needs.channel-map.outputs.distinct_csv', yml)
         self.assertIn('max-parallel: 1', yml)

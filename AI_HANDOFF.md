@@ -239,3 +239,33 @@ PRUNE_ONLY_VIDEO_IDS=<VIDEO_ID> xvfb-run -a node prune_low_performers.js
   `[*] Kapak görseli 1080x1920 olarak hazırlandı (74 KB).` → `[+] Kapak resmi başarıyla yüklendi.` →
   `⏭️ ATLANDI ... YouTube günlük yükleme kotanı doldu.`
 - `cron-kick`: `[KOTA] ... sonraki deneme 4 saat sonra.` → `Zincir tetiklendi -> kanal 1, dilim 1793760470.`
+
+---
+
+## 10. Faz 12 — TOTAL DOMINATION: Gerçekleşenler ve Kanıtlar
+
+### 10.1 Kod değişiklikleri
+| Alan | Değişiklik |
+| :--- | :--- |
+| `daily_shorts.yml` | cron `0,13,27,41,55 * * * *`, `cancel-in-progress: true` |
+| `content_engine.py` | Silahlandırılmış sistem promptu + `affiliate_hook` alanı |
+| `youtube_studio_uploader.js` | Agresif kapak stili, `filechooser` yedeği, `[+] KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!` logu, video ID kaydı (`logs/channel_video_id.txt`) |
+| `scripts/generate_banner.py` | 2560x1440 banner üretimi (PIL, güvenli alana otomatik sığdırma) |
+| `scripts/channel_hygiene.js` | Banner + About + sabitlenmiş yorum otomasyonu |
+
+### 10.2 Canlı Studio'da doğrulanan seçiciler
+| İşlem | Seçici |
+| :--- | :--- |
+| Özelleştirme sayfası | `https://studio.youtube.com/channel/<id>/editing/profile` |
+| Banner dosya input | `ytcp-banner-upload input#file-selector` |
+| Profil resmi / filigran (DİKKAT) | `ytcp-profile-image-upload` / `ytcp-video-watermark-upload` (banner DEĞİL) |
+| Kanal açıklaması | `#description-textbox` (contenteditable) + "Yayınla" |
+| Yorum kutusu | `ytd-comment-simplebox-renderer #placeholder-area` → `#input` → `#submit-button` |
+| Yorum ⋮ menüsü | `ytd-comment-view-model ytd-menu-renderer button#button` (aria "İşlem menüsü") |
+| Sabitleme | `ytd-menu-service-item-renderer:has-text("Sabitle")` → doğrulama: `#pinned-comment-badge` |
+| ❌ Studio Yorumlar sayfası | "Kimliğinizi doğrulayın" modalı → **izleme sayfasından yorum yazılıyor** |
+
+### 10.3 Notlar
+- Studio'daki "Branding" sayfası (`/editing/branding`) **hata veriyor**; banner artık `/editing/profile` üzerinden yükleniyor.
+- `youtube.upload` OAuth kapsamı yorum yazmaya yetmez; bu yüzden yorum **tarayıcı oturumuyla** yazılıyor.
+- Banner + About her turda idempotent olarak çalışır (güncelleme, üstüne yazma).

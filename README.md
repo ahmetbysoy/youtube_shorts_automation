@@ -193,3 +193,53 @@ işaret ettiği için kanalın günlük yükleme kotası 10 katına kadar harcan
 > ⚠️ **Kanal kurulumu:** `COOKIES_JSON_1..10` şu anda **tek hesabı** gösteriyor. Gerçek 10 kanal için
 > her kanalın **ayrı bir YouTube hesabı** (ayrı `cookies.json` + `storage_state.json`) olmalı.
 > Ayrı hesaplar girildikçe `channel_map.sh` otomatik olarak üretime alır (matris büyür).
+
+---
+
+## Faz 12 — TOTAL DOMINATION (Silahlandırılmış Prompt + Agresif Kapak + Kanal Hijyeni)
+
+### 1) Cron Throttle Bypass
+```yaml
+on:
+  schedule:
+    - cron: '0,13,27,41,55 * * * *'   # asal olmayan dakikalar
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true            # tıkanmış/eski job iptal, en güncel çalışır
+permissions:
+  contents: write
+  actions: write
+```
+> Zincir (cron-kick) tetikleme POST'u tamamladıktan sonra iptal olur; self-perpetuating zincir bozulmaz.
+
+### 2) Silahlandırılmış LLM Promptu
+`content_engine.py → build_llm_prompts()` artık "algoritma hacker'ı" personasıyla çalışır:
+scroll-stop hook (60-80 kelime), zorlayıcı CTA, **zorunlu kapak dili**
+(`YouTube Shorts thumbnail, vertical 9:16, hyper-dramatic lighting, high contrast, vibrant colors,
+glowing elements, 8k resolution, cinematic`), tam 3 spesifik hashtag + `affiliate_hook`.
+JSON şeması: `topic, title, description, hook, script_text, cta_line, thumbnail_prompt,
+viral_hashtags, affiliate_hook, visual_keywords`.
+
+### 3) Agresif AI Kapak (CTR odaklı)
+`youtube_studio_uploader.js` → kapak promptuna otomatik eklenen stil suffix'i:
+`glowing arrows, shocked expression, unreal engine 5 render, dramatic shadows, 8k resolution...`
+Yükleme iki katmanlıdır: önce `ytcp-thumbnail-uploader input#file-loader` (doğrulanmış yol),
+olmazsa `Kapak resmi / Thumbnail` butonu + `filechooser` yedeği. Başarı logu:
+`[+] KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!`
+
+### 4) Açıklama Sırası (Metadata Zehiri)
+```
+[1] affiliate_hook (varsa) / affiliate CTA + link
+[2] Etkileşim CTA (cta_line)
+[3] Gövde
+[4] Tam 3 trend hashtag
+```
+
+### 5) Kanal Hijyeni (otomasyon)
+| Adım | Nerede | Durum |
+| :--- | :--- | :--- |
+| Banner (2560x1440, siyah + sarı/beyaz + kırmızı "ABONE OL") | `scripts/generate_banner.py` | ✅ üretildi & yüklendi |
+| Kanal "Hakkında" açıklaması | `ytcp-social-suggestions-textbox#description-textbox` + "Yayınla" | ✅ güncellendi |
+| Sabitlenmiş yorum | `ytd-comment-simplebox-renderer` → `İşlem menüsü` → "Sabitle" | ✅ yazıldı & sabitlendi (`#pinned-comment-badge`) |
+
+Hepsi `scripts/channel_hygiene.js` ile yapılır; **hata olursa yayınlama akışı bozulmaz**.

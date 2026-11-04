@@ -654,31 +654,31 @@ def build_llm_prompts(
             "Senaryoyu bu doğrulanmış bilgilere dayandır; kesinlikle uydurma isim veya tarih ekleme.\n"
         )
 
+    # --- FAZ 12: SİLAHLANDIRILMIŞ PROMPT (algoritma manipülasyon motoru) ---
     system_prompt = (
-        "Sen milyonlarca izlenen Türkçe YouTube Shorts belgesel kanallarının baş senaristisin. "
-        "Görevin 'İlginç Bilgiler / Tarih / Bilim' konseptinde %100 gerçek, doğrulanabilir, "
-        "izleyiciyi ilk 3 saniyede yakalayan ve son saniyeye kadar ekranda tutan bir Shorts paketi üretmektir. "
-        "Sen bir 'algoritma hacker'ısın: metnin yanında KAPAK (thumbnail) ve ETKİLEŞİM (CTA + hashtag) "
-        "metadatasını da üretirsin.\n\n"
-        "KESİN KURALLAR:\n"
-        "1. HOOK (İlk Cümle - ilk 3 saniye): Asla 'Merhaba' deme. Doğrudan beyni sarsan bir soru veya "
-        "şok edici istatistik olmalı; kaydırmayı anında durduracak merak uyandırıcı bir gerçek veya soru.\n"
-        "2. UZUNLUK: `script_text` alanı TAM OLARAK 60 ile 80 Türkçe kelime arasında olmalı (yaklaşık 30-45 saniye).\n"
-        "3. CTA (Call to Action): `cta_line` alanı, videonun son cümlesi gibi izleyiciyi yorum yapmaya veya "
-        "abone olmaya ZORLAYAN tek bir cümle olmalı. "
-        "Örnek: 'Sen olsan ne yapardın? Yorumlara yaz!' veya 'Bunu bilen var mı? Abone ol, birlikte şaşıralım!'\n"
-        "4. THUMBNAIL PROMPT: `thumbnail_prompt` alanı, bu videonun YouTube KAPAĞI olacak; yüksek kontrastlı, "
-        "sinematik, DIKEY (9:16) bir görsel için İNGİLİZCE bir 'image generation prompt' olmalı. "
-        "Örnek: 'Cinematic vertical shot of Napoleon running from giant rabbits, hyper-realistic, dramatic lighting, 8k'. "
-        "Görselde yazı/metin olmasın, odak tek bir güçlü sahnede olsun.\n"
-        "5. HASHTAGLAR: `viral_hashtags` alanında SADECE 3 adet, çok spesifik ve trend hashtag üret "
-        "(örn. '#göbeklitepe', '#napolyon', '#marianacukuru'). Genel etiketler ('#bilim', '#tarih') yazma; "
-        "#shorts zaten sistemde var, onu da yazma.\n"
-        "6. Dil ve Diksiyon: Çok doğal, akıcı ve vurucu bir belgesel Türkçesi kullan. Emoji, hashtag, markdown veya "
-        "sahne notu YAZMA. Kısaltmaları ('milattan önce' gibi) açık yaz.\n"
-        "7. Görsel Arama Kelimeleri: Faz 3'te Pexels/Pixabay dikey stok video aramasında kullanılmak üzere "
-        "konuya uygun 4 adet İngilizce sinematik arama terimi (`visual_keywords`) üret.\n"
-        "8. Yalnızca geçerli bir JSON nesnesi döndür."
+        "Sen YouTube algoritmasını hackleyen, milyonlarca izlenen Türkçe Shorts kanallarının "
+        "acımasız baş stratejistsin. "
+        "Amacın: İzleyiciyi ilk 3 saniyede dondurmak (scroll stop), 40 saniye boyunca ekrana "
+        "çivilemek (retention) ve video biter bitmez yorum yapmaya veya linke tıklamaya ZORLAMAK "
+        "(engagement).\n\n"
+        "KESİN VE TARTIŞILMAZ KURALLAR:\n"
+        "1. HOOK: Asla 'Merhaba', 'Biliyor muydunuz' deme. Doğrudan beyni sarsan, absürt veya "
+        "şok edici bir iddia/soru ile başla.\n"
+        "2. UZUNLUK: `script_text` TAM OLARAK 60-80 kelime olmalı. (35-45 saniye). Daha kısa ise "
+        "reddedilir.\n"
+        "3. CTA (Call to Action): Metnin son cümlesi, izleyiciyi kışkırtarak yorum yapmaya zorlamalı. "
+        "(Örn: 'Sence bu bir tesadüf mü yoksa planlı mı? Yorumlara yaz, tartışalım!')\n"
+        "4. THUMBNAIL PROMPT: Bu videonun kapağı olacak. İngilizce yaz. MUTLAKA şunları içermeli: "
+        "'YouTube Shorts thumbnail, vertical 9:16, hyper-dramatic lighting, high contrast, vibrant "
+        "colors, glowing elements, mysterious or shocking focal point, 8k resolution, cinematic, "
+        "highly detailed'.\n"
+        "5. HASHTAGLAR: Sadece 3 adet, çok spesifik ve o videoya özel hashtag. (#shorts hariç, o "
+        "sistemde var; genel etiket de yazma.)\n"
+        "6. GÖRSELLER: `visual_keywords` alanında konuya uygun 4 adet İNGİLİZCE sinematik arama "
+        "terimi üret (Pexels/Pixabay dikey stok video araması için).\n"
+        "7. DİL: Çok doğal, akıcı ve vurucu bir belgesel Türkçesi. Emoji, hashtag, markdown veya "
+        "sahne notu YAZMA.\n"
+        "8. SADECE GEÇERLİ, BOZUK OLMAYAN BİR JSON NESNESİ DÖNDÜR."
     )
 
     user_prompt = (
@@ -688,15 +688,19 @@ def build_llm_prompts(
         f"{fact_block}\n"
         "Lütfen tam olarak aşağıdaki JSON şemasında üretim yap:\n"
         "{\n"
-        '  "topic": "Tarih veya Bilim veya İlginç Bilgiler",\n'
-        '  "title": "Merak uyandıran çarpıcı Türkçe başlık (Maks 60 karakter) #Shorts",\n'
-        '  "description": "Kısa Türkçe SEO açıklaması",\n'
-        '  "hook": "Metnin ilk cümlesi olan 3 saniyelik kanca",\n'
-        '  "script_text": "Hook cümlesiyle başlayan, 60-80 kelimelik tam seslendirme metni",\n'
-        '  "cta_line": "Videonun sonundaki etkileşim çağrısı cümlesi",\n'
-        '  "thumbnail_prompt": "İngilizce, dikey, yüksek kontrastlı kapak görseli promptu",\n'
-        '  "viral_hashtags": ["#spesifik1", "#spesifik2", "#spesifik3"],\n'
-        '  "visual_keywords": ["english keyword 1", "english keyword 2", "english keyword 3", "english keyword 4"]\n'
+        '  "topic": "Tarih / Bilim / İlginç Bilgiler",\n'
+        '  "title": "Şok edici, 60 karakteri geçmeyen, merak uyandıran başlık #Shorts",\n'
+        '  "description": "Kısa, merak uyandıran Türkçe açıklama gövdesi",\n'
+        '  "hook": "İlk 3 saniyede izleyiciyi donduran soru/iddia",\n'
+        '  "script_text": "Hook ile başlayan, 60-80 kelimelik, tempolu metin",\n'
+        '  "cta_line": "İzleyiciyi yorum yapmaya ZORLAYAN kışkırtıcı son cümle",\n'
+        '  "thumbnail_prompt": "İngilizce, yukarıdaki kurallara uygun, yüksek tıklama oranlı (CTR) '
+        'kapak görseli promptu",\n'
+        '  "viral_hashtags": ["#spesifikkonu1", "#spesifikkonu2", "#spesifikkonu3"],\n'
+        '  "affiliate_hook": "Açıklamanın en üstüne gelecek, tıklamaya zorlayan 1 satırlık link '
+        'çağrısı (Örn: 🔗 Bu deney setini incele: [LINK])",\n'
+        '  "visual_keywords": ["english keyword 1", "english keyword 2", "english keyword 3", '
+        '"english keyword 4"]\n'
         "}"
     )
     return system_prompt, user_prompt
@@ -965,8 +969,28 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
 
     affiliate_link, affiliate_cta = resolve_affiliate_offer(topic_val, title, script_text)
 
-    # SIRA: [1] Affiliate CTA + link (Faz 9: en ustte) -> [2] Viral CTA -> [3] Govde -> [4] Hashtag'ler
-    blocks = [affiliate_cta, cta_line, base_desc, " ".join(viral_hashtags)]
+    # --- FAZ 12: affiliate_hook (LLM'in yazdigi tiklama zorlayan ilk satir) ---
+    affiliate_hook = str(raw_data.get("affiliate_hook", "") or "").strip()
+    if affiliate_hook:
+        # "[LINK]" placeholder'ini gercek affiliate linki ile degistir
+        affiliate_hook = affiliate_hook.replace("[LINK]", affiliate_link).replace("[link]", affiliate_link)
+        if affiliate_link and affiliate_link not in affiliate_hook:
+            affiliate_hook = f"{affiliate_hook} {affiliate_link}".strip()
+        affiliate_hook = affiliate_hook[:300].strip()
+    else:
+        affiliate_hook = ""
+
+    # SIRA: [1] Affiliate hook (Faz 12) -> [2] Affiliate CTA+link (Faz 9) -> [3] Viral CTA
+    #        -> [4] Govde -> [5] Tam 3 hashtag
+    # Tekrari onlemek icin: hook linki iceriyorsa ayri affiliate CTA satiri eklenmez.
+    if affiliate_hook:
+        aff_block = affiliate_hook
+    elif affiliate_cta:
+        aff_block = affiliate_cta
+    else:
+        aff_block = ""
+
+    blocks = [aff_block, cta_line, base_desc, " ".join(viral_hashtags)]
     enriched_desc = "\n\n".join([b for b in blocks if b]).strip()
 
     return {
@@ -976,6 +1000,7 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
         "description": enriched_desc,
         "affiliate_link": affiliate_link,
         "affiliate_cta": affiliate_cta,
+        "affiliate_hook": affiliate_hook,
         "cta_line": cta_line,
         "thumbnail_prompt": thumbnail_prompt,
         "viral_hashtags": viral_hashtags,
