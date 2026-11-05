@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Medya anahtar güvenliği
+
+- Pixabay gereği URL sorgusunda bulunan API anahtarı hata loguna yazılmasın diye tam istisna yerine yalnız sınıfı kaydedilir; HTTP yönlendirmesi reddedilir. Medya uygunluğu ayrıca doğrulanmalıdır.
+
 ## 2026-11-05 — Gerçek Gemini metin kuru testi
 
 - Yayınsız #41991785782 testinde Gemini 3.1 Flash Lite geçerli 84 kelimelik senaryo döndürdü. Yıldızlara göre dönüş/Güneş günü ayrımı ve tekrar güvenliği nedeniyle otomatik senaryo yayınına bağlanmadı.

@@ -63,3 +63,6 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 
 - NASA Venüs facts sayfasında “sunrise to sunset 117” ifadesi, NASA GISS kaynak sayfasındaki 117 günlük **Güneş günü** ifadesiyle çelişkili/yorum gerektiriyor. İlk kuru test bağlamında bu belirsiz ifade de üretime yansımış; bu nedenle ilk senaryo doğruluk onayı değildir. Test bağlamı GISS kaynağındaki Güneş günü ifadesiyle düzeltildi ve yeniden sınanacak.
 - 08:10 UTC civarında yapılan salt-okunur kontrolde yeni bir Göbeklitepe taslağı daha (`hlmfIWp3rSc`) tespit edildi: toplam 3 taslak. #122 artefaktı aynı başlıkta, ancak eşleşme salt başlıkla kesin sayılmaz. Taslaklar yayınlanmadı ve değiştirilmedi.
+
+- Pixabay API anahtarı servis gereği sorgu parametresindedir; eski kod hata metniyle tam URL/anahtar sızdırabiliyordu. Hata logu istisna türüne indirildi, yönlendirme reddedildi. Otomatik medya kalitesi/telif/konu doğruluğu bu düzeltmeyle kanıtlanmış değildir.
+- Düzeltilmiş NASA GISS girdisiyle yayınsız Gemini text koşusu `41992632308` HTTP/API ve şema testini geçti (83 kelime). Üretilen metin hâlâ “fiziksel dengesizlik/evrenin hatası” gibi yanıltıcı retorik içerdi; kaynak doğrulama ve editoryal kontrol yokken otomatik senaryo yayınını etkinleştirmeme kararı geçerli.

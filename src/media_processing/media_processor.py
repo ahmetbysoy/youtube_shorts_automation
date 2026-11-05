@@ -107,12 +107,16 @@ def fetch_pixabay_video(keyword: str, duration_needed: float) -> Dict[str, Any] 
     if not _is_real_api_key(api_key):
         return None
 
-    url = (
-        f"https://pixabay.com/api/videos/"
-        f"?key={api_key.strip()}&q={requests.utils.quote(keyword)}&min_width=1080&per_page=8"
-    )
+    # Pixabay requires the API key in the query. Never print the URL or an
+    # exception containing it; do not forward it through HTTP redirects.
+    url = "https://pixabay.com/api/videos/"
     try:
-        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT},
+                            params={"key": api_key.strip(), "q": keyword, "min_width": 1080, "per_page": 8},
+                            timeout=15, allow_redirects=False)
+        if 300 <= resp.status_code < 400:
+            print("[UYARI] Pixabay yönlendirmesi güvenlik nedeniyle reddedildi.", file=sys.stderr)
+            return None
         resp.raise_for_status()
         data = resp.json()
         hits = data.get("hits") or []
@@ -128,7 +132,8 @@ def fetch_pixabay_video(keyword: str, duration_needed: float) -> Dict[str, Any] 
                     "media_kind": "video",
                 }
     except Exception as exc:
-        print(f"[UYARI] Pixabay API hatası ({keyword}): {exc}", file=sys.stderr)
+        # The exception may contain the full query URL and API key.
+        print(f"[UYARI] Pixabay API hatası ({keyword}): {type(exc).__name__}; yerel/diğer yedek deneniyor.", file=sys.stderr)
     return None
 
 
