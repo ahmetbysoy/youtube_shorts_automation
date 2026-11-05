@@ -1,5 +1,7 @@
 # YouTube Shorts Automation — Tam Otonom İçerik Fabrikası (Faz 1–7)
 
+> Faz 15 canlı plan/TODO: [Kanalın tek tek incelenmesi, kapak yenileme ve otonom sistem](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
+
 > **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı seçimiyle 26 mevcut taslak PUBLIC yayınlandı; silme yapılmadı. [Video kanıtları](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; tekrar, görsel eşleştirme ve açıklama kalitesi TODO. Aktif pruner politikası değiştirilmedi. Aşağıdaki eski faz özetleri tarihsel olabilir; tek kanal ve güncel TODO için `AI_HANDOFF.md` ve Faz 13 planına bakın.
 
 > Faz 14 ilk kod: `GEMINI_FREE_VISION_ENABLED` kod varsayılanı `0`, bu depoda `1`; gerçek tek kare API testi başarılı; Studio üzerinde yeni kapak henüz doğrulanmadı. Mevcut kareler uygun değilse temsili yerel kapak. Ücretli görsel üretimi yapılmaz. Projeye billing bağlanırsa text/vision istekleri ücretlenebilir; bu durumda değişkeni `0` yapın.

@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Faz 15 planı
+
+- Kanaldaki videoların tek tek incelenmesi, kapak pilotu ve toplu doğrulanmış uygulama ile otonom sistem eksikleri için kanıt odaklı TODO eklendi. Henüz video değiştirilmedi.
+
 ## 2026-11-05 — Ücretsiz vision etkinleştirme
 
 - Bu depoda `GEMINI_FREE_VISION_ENABLED=1` API ile ayarlandı ve okundu; kodun güvenli varsayılanı 0. Google billing sonradan açılırsa maliyet mümkün, kapatılmalı. Anahtarın Free tier projeye aitliği kullanıcı beyanına dayanır.

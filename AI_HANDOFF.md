@@ -1,5 +1,7 @@
 # 🤖 AI_HANDOFF.md — Yapay Zeka Devir Teslim ve Operasyon Kılavuzu
 
+> **Faz 15:** [Canlı plan ve TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md). Kullanıcı tüm videoları tek tek inceleyip kapakları yeniden düzenlemeyi istedi. Henüz inceleme ve yükleme yapılmadı; ücretsiz kullanım sınırını ve gizliliği koru.
+
 > **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı önceki silme isteğini değiştirerek tüm taslakların PUBLIC yayınını seçti. 26 mevcut video Studio’da aynı ID üzerinden PUBLIC doğrulandı; silme yapılmadı. [Kanıt listesi](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; içerik tekrarı, görsel uyumu ve açıklamalar çözülmedi. Aktif otomasyon/pruner değiştirilmedi. Önceki bloklar tarihsel kanıttır.
 
 > **Faz 14 uygulama:** `scripts/gemini_frame_selector.py` ücretsiz text/vision endpointini en fazla bir kez kullanır; `vars.GEMINI_FREE_VISION_ENABLED` kod varsayılanı 0; repo değişkeni şu anda 1. Yeni görsel üretmez. Gerçek CI kare incelemesi `41988709577` başarılı; Studio kapak yükleme kanıtı henüz yok; Google projesine billing bağlanırsa text API ücretli olabilir, değişkeni kapat.
