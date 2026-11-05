@@ -233,7 +233,13 @@ def main() -> int:
         # Decorative scene is explicitly illustrative; do not represent an actual photo.
         subject = (title + " " + args.topic).lower()
         cx, cy = W // 2, 1110
-        if "emu" in subject:
+        if "muz" in subject:
+            # Decorative banana silhouette, not a scientific illustration.
+            draw.ellipse([145, 740, 935, 1530], fill=(34, 35, 45), outline=(65, 71, 80), width=5)
+            draw.arc([250, 825, 820, 1375], 25, 155, fill=(245, 205, 73), width=105)
+            draw.line([(285, 1180), (245, 1135)], fill=(245, 205, 73), width=50)
+            draw.line([(790, 1175), (830, 1130)], fill=(245, 205, 73), width=50)
+        elif "emu" in subject:
             # A stylized long-necked bird, not a depiction of a specific animal or event.
             draw.ellipse([145, 740, 935, 1530], fill=(34, 35, 45), outline=(65, 71, 80), width=5)
             draw.ellipse([310, 1000, 710, 1250], fill=(221, 185, 87))
