@@ -1,6 +1,6 @@
 # YouTube Shorts Automation — Tam Otonom İçerik Fabrikası (Faz 1–7)
 
-> Faz 15: 56 PUBLIC video 4 karelik örneklerle tarandı; baştan sona doğrulama ve iki taslak incelemesi açık. YouTube günlük özel kapak kotası nedeniyle toplu yükleme bekliyor. [Canlı plan/TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
+> Faz 15: 08:39 UTC envanterinde 58 PUBLIC + 3 taslak; PUBLIC videoların kapakları ve örnek kareleri, taslakların önizlemeleri incelendi. Baştan sona ses/olgu doğrulaması yapılmadı. Özel kapaklar günlük kota nedeniyle değiştirilmedi; #123 otomatik YouTube kapağıyla PUBLIC, iş başarılı fakat workflow iptal. Gemini kare kabulü yanlış eşleşme nedeniyle varsayılan kapalıdır. [Canlı plan/TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
 
 > Faz 15 canlı plan/TODO: [Kanalın tek tek incelenmesi, kapak yenileme ve otonom sistem](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
 
@@ -10,7 +10,7 @@
 
 > Faz 14 güncel plan: [ücretsiz Gemini kare değerlendirmesi ve yerel yedek](docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md); ücretli görüntü üretimi kullanıcının tercihi nedeniyle kapalı.
 
-Python, FFmpeg ve Node.js Playwright tabanlı; **sıfır API kotası**, **sıfır maliyet** ve **sıfır manuel müdahale** ile çalışan, GitHub Actions üzerinde her gün paralel olarak Türkçe YouTube Shorts üreten ve doğrudan **Herkese Açık (`PUBLIC`)** yayınlayan uçtan uca otomasyon sistemi.
+Python, FFmpeg ve Node.js Playwright tabanlı, GitHub Actions üzerinde Türkçe Shorts üretip PUBLIC yayınlamayı amaçlayan sistem. Ücretsiz katmanlar ve YouTube kotaları sınırlıdır; maliyet ve sıfır manuel müdahale garantisi verilmez. Güncel durum ve açık doğrulama eksikleri için Faz 15 TODO’ya bakın.
 
 > 🤖 **Projeyi Devralacak Yapay Zeka / Geliştirici İçin İlk Adım:**  
 > Tüm sistem durumu, kimlik/oturum dosyalarının Google Drive & GitHub Secrets konumları, kritik güvenlik kuralları ve çözülmüş teknik tuzaklar için önce **[`AI_HANDOFF.md`](./AI_HANDOFF.md)** ve **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)** belgelerini okuyun.
