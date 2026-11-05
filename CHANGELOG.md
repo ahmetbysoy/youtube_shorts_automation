@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Faz 14 planı
+
+- Kullanıcı ücretli API kullanımını reddetti; AI Studio Free tier projesi ve GitHub Actions secret varlığı doğrulandı. Gerçek Gemini API ve kapak testleri henüz yapılmadı.
+- Mevcut karelerin ücretsiz Gemini ile değerlendirilmesi ve yerel yedek için plan eklendi. Gemini ile yeni görsel üretildiği iddia edilmez.
+
 ## 2026-11-05 — Taslakların kullanıcının seçimiyle yayınlanması
 
 - Kullanıcı silme yerine tüm taslakları herkese açık yayınlamayı seçti; 26 mevcut video PUBLIC olarak yayınlandı ve aynı ID’ler Studio’da doğrulandı. Silme yapılmadı.
