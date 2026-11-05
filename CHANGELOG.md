@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Gerçek kapak kotası yolu ve Gemini yanlış eşleşmesi
+
+- #123 build-and-upload başarılı, `Ph4448Rkw3Q` PUBLIC: günlük özel kapak modalı aşıldı ve kullanıcı kararıyla YouTube otomatik kapağı kullanıldı.
+- Aynı koşuda Gemini, gözlemde konu nesnesi belirsiz ve yabancı yazılı bir kareyi 0.90 ile seçti. Model eşleşmesi henüz güvenilir değil; otomatik kare kabulü varsayılan kapalı, temsili yerel yedek korunur.
+
 ## 2026-11-05 — Üç taslağın Studio önizleme incelemesi
 
 - Üç yeni taslağın kendi ID ayrıntı sayfaları salt okunur incelendi; önizlemelerinde konu dışı görseller var. Hiçbiri değiştirilmedi veya yayımlanmadı.

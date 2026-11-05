@@ -715,7 +715,7 @@ async function uploadToYouTubeStudio() {
         } else if (useFreeVision) {
             // Mevcut kareyi seçer; Google ile yeni görüntü üretmez. Uygun kare
             // yoksa aynı fonksiyon yerel temsili kart döndürür.
-            console.log('[KAPAK] Ücretsiz Gemini mevcut kareleri inceliyor; görsel üretim API çağrılmaz.');
+            console.log('[KAPAK] Ücretsiz Gemini kare incelemesi; doğrulanmamış seçim kapalıysa temsili yedek kullanılır. Görsel üretim API çağrılmaz.');
             thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''));
         } else {
             try {
