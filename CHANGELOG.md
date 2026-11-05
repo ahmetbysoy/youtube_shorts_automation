@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Kota durumunda kullanıcı tercihi
+
+- Kullanıcı kota doluyken YouTube otomatik kapakla yayına devamı seçti. Özel küçük resim kota modalını tanıyıp kapatma ve sonucu loglama eklendi; yeni kodla canlı yayın kanıtı henüz yok. AI video yalnız doğrulanmış ücretsiz ve yedekli ise araştırılacak.
+
 ## 2026-11-05 — Faz 15 ilk gerçek envanter ve kota engeli
 
 - HAR ile 58 Shorts: 56 PUBLIC ve 2 taslak; veri özel tutuldu.

@@ -508,6 +508,27 @@ function generateLocalFallbackThumbnail(title, topic, disableVision = false) {
     return null;
 }
 
+/** YouTube'un özel küçük resim sınırı, genel video yükleme sınırından ayrıdır. */
+async function dismissThumbnailLimitDialog(page) {
+    const text = await page.locator('body').innerText({ timeout: 5000 }).catch(() => '');
+    const marker = /günlük\s+özel\s+küçük\s+resim\s+sınırına\s+ulaşıldı|daily\s+custom\s+thumbnail\s+limit\s+reached/i;
+    if (!marker.test(text)) return false;
+    console.log('[KAPAK] YouTube günlük özel kapak sınırına ulaşıldı; yerel kapak yüklenemedi. Kullanıcı seçimiyle otomatik kapakla devam edilecek.');
+    const dialogs = page.locator('ytcp-dialog, tp-yt-paper-dialog, [role="dialog"]');
+    for (let i = (await dialogs.count()) - 1; i >= 0; i--) {
+        const dialog = dialogs.nth(i);
+        if (!(await dialog.isVisible().catch(() => false))) continue;
+        const dialogText = await dialog.innerText().catch(() => '');
+        if (!marker.test(dialogText)) continue;
+        const close = dialog.getByRole('button', { name: /^(Kapat|Close)$/i }).first();
+        if (!(await close.isVisible().catch(() => false))) continue;
+        await close.click({ timeout: 5000 });
+        await page.waitForTimeout(1000);
+        if (!(await dialog.isVisible().catch(() => false))) return true;
+    }
+    throw new Error('THUMBNAIL_QUOTA_DIALOG_BLOCKED: günlük özel kapak sınırı uyarısı kapatılamadı; yayın durduruldu');
+}
+
 /** YouTube Studio'daki "Küçük resim" (thumbnail) alanına özel kapağı yükler. */
 async function uploadCustomThumbnail(page, thumbPath) {
     const input = page.locator(
@@ -543,11 +564,11 @@ async function uploadCustomThumbnail(page, thumbPath) {
     }
     await page.waitForTimeout(5000);
 
-    // "Kaydet" / "Bitti" butonu (bazi Studio surumlerinde gerekli)
-    await page.locator('ytcp-button#done-button, ytcp-button#save-button')
-        .first().click({ timeout: 2500 }).catch(() => {});
+    if (await dismissThumbnailLimitDialog(page)) {
+        return { ok: false, dailyThumbnailLimit: true, reason: 'günlük özel kapak limiti; YouTube otomatik kapak seçimi' };
+    }
 
-    // Dogrulama: onizleme gorseli degisti mi? (otomatik secilen kare ile ayni olmamali)
+    // Önizleme kontrolü yayınlamaz ve ana yayın/kaydet düğmesine dokunmaz.
     const previewAfter = await page.evaluate(() => {
         const editor = document.querySelector('ytcp-video-thumbnail-editor, ytcp-thumbnail-uploader, ytcp-video-custom-still-editor');
         return editor ? [...editor.querySelectorAll('img')].map(img => img.currentSrc || img.src).filter(Boolean).join('|') : '';
@@ -721,6 +742,7 @@ async function uploadToYouTubeStudio() {
                     console.log(`[!] Kapak yüklemesi doğrulanamadı; Studio kontrolü gerekli. (Sebep: ${thumbResult.reason})`);
                 }
             } catch (thumbUploadErr) {
+                if (String(thumbUploadErr.message || '').includes('THUMBNAIL_QUOTA_DIALOG_BLOCKED')) throw thumbUploadErr;
                 console.log(`[!] Kapak yüklemesi doğrulanamadı; Studio kontrolü gerekli. (Hata: ${thumbUploadErr.message})`);
             } finally {
                 if (fs.existsSync(thumbPath)) {
