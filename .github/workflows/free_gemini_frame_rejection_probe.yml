@@ -1,0 +1,59 @@
+name: "Real frame quality probe (no publication)"
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install 'Pillow==11.3.0' 'yt-dlp==2026.10.26'
+      - name: Get real published Mariana video and candidate frames
+        run: |
+          mkdir -p probe
+          yt-dlp --no-playlist --quiet --no-warnings -f 'bv*[height<=640]+ba/b' --merge-output-format mp4 -o 'probe/video.%(ext)s' 'https://www.youtube.com/watch?v=Ph4448Rkw3Q'
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0,'scripts')
+          from generate_fallback_thumbnail import extract_candidate_frames
+          files=extract_candidate_frames(Path('probe/video.mp4'),Path('probe'))
+          if len(files)!=5: raise SystemExit('Gerçek videodan 5 kare alınamadı')
+          print('REAL_VIDEO_FRAMES',len(files))
+          PY
+      - name: One free Gemini vision call, require rejection of misleading frames
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_FREE_VISION_ENABLED: '1'
+          GEMINI_ALLOW_UNVERIFIED_FRAME_SELECTION: '1'
+        run: |
+          python - <<'PY'
+          import contextlib, io, sys
+          from pathlib import Path
+          sys.path.insert(0,'scripts')
+          from gemini_frame_selector import select_subject_frame
+          frames=[Path('probe')/f'frame_{i}.jpg' for i in range(5)]
+          b=io.StringIO()
+          with contextlib.redirect_stdout(b):
+              selected=select_subject_frame("Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",frames)
+          log=b.getvalue(); print(log,end='')
+          if 'açık/güvenli konu eşleşmesi bulmadı' not in log:
+              raise SystemExit('Ret kanıtlanmadı; API hatası veya yanlış eşleşme')
+          if selected is not None:
+              raise SystemExit('Bu gerçek örnekte seçilen kare konu bakımından kanıtlanmadı')
+          print('REAL_FRAME_REJECTION_OK; insan doğrulaması hâlâ gerekli')
+          PY
+      - name: Keep real frame evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: real-mariana-frame-evidence
+          path: probe/frame_*.jpg
+          if-no-files-found: warn
+          retention-days: 7
