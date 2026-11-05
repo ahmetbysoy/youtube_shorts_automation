@@ -19,6 +19,26 @@ jobs:
           mkdir -p probe
           curl --fail --silent --show-error --max-time 30 -L 'https://i.ytimg.com/vi/7DULxjp6PsQ/hqdefault.jpg' -o probe/input.jpg
           python -c 'from PIL import Image; im=Image.open("probe/input.jpg"); im.verify(); print("Gerçek herkese açık video görseli doğrulandı")'
+      - name: Discover account model names (no generation)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          key=os.environ.get('GEMINI_API_KEY','')
+          if not key: raise SystemExit('GEMINI_API_KEY not present')
+          req=urllib.request.Request('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100',headers={'x-goog-api-key':key})
+          try:
+              with urllib.request.urlopen(req,timeout=20) as r: data=json.load(r)
+          except urllib.error.HTTPError as exc:
+              try: detail=json.loads(exc.read()).get('error',{}).get('status','unknown')
+              except Exception: detail='unknown'
+              print('MODEL_LIST_HTTP',exc.code,'STATUS',detail)
+              raise SystemExit(1)
+          for m in data.get('models',[]):
+              if 'generateContent' in m.get('supportedGenerationMethods',[]):
+                  print('AVAILABLE_MODEL',m.get('name',''))
+          PY
       - name: One free-tier vision request; never generate images
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -42,6 +62,7 @@ jobs:
           print('FREE_VISION_REAL_REQUEST_OK selected=', result)
           PY
       - name: Generate local fallback without API
+        if: always()
         env:
           GEMINI_FREE_VISION_ENABLED: '0'
         run: |

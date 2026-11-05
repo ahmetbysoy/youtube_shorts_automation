@@ -19,3 +19,5 @@ Google fiyat sayfasında Gemini 3.1 Flash Lite Image ve Nano Banana 2.1 için ü
 ## Uygulama sınırı
 
 Yerel yedek `--strict-subject` ile rastgele kontrast karesi yerine uygunluk doğrulanamazsa açıkça **temsili görsel** içeren metin kartına düşer; eski standalone kullanımda `--strict-subject` yoksa kontrastlı kare seçimi geriye dönük korunur. Dış servis HTTP 402 ise beklemeden yedeğe geçilir. Bu yöntem Google ile sıfırdan görsel üretmez; uygunluk, tıklanma ve yayınlanan Studio kapağı garantisi vermez. Gerçek Gemini testi [yayın yapmayan manuel workflow](../.github/workflows/free_gemini_probe.yml) ile yapılacak.
+
+İlk gerçek test #1 (run `41988326325`, commit `f007d7a`): gerçek herkese açık video görseli alındı; Gemini text/vision çağrısı HTTP 404 döndürdü. Bu nedenle üretimde Gemini değişkeni aktif edilmedi. Hesabın model listesi gerçek API ile ayrıca kontrol ediliyor; HTTP 404 nedeni henüz doğrulanmadı.

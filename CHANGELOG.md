@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Gemini deneme sonucu
+
+- Gerçek CI #1 `41988326325`: video görseli alındı, ücretsiz Gemini model çağrısı HTTP 404 döndü; üretimde kapalı. Model erişimi için güvenli keşif testi eklendi.
+
 ## 2026-11-05 — Faz 14 ilk uygulama
 
 - Gemini text/vision, mevcut kareden konu seçimi (tek istek, açık Free-tier anahtarı gerekli); varsayılan kapalı. Ücretli Google görsel üretimi yok.
