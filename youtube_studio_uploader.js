@@ -475,7 +475,7 @@ async function generateAiThumbnail(prompt) {
 }
 
 /** AI kapak servisi basarisiz oldugunda yerel yedek kapak uretir. */
-function generateLocalFallbackThumbnail(title, topic) {
+function generateLocalFallbackThumbnail(title, topic, disableVision = false) {
     const outPath = path.join(os.tmpdir(), `yt_thumb_fallback_${Date.now()}.jpg`);
     const script = path.join(BASE_DIR, 'scripts', 'generate_fallback_thumbnail.py');
     try {
@@ -491,7 +491,7 @@ function generateLocalFallbackThumbnail(title, topic) {
         const result = require('child_process').spawnSync(
             'python3',
             args,
-            { encoding: 'utf-8', timeout: 120000 }
+            { encoding: 'utf-8', timeout: 120000, env: { ...process.env, GEMINI_FREE_VISION_ENABLED: disableVision ? '0' : (process.env.GEMINI_FREE_VISION_ENABLED || '0') } }
         );
         for (const line of (result.stdout || '').split('\n')) {
             if (line.startsWith('[KAPAK]')) console.log(line); // secret or full model response is never logged
@@ -521,6 +521,10 @@ async function uploadCustomThumbnail(page, thumbPath) {
         return { ok: false, reason: 'kapak dosya alanı bulunamadı' };
     }
 
+    const previewBefore = await page.evaluate(() => {
+        const editor = document.querySelector('ytcp-video-thumbnail-editor, ytcp-thumbnail-uploader, ytcp-video-custom-still-editor');
+        return editor ? [...editor.querySelectorAll('img')].map(img => img.currentSrc || img.src).filter(Boolean).join('|') : '';
+    });
     try {
         await input.setInputFiles(thumbPath);
     } catch (directErr) {
@@ -544,13 +548,15 @@ async function uploadCustomThumbnail(page, thumbPath) {
         .first().click({ timeout: 2500 }).catch(() => {});
 
     // Dogrulama: onizleme gorseli degisti mi? (otomatik secilen kare ile ayni olmamali)
-    const applied = await page.evaluate(() => {
-        const editor = document.querySelector('ytcp-video-thumbnail-editor');
-        if (!editor) return false;
-        const custom = editor.querySelector('ytcp-video-custom-still-editor');
-        return !!custom;
+    const previewAfter = await page.evaluate(() => {
+        const editor = document.querySelector('ytcp-video-thumbnail-editor, ytcp-thumbnail-uploader, ytcp-video-custom-still-editor');
+        return editor ? [...editor.querySelectorAll('img')].map(img => img.currentSrc || img.src).filter(Boolean).join('|') : '';
     });
-    return { ok: true, customApplied: applied };
+    // Merely having an uploader DOM element or assigning files is not proof of success.
+    if (!previewAfter || previewAfter === previewBefore) {
+        return { ok: false, reason: 'kapak yükleme denendi; Studio önizleme değişimi doğrulanamadı' };
+    }
+    return { ok: true, customApplied: true };
 }
 
 async function uploadToYouTubeStudio() {
@@ -682,8 +688,14 @@ async function uploadToYouTubeStudio() {
         let thumbPath = null;
         // FAZ 12.6 / Islah 11: canli test modu -> AI kapak atlanir, yerel yedek kapak dogrudan kullanilir.
         const forceLocalThumbnail = String(process.env.FORCE_LOCAL_THUMBNAIL || '0') === '1';
+        const useFreeVision = !forceLocalThumbnail && process.env.GEMINI_FREE_VISION_ENABLED === '1';
         if (forceLocalThumbnail) {
-            console.log('[!] FORCE_LOCAL_THUMBNAIL=1 -> AI kapak atlandi, yerel yedek kapak kullanilacak (canli kanit modu).');
+            console.log('[!] FORCE_LOCAL_THUMBNAIL=1 -> AI kapak atlandi, yerel yedek kapak kullanilacak; Gemini da devre disi.');
+        } else if (useFreeVision) {
+            // Mevcut kareyi seçer; Google ile yeni görüntü üretmez. Uygun kare
+            // yoksa aynı fonksiyon yerel temsili kart döndürür.
+            console.log('[KAPAK] Ücretsiz Gemini mevcut kareleri inceliyor; görsel üretim API çağrılmaz.');
+            thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''));
         } else {
             try {
                 thumbPath = await generateAiThumbnail(thumbnailPrompt);
@@ -695,7 +707,7 @@ async function uploadToYouTubeStudio() {
             // FAZ 12.6: AI kapak servisi rate limit verdi (HTTP 402) -> YEREL yedek kapak
             // (scripts/generate_fallback_thumbnail.py) ile agresif kapak uretilir.
             console.log('[!] AI kapak servisi basarisiz -> yerel yedek kapak deniyor...');
-            thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''));
+            thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''), true);
             if (!thumbPath) {
                 console.log('[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Manuel müdahale gerekebilir)');
             }

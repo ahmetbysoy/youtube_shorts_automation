@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Gerçek ücretsiz Gemini kare testi
+
+- CI `41988709577`: gerçek Zanzibar video kapağı için `gemini-3.1-flash-lite` konu uyumsuzluğu yanıtı ve yerel yedek başarılı; yeni görsel üretilmedi.
+- Ücretsiz kare incelemesi açıkken üretimde önce bu yol kullanılır, dış servis/billing ile ücretli görüntü API çağrılmaz. `FORCE_LOCAL_THUMBNAIL` tüm AI incelemesini kapatır.
+- Kapak yükleyicisi artık salt DOM bileşeni varlığını başarı saymaz; önizleme değişimi gerektirir. Gerçek Studio yüklemesi ayrıca doğrulanmalı.
+
 ## 2026-11-05 — Gemini deneme sonucu
 
 - Gerçek CI #1 `41988326325`: video görseli alındı, ücretsiz Gemini model çağrısı HTTP 404 döndü; üretimde kapalı. Model erişimi için güvenli keşif testi eklendi.

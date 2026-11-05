@@ -98,7 +98,7 @@ def run_step(step_name: str, command: list, env_overrides: dict | None = None) -
                     "SİLAHLANDIRILMIŞ", "KAPAK RESMİ", "Yayınlanan video ID",
                     # Faz 12.6: kapak hata/ fallback mesajlari da gorunur olsun
                     "Kapak üretimi", "Kapak resmi yüklenemedi", "Kapak indirme hatası",
-                    "Kapak servisi", "Yerel yedek kapak", "rate limit",
+                    "Kapak servisi", "Yerel yedek kapak", "rate limit", "[KAPAK]",
                     # Faz 13: aciklama guvenligi + kaynak satiri kanitlari
                     "Kaynak:", "KAYNAK", "GUVENLIK", "CTA guvenlik",
                     "seçimi doğrulandı", "Studio PUBLIC", "YAYINLAMA İŞLEMİ",
