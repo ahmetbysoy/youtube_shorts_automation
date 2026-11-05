@@ -84,7 +84,14 @@ def select_subject_frame(title: str, paths: list[Path]) -> int | None:
             return frame - 1
         print("[KAPAK] Gemini açık/güvenli konu eşleşmesi bulmadı; yerel metin kartı.")
     except urllib.error.HTTPError as exc:
-        print(f"[KAPAK] Gemini HTTP {exc.code}; yerel yedek.")
+        # Only an allowlisted error status; never emit provider body or credentials.
+        try:
+            provider_status = json.loads(exc.read(16384)).get("error", {}).get("status", "UNKNOWN")
+            if provider_status not in {"NOT_FOUND", "PERMISSION_DENIED", "RESOURCE_EXHAUSTED", "INVALID_ARGUMENT", "UNAUTHENTICATED", "FAILED_PRECONDITION"}:
+                provider_status = "UNKNOWN"
+        except Exception:
+            provider_status = "UNKNOWN"
+        print(f"[KAPAK] Gemini HTTP {exc.code}, durum {provider_status}; yerel yedek.")
     except Exception as exc:
         # Do not print exception messages: URLs or other sensitive material may appear.
         print(f"[KAPAK] Gemini incelemesi başarısız ({type(exc).__name__}); yerel yedek.")

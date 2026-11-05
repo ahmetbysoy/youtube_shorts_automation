@@ -39,6 +39,25 @@ jobs:
               if 'generateContent' in m.get('supportedGenerationMethods',[]):
                   print('AVAILABLE_MODEL',m.get('name',''))
           PY
+      - name: Diagnose listed free text model without image generation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          body=json.dumps({'contents':[{'parts':[{'text':'Respond OK'}]}], 'generationConfig':{'maxOutputTokens':32}}).encode()
+          for name in ('gemini-2.5-flash','gemini-3.1-flash-lite','gemini-3.5-flash-lite'):
+              req=urllib.request.Request('https://generativelanguage.googleapis.com/v1beta/models/'+name+':generateContent',data=body,headers={'Content-Type':'application/json','x-goog-api-key':os.environ['GEMINI_API_KEY']},method='POST')
+              try:
+                  with urllib.request.urlopen(req,timeout=20) as r:
+                      j=json.load(r); print('FREE_TEXT_MODEL',name,'HTTP',r.status,'HAS_CANDIDATE',bool(j.get('candidates')))
+                      if j.get('candidates'): break
+              except urllib.error.HTTPError as exc:
+                  try: err=json.loads(exc.read()).get('error',{}); status=err.get('status','unknown'); msg=err.get('message','').lower()
+                  except Exception: status='unknown';msg=''
+                  labels=[w for w in ('model', 'api key', 'not found', 'permission', 'quota', 'billing', 'project', 'enabled', 'region', 'method') if w in msg]
+                  print('FREE_TEXT_MODEL',name,'HTTP',exc.code,'STATUS',status,'HINTS',','.join(labels))
+          PY
       - name: One free-tier vision request; never generate images
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
