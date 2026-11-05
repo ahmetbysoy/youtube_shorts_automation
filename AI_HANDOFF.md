@@ -1,6 +1,6 @@
 # 🤖 AI_HANDOFF.md — Yapay Zeka Devir Teslim ve Operasyon Kılavuzu
 
-> **Faz 15:** [Canlı plan ve TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md). Kullanıcı tüm videoları tek tek inceleyip kapakları yeniden düzenlemeyi istedi. Studio envanteri 56 PUBLIC + 2 taslak; gerçek #121 ekranı günlük özel küçük resim limiti gösterdi. Kapak değişikliği henüz yapılmadı; ücretsiz kullanım sınırını ve gizliliği koru.
+> **Faz 15:** [Canlı plan ve TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md). Kullanıcı tüm videoları tek tek inceleyip kapakları yeniden düzenlemeyi istedi. Studio envanteri 56 PUBLIC + 2 taslak; 56 PUBLIC mevcut kapak ve dört gerçek kareyle örneklendi, tümü baştan sona izlenmedi. Gerçek #121 ekranı günlük özel küçük resim limiti gösterdi. Kullanıcı: kota doluyken YouTube otomatik kapağıyla yayın devam etsin; yalnız gerçekten ücretsiz ve güvenilir AI video araştırılsın. Kapak değişikliği henüz yapılmadı; ücretsiz kullanım sınırını ve gizliliği koru.
 
 > **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı önceki silme isteğini değiştirerek tüm taslakların PUBLIC yayınını seçti. 26 mevcut video Studio’da aynı ID üzerinden PUBLIC doğrulandı; silme yapılmadı. [Kanıt listesi](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; içerik tekrarı, görsel uyumu ve açıklamalar çözülmedi. Aktif otomasyon/pruner değiştirilmedi. Önceki bloklar tarihsel kanıttır.
 

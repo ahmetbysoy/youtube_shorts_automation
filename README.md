@@ -1,6 +1,6 @@
 # YouTube Shorts Automation — Tam Otonom İçerik Fabrikası (Faz 1–7)
 
-> Faz 15 ilk gerçek bulgu: YouTube günlük özel kapak sınırı engeli; toplu yükleme bekliyor. [Canlı plan/TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
+> Faz 15: 56 PUBLIC video 4 karelik örneklerle tarandı; baştan sona doğrulama ve iki taslak incelemesi açık. YouTube günlük özel kapak kotası nedeniyle toplu yükleme bekliyor. [Canlı plan/TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
 
 > Faz 15 canlı plan/TODO: [Kanalın tek tek incelenmesi, kapak yenileme ve otonom sistem](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
 

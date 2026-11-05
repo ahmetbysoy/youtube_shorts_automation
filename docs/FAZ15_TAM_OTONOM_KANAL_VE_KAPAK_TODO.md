@@ -54,3 +54,9 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 - Mevcut `content_engine.py` Gemini yolu 404 veren 2.5 Flash kullanıyor ve anahtarı URL'ye koyuyordu. Ücretsiz model `gemini-3.1-flash-lite` ve key header'a taşındı; redirect kapatıldı. `main.py --force-fallback` sürmektedir; gerçek senaryo isteği ve iddiaların bağımsız doğruluğu kanıtlanana kadar üretim senaryosuna bağlandığı iddia edilmez.
 
 - Kaynaklı fakat **yayın yapmayan** gerçek Gemini senaryo testi workflow olarak eklendi. NASA'ya göre Venüs'ün yıldızlara göre dönüşü 243 Dünya günü, yılı 225 gündür; Güneş günü yaklaşık 117 gündür: https://science.nasa.gov/venus/venus-facts/ . Başlıktaki "bir gün" ifadesi bu ayrımı belirtmediğinden mevcut Venüs videoları için açıklama/netleştirme ayrıca incelenmeli. Bu kuru test, konu tekrarını veya bütün üretilen cümlelerin doğruluğunu garanti etmez.
+
+## Gerçek senaryo kuru testi
+
+- Yayın yapmayan Actions koşusu `41991785782`, commit `17b5ed0`, `gemini-3.1-flash-lite` ile 84 kelimelik gerçek JSON senaryosu döndürdü. Sadece erişim/şema kanıtıdır: başlık yine “bir gün” ile yıldızlara göre dönüşü karıştırabilecek şekilde belirsizdi; NASA kaynaklarında Güneş günü ve dönüş ayrımı ayrıca incelenmeli. Üretime doğruluk/tekrar koruması olmadan bağlanmadı.
+- 56 videonun her biri için kapak + 4 örnek kare ve 56 otomatik altyazı alındı. Özel rapor her videoya ait gözlem içerir, fakat yalnız örneklemeye dayalıdır, baştan sona ses/gerçeklik denetimi değildir. İki taslağın kimlikleri bulundu ama içerikleri ID bazında henüz doğrulanmadı. Videoların orijinal kapakları değil, public küçük önizlemeleri saklandı.
+- #122 `41989980767`, eski `b8d3860` koduyla tamamı iptal; build-and-upload hata verdi ve aynı overlay tarafından tıklandı. Bu yeni kota-modal kodu canlı kanıtı değildir. #123 `41991701631`, yeni `31e4fa2` kodunu çekmiş ve gözlem anında devam ediyordu.

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Gerçek Gemini metin kuru testi
+
+- Yayınsız #41991785782 testinde Gemini 3.1 Flash Lite geçerli 84 kelimelik senaryo döndürdü. Yıldızlara göre dönüş/Güneş günü ayrımı ve tekrar güvenliği nedeniyle otomatik senaryo yayınına bağlanmadı.
+- Günlük kapak kotası devam ederken kullanıcı otomatik YouTube kapağıyla yeni yayına devamı seçti; modal düzeltmesinin canlı kanıtı bekleniyor.
+
 ## 2026-11-05 — Gemini metin bağlantısı güvenlik düzeltmesi
 
 - Kullanılmayan 2.5 Flash text endpointi gerçek erişimi test edilen 3.1 Flash Lite ile değiştirildi; API anahtarı URL yerine header üzerinden geçer, redirect kapalı. Yeni senaryo akışı ve gerçek içerik doğrulaması hâlâ test edilmedi; `--force-fallback` korunuyor.
