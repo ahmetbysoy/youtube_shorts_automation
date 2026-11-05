@@ -23,3 +23,5 @@ Yerel yedek `--strict-subject` ile rastgele kontrast karesi yerine uygunluk doğ
 İlk gerçek test #1 (run `41988326325`, commit `f007d7a`): gerçek herkese açık video görseli alındı; Gemini text/vision çağrısı HTTP 404 döndürdü. Bu nedenle üretimde Gemini değişkeni aktif edilmedi. Hesabın model listesi gerçek API ile ayrıca kontrol ediliyor; HTTP 404 nedeni henüz doğrulanmadı.
 
 İkinci canlı CI (`41988450201`): anahtar ile model listesi başarıyla okundu ve `gemini-2.5-flash-lite` listede var; generateContent yine HTTP 404. Ücretli görsel API denenmedi. Yerel yedek CI içinde 1080x1920 doğrulandı. HTTP 404 nedeni belirsiz; farklı ücretsiz text modelleri ile teşhis eklendi.
+
+Üçüncü gerçek CI (`41988589391`): 2.5 Flash metin HTTP 404, `gemini-3.1-flash-lite` text isteği HTTP 200 ve gerçek aday döndürdü. Görsel-anlama uygulaması bu ücretsiz text modeline taşındı; kendi görsel-anlama testi henüz bekliyor.

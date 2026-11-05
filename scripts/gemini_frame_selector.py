@@ -18,7 +18,7 @@ from PIL import Image
 
 # Official text/vision model, not an image-generation model. Free-tier model
 # availability and quotas may change; billing depends on the project.
-URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
+URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent"
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -64,8 +64,8 @@ def select_subject_frame(title: str, paths: list[Path]) -> int | None:
                 "mime_type": "image/jpeg", "data": base64.b64encode(out.getvalue()).decode("ascii")
             }}]
         body = json.dumps({"contents": [{"parts": parts}], "generationConfig": {
-            "temperature": 0, "maxOutputTokens": 512,
-            "responseMimeType": "application/json", "thinkingConfig": {"thinkingBudget": 0}
+            "temperature": 0, "maxOutputTokens": 1024,
+            "responseMimeType": "application/json"
         }}).encode()
         req = urllib.request.Request(URL, data=body, headers={
             "Content-Type": "application/json", "x-goog-api-key": key,
@@ -74,7 +74,7 @@ def select_subject_frame(title: str, paths: list[Path]) -> int | None:
         with opener.open(req, timeout=25) as response:
             result = json.loads(response.read(2_000_000))
         pieces = result.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        text = "".join(x.get("text", "") for x in pieces if isinstance(x, dict))
+        text = "".join(x.get("text", "") for x in pieces if isinstance(x, dict) and not x.get("thought"))
         decision = json.loads(text)
         frame, conf = decision.get("frame"), decision.get("confidence")
         if (isinstance(frame, int) and not isinstance(frame, bool) and
