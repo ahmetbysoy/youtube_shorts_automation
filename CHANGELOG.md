@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Gemini metin bağlantısı güvenlik düzeltmesi
+
+- Kullanılmayan 2.5 Flash text endpointi gerçek erişimi test edilen 3.1 Flash Lite ile değiştirildi; API anahtarı URL yerine header üzerinden geçer, redirect kapalı. Yeni senaryo akışı ve gerçek içerik doğrulaması hâlâ test edilmedi; `--force-fallback` korunuyor.
+- 56 PUBLIC videonun her biri için mevcut kapak ve 4 gerçek kare örneklemesi, 56 otomatik altyazı indirimi yapıldı; iki taslak ve kapsamlı doğrulama açık.
+
 ## 2026-11-05 — Kota durumunda kullanıcı tercihi
 
 - Kullanıcı kota doluyken YouTube otomatik kapakla yayına devamı seçti. Özel küçük resim kota modalını tanıyıp kapatma ve sonucu loglama eklendi; yeni kodla canlı yayın kanıtı henüz yok. AI video yalnız doğrulanmış ücretsiz ve yedekli ise araştırılacak.

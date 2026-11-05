@@ -8,7 +8,7 @@ YouTube Shorts senaryo + seslendirme motoru.
 Mimari Katmanlar ("Sadece ücretsiz katmanlar & her aracın bir alternatifi"):
   1. LLM Senaryo Katmanı (60-80 kelime / 30-45 sn Shorts Senaryosu):
      - Birincil  : Groq Cloud Free API (`llama-3.3-70b-versatile` - GROQ_API_KEY)
-     - İkincil   : Google Gemini Free API (`gemini-2.5-flash` - GEMINI_API_KEY)
+     - İkincil   : Google Gemini Free API (`gemini-3.1-flash-lite` - GEMINI_API_KEY)
      - Gerçeklik : Türkçe Wikipedia REST API üzerinden doğrulanmış kaynak özeti beslemesi
      - Tolerans  : API kesintisi, anahtar eksikliği veya kota aşımında (`try-except`)
                    devreye giren doğrulanmış 4'lü yedek (fallback) senaryo havuzu
@@ -1234,11 +1234,12 @@ def call_groq_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[st
 
 
 def call_gemini_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[str, Any]:
-    """İkincil Alternatif: Google Gemini Free API (`gemini-2.5-flash`)."""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    """Text model: only free-tier project use; key stays in a header, never the URL."""
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent"
     resp = requests.post(
         url,
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
+        allow_redirects=False,
         json={
             "systemInstruction": {"parts": [{"text": system_prompt}]},
             "contents": [{"parts": [{"text": user_prompt}]}],
@@ -1251,8 +1252,9 @@ def call_gemini_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[
     )
     resp.raise_for_status()
     candidates = resp.json().get("candidates", [])
-    content = candidates[0]["content"]["parts"][0]["text"]
-    return validate_and_normalize_scenario(extract_json_object(content), "gemini:gemini-2.5-flash")
+    parts = candidates[0]["content"]["parts"]
+    content = "".join(p.get("text", "") for p in parts if isinstance(p, dict) and not p.get("thought"))
+    return validate_and_normalize_scenario(extract_json_object(content), "gemini:gemini-3.1-flash-lite")
 
 
 def pick_fallback_scenario(
@@ -1369,7 +1371,7 @@ def generate_scenario(
         # 2. Katman: Google Gemini API (İkincil Alternatif)
         if gemini_key:
             try:
-                print("[LLM] İkincil sağlayıcı deneniyor: Google Gemini API (gemini-2.5-flash)...")
+                print("[LLM] İkincil sağlayıcı deneniyor: Google Gemini API (gemini-3.1-flash-lite)...")
                 scenario = call_gemini_llm(system_prompt, user_prompt, gemini_key)
                 save_recent_title(scenario["title"])
                 return scenario
