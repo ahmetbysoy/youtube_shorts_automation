@@ -2,6 +2,10 @@
 
 ## 2026-11-05 — Gerçek kapak kotası yolu ve Gemini yanlış eşleşmesi
 
+- #123 gerçek 5 kare örneğine dayanan `41996283537` ücretsiz vision ret testi geçti; tek örnek otomatik kabulü açmaya yeterli değil.
+- 58 PUBLIC ID için temsili yerel kapak taslağı hazırlandı; ikisinin konusu otomatik altyazıdan alındı ve ses doğrulaması bekler. Kapaklar yüklenmedi. Uzun kelime kırpılması önlendi.
+
+
 - #123 tüm workflow `cancelled` (cron-kick iptal), yükleme job başarılıdır; ret testi `41994197825` YouTube bot kontrolünde durdu ve Gemini çağrısı yapmadı. Test gerçek #123 artefaktıyla yeniden düzenlendi.
 
 - #123 build-and-upload başarılı, `Ph4448Rkw3Q` PUBLIC: günlük özel kapak modalı aşıldı ve kullanıcı kararıyla YouTube otomatik kapağı kullanıldı.

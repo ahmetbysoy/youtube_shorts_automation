@@ -1,6 +1,6 @@
 # YouTube Shorts Automation — Tam Otonom İçerik Fabrikası (Faz 1–7)
 
-> Faz 15: 08:39 UTC envanterinde 58 PUBLIC + 3 taslak; PUBLIC videoların kapakları ve örnek kareleri, taslakların önizlemeleri incelendi. Baştan sona ses/olgu doğrulaması yapılmadı. Özel kapaklar günlük kota nedeniyle değiştirilmedi; #123 otomatik YouTube kapağıyla PUBLIC, iş başarılı fakat workflow iptal. Gemini kare kabulü yanlış eşleşme nedeniyle varsayılan kapalıdır. [Canlı plan/TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
+> Faz 15: 08:39 UTC envanterinde 58 PUBLIC + 3 taslak; PUBLIC videoların kapakları ve örnek kareleri, taslakların önizlemeleri incelendi. Baştan sona ses/olgu doğrulaması yapılmadı. Özel kapaklar günlük kota nedeniyle değiştirilmedi; #123 otomatik YouTube kapağıyla PUBLIC, iş başarılı fakat workflow iptal. Gemini kare kabulü yanlış eşleşme nedeniyle varsayılan kapalıdır. 58 yüklenmemiş temsili kapak adayı hazırlandı; ikisinin konusu otomatik altyazıya dayanır ve doğrulama bekler. [Canlı plan/TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
 
 > Faz 15 canlı plan/TODO: [Kanalın tek tek incelenmesi, kapak yenileme ve otonom sistem](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
 
