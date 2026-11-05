@@ -94,3 +94,14 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 
 - #123 `41991701631` gerçek CI üretim logu `submarine underwater dark` aramasında `Bunker_Valentin_Cross_-_Section.webm` Wikimedia dosyasını kullandığını gösteriyor. Commons API dosyanın `LicenseShortName = CC BY-SA 4.0`, `AttributionRequired = true` bilgisini döndürüyor: https://commons.wikimedia.org/wiki/File:Bunker_Valentin_Cross_-_Section.webm . #123 PUBLIC `Ph4448Rkw3Q` YouTube açıklaması 08:44 UTC salt okunur alındı; dosya adı, `Krauts` veya CC lisans atfı görünmedi. Bu tek bir dosya için somut uyumsuzluk riski; nihai hukuki değerlendirme değildir.
 - Üretimde Commons lisans/atıf meta verisi seçilmiyor veya açıklamaya aktarılmıyor. Diğer dosyalar tek tek doğrulanmalı, üçüncü taraf şartları/atıf ve varsa share-alike yükümlülükleri incelenmeli. Kullanıcının izni olmadan mevcut PUBLIC açıklamalar değiştirilmedi. Otonom yayın, olası ek hataları çoğaltabileceğinden durdurma/devam ve mevcut açıklamalara atıf ekleme için kullanıcı kararı istenecek.
+
+
+## 2026-11-05 Pruner güvenlik aşaması (kullanıcı onaylı)
+
+- Durum: GitHub koşusu #251 (09:21 UTC) `scanned=0 / deleted=0` ile "success" göründü. Kök neden henüz kanıtlanmadı.
+- Uygulanan geçici önlem: workflow'da `PRUNE_DRY_RUN` varsayılanı `true` (silme kapalı), `PRUNE_QUIET_LOG=true` (başlık/ID loga yazılmaz), `PRUNE_PERSIST_STATE=false` (ilk görülme kayıtları güncellenmez), `PRUNE_FAIL_ON_ZERO_SCAN=true` (0 tarama = koşu başarısız). Rapor/state artık repoya commit edilmiyor ve artifact yüklenmiyor.
+- Yerel kuru çalışma (16:38 UTC, gerçek Studio oturumu): 28 satır tarandı (yalnızca ilk sayfa), 13 hedef (RSS yaşı >=60 dk, <=3 görüntüleme), 0 silme.
+- Tespit 1: Sayfalama yok; Studio ilk sayfadaki 28 satır dışındaki videolar hiç taranmıyor.
+- Tespit 2: RSS yalnızca son 15 videoyu kapsıyor; kalan videolarda mutlak tarih "23:59" varsayımı NEGATİF yaş (-442 dk) üretiyor -> aynı gün yayınlanan videolar gece yarısına kadar hiç silinemiyor.
+- Tespit 3: GitHub'daki 0 tarama yerelde tekrarlamadı; GitHub tarafındaki oturum/secret veya yükleme farkı şüpheli, doğrulanmadı.
+- Sonraki adım (onay bekliyor): sayfalama, yaş hesabı, PUBLIC kontrolü ve görüntülenme okunamazsa koruma; ardından GitHub'da kuru çalışma ile doğrulama; en son silmeyi açma.

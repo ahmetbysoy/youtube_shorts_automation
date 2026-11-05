@@ -43,6 +43,12 @@ const MIN_AGE_MINUTES = Number(process.env.PRUNE_MIN_AGE_MINUTES || 60);
 const MAX_DELETIONS = Number(process.env.PRUNE_MAX_DELETIONS || 10);
 const MIN_REMAINING = Number(process.env.PRUNE_MIN_REMAINING || 1);
 const DRY_RUN = String(process.env.PRUNE_DRY_RUN || 'false').toLowerCase() === 'true';
+// Güvenlik aşaması: ayrıntılı video bilgisi (başlık/ID) loga yazılmaz, yalnızca sayılar.
+const QUIET_LOG = String(process.env.PRUNE_QUIET_LOG || 'false').toLowerCase() === 'true';
+// Güvenlik aşaması: prune_state.json (ilk görülme kayıtları) diske yazılmaz.
+const PERSIST_STATE = String(process.env.PRUNE_PERSIST_STATE || 'true').toLowerCase() !== 'false';
+// Güvenlik kilidi: hiç satır taranamadıysa koşu BAŞARISIZ sayılır (sessiz 0/0 "success" olmasın).
+const FAIL_ON_ZERO_SCAN = String(process.env.PRUNE_FAIL_ON_ZERO_SCAN || 'true').toLowerCase() !== 'false';
 const ONLY_IDS = (process.env.PRUNE_ONLY_VIDEO_IDS || '')
     .split(',')
     .map(s => s.trim())
@@ -55,6 +61,11 @@ const MONTHS_TR = {
 
 function log(msg) {
     console.log(msg);
+}
+
+/** Video başlığı/ID içeren satırlar: QUIET_LOG açıkken yazılmaz. */
+function logDetail(msg) {
+    if (!QUIET_LOG) console.log(msg);
 }
 
 /** "1.234", "1,2 B", "3,4 Mn", "87" -> sayı */
@@ -456,7 +467,7 @@ async function pruneLowPerformers() {
                 }
 
                 if (ONLY_IDS.length && !ONLY_IDS.includes(video.videoId)) {
-                    log(`[*] KORUNDU: '${title}' ${base} (seçili video listesinde değil)`);
+                    logDetail(`[*] KORUNDU: '${title}' ${base} (seçili video listesinde değil)`);
                     report.protected.push({ videoId: video.videoId, title, views, reason: 'filtre' });
                     continue;
                 }
@@ -466,53 +477,64 @@ async function pruneLowPerformers() {
                 const wouldEmptyChannel = (scannedTotal - deletedCount) <= MIN_REMAINING;
 
                 if (tooYoung) {
-                    log(`[*] KORUNDU: '${title}' ${base} | Henüz ${MIN_AGE_MINUTES} dk geçmedi`);
+                    logDetail(`[*] KORUNDU: '${title}' ${base} | Henüz ${MIN_AGE_MINUTES} dk geçmedi`);
                     report.protected.push({ videoId: video.videoId, title, views, reason: age.minutes === null ? 'yaş-belirsiz' : 'çok-yeni', ageMinutes: age.minutes });
                     continue;
                 }
                 if (tooGood) {
-                    log(`[*] KORUNDU: '${title}' ${base} | ${MIN_VIEWS}+ izlenme (performanslı)`);
+                    logDetail(`[*] KORUNDU: '${title}' ${base} | ${MIN_VIEWS}+ izlenme (performanslı)`);
                     report.protected.push({ videoId: video.videoId, title, views, reason: 'performanslı' });
                     continue;
                 }
                 if (deletedCount >= MAX_DELETIONS) {
-                    log(`[!] HEDEF TESPİT EDİLDİ ama atlandı: '${title}' ${base} | Çalıştırma silme limiti (${MAX_DELETIONS}) doldu`);
+                    logDetail(`[!] HEDEF TESPİT EDİLDİ ama atlandı: '${title}' ${base} | Çalıştırma silme limiti (${MAX_DELETIONS}) doldu`);
                     report.protected.push({ videoId: video.videoId, title, views, reason: 'limit' });
                     continue;
                 }
                 if (wouldEmptyChannel) {
-                    log(`[*] KORUNDU: '${title}' ${base} | Kanalda en az ${MIN_REMAINING} video bırakılmalı`);
+                    logDetail(`[*] KORUNDU: '${title}' ${base} | Kanalda en az ${MIN_REMAINING} video bırakılmalı`);
                     report.protected.push({ videoId: video.videoId, title, views, reason: 'kanal-tabani' });
                     continue;
                 }
 
-                log(`[!] HEDEF TESPİT EDİLDİ: '${title}' ${base} -> SİLİNİYOR!`);
+                logDetail(`[!] HEDEF TESPİT EDİLDİ: '${title}' ${base} -> SİLİNİYOR!`);
                 report.targets.push({ videoId: video.videoId, title, views, ageMinutes: Math.round(age.minutes), ageSource: age.source });
 
                 if (DRY_RUN) {
-                    log(`[*] DRY-RUN: '${title}' silinmedi (PRUNE_DRY_RUN=true).`);
+                    logDetail(`[*] DRY-RUN: '${title}' silinmedi (PRUNE_DRY_RUN=true).`);
                     continue;
                 }
 
                 const res = await deleteVideoById(page, video.videoId);
                 if (res.ok) {
-                    log(`[+] BAŞARILI: '${title}' kalıcı olarak silindi.`);
+                    logDetail(`[+] BAŞARILI: '${title}' kalıcı olarak silindi.`);
                     report.deleted.push({ videoId: video.videoId, title, views });
                     deletedCount++;
                     delete state.videos[video.videoId];
                     await page.waitForTimeout(2500);
                 } else {
-                    log(`[-] SİLEME BAŞARISIZ: '${title}' -> ${res.reason}`);
+                    logDetail(`[-] SİLEME BAŞARISIZ: '${title}' -> ${res.reason}`);
                     report.errors.push({ videoId: video.videoId, title, reason: res.reason });
                 }
             }
         }
 
-        saveState(state);
+        if (PERSIST_STATE) {
+            saveState(state);
+        } else {
+            log('[*] Güvenlik aşaması: prune_state.json güncellenmedi (PRUNE_PERSIST_STATE=false).');
+        }
 
         report.finished_at = new Date().toISOString();
         report.deleted_count = deletedCount;
+        if (scannedTotal === 0 && FAIL_ON_ZERO_SCAN) {
+            report.errors.push({ reason: 'zero-scan: Studio listesinden hiç satır okunamadı (oturum/DOM/yükleme sorunu olabilir)' });
+        }
         fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2), 'utf8');
+        log(`[*] Özet: taranan ${scannedTotal} | hedef ${report.targets.length} | silinen ${deletedCount} | korunan ${report.protected.length} | hata ${report.errors.length} | dry_run=${DRY_RUN}`);
+        if (scannedTotal === 0 && FAIL_ON_ZERO_SCAN) {
+            throw new Error('ZERO_SCAN: hiç video satırı taranamadı; koşu güvenlik gereği başarısız sayıldı.');
+        }
 
         log('\n============================================================');
         log(` 🚀 TEMİZLİK TAMAMLANDI: ${deletedCount} adet düşük performanslı video imha edildi. 🚀`);
