@@ -79,3 +79,7 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 
 - #123 tüm koşunun kesin sonucu `cancelled`: `channel-map` ve `build-and-upload` başarılı, `cron-kick` iptal. PUBLIC sonucu, tüm workflow success demek değildir; iptal nedeni ayrıca açık.
 - Ret testi `41994197825` başarısız: GitHub runner YouTube'dan indirme adımında bot doğrulamasına takıldı, Gemini çağrısı yapılmadı. Test aynı #123 işinin gerçek artefaktını, içindeki video ID ile doğrulayarak okuyacak şekilde düzeltildi; yayın yapmaz.
+
+- Ret testi `41996096862` gerçek #123 artefaktını başarıyla indirdi ve video ID eşleşmesini geçti; kare çıkarma adımı 5 kare üretemedi ve Gemini çalışmadı. CI ortamına FFmpeg/ffprobe kurulumu eklendi; yeni test sonucu bekleniyor.
+- 08:39 UTC HAR Studio envanteri: 58 PUBLIC, 3 taslak. Yeni PUBLIC `FGFYAvARDPg` için public kapak ve 5 gerçek kare örneklendi; kapakta arazi taşıtı ve örneklerde astronot duyurusu, taşıt ve uydu yörünge grafiği görülüyor, gözyaşı konusunu örnekler doğrudan göstermiyor. Başından sona izleme/ses doğrulaması yapılmadı.
+- Medya hattı Wikimedia sonuçlarını lisans/atıf ayrıntılarını almadan seçiyor; Commons'taki her dosya telifsiz değildir. Kullanım ve atıf koşulları gerçek dosya bazında doğrulanmalı; otomatik medya ve telif güvenilirliği açık görevdir.

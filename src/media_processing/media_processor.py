@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Faz 3 - Görev 3: Medya İşleme ve FFmpeg Montaj Hattı (media_processor.py)
-Gerçek API'ler (Pexels -> Pixabay -> Wikimedia Commons Public Domain),
+Gerçek API'ler (Pexels -> Pixabay -> Wikimedia Commons),
 gerçek FFmpeg kompleks filtreleri (9:16 scale+crop + concat + Ken Burns zoompan +
 ASS dinamik altyazı burn-in + afftdn & sidechaincompress audio ducking),
 sıfır basitleştirme.
@@ -149,7 +149,7 @@ def _build_query_variants(keyword: str) -> List[str]:
 
 def fetch_wikimedia_media(keyword: str, duration_needed: float, used_urls: set[str] | None = None) -> Dict[str, Any] | None:
     """
-    Üçüncül Gerçek Medya Katmanı (Sıfır Anahtar & %100 Telifsiz):
+    Üçüncül Medya Katmanı (sıfır anahtar; dosya bazlı lisans/atıf doğrulaması gerekir):
     Pexels/Pixabay anahtarı yoksa veya kota dolmuşsa Wikimedia Commons resmi API'sinden
     gerçek belgesel/doğa videoları (.webm/.mp4) veya yüksek çözünürlüklü arşiv görselleri çeker.
     """
