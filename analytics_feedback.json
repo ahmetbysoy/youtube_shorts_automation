@@ -1,83 +1,12 @@
 {
-  "scraped_at": "2026-11-04T15:02:59.370Z",
+  "scraped_at": "2026-11-05T13:56:25.150Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
-  "videos_analyzed": 6,
-  "winning_topic": "Bilim",
+  "videos_analyzed": 0,
+  "winning_topic": "Uzay",
   "boost_active": false,
-  "outperformance_ratio": 0,
+  "outperformance_ratio": 1,
   "discarded_topics": [],
   "optimization_directive": "Tüm konularda dengeli yüksek dopaminli kanca (hook) üretimine devam et.",
-  "topic_scores": [
-    {
-      "niche": "Bilim",
-      "video_count": 1,
-      "avg_views": 0,
-      "avg_view_duration_sec": 0,
-      "avg_score": 0
-    },
-    {
-      "niche": "Tarih",
-      "video_count": 4,
-      "avg_views": 0,
-      "avg_view_duration_sec": 0,
-      "avg_score": 0
-    },
-    {
-      "niche": "Uzay",
-      "video_count": 1,
-      "avg_views": 0,
-      "avg_view_duration_sec": 0,
-      "avg_score": 0
-    }
-  ],
-  "recent_videos": [
-    {
-      "videoId": "",
-      "title": "final short",
-      "niche": "Bilim",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
-    },
-    {
-      "videoId": "",
-      "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
-      "niche": "Tarih",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
-    },
-    {
-      "videoId": "oyN7UFqbgVo",
-      "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
-      "niche": "Tarih",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
-    },
-    {
-      "videoId": "DC6ZIGtOsqc",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "niche": "Tarih",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
-    },
-    {
-      "videoId": "HCfoHJym2xM",
-      "title": "Pompeii'yi Saniyeler İçinde Donduran Yanardağ Felaketi! #Shorts",
-      "niche": "Tarih",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
-    },
-    {
-      "videoId": "eyWPXbYhNlo",
-      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
-      "niche": "Uzay",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
-    }
-  ]
+  "topic_scores": [],
+  "recent_videos": []
 }
