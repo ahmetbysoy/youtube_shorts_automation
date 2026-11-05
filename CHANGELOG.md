@@ -2,6 +2,9 @@
 
 ## 2026-11-05 — Gerçek kapak kotası yolu ve Gemini yanlış eşleşmesi
 
+- #123 gerçek Commons klibinde CC BY-SA 4.0 + atıf zorunluluğu, PUBLIC açıklamada ise klibe ait atfın görünmediği gözlemlendi. Otomatik dosya bazlı lisans/atıf kontrolü yok; mevcut video açıklamaları kullanıcı izni olmadan değiştirilmedi.
+
+
 - #123 gerçek 5 kare örneğine dayanan `41996283537` ücretsiz vision ret testi geçti; tek örnek otomatik kabulü açmaya yeterli değil.
 - 58 PUBLIC ID için temsili yerel kapak taslağı hazırlandı; ikisinin konusu otomatik altyazıdan alındı ve ses doğrulaması bekler. Kapaklar yüklenmedi. Uzun kelime kırpılması önlendi.
 
