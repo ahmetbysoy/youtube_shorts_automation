@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Ücretsiz vision etkinleştirme
+
+- Bu depoda `GEMINI_FREE_VISION_ENABLED=1` API ile ayarlandı ve okundu; kodun güvenli varsayılanı 0. Google billing sonradan açılırsa maliyet mümkün, kapatılmalı. Anahtarın Free tier projeye aitliği kullanıcı beyanına dayanır.
+- Uploader önizleme değişimini kalıcı kayıt diye sunmaz; gerçek Studio sonrası kontrol hâlâ bekleniyor.
+
 ## 2026-11-05 — Gerçek ücretsiz Gemini kare testi
 
 - CI `41988709577`: gerçek Zanzibar video kapağı için `gemini-3.1-flash-lite` konu uyumsuzluğu yanıtı ve yerel yedek başarılı; yeni görsel üretilmedi.

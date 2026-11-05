@@ -106,9 +106,9 @@ class TestFaz12AggressiveThumbnail(unittest.TestCase):
         ):
             self.assertIn(phrase, source, phrase)
 
-    def test_uploader_logs_required_success_line(self) -> None:
+    def test_uploader_logs_preview_with_verification_caveat(self) -> None:
         source = UPLOADER_JS.read_text(encoding="utf-8")
-        self.assertIn("[+] KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!", source)
+        self.assertIn("Studio önizlemesi değişti; yayın sonrası kalıcı kayıt ayrıca doğrulanmalı", source)
         self.assertIn("SİLAHLANDIRILMIŞ AI KAPAK (THUMBNAIL) ÜRETİLİYOR VE YÜKLENİYOR", source)
 
     def test_uploader_keeps_proven_selectors_and_ffmpeg(self) -> None:

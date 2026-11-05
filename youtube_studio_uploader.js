@@ -716,13 +716,12 @@ async function uploadToYouTubeStudio() {
             try {
                 const thumbResult = await uploadCustomThumbnail(page, thumbPath);
                 if (thumbResult.ok) {
-                    console.log('[+] Kapak resmi başarıyla yüklendi.');
-                    console.log('[+] KAPAK RESMİ BAŞARIYLA YÜKLENDİ VE KAYDEDİLDİ!');
+                    console.log('[KAPAK] Dosya gönderildi ve Studio önizlemesi değişti; yayın sonrası kalıcı kayıt ayrıca doğrulanmalı.');
                 } else {
-                    console.log(`[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Sebep: ${thumbResult.reason})`);
+                    console.log(`[!] Kapak yüklemesi doğrulanamadı; Studio kontrolü gerekli. (Sebep: ${thumbResult.reason})`);
                 }
             } catch (thumbUploadErr) {
-                console.log(`[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Hata: ${thumbUploadErr.message})`);
+                console.log(`[!] Kapak yüklemesi doğrulanamadı; Studio kontrolü gerekli. (Hata: ${thumbUploadErr.message})`);
             } finally {
                 if (fs.existsSync(thumbPath)) {
                     try { fs.unlinkSync(thumbPath); } catch (_) {}
@@ -944,7 +943,7 @@ async function uploadToYouTubeStudio() {
             console.log(` Link : ${videoUrl}`);
         }
         console.log(" Durum: PUBLIC (Herkese Açık) - Tam Otonom Yayınlandı!");
-        console.log(" Not  : Sıfır API kotası, sıfır manuel müdahale ile yayında.");
+        console.log(" Not  : Kapak ve içerik kalitesi ayrıca kontrol edilmelidir.");
         console.log("============================================================\n");
     } catch (uploadErr) {
         const errShot = path.join(BASE_DIR, 'logs', 'studio_error.png');

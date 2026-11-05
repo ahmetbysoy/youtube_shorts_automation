@@ -75,7 +75,7 @@ class TestFaz11ViralMetadata(unittest.TestCase):
     def test_uploader_contains_thumbnail_pipeline(self) -> None:
         source = UPLOADER_JS.read_text(encoding="utf-8")
         self.assertIn("AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor", source)
-        self.assertIn("Kapak resmi başarıyla yüklendi", source)
+        self.assertIn("Studio önizlemesi değişti; yayın sonrası kalıcı kayıt ayrıca doğrulanmalı", source)
         self.assertIn("Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak", source)
         self.assertIn("image.pollinations.ai", source)
         self.assertIn("ytcp-thumbnail-uploader input[type=\"file\"]", source)
