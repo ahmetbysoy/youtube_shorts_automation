@@ -1,5 +1,7 @@
 # YouTube Shorts Automation — Tam Otonom İçerik Fabrikası (Faz 1–7)
 
+> Faz 15 ilk gerçek bulgu: YouTube günlük özel kapak sınırı engeli; toplu yükleme bekliyor. [Canlı plan/TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
+
 > Faz 15 canlı plan/TODO: [Kanalın tek tek incelenmesi, kapak yenileme ve otonom sistem](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
 
 > **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı seçimiyle 26 mevcut taslak PUBLIC yayınlandı; silme yapılmadı. [Video kanıtları](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; tekrar, görsel eşleştirme ve açıklama kalitesi TODO. Aktif pruner politikası değiştirilmedi. Aşağıdaki eski faz özetleri tarihsel olabilir; tek kanal ve güncel TODO için `AI_HANDOFF.md` ve Faz 13 planına bakın.

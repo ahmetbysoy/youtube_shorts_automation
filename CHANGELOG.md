@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Faz 15 ilk gerçek envanter ve kota engeli
+
+- HAR ile 58 Shorts: 56 PUBLIC ve 2 taslak; veri özel tutuldu.
+- Gerçek #121 hatası Studio ekranında günlük özel küçük resim kotası olarak doğrulandı; yükleme modalı işlemi engelledi. Eski "kapak kaydedildi" logu kanıt değil.
+- Özel kapak alanı salt okunur görüldü; kota nedeniyle pilot ve toplu değişiklik yapılmadı.
+
 ## 2026-11-05 — Faz 15 planı
 
 - Kanaldaki videoların tek tek incelenmesi, kapak pilotu ve toplu doğrulanmış uygulama ile otonom sistem eksikleri için kanıt odaklı TODO eklendi. Henüz video değiştirilmedi.

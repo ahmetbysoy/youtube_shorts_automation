@@ -12,12 +12,12 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 - YouTube'a göre Shorts'a özel kapak bilgisayarda Studio'da doğrulanmış hesapla eklenir, kaydedilir; günlük limit olabilir ve görüntünün yayılmasına zaman gerekebilir. Hesapta gerçekten görünmüyorsa özelliği zorlamadan dur: https://support.google.com/youtube/answer/72431
 
 ## A. Plan ve mevcut durum
-- [x] Bu plan/TODO hazırlanıp sürüm kontrolüne eklenecek.
-- [ ] Güncel repo/workflow, aktif CI, vars/secret varlığı, koşular ve en son değişiklikler salt okunur kontrol edilsin. Ücretli erişim ve faturalandırma açılmasın.
-- [ ] Geçmiş faz 13/14 eksikleri mevcut kanıtla yeniden ayrıştırılsın; eski iddialar yerine gerçek durum kaydedilsin.
+- [x] Plan/TODO commit `b8d3860` ve Drive kaynak yedeğiyle kaydedildi.
+- [x] Güncel repo/workflow ve Gemini variable kontrol edildi; daily_shorts ve hourly_pruner aktif. `GEMINI_FREE_VISION_ENABLED=1`. Run #121 başarısız; #122 gözlem sırasında devam ediyordu. Ücretli erişim/faturalandırma açılmadı.
+- [x] Faz 13/14 eksikleri planla karşılaştırıldı; geçmiş, altyazı, beyan ve Studio kapak doğrulaması açık.
 
 ## B. Güncel kanal envanteri ve video incelemesi
-- [ ] Aynı yetkili HAR/Google oturumuyla YouTube Studio'ya gir ve sayfaların tamamını gezerek video ID, başlık, görünürlük, mevcut kapak ve erişilebilir metaveri envanterini **özel** sakla. Tekrar eden başlıkları ID ile ayır; sayımların gözlem zamanını kaydet.
+- [x] Aynı yetkili HAR/Google oturumuyla 5 Kasım 2026 07:49 UTC Studio Shorts envanteri alındı: 56 PUBLIC ve 2 taslak, toplam 58; taslak ID bilgileri ayrı salt-okunur kontrole tamamlandı. Başlık/durum özel saklandı; daha sonra değişebilir. Her videonun ayrıntılı içeriği henüz incelenmedi.
 - [ ] Her erişilebilir videoyu tek tek incele: gerçek içerik/ses/altyazı, iddia/kaynak, mevcut kapak-konu uyumu, metin okunabilirliği, sentetik içerik beyanı ve açıklama. Kapsamlı izleme veya ses dökümü başarısızsa video bazında eksik olarak işaretle, tahmin etme.
 - [ ] Her video için özel rapora kaynak/kapsam, önceki kapak referansı, öneri ve işlem durumunu kaydet; telifli/yanıltıcı/konu dışı görsel ve desteklenmeyen iddia kullanma. Mevcut görseli mümkün olduğu ölçüde yedekle; indirilen görsel, orijinalin tam çözünürlüklü kopyası olmayabilir.
 
@@ -38,3 +38,10 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 - [ ] Özel video bazlı rapor ve kapakları erişim kontrollü Drive'a koy; halka açık repo yalnız hassas olmayan kod ve kanıt özetini içersin.
 - [ ] Her fazda README/AI_HANDOFF/CHANGELOG ve TODO'yu güncelle, commit/push yap ve kaynak yedeğini Drive'a yükle.
 - [ ] Gerçek sonuçları, engelleri, değiştirilmemiş videoları, maliyet risklerini ve takip işlerini kullanıcıya açıkça bildir.
+
+## 5 Kasım 2026: kota engeli ve gerçek kanıt
+
+- Run #121 `41988308192` eski commit `d9263dc` ile başarısız. Gerçek `studio_error.png` üzerinde **“Günlük özel küçük resim sınırına ulaşıldı … 24 saate kadar beklemeniz gerekebilir”** modalı var; overlay sonrasındaki tıklamayı bloke etti. Bu, video yükleme kotasıyla aynı şey değildir. Eski koşudaki "kapak başarıyla kaydedildi" logu güvenilir değildir.
+- Mevcut PUBLIC Zanzibar videosu `7DULxjp6PsQ` ayrıntı sayfasında Studio özel resim editörü ve JPEG/PNG dosya alanı salt okunur görüldü. Bu görünüm, **başarılı özel kapak kaydını kanıtlamaz**. Kota modalı nedeniyle pilot/toplu kapak yükleme denenmedi; sınır zorlanmayacak.
+- İnceleme anında iki yeni taslak oluşmuş; bu yeni taslaklar kullanıcıdan yeni bir yayınlama talebi olmadan değiştirilmez/yayınlanmaz. Mevcut pruner ve scheduler ayarları henüz değiştirilmedi. Run #122 kendi eski checkout'u ile sürüyor; sonucu ayrıca değerlendirilmeli.
+- Kullanıcıya yayınların, özel kapak günlük kotası sıfırlanana kadar durdurulup durdurulmayacağı ve AI video kapsamı sorulmalı. Eski "AI video tüm sisteme bağlanmasın" talimatı belirsizlik çözülünceye kadar korunur.
