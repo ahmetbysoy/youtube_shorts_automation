@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Üç taslağın Studio önizleme incelemesi
+
+- Üç yeni taslağın kendi ID ayrıntı sayfaları salt okunur incelendi; önizlemelerinde konu dışı görseller var. Hiçbiri değiştirilmedi veya yayımlanmadı.
+
 ## 2026-11-05 — Medya anahtar güvenliği
 
 - Pixabay gereği URL sorgusunda bulunan API anahtarı hata loguna yazılmasın diye tam istisna yerine yalnız sınıfı kaydedilir; HTTP yönlendirmesi reddedilir. Medya uygunluğu ayrıca doğrulanmalıdır.

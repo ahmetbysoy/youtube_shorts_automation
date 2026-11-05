@@ -66,3 +66,5 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 
 - Pixabay API anahtarı servis gereği sorgu parametresindedir; eski kod hata metniyle tam URL/anahtar sızdırabiliyordu. Hata logu istisna türüne indirildi, yönlendirme reddedildi. Otomatik medya kalitesi/telif/konu doğruluğu bu düzeltmeyle kanıtlanmış değildir.
 - Düzeltilmiş NASA GISS girdisiyle yayınsız Gemini text koşusu `41992632308` HTTP/API ve şema testini geçti (83 kelime). Üretilen metin hâlâ “fiziksel dengesizlik/evrenin hatası” gibi yanıltıcı retorik içerdi; kaynak doğrulama ve editoryal kontrol yokken otomatik senaryo yayınını etkinleştirmeme kararı geçerli.
+
+- Üç taslak da kendi Studio video ID ayrıntı sayfasında salt okunur incelendi: Napolyon önizlemesinde yabancı yazı, denizanasında uzay aracı, Göbeklitepe'de Grand Canyon yazılı kap var; üçü de taslak olarak kaldı. Yalnız önizleme; tüm video/sesler tek tek doğrulanmış değildir.
