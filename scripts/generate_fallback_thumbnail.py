@@ -84,6 +84,19 @@ def wrap(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> list[str
     return lines
 
 
+def layout_title(draw: ImageDraw.ImageDraw, text: str, max_width: int, max_height: int):
+    """Fit every line including its stroke; fail closed rather than crop a long word."""
+    for size in range(126, 7, -2):
+        font = pick_font(size)
+        lines = wrap(draw, text, font, max_width - 10)
+        boxes = [draw.textbbox((0, 0), line, font=font, stroke_width=5) for line in lines]
+        widths = [box[2] - box[0] for box in boxes]
+        height = sum(box[3] - box[1] + 22 for box in boxes)
+        if lines and len(lines) <= 5 and max(widths) <= max_width and height <= max_height:
+            return font, lines
+    raise ValueError("Kapak başlığı taşmadan yerleştirilemedi")
+
+
 # --------------------------------------------------------------------------- video
 def _run(cmd: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True, timeout=120)
@@ -220,7 +233,16 @@ def main() -> int:
         # Decorative scene is explicitly illustrative; do not represent an actual photo.
         subject = (title + " " + args.topic).lower()
         cx, cy = W // 2, 1110
-        if any(word in subject for word in ("zanzibar", "savaş", "savas", "savaşı")):
+        if "emu" in subject:
+            # A stylized long-necked bird, not a depiction of a specific animal or event.
+            draw.ellipse([145, 740, 935, 1530], fill=(34, 35, 45), outline=(65, 71, 80), width=5)
+            draw.ellipse([310, 1000, 710, 1250], fill=(221, 185, 87))
+            draw.line([(630, 1100), (675, 920), (720, 840)], fill=(221, 185, 87), width=65)
+            draw.ellipse([685, 795, 780, 880], fill=(221, 185, 87))
+            draw.polygon([(770, 815), (835, 850), (770, 865)], fill=(242, 208, 117))
+            draw.line([(425, 1220), (400, 1410)], fill=(221, 185, 87), width=20)
+            draw.line([(570, 1220), (595, 1410)], fill=(221, 185, 87), width=20)
+        elif any(word in subject for word in ("zanzibar", "savaş", "savas", "savaşı")):
             # Simplified ship and sea, not a claimed reconstruction of a historical vessel.
             draw.ellipse([145, 740, 935, 1530], fill=(22, 35, 52), outline=(49, 65, 80), width=5)
             draw.line([(250, 1240), (830, 1240)], fill=(237, 191, 60), width=12)
@@ -268,15 +290,7 @@ def main() -> int:
     draw.rounded_rectangle([60, 65, 60 + chip_w, 150], radius=16, fill=YELLOW)
     draw.text((95, 79 - box[1]), topic, font=chip_font, fill=(12, 16, 26))
     title_text = turkish_upper(title.strip())
-    title_font = pick_font(126)
-    for size in range(126, 37, -4):
-        candidate = pick_font(size)
-        lines = wrap(draw, title_text, candidate, W - 120)
-        heights = sum(draw.textbbox((0, 0), x, font=candidate)[3] - draw.textbbox((0, 0), x, font=candidate)[1] + 22 for x in lines)
-        if len(lines) <= 5 and heights <= 520:
-            title_font = candidate
-            break
-    lines = wrap(draw, title_text, title_font, W - 120)
+    title_font, lines = layout_title(draw, title_text, W - 120, 520)
     y = 225
     for line in lines:
         box = draw.textbbox((0, 0), line, font=title_font, stroke_width=4)
