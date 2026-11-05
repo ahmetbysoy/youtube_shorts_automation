@@ -417,7 +417,7 @@ async function generateAiThumbnail(prompt) {
     const rawPath = path.join(os.tmpdir(), `yt_thumb_raw_${Date.now()}.jpg`);
     const finalPath = path.join(os.tmpdir(), `yt_thumb_${Date.now()}.jpg`);
 
-    const retryDelays = [0, 12000, 30000, 60000];
+    const retryDelays = [0, 3000];
     for (const delay of retryDelays) {
         if (delay > 0) {
             console.log(`[*] Kapak servisi meşgul (rate limit), ${delay / 1000}s sonra tekrar denenecek...`);
@@ -425,10 +425,15 @@ async function generateAiThumbnail(prompt) {
         }
         try {
             const res = await fetch(url, {
-                headers: { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36' }
+                headers: { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36' },
+                signal: AbortSignal.timeout(15000)
             });
-            if (res.status === 402 || res.status === 429) {
-                console.log(`[!] Kapak servisi rate limit döndü (HTTP ${res.status}).`);
+            if (res.status === 402) {
+                console.log('[!] Kapak servisi ücret istiyor (HTTP 402); yerel yedeğe geçiliyor.');
+                break;
+            }
+            if (res.status === 429) {
+                console.log('[!] Kapak servisi rate limit döndü (HTTP 429).');
                 continue;
             }
             if (!res.ok) {
@@ -481,12 +486,16 @@ function generateLocalFallbackThumbnail(title, topic) {
             '--out', outPath,
             '--video', String(VIDEO_PATH || ''),
             '--topic', String(topic || ''),
+            '--strict-subject', // uyumsuz rastgele kare yerine konu dogrulanamazsa metin karti
         ];
         const result = require('child_process').spawnSync(
             'python3',
             args,
             { encoding: 'utf-8', timeout: 120000 }
         );
+        for (const line of (result.stdout || '').split('\n')) {
+            if (line.startsWith('[KAPAK]')) console.log(line); // secret or full model response is never logged
+        }
         if (result.status === 0 && fs.existsSync(outPath) && fs.statSync(outPath).size > 8000) {
             const detail = (result.stdout || '').match(/\(konu kareli\)|\(metin karti\)/);
             console.log(`[*] Yerel yedek kapak hazir (${Math.round(fs.statSync(outPath).size / 1024)} KB${detail ? ' ' + detail[0] : ''}).`);

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Faz 14 ilk uygulama
+
+- Gemini text/vision, mevcut kareden konu seçimi (tek istek, açık Free-tier anahtarı gerekli); varsayılan kapalı. Ücretli Google görsel üretimi yok.
+- Doğrulama başarısızsa 9:16 temsili yerel kapak; HTTP 402 derhal fallback. Zanzibar gerçek videosuyla yerel JPEG denendi. Gemini ve Studio yükleme kanıtı henüz yok; var olan birim testleri 87/87 geçti (canlı yayın kanıtı değildir).
+
 ## 2026-11-05 — Faz 14 planı
 
 - Kullanıcı ücretli API kullanımını reddetti; AI Studio Free tier projesi ve GitHub Actions secret varlığı doğrulandı. Gerçek Gemini API ve kapak testleri henüz yapılmadı.

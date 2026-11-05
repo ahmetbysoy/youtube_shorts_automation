@@ -192,6 +192,10 @@ jobs:
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
           FORCE_LOCAL_THUMBNAIL: ${{ inputs.force_local_thumbnail || '0' }}
+          # Yalnız serbest kota için ayrılmış ve faturalandırması KAPALI proje.
+          # Projeye ödeme bağlanırsa vars.GEMINI_FREE_VISION_ENABLED değerini hemen 0 yapın.
+          GEMINI_FREE_VISION_ENABLED: ${{ vars.GEMINI_FREE_VISION_ENABLED || '0' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           # Tek video: icerik -> ses -> video -> kapak -> baslik/hashtag -> YAYIN (PUBLIC)
           # Tamami bitmeden sonraki kanal/kullanici devreye girmez (max-parallel: 1).

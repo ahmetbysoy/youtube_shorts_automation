@@ -2,6 +2,8 @@
 
 > **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı seçimiyle 26 mevcut taslak PUBLIC yayınlandı; silme yapılmadı. [Video kanıtları](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; tekrar, görsel eşleştirme ve açıklama kalitesi TODO. Aktif pruner politikası değiştirilmedi. Aşağıdaki eski faz özetleri tarihsel olabilir; tek kanal ve güncel TODO için `AI_HANDOFF.md` ve Faz 13 planına bakın.
 
+> Faz 14 ilk kod: `GEMINI_FREE_VISION_ENABLED` varsayılan `0`; gerçek API testi bekliyor. Mevcut kareler uygun değilse temsili yerel kapak. Ücretli görsel üretimi yapılmaz.
+
 > Faz 14 güncel plan: [ücretsiz Gemini kare değerlendirmesi ve yerel yedek](docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md); ücretli görüntü üretimi kullanıcının tercihi nedeniyle kapalı.
 
 Python, FFmpeg ve Node.js Playwright tabanlı; **sıfır API kotası**, **sıfır maliyet** ve **sıfır manuel müdahale** ile çalışan, GitHub Actions üzerinde her gün paralel olarak Türkçe YouTube Shorts üreten ve doğrudan **Herkese Açık (`PUBLIC`)** yayınlayan uçtan uca otomasyon sistemi.

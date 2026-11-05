@@ -81,7 +81,7 @@ def wrap(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> list[str
             current = word
     if current:
         lines.append(current)
-    return lines[:6]
+    return lines
 
 
 # --------------------------------------------------------------------------- video
@@ -175,6 +175,7 @@ def main() -> int:
     parser.add_argument("--out", required=True)
     parser.add_argument("--video", default="", help="output/final_short.mp4 (konu karesi icin)")
     parser.add_argument("--topic", default="", help="kisa konu rozeti (Bilim/Tarih/Uzay)")
+    parser.add_argument("--strict-subject", action="store_true", help="konu eslesmesi dogrulanmazsa rastgele kare yerine metin karti")
     args = parser.parse_args()
 
     out = Path(args.out)
@@ -192,75 +193,100 @@ def main() -> int:
     if video_path and video_path.exists() and video_path.stat().st_size > 1000:
         with tempfile.TemporaryDirectory() as tmp:
             frames = extract_candidate_frames(video_path, Path(tmp))
-            best = pick_best_frame(frames)
+            best = None
+            if args.strict_subject and frames:
+                from gemini_frame_selector import select_subject_frame
+                selected = select_subject_frame(title, frames)
+                if selected is not None:
+                    best = frames[selected]
+            elif not args.strict_subject:
+                # Backward-compatible explicit non-strict mode: contrast is not semantic matching.
+                best = pick_best_frame(frames)
             if best:
                 with Image.open(best) as raw:
                     base_img = cover_crop(raw.convert("RGB"), W, H)
         if base_img is not None:
             base_img = ImageEnhance.Color(base_img).enhance(1.12)
             base_img = ImageEnhance.Contrast(base_img).enhance(1.08)
-            print(f"[*] Konu karesi videodan alindi ({video_path.name}).")
+            print(f"[*] Secilen video karesi alindi ({video_path.name}); model karari insan dogrulamasi degildir.")
 
     if base_img is None:
-        # --- Eski davranis: saf metin karti (konu karesi bulunamadi) ------------
-        img = Image.new("RGB", (W, H), (8, 8, 12))
+        # Neutral, honest artwork; never imply a contrast-selected frame depicts the subject.
+        img = Image.new("RGB", (W, H), (8, 12, 25))
         draw = ImageDraw.Draw(img)
         for y in range(H):
             ratio = y / H
-            draw.line([(0, y), (W, y)],
-                      fill=(int(10 + 70 * ratio), int(6 + 8 * ratio), int(12 + 14 * ratio)))
-        draw.rectangle([0, 120, W, 300], fill=(196, 22, 32))
-        band_font = fit_font(draw, "SON BULMA", W - 120, 150)
-        bbox = draw.textbbox((0, 0), "SON BULMA", font=band_font)
-        draw.text(((W - (bbox[2] - bbox[0])) / 2, 210 - (bbox[3] - bbox[1]) / 2 - bbox[1]),
-                  "SON BULMA", font=band_font, fill=(255, 255, 255))
+            draw.line([(0, y), (W, y)], fill=(int(8 + 18 * ratio), int(12 + 16 * ratio), int(25 + 22 * ratio)))
+        # Decorative scene is explicitly illustrative; do not represent an actual photo.
+        subject = (title + " " + args.topic).lower()
+        cx, cy = W // 2, 1110
+        if any(word in subject for word in ("zanzibar", "savaş", "savas", "savaşı")):
+            # Simplified ship and sea, not a claimed reconstruction of a historical vessel.
+            draw.ellipse([145, 740, 935, 1530], fill=(22, 35, 52), outline=(49, 65, 80), width=5)
+            draw.line([(250, 1240), (830, 1240)], fill=(237, 191, 60), width=12)
+            draw.polygon([(275, 1170), (800, 1170), (720, 1290), (345, 1290)], fill=(239, 197, 70))
+            draw.rectangle([385, 1055, 680, 1170], fill=(200, 159, 54))
+            draw.rectangle([490, 925, 515, 1055], fill=(238, 197, 78))
+            draw.polygon([(515, 930), (515, 1040), (690, 1040)], fill=(247, 215, 123))
+            for y in (1330, 1375, 1420):
+                draw.arc([255, y-35, 825, y+45], 0, 180, fill=(72, 119, 143), width=8)
+        elif any(word in subject for word in ("volkan", "yanardağ", "yanardag", "krakatoa", "pompeii", "vezüv")):
+            draw.ellipse([145, 740, 935, 1530], fill=(34, 30, 42), outline=(65, 52, 58), width=5)
+            draw.polygon([(235, 1380), (445, 1020), (565, 1020), (850, 1380)], fill=(94, 91, 95))
+            draw.polygon([(445, 1020), (565, 1020), (520, 1080), (465, 1060)], fill=(244, 111, 46))
+            draw.line([(500, 1020), (465, 895), (390, 825)], fill=(245, 161, 59), width=22)
+            draw.line([(510, 1010), (565, 890), (640, 830)], fill=(238, 105, 46), width=18)
+            draw.ellipse([380, 780, 420, 820], fill=(249, 187, 64))
+            draw.ellipse([640, 775, 672, 807], fill=(247, 151, 52))
+        elif any(word in subject for word in ("uzay", "güneş", "gunes", "yıldız", "yildiz", "gezegen", "venüs", "venüs", "uranüs", "neptün", "voyager")):
+            draw.ellipse([230, 805, 850, 1425], fill=(32, 57, 91), outline=(232, 187, 62), width=12)
+            draw.ellipse([345, 890, 430, 975], fill=(75, 109, 149))
+            draw.ellipse([590, 1120, 755, 1285], fill=(60, 89, 131))
+            draw.arc([145, 950, 935, 1270], 10, 175, fill=(237, 194, 76), width=15)
+            for x,y,r in [(180,820,8),(850,780,10),(850,1410,7),(220,1430,10),(735,715,6)]:draw.ellipse([x-r,y-r,x+r,y+r],fill=(245,220,135))
+        elif any(word in subject for word in ("okyanus", "deniz", "mariana", "ahtapot")):
+            draw.ellipse([145, 740, 935, 1530], fill=(16, 44, 61), outline=(49, 81, 94), width=5)
+            for y in (920, 1000, 1080, 1160, 1240, 1320):
+                draw.arc([205,y-55,875,y+55], 0, 180, fill=(72, 155, 174), width=14)
+            draw.ellipse([455, 1110, 625, 1280], fill=(238, 197, 78))
+        else:
+            draw.ellipse([205, 775, 875, 1445], outline=(58, 73, 92), width=7)
+            draw.ellipse([265, 835, 815, 1385], outline=(100, 88, 62), width=4)
+            draw.polygon([(540, 905), (605, 1090), (800, 1110), (645, 1225), (695, 1400), (540, 1300), (385, 1400), (435, 1225), (280, 1110), (475, 1090)], fill=(232, 187, 63))
+        art_font = pick_font(32)
+        draw.text((70, 1510), "TEMSİLİ GÖRSEL", font=art_font, fill=(167, 177, 188))
     else:
         img = draw_gradient_overlay(base_img)
         draw = ImageDraw.Draw(img)
 
-    # --- 2) Konu rozeti (kirmizi etiket) -> ustte, baslik onun altinda ---------
-    topic = (args.topic or "").strip().upper()[:18]
-    title_top = 420
-    if topic:
-        chip_font = fit_font(draw, topic, 640, 74, 44)
-        bbox = draw.textbbox((0, 0), topic, font=chip_font)
-        chip_w = bbox[2] - bbox[0] + 70
-        chip_h = bbox[3] - bbox[1] + 44
-        cx, cy = (W - chip_w) / 2, 40
-        draw.rounded_rectangle([cx, cy, cx + chip_w, cy + chip_h], radius=18, fill=(196, 22, 32))
-        draw.text((cx + 35, cy + 18), topic, font=chip_font, fill=(255, 255, 255))
-        title_top = 210
-
-    # --- 3) Baslik (siyah dis konturlu sari) -----------------------------------
-    title_font = fit_font(draw, title, W - 140, 132)
-    lines = wrap(draw, title, title_font, W - 140)
-    y = title_top
+    # Header and title occupy a bounded area; long titles wrap rather than overlap.
+    turkish_upper = lambda text: text.replace("i", "İ").replace("ı", "I").upper()
+    topic = turkish_upper((args.topic or "KISA BİLGİ").strip())[:20]
+    chip_font = fit_font(draw, topic, 700, 52, 36)
+    box = draw.textbbox((0, 0), topic, font=chip_font)
+    chip_w = box[2] - box[0] + 70
+    draw.rounded_rectangle([60, 65, 60 + chip_w, 150], radius=16, fill=YELLOW)
+    draw.text((95, 79 - box[1]), topic, font=chip_font, fill=(12, 16, 26))
+    title_text = turkish_upper(title.strip())
+    title_font = pick_font(126)
+    for size in range(126, 37, -4):
+        candidate = pick_font(size)
+        lines = wrap(draw, title_text, candidate, W - 120)
+        heights = sum(draw.textbbox((0, 0), x, font=candidate)[3] - draw.textbbox((0, 0), x, font=candidate)[1] + 22 for x in lines)
+        if len(lines) <= 5 and heights <= 520:
+            title_font = candidate
+            break
+    lines = wrap(draw, title_text, title_font, W - 120)
+    y = 225
     for line in lines:
-        bbox = draw.textbbox((0, 0), line, font=title_font)
-        x = (W - (bbox[2] - bbox[0])) / 2
-        for dx, dy in ((-6, 0), (6, 0), (0, -6), (0, 6), (-5, -5), (5, 5), (-5, 5), (5, -5)):
-            draw.text((x + dx, y + dy), line, font=title_font, fill=(0, 0, 0))
-        draw.text((x, y), line, font=title_font, fill=YELLOW)
-        y += int(bbox[3] - bbox[1]) + 26
-
-
-    # --- 4) Kirmizi "ABONE OL" butonu + sari ok (konuya isaret) -----------------
-    btn_y = H - 430
-    draw.rounded_rectangle([140, btn_y, W - 140, btn_y + 190], radius=44, fill=RED)
-    btn_font = fit_font(draw, "ABONE OL", W - 380, 116, 60)
-    bbox = draw.textbbox((0, 0), "ABONE OL", font=btn_font)
-    draw.text(((W - (bbox[2] - bbox[0])) / 2, btn_y + 95 - (bbox[3] - bbox[1]) / 2 - bbox[1]),
-              "ABONE OL", font=btn_font, fill=(255, 255, 255))
-
-    # Ok KONU CERCEVESINE (yukari) isaret eder: denetim "konu nesnesi net olsun" diyor.
-    arrow_top = btn_y - 250
-    arrow = [
-        (W // 2 - 110, arrow_top + 170),
-        (W // 2 + 110, arrow_top + 170),
-        (W // 2, arrow_top),
-    ]
-    draw.polygon(arrow, fill=YELLOW)
-    draw.rectangle([W // 2 - 26, arrow_top + 150, W // 2 + 26, arrow_top + 210], fill=YELLOW)
+        box = draw.textbbox((0, 0), line, font=title_font, stroke_width=4)
+        x = 60
+        draw.text((x, y), line, font=title_font, fill=(255,255,255), stroke_width=5, stroke_fill=(0,0,0))
+        y += box[3] - box[1] + 22
+    draw.rounded_rectangle([60, 1690, 450, 1785], radius=18, fill=RED)
+    btn_font = pick_font(52)
+    draw.text((92, 1704), "ABONE OL", font=btn_font, fill=(255,255,255))
+    draw.line([(60, 1830), (W - 60, 1830)], fill=YELLOW, width=7)
 
     img.save(out, "JPEG", quality=92)
     size_kb = round(out.stat().st_size / 1024)

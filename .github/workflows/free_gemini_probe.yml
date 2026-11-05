@@ -1,0 +1,56 @@
+name: Free Gemini thumbnail probe (no publish)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-free-vision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install image dependency
+        run: python -m pip install 'Pillow==11.3.0'
+      - name: Fetch real public video thumbnail
+        run: |
+          mkdir -p probe
+          curl --fail --silent --show-error --max-time 30 -L 'https://i.ytimg.com/vi/7DULxjp6PsQ/hqdefault.jpg' -o probe/input.jpg
+          python -c 'from PIL import Image; im=Image.open("probe/input.jpg"); im.verify(); print("Gerçek herkese açık video görseli doğrulandı")'
+      - name: One free-tier vision request; never generate images
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_FREE_VISION_ENABLED: '1'
+        run: |
+          python - <<'PY'
+          import contextlib, io, os, sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from gemini_frame_selector import select_subject_frame
+          if not os.environ.get('GEMINI_API_KEY'):
+              raise SystemExit('GEMINI_API_KEY secret bulunamadı')
+          buf = io.StringIO()
+          with contextlib.redirect_stdout(buf):
+              result = select_subject_frame('1896 İngiliz-Zanzibar Savaşı, 38 dakika', [Path('probe/input.jpg')])
+          log = buf.getvalue()
+          print(log, end='')
+          valid = 'için eşleşme bildirdi' in log or 'açık/güvenli konu eşleşmesi bulmadı' in log
+          if not valid:
+              raise SystemExit('Ücretsiz Gemini yanıtı doğrulanamadı; üretimde aktif etmeyin')
+          print('FREE_VISION_REAL_REQUEST_OK selected=', result)
+          PY
+      - name: Generate local fallback without API
+        env:
+          GEMINI_FREE_VISION_ENABLED: '0'
+        run: |
+          python scripts/generate_fallback_thumbnail.py --title 'Tarihin En Kısa Savaşı Sadece 38 Dakika Sürdü!' --topic Tarih --strict-subject --out probe/fallback.jpg
+          python -c 'from PIL import Image; im=Image.open("probe/fallback.jpg"); assert im.size==(1080,1920); im.verify(); print("LOCAL_FALLBACK_OK")'
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: real-thumbnail-probe
+          path: probe/
+          if-no-files-found: ignore
+          retention-days: 7
