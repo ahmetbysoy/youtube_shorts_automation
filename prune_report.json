@@ -1,15 +1,49 @@
 {
-  "started_at": "2026-11-04T20:23:39.349Z",
+  "started_at": "2026-11-05T01:25:58.600Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "threshold_views": 100,
   "min_age_minutes": 60,
   "max_deletions": 10,
   "dry_run": false,
-  "scanned": 0,
+  "scanned": 5,
   "targets": [],
   "deleted": [],
-  "protected": [],
+  "protected": [
+    {
+      "videoId": "WKYwF96hQzg",
+      "title": "Tarihin En Kısa Savaşı Sadece 38 Dakika Sürdü! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": -1354.0066666666667
+    },
+    {
+      "videoId": "1IAgNqsjgvQ",
+      "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
+      "views": 1,
+      "reason": "çok-yeni",
+      "ageMinutes": -1354.0066666666667
+    },
+    {
+      "videoId": "yiiLdVadjmM",
+      "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
+      "views": 0,
+      "reason": "çok-yeni",
+      "ageMinutes": -1354.0066666666667
+    },
+    {
+      "videoId": "BlrZMXlIbU0",
+      "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "views": 494,
+      "reason": "performanslı"
+    },
+    {
+      "videoId": "pg39JuqqA40",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "views": 858,
+      "reason": "performanslı"
+    }
+  ],
   "errors": [],
-  "finished_at": "2026-11-04T20:24:22.042Z",
+  "finished_at": "2026-11-05T01:26:29.821Z",
   "deleted_count": 0
 }
