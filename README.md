@@ -427,3 +427,9 @@ channel_id: ${{ fromJSON(format('["{0}"]', join(needs.channel-map.outputs.distin
 | `actions/checkout@v7` "yok" iddiası | ❌ **yanlış** — v7.0.1 (20.07.2026) mevcut, `runs.using: node24`; CI'da fiilen çalıştı (#43/#44 başarılı) |
 | `ubuntu-26.04` runner "yok" iddiası | ❌ **yanlış** — 17.09.2026 changelog'u duyurdu; `ubuntu_26_test.yml` iki kez 26.04'te **başarıyla** çalıştı (ffmpeg 8.0.1, altyazı montajı OK, 57 test OK) |
 | `requirements.txt` "pinler bulunamaz" iddiası | ❌ **yanlış** — zaten tam pin (`==`) ve her CI koşusunda başarıyla kuruluyor |
+
+### 13 — Taslak ve yayın doğrulaması (5 Kasım 2026)
+
+Run #90 gerçek Studio görüntüsünde zorunlu çocuklara özel seçimi boştu; İleri pasif kaldı. Uploader artık bu seçimin ve PUBLIC seçiminin gerçekten işaretlendiğini kontrol eder. Yayın sonrası ilgili video ID'si için Studio satırında PUBLIC ikonu + etiketi görülmezse `publish_unverified` ile hata verir; yeniden yüklemeden önce Studio kontrol edilmelidir. Gerçek bir taslakta çocuk radyo seçimi, mevcut bir PUBLIC videoda Studio görünürlük seçicisi doğrulandı; **yeni kodla uçtan uca yayın doğrulaması henüz yapılmadı**.
+
+LLM için 2–3 kelimeli konuya özgü görsel arama yönergesi ve `docs/AI_VIDEO_HERO_PROMPT.md` eklendi. CI `--force-fallback` kullandığından bu yönerge mevcut fallback üretimini tek başına düzeltmez; konu uyumu ve izlenme artışı garanti edilmez. Ayrıntılı TODO: `docs/FAZ13_AUDIT_PLAN.md`.

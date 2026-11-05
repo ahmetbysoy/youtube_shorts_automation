@@ -338,3 +338,11 @@ Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olama
 | **"İleri" butonu pasif** (kontroller sürerken) → görünürlük sekmesi açılmıyor | run #41: `locator.waitFor` timeout + `logs/studio_error.png` | Buton enabled olana kadar bekle + tekrar dene |
 | **Slot çarpımı sabit kalırsa** aynı konu arka arkaya | #43 ve #44 aynı konu ("Kleopatra") | Havuz boyutuyla **aralarında asal** adım (`_coprime_step`) |
 | `actionlint` etiket listesi güncel değil | `ubuntu-26.04 is unknown` | `.github/actionlint.yaml` ignore + gerekçe |
+
+## Yayın olayı — 5 Kasım 2026
+
+- Run #90 (`41939518221`) `studio_error.png`: zorunlu çocuklara özel seçimi yanıtlanmamış, İleri pasif; PUBLIC seçicisi timeout. Sadece bu koşunun nedeni kanıtlıdır.
+- `youtube_studio_uploader.js`: hedef radyo görünür olana kadar bekler, seçimi `aria-checked` ile doğrular; PUBLIC için de aynı kontrol. Yayın sonrası yeni video ID'sinin Studio satırında PUBLIC ikon ve etiketi aranır; yoksa `publish_unverified`, yeniden yükleme öncesi insan kontrolü. Yerel eski video ID temizlenir.
+- Studio'da gerçek taslakta çocuk seçimi `true`; eski PUBLIC video `1IAgNqsjgvQ` üzerinde görünürlük seçicisi doğrulandı. Yeni versiyonla uçtan uca yayın henüz kanıtlanmadı.
+- LLM görsel arama promptu 2–3 kelimeye yönlendirilir; CI `--force-fallback`, dolayısıyla fallback sahneler otomatik düzelmez. `docs/AI_VIDEO_HERO_PROMPT.md` üretime bağlı değildir.
+- Cleanup sırasında `daily_shorts.yml` geçici olarak `disabled_manually`; çalışma bitiminde yeniden etkinleştir ve tek kanallı dispatch sonucunu kaydet.

@@ -91,3 +91,14 @@ Bu belge **canlı TODO**'dur: her adım bitince `[x]` işaretlenir, commit + pus
 Kanal 2 abone / 9 Shorts ile başlangıç erişimi aldı; ancak **ölçüm penceresi çok kısa** (son 4 video ~49 dk içinde).
 Kalıcı performans yargısı için 14 günlük Studio verisi (gösterim, CTR, izlenme süresi, trafik kaynağı) gerekir.
 Bu fazda **ölçülebilir sayı uydurulmaz**; ölçüm `scripts/analytics_scraper.js` ile günlük toplanır.
+
+## 9. Yayın / taslak olayı — 5 Kasım 2026
+
+- [x] Run #90 (`41939518221`) gerçek log ve `studio_error.png` incelendi: 18 ilerleme denemesinden sonra PUBLIC radyo zaman aşımına uğruyor; Studio ekranında zorunlu çocuklara özel seçimi boş ve İleri pasif. Bu, #90 için kanıttır; tüm taslakların nedeni olduğu kanıtlanmamıştır.
+- [x] Çocuklara özel değil radyo öğesinde görünürlük beklentisi, tıklama sonrası aynı elemanda `aria-checked=true` doğrulaması eklendi. Gerçek mevcut taslakta seçim denendi; `true` gözlendi.
+- [x] PUBLIC seçim durumu ve etkin yayın düğmesi kontrolü; yayın sonrasında aynı video ID'sinin Studio satırındaki PUBLIC ikonu ve etiketi doğrulanmadan başarı yazılmaz. Gerçek, daha önce PUBLIC olan `1IAgNqsjgvQ` üzerinde Studio seçicisi doğrulandı.
+- [x] `docs/AI_VIDEO_HERO_PROMPT.md` eklendi; LLM arama terimleri için konuya özel 2–3 sözcük önerisi eklendi. Mevcut CI `--force-fallback` kullandığından bu prompt değişikliği CI fallback görsellerini düzeltmez. Medya-konu uyumu veya yüzdelik performans iyileşmesi garanti edilmez.
+- [x] `node --check` ve mevcut test kümesi 87/87 geçti (test paketi birim testleri içerir; canlı yeni yayın kanıtı değildir).
+- [ ] Gerçek Studio taslaklarını yalnızca taslak oldukları doğrulanarak kalıcı sil; sonuç sayısını kanıtla. Otomatik üretim çakışmasın diye daily workflow geçici olarak durduruldu; işlem sonunda yeniden etkinleştirilmeli.
+- [ ] Yeni kod GitHub + Drive'a yüklensin; manuel tek kanal testi ve gerçek PUBLIC/ID/log kanıtı alınsın.
+- [ ] Yeni videonun örnek kareleri ses ve altyazı ile karşılaştırılsın; eşleşme yoksa başarısız say.

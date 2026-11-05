@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Taslak / PUBLIC doğrulaması
+
+- Run #90 gerçek ekranında boş çocuklara özel seçimi tespit edildi. Seçim ve PUBLIC radyo durumları artık beklenip doğrulanır.
+- Yayın butonu sonrasında video ID ile Studio PUBLIC ikonu ve etiketi kontrol edilir; doğrulanamazsa başarı raporlanmaz. Gerçek yeni yayın testi henüz bekliyor.
+- Hero prompt şablonu ve LLM için çok sözcüklü görsel sorgu yönergesi eklendi. CI fallback bu LLM promptunu kullanmaz; görsel uyumu garanti edilmez.
+- Gerçek bir taslakta çocuk seçimi ve önceden yayımlanmış videoda PUBLIC seçicisi incelendi. Mevcut birim testleri 87/87 geçti.
+
+
 ## 2026-11-04 — FAZ 13.4 kaynaklı gözlem geçmişi
 
 - Atom akışı ve Studio pruner raporunu kanal/video ID, kaynak ve gözlem zamanı ile birleştiren salt-okunur araç eklendi; gerçek olmayan yayın zamanı üretilmez.

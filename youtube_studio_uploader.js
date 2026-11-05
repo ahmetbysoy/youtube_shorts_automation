@@ -545,6 +545,8 @@ async function uploadCustomThumbnail(page, thumbPath) {
 }
 
 async function uploadToYouTubeStudio() {
+    const previousId = path.join(BASE_DIR, 'logs', 'channel_video_id.txt');
+    if (fs.existsSync(previousId)) fs.unlinkSync(previousId);
     if (!fs.existsSync(VIDEO_PATH)) {
         console.error("[-] HATA: final_short.mp4 bulunamadı! Önce Python montaj hattını çalıştır.");
         process.exit(1);
@@ -715,13 +717,20 @@ async function uploadToYouTubeStudio() {
             process.exit(42);
         }
 
-        // Çocuklara özel değil (Zorunlu YouTube Studio alanı!)
-        const notForKids = page.locator('tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]').first();
-        await notForKids.scrollIntoViewIfNeeded().catch(() => {});
-        if (await notForKids.isVisible({ timeout: 10000 }).catch(() => false)) {
-            await notForKids.click({ force: true });
-            console.log("[*] 'Hayır, çocuklara özel değil' seçildi.");
+        // Studio bu alani zorunlu tutar. isVisible(timeout) beklemez: radio
+        // gec render olursa eski kod secimi sessizce atlayip taslak birakiyordu.
+        // Kanalin mevcut icerik politikasi: cocuklara ozel degil.
+        const notForKids = page.locator('tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]:visible').first();
+        await notForKids.waitFor({ state: 'visible', timeout: 30000 });
+        await notForKids.scrollIntoViewIfNeeded();
+        if ((await notForKids.getAttribute('aria-checked')) !== 'true') {
+            await notForKids.click();
         }
+        await page.waitForFunction(
+            el => el && el.getAttribute('aria-checked') === 'true',
+            await notForKids.elementHandle(), { timeout: 10000 }
+        );
+        console.log("[*] 'Hayır, çocuklara özel değil' seçimi doğrulandı.");
 
         // Daha fazla göster -> Etiketler
         const toggleBtn = page.locator('ytcp-button#toggle-button, #toggle-button').first();
@@ -742,7 +751,7 @@ async function uploadToYouTubeStudio() {
         // FAZ 12.6: Kapak yuklemesinden sonra diyalog "Ayrıntılar" sekmesine doner ve
         // "İleri" butonu video kontrolleri surerken PASIF kalir. Buton ENABLED olana
         // kadar tekrar denenir (onceki tek seferlik zorla tiklama 25 sn timeout veriyordu).
-        const PUBLIC_RADIO_SEL = 'tp-yt-paper-radio-button[name="PUBLIC"], #public-radio-button, input[value="PUBLIC"]';
+        const PUBLIC_RADIO_SEL = 'tp-yt-paper-radio-button[name="PUBLIC"]:visible, #public-radio-button:visible, input[value="PUBLIC"]:visible';
         for (let attempt = 0; attempt < 18; attempt++) {
             const radioNow = page.locator(PUBLIC_RADIO_SEL).first();
             if (await radioNow.isVisible({ timeout: 1500 }).catch(() => false)) {
@@ -777,9 +786,12 @@ async function uploadToYouTubeStudio() {
             }
             throw waitErr;
         }
-        await publicRadio.click({ force: true });
-        console.log("[*] Görünürlük 'PUBLIC (Herkese Açık)' olarak işaretlendi.");
-        await page.waitForTimeout(1500);
+        await publicRadio.click();
+        await page.waitForFunction(
+            el => el && (el.getAttribute('aria-checked') === 'true' || el.checked === true),
+            await publicRadio.elementHandle(), { timeout: 10000 }
+        );
+        console.log("[*] Görünürlük 'PUBLIC (Herkese Açık)' seçimi doğrulandı.");
 
         // Olası ara onay/çocuk güvenliği diyaloglarını otomatik onayla
         const preConfirmDialog = page.locator('ytcp-confirmation-dialog, ytcp-confirmation-dialog-renderer').first();
@@ -821,7 +833,11 @@ async function uploadToYouTubeStudio() {
         // Yayınla (Publish) butonuna tıkla
         const doneBtn = page.locator('ytcp-button#done-button').first();
         await doneBtn.waitFor({ state: 'visible', timeout: 30000 });
-        await doneBtn.click({ force: true });
+        await page.waitForFunction(() => {
+            const button = document.querySelector('ytcp-button#done-button');
+            return button && !button.hasAttribute('disabled') && button.getAttribute('aria-disabled') !== 'true';
+        }, null, { timeout: 30000 });
+        await doneBtn.click();
         console.log("[*] 'Yayınla' (Publish) butonuna tıklandı.");
         await page.waitForTimeout(3000);
 
@@ -853,24 +869,48 @@ async function uploadToYouTubeStudio() {
             }
         }
         await page.screenshot({ path: '/tmp/yt_upload_success.png' }).catch(() => {});
-        await page.locator('ytcp-video-share-dialog ytcp-button#close-button, ytcp-uploads-still-processing-dialog ytcp-button#close-button').first().click({ timeout: 2500 }).catch(() => {});
-
-        await persistAllSessionArtifacts(context);
-        writeAuthStatus('upload_completed', { title, videoUrl, visibility: 'PUBLIC', matrixChannelId: matrixChannelId || '1', channelUrl: page.url() });
-
-        // FAZ 12.5: Yayinlanan video ID'sini kaydet (sabitlenmis yorum adimi kullanir)
-        try {
-            const vidMatch = String(videoUrl || '').match(/[?&]v=([A-Za-z0-9_-]{6,})/) ||
-                             String(videoUrl || '').match(/\/shorts\/([A-Za-z0-9_-]{6,})/);
-            const publishedId = vidMatch ? vidMatch[1] : '';
-            if (publishedId) {
-                fs.mkdirSync(path.join(BASE_DIR, 'logs'), { recursive: true });
-                fs.writeFileSync(path.join(BASE_DIR, 'logs', 'channel_video_id.txt'), publishedId);
-                console.log(`[*] Yayınlanan video ID: ${publishedId}`);
+        // Yayın butonuna basılması veya işleniyor metni PUBLIC kanıtı değildir.
+        // Studio içerik tablosunda tam video ID + PUBLIC durumu doğrulanmalıdır.
+        const vidMatch = String(videoUrl || '').match(/[?&]v=([A-Za-z0-9_-]{11})(?:[&#]|$)/) ||
+                         String(videoUrl || '').match(/\/(?:shorts|embed)\/([A-Za-z0-9_-]{11})(?:[?&#/]|$)/) ||
+                         String(videoUrl || '').match(/youtu\.be\/([A-Za-z0-9_-]{11})(?:[?&#/]|$)/);
+        const publishedId = vidMatch ? vidMatch[1] : '';
+        const channelMatch = page.url().match(/\/channel\/(UC[A-Za-z0-9_-]{22})/);
+        const channelId = channelMatch ? channelMatch[1] : '';
+        let verifiedPublic = false;
+        if (publishedId && channelId) {
+            const checkPage = await context.newPage();
+            try {
+                for (let attempt = 0; attempt < 6; attempt++) {
+                    await checkPage.goto(`https://studio.youtube.com/channel/${channelId}/videos/short`,
+                        { waitUntil: 'domcontentloaded', timeout: 45000 });
+                    const row = checkPage.locator(`ytcp-video-row:has(a[href*="/video/${publishedId}/"])`).first();
+                    await row.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+                    const icons = await row.locator('yt-icon.privacy-public-icon').count();
+                    const labels = await row.locator('.icon-text-edit-triangle-wrap .label-span').allTextContents();
+                    if (icons > 0 && labels.some(label => /^(herkese açık|public)$/i.test(label.trim()))) {
+                        verifiedPublic = true;
+                        break;
+                    }
+                    console.log(`[*] Studio PUBLIC doğrulaması bekleniyor (${attempt + 1}/6), video ID: ${publishedId}`);
+                    await checkPage.waitForTimeout(5000);
+                }
+            } catch (verifyErr) {
+                console.error(`[!] Studio görünürlük doğrulaması tamamlanamadı: ${verifyErr.message}`);
+            } finally {
+                await checkPage.close().catch(() => {});
             }
-        } catch (idErr) {
-            console.log(`[!] Video ID kaydedilemedi: ${idErr.message}`);
         }
+        if (!verifiedPublic) {
+            writeAuthStatus('publish_unverified', { title, videoUrl, videoId: publishedId, channelUrl: page.url() });
+            throw new Error(`Yayın sonrası PUBLIC doğrulanamadı; tekrar yüklemeden Studio'yu kontrol edin. Video ID: ${publishedId || 'bilinmiyor'}`);
+        }
+        await persistAllSessionArtifacts(context);
+        writeAuthStatus('upload_completed', { title, videoUrl, videoId: publishedId, visibility: 'PUBLIC', matrixChannelId: matrixChannelId || '1', channelUrl: page.url() });
+        fs.mkdirSync(path.join(BASE_DIR, 'logs'), { recursive: true });
+        fs.writeFileSync(path.join(BASE_DIR, 'logs', 'channel_video_id.txt'), publishedId);
+        console.log(`[*] Yayınlanan video ID: ${publishedId}`);
+        console.log('[+] YAYINLAMA İŞLEMİ ZORLANDI VE TAMAMLANDI! (Studio PUBLIC doğrulandı)');
 
         console.log("\n============================================================");
         console.log(" 🚀 PLAYWRIGHT TAM OTONOM YAYIN (PUBLIC) BAŞARILI! 🚀");

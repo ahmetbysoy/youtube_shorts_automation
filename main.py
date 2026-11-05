@@ -101,6 +101,7 @@ def run_step(step_name: str, command: list, env_overrides: dict | None = None) -
                     "Kapak servisi", "Yerel yedek kapak", "rate limit",
                     # Faz 13: aciklama guvenligi + kaynak satiri kanitlari
                     "Kaynak:", "KAYNAK", "GUVENLIK", "CTA guvenlik",
+                    "seçimi doğrulandı", "Studio PUBLIC", "YAYINLAMA İŞLEMİ",
                 )
                 if any(tok in line for tok in show_tokens):
                     logging.info(f"  -> {line.strip()}")
