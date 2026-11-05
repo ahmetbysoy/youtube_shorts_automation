@@ -1,5 +1,7 @@
 # YouTube Shorts Automation — Tam Otonom İçerik Fabrikası (Faz 1–7)
 
+> **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı seçimiyle 26 mevcut taslak PUBLIC yayınlandı; silme yapılmadı. [Video kanıtları](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; tekrar, görsel eşleştirme ve açıklama kalitesi TODO. Aktif pruner politikası değiştirilmedi. Aşağıdaki eski faz özetleri tarihsel olabilir; tek kanal ve güncel TODO için `AI_HANDOFF.md` ve Faz 13 planına bakın.
+
 Python, FFmpeg ve Node.js Playwright tabanlı; **sıfır API kotası**, **sıfır maliyet** ve **sıfır manuel müdahale** ile çalışan, GitHub Actions üzerinde her gün paralel olarak Türkçe YouTube Shorts üreten ve doğrudan **Herkese Açık (`PUBLIC`)** yayınlayan uçtan uca otomasyon sistemi.
 
 > 🤖 **Projeyi Devralacak Yapay Zeka / Geliştirici İçin İlk Adım:**  

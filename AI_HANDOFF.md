@@ -1,5 +1,7 @@
 # 🤖 AI_HANDOFF.md — Yapay Zeka Devir Teslim ve Operasyon Kılavuzu
 
+> **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı önceki silme isteğini değiştirerek tüm taslakların PUBLIC yayınını seçti. 26 mevcut video Studio’da aynı ID üzerinden PUBLIC doğrulandı; silme yapılmadı. [Kanıt listesi](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; içerik tekrarı, görsel uyumu ve açıklamalar çözülmedi. Aktif otomasyon/pruner değiştirilmedi. Önceki bloklar tarihsel kanıttır.
+
 > **Son Güncelleme:** `2026-11-03` (Faz 1–7 Tamamlandı, Bulutta %100 Canlı Üretimde)  
 > **Hedef Kitle:** Bu projeyi devralacak bir sonraki Yapay Zeka Ajanı (Arena Agent, Claude Code, Cursor, Codex vb.) veya Geliştirici.
 

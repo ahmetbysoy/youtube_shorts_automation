@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Taslakların kullanıcının seçimiyle yayınlanması
+
+- Kullanıcı silme yerine tüm taslakları herkese açık yayınlamayı seçti; 26 mevcut video PUBLIC olarak yayınlandı ve aynı ID’ler Studio’da doğrulandı. Silme yapılmadı.
+- Telefon doğrulaması sonrası işlem tamamlandı; iki video mevcut `final short` adıyla yayınlandı. Tekrarlar, görsel kalite ve açıklama düzeltmeleri çözülmedi.
+- Yayın kimlikleri: `docs/evidence/draft_publications_2026-11-05.md`. Otomatik workflow ve pruner politikası değiştirilmedi.
+
 ## 2026-11-05 — Canlı tek kanal yayın testi
 
 - #97 yayın adımı başarılı; `7DULxjp6PsQ` Studio PUBLIC ve girişsiz player OK. Genel koşu cron-kick iptali nedeniyle cancelled.
