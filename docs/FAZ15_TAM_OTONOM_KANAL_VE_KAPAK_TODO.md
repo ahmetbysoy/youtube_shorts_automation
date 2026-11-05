@@ -76,3 +76,6 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 - Prompt daha katı ve eşik 0.95 yapıldı; bu kendi başına güvenilirlik garantisi değildir. Ek olarak gerçek kalitesi onaylanmayan karelerin otomatik seçimi varsayılan kapatıldı (`GEMINI_ALLOW_UNVERIFIED_FRAME_SELECTION` yalnız izole testte 1); üretim temsili yerel karta düşer. Seçimi açmak için gerçek olumlu/olumsuz örneklerle ayrıca doğrulama şart.
 
 - #123 videosunun gerçek 5 kare adayıyla, yeni sıkı promptun yanıltıcı örneği reddetmesini sınayan yayınsız manuel CI eklendi. Başarı tek örnektir; varsayılan seçim kilidini açmaya tek başına yetmez.
+
+- #123 tüm koşunun kesin sonucu `cancelled`: `channel-map` ve `build-and-upload` başarılı, `cron-kick` iptal. PUBLIC sonucu, tüm workflow success demek değildir; iptal nedeni ayrıca açık.
+- Ret testi `41994197825` başarısız: GitHub runner YouTube'dan indirme adımında bot doğrulamasına takıldı, Gemini çağrısı yapılmadı. Test aynı #123 işinin gerçek artefaktını, içindeki video ID ile doğrulayarak okuyacak şekilde düzeltildi; yayın yapmaz.

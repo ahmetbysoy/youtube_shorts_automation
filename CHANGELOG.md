@@ -2,6 +2,8 @@
 
 ## 2026-11-05 — Gerçek kapak kotası yolu ve Gemini yanlış eşleşmesi
 
+- #123 tüm workflow `cancelled` (cron-kick iptal), yükleme job başarılıdır; ret testi `41994197825` YouTube bot kontrolünde durdu ve Gemini çağrısı yapmadı. Test gerçek #123 artefaktıyla yeniden düzenlendi.
+
 - #123 build-and-upload başarılı, `Ph4448Rkw3Q` PUBLIC: günlük özel kapak modalı aşıldı ve kullanıcı kararıyla YouTube otomatik kapağı kullanıldı.
 - Aynı koşuda Gemini, gözlemde konu nesnesi belirsiz ve yabancı yazılı bir kareyi 0.90 ile seçti. Model eşleşmesi henüz güvenilir değil; otomatik kare kabulü varsayılan kapalı, temsili yerel yedek korunur.
 

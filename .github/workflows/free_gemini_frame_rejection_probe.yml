@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -13,17 +14,24 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: pip install 'Pillow==11.3.0' 'yt-dlp==2026.10.26'
-      - name: Get real published Mariana video and candidate frames
+        run: pip install 'Pillow==11.3.0'
+      - name: Download real production artifact from run 123
+        uses: actions/download-artifact@v8
+        with:
+          name: shorts-output-channel-1-123
+          path: probe
+          github-token: ${{ github.token }}
+          run-id: 41991701631
+      - name: Verify ID and extract real candidate frames
         run: |
-          mkdir -p probe
-          yt-dlp --no-playlist --quiet --no-warnings -f 'bv*[height<=640]+ba/b' --merge-output-format mp4 -o 'probe/video.%(ext)s' 'https://www.youtube.com/watch?v=Ph4448Rkw3Q'
           python - <<'PY'
           import sys
           from pathlib import Path
           sys.path.insert(0,'scripts')
           from generate_fallback_thumbnail import extract_candidate_frames
-          files=extract_candidate_frames(Path('probe/video.mp4'),Path('probe'))
+          if Path('probe/logs/channel_video_id.txt').read_text().strip() != 'Ph4448Rkw3Q':
+              raise SystemExit('Üretim artefaktındaki PUBLIC video ID eşleşmiyor')
+          files=extract_candidate_frames(Path('probe/output/final_short.mp4'),Path('probe'))
           if len(files)!=5: raise SystemExit('Gerçek videodan 5 kare alınamadı')
           print('REAL_VIDEO_FRAMES',len(files))
           PY
