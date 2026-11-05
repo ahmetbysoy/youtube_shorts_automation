@@ -24,8 +24,8 @@ jobs:
           key=os.environ.get('GEMINI_API_KEY', '')
           if not key: raise SystemExit('Secret yok')
           # Actual published source, not an invented data sample:
-          # https://science.nasa.gov/venus/venus-facts/
-          fact={'title':'NASA Science: Venus Facts','extract':'Venus completes one rotation in about 243 Earth days and one orbit in about 225 Earth days. Sunrise to sunset takes 117 Earth days.'}
+          # https://science.nasa.gov/earth/climate-change/nasa-climate-modeling-suggests-venus-may-have-been-habitable/
+          fact={'title':'NASA Science: Venus Facts','extract':'Venus completes one rotation in about 243 Earth days and one orbit in about 225 Earth days. A solar day, from one sunrise to the next, is about 117 Earth days.'}
           system,user=build_llm_prompts('Venüs dönme ve yörünge süreleri',[],wiki_fact=fact)
           scenario=call_gemini_llm(system,user,key)
           assert scenario.get('provider')=='gemini:gemini-3.1-flash-lite'
