@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 2026-11-05 — Canlı tek kanal yayın testi
+
+- #97 yayın adımı başarılı; `7DULxjp6PsQ` Studio PUBLIC ve girişsiz player OK. Genel koşu cron-kick iptali nedeniyle cancelled.
+- 25 taslak seçildi, başka içerik seçilmedi; Studio kimlik doğrulaması istediğinden hiç silinmedi. Workflow yeniden etkinleştirildi.
+- Gerçek videonun örnek kareleri konuya uymuyor; ayrıca aynı başlıklı başka PUBLIC video var. Görsel eşleştirme ve tekrar önleme çözülmedi.
+
 ## 2026-11-05 — Taslak / PUBLIC doğrulaması
 
 - Run #90 gerçek ekranında boş çocuklara özel seçimi tespit edildi. Seçim ve PUBLIC radyo durumları artık beklenip doğrulanır.

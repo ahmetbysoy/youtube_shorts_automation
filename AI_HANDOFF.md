@@ -345,4 +345,6 @@ Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olama
 - `youtube_studio_uploader.js`: hedef radyo görünür olana kadar bekler, seçimi `aria-checked` ile doğrular; PUBLIC için de aynı kontrol. Yayın sonrası yeni video ID'sinin Studio satırında PUBLIC ikon ve etiketi aranır; yoksa `publish_unverified`, yeniden yükleme öncesi insan kontrolü. Yerel eski video ID temizlenir.
 - Studio'da gerçek taslakta çocuk seçimi `true`; eski PUBLIC video `1IAgNqsjgvQ` üzerinde görünürlük seçicisi doğrulandı. Yeni versiyonla uçtan uca yayın henüz kanıtlanmadı.
 - LLM görsel arama promptu 2–3 kelimeye yönlendirilir; CI `--force-fallback`, dolayısıyla fallback sahneler otomatik düzelmez. `docs/AI_VIDEO_HERO_PROMPT.md` üretime bağlı değildir.
-- Cleanup sırasında `daily_shorts.yml` geçici olarak `disabled_manually`; çalışma bitiminde yeniden etkinleştir ve tek kanallı dispatch sonucunu kaydet.
+- Cleanup sırasında `daily_shorts.yml` geçici durduruldu; run #96 iptal edildi ve workflow tekrar etkinleştirildi. Studio 25 taslak/0 başka kayıt seçimine rağmen kimlik doğrulaması istedi; hiçbiri silinmedi.
+- Run #97 (`41948576364`): build-and-upload başarılı, `7DULxjp6PsQ` Studio PUBLIC doğrulandı ve girişsiz player OK. Cron-kick yeni 01:45 UTC zincirini tetiklerken run geneli cancelled.
+- Canlı videoda örneklenen sahneler (uçak, yan dönmüş kıyı, alakasız yazılı grafik) Zanzibar savaşına uymuyor; kalite başarısız. `WKYwF96hQzg` aynı başlığın başka PUBLIC videosu. 13.4 tekrar koruması henüz yok.
