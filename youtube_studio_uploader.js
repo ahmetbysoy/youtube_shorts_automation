@@ -737,19 +737,26 @@ async function uploadToYouTubeStudio() {
             try {
                 const thumbResult = await uploadCustomThumbnail(page, thumbPath);
                 if (thumbResult.ok) {
-                    console.log('[KAPAK] Dosya gönderildi ve Studio önizlemesi değişti; yayın sonrası kalıcı kayıt ayrıca doğrulanmalı.');
+                    console.log('[KAPAK] Dosya gönderildi ve Studio önizlemesi değişti.');
+                } else if (thumbResult.dailyThumbnailLimit) {
+                    console.log('[KAPAK] Günlük thumbnail limiti dolmuş — video thumbnail\'siz devam ediyor.');
+                    // Dialog kapandı, devam et — throw etme
                 } else {
-                    console.log(`[!] Kapak yüklemesi doğrulanamadı; Studio kontrolü gerekli. (Sebep: ${thumbResult.reason})`);
+                    console.log(`[!] Kapak yüklenemedi (${thumbResult.reason}) — devam ediliyor.`);
                 }
             } catch (thumbUploadErr) {
-                if (String(thumbUploadErr.message || '').includes('THUMBNAIL_QUOTA_DIALOG_BLOCKED')) throw thumbUploadErr;
-                console.log(`[!] Kapak yüklemesi doğrulanamadı; Studio kontrolü gerekli. (Hata: ${thumbUploadErr.message})`);
+                // THUMBNAIL_QUOTA_DIALOG_BLOCKED dahil tüm thumbnail hatalarını yut
+                console.log(`[!] Kapak yükleme hatası yutuldu (${thumbUploadErr.message.slice(0,80)}) — devam ediliyor.`);
             } finally {
                 if (fs.existsSync(thumbPath)) {
                     try { fs.unlinkSync(thumbPath); } catch (_) {}
                 }
             }
         }
+
+        // Thumbnail limiti dialog'unu kapat ve sayfayı normalleştir
+        await page.keyboard.press('Escape').catch(() => {});
+        await page.waitForTimeout(1000);
 
         // Kota koruması: YouTube günlük yükleme limiti dolduysa boşuna uğraşma (kapak yüklendikten SONRA)
         if (await detectDailyUploadLimit(page)) {
