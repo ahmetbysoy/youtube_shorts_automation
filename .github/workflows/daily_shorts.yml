@@ -188,15 +188,7 @@ jobs:
 
           # Pixabay/Pexels cookie'lerini cookies.json'a birleştir (video çekici için)
           if [ -n "$MEDIA_COOKIES_JSON" ]; then
-            python3 -c "
-import json, os
-yt = json.load(open('cookies.json'))
-media = json.loads(os.environ['MEDIA_COOKIES_JSON'])
-existing = {(c['name'], c['domain']) for c in yt}
-merged = yt + [c for c in media if (c['name'], c['domain']) not in existing]
-json.dump(merged, open('cookies.json','w'))
-print(f'[OK] Cookie birleştirildi: {len(yt)} YouTube + {len(merged)-len(yt)} Media = {len(merged)} toplam')
-"
+            python3 -c "import json,os; yt=json.load(open('cookies.json')); media=json.loads(os.environ['MEDIA_COOKIES_JSON']); ex={(c['name'],c['domain'])for c in yt}; merged=yt+[c for c in media if(c['name'],c['domain'])not in ex]; json.dump(merged,open('cookies.json','w')); print(f'[OK] Cookie birleştirildi: YouTube+{len(merged)-len(yt)} Media={len(merged)} toplam')"
           fi
 
           python -c "import json; c=json.load(open('cookies.json')); print(f'[OK] Kanal ${{ matrix.channel_id }} cookies.json doğrulandı ({len(c)} çerez)')"
