@@ -2358,20 +2358,24 @@ async def _edge_tts_generate(
     word_timestamps: list[dict[str, Any]] = []
     raw_words = text.split()
 
-    with audio_out.open("wb") as audio_file:
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_file.write(chunk["data"])
-            elif chunk["type"] == "WordBoundary":
-                start_ms = round(chunk["offset"] / 10_000, 1)
-                dur_ms = round(chunk["duration"] / 10_000, 1)
-                word_timestamps.append(
-                    {
-                        "word": chunk["text"],
-                        "start_ms": start_ms,
-                        "end_ms": round(start_ms + dur_ms, 1),
-                    }
-                )
+    async def consume_stream() -> None:
+        with audio_out.open("wb") as audio_file:
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio_file.write(chunk["data"])
+                elif chunk["type"] == "WordBoundary":
+                    start_ms = round(chunk["offset"] / 10_000, 1)
+                    dur_ms = round(chunk["duration"] / 10_000, 1)
+                    word_timestamps.append(
+                        {
+                            "word": chunk["text"],
+                            "start_ms": start_ms,
+                            "end_ms": round(start_ms + dur_ms, 1),
+                        }
+                    )
+
+    # Akış hiç ilerlemezse TTS fazını sınırsız bekletme.
+    await asyncio.wait_for(consume_stream(), timeout=90)
 
     if len(word_timestamps) == len(raw_words):
         for wt, orig_token in zip(word_timestamps, raw_words):
@@ -2403,6 +2407,7 @@ def _gtts_fallback_generate(text: str, audio_out: Path) -> list[dict[str, Any]]:
             check=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            timeout=120,
         )
     finally:
         tmp_raw.unlink(missing_ok=True)
