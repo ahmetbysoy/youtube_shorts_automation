@@ -124,7 +124,7 @@ jobs:
       - name: APT Cache Dizinini Hazırla
         run: |
           mkdir -p "${RUNNER_TEMP}/apt-cache/archives/partial"
-          printf 'Dir::Cache::archives "%s/apt-cache/archives/";\\n' "${RUNNER_TEMP}" > "${RUNNER_TEMP}/apt-cache/apt.conf"
+          printf 'Dir::Cache::archives "%s/apt-cache/archives/";\n' "${RUNNER_TEMP}" > "${RUNNER_TEMP}/apt-cache/apt.conf"
           echo "APT_CONFIG=${RUNNER_TEMP}/apt-cache/apt.conf" >> "$GITHUB_ENV"
           echo "[CACHE] APT .deb arşivleri cache dizinine yönlendirildi."
 
