@@ -90,8 +90,12 @@ jobs:
 
       - name: Sistem Paketlerini Kur (Xvfb)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
+          if command -v Xvfb &>/dev/null; then
+            echo "[✓] Xvfb zaten kurulu, apt atlanıyor."
+          else
+            sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
+            sudo apt-get install -y --no-install-recommends xvfb
+          fi
 
       - name: Node.js 20 Kur
         uses: actions/setup-node@v7
