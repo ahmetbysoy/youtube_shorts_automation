@@ -159,6 +159,8 @@ jobs:
         run: |
           NOW=$(date -u +%s)
           WORKFLOW="hourly_pruner.yml"
+
+          # 1) Schedule zamanlayıcı yakın zamanda çalıştıysa zincir gerekmez
           LAST=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?event=schedule&per_page=1" \
             | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
@@ -166,26 +168,37 @@ jobs:
             LAST_EPOCH=$(date -u -d "$LAST" +%s)
             AGE=$(( NOW - LAST_EPOCH ))
             if [ "$AGE" -lt 5400 ]; then
-              echo "[OK] Saatlik zamanlayici CANLI (${AGE} saniye once) -> zincir tetiklenmiyor."
+              echo "[OK] Saatlik zamanlayici CANLI (${AGE}s once) -> zincir tetiklenmiyor."
               exit 0
             fi
           fi
-          NEXT_SLOT=$(( (NOW / 3600 + 1) * 3600 ))
 
-          # AKTIF KOSU KONTROLU: baska bir pruner kosusu varsa zincir TETIKLENMEZ
+          # 2) Aktif başka bir pruner koşusu varsa tetikleme
           ACTIVE_COUNT=$(bash scripts/active_runs_count.sh "${WORKFLOW}" 2>/dev/null || echo 0)
           ACTIVE_COUNT="${ACTIVE_COUNT:-0}"
           if [ "${ACTIVE_COUNT}" -gt 0 ]; then
-            echo "[OK] Aktif kosu sayisi: ${ACTIVE_COUNT} -> zincir TETIKLENMEDI (cakisma onlendi)."
+            echo "[OK] Aktif kosu: ${ACTIVE_COUNT} -> TETIKLENMEDI."
             exit 0
           fi
 
+          # 3) Minimum 30 dakika gap — döngü fırtınası önlemi
+          LAST_ANY=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?per_page=2" \
+            | python3 -c "import json,sys,os; runs=json.load(sys.stdin).get('workflow_runs',[]); me=os.environ.get('GITHUB_RUN_ID',''); [print(r.get('created_at','')) or exit() for r in runs if str(r.get('id'))!=me]" 2>/dev/null || true)
+          if [ -n "$LAST_ANY" ]; then
+            LAST_ANY_EPOCH=$(date -u -d "$LAST_ANY" +%s 2>/dev/null || echo 0)
+            GAP=$(( NOW - LAST_ANY_EPOCH ))
+            if [ "$GAP" -lt 1800 ]; then
+              echo "[OK] Son pruner ${GAP}s once baslamis (min 1800s) -> TETIKLENMEDI."
+              exit 0
+            fi
+          fi
+
+          # 4) Zinciri tetikle (slot_epoch bekleme yok)
           TARGET_CHANNEL="${NEXT_CHANNEL:-1}"
-          echo "[*] Benzersiz (ayri hesap) kanal sayisi: ${DISTINCT_COUNT:-1}"
-          echo "[*] Siradaki kanal: ${TARGET_CHANNEL}"
-          echo "[*] Sonraki saat dilimi: ${NEXT_SLOT} (UTC $(date -u -d @${NEXT_SLOT} '+%H:%M:%S'))"
+          echo "[*] Pruner zinciri tetikleniyor -> kanal ${TARGET_CHANNEL}"
           curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches" \
-            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"${TARGET_CHANNEL}\",\"slot_epoch\":\"${NEXT_SLOT}\"}}"
+            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"${TARGET_CHANNEL}\",\"slot_epoch\":\"\"}}"
           echo "[*] Zincir tetiklendi -> kanal ${TARGET_CHANNEL}."

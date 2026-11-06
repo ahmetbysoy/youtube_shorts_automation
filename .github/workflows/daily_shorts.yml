@@ -106,24 +106,6 @@ jobs:
       - name: Depoyu Çek (Checkout)
         uses: actions/checkout@v7
 
-      - name: "Zincir Zaman Dilimi Beklemesi (15dk kanalizasyonu)"
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.slot_epoch != '' }}
-        env:
-          # input dogrudan shell'e gomulmez (script injection / quoting riski)
-          SLOT_EPOCH: ${{ inputs.slot_epoch }}
-        run: |
-          TARGET="${SLOT_EPOCH:-}"
-          NOW=$(date -u +%s)
-          if ! [[ "$TARGET" =~ ^[0-9]+$ ]]; then
-            echo "[*] slot_epoch gecersiz, bekleme yok."
-            exit 0
-          fi
-          if [ "$TARGET" -gt "$NOW" ]; then
-            DELAY=$(( TARGET - NOW ))
-            echo "[*] Zincir tetikleyicisi: ${DELAY} saniye sonra 15 dakikalık dilime geçilecek..."
-            sleep "$DELAY"
-          fi
-
       - name: "Uretim Kapisi (Watchdog: Zincir aktifse bu kosu bekci)"
         id: gate
         run: |
@@ -325,10 +307,9 @@ jobs:
           done
 
           if [ "$QUOTA_HIT" = "1" ]; then
-            echo "[KOTA] Onceki tur gunluk yukleme kotasiyla durdu -> bosuna uretim yapmamak icin sonraki deneme 4 saat sonra."
-            NEXT_SLOT=$(( NOW + 14400 ))
-          else
-            NEXT_SLOT=$(( (NOW / 900 + 1) * 900 ))
+            echo "[KOTA] Onceki tur gunluk yukleme kotasiyla durdu -> 4 saat bekleniyor."
+            echo "[OK] Zincir TETIKLENMEDI (kota)."
+            exit 0
           fi
 
           # --- 2) Zamanlayici canli mi? ---
@@ -339,15 +320,10 @@ jobs:
           if [ -n "$LAST" ]; then
             LAST_EPOCH=$(date -u -d "$LAST" +%s)
             AGE=$(( NOW - LAST_EPOCH ))
-            echo "[BILGI] Son schedule calistirmasi ${AGE} saniye once (zamanlayici seyrek + gecikmeli)."
-          else
-            echo "[BILGI] Hic zamanlanmis calistirma yok."
+            echo "[BILGI] Son schedule calistirmasi ${AGE} saniye once."
           fi
-          echo "[BILGI] Tek uretim mekanizmasi ZINCIR; cron yalnizca bekci (watchdog) olarak calisir."
 
-
-          # --- 3) AKTIF KOSU KONTROLU: baska bir kosu varsa zincir TETIKLENMEZ ---
-          # (Ayni anda iki kosu = Studio oturum/cerez cakismasi + iptal firtinasi)
+          # --- 3) AKTIF KOSU KONTROLU ---
           ACTIVE_COUNT=$(bash scripts/active_runs_count.sh "${WORKFLOW}" 2>/dev/null || echo 0)
           ACTIVE_COUNT="${ACTIVE_COUNT:-0}"
           if [ "${ACTIVE_COUNT}" -gt 0 ]; then
@@ -355,14 +331,25 @@ jobs:
             exit 0
           fi
 
-          # --- 4) Siradaki kanal (ayri hesaplar arasinda donusum) ---
+          # Son run'dan bu yana en az 3 dakika geçmeli (döngü fırtınası önlemi)
+          LAST_ANY=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?per_page=1" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
+          if [ -n "$LAST_ANY" ]; then
+            LAST_ANY_EPOCH=$(date -u -d "$LAST_ANY" +%s)
+            GAP=$(( NOW - LAST_ANY_EPOCH ))
+            if [ "$GAP" -lt 180 ]; then
+              echo "[OK] Son run ${GAP} saniye once baslamis (min 180s) -> zincir TETIKLENMEDI."
+              exit 0
+            fi
+          fi
+
+          # --- 4) Zinciri hemen tetikle (slot_epoch bekleme yok) ---
           TARGET_CHANNEL="${NEXT_CHANNEL:-1}"
-          echo "[*] Benzersiz (ayri hesap) kanal sayisi: ${DISTINCT_COUNT:-1}"
           echo "[*] Siradaki kanal: ${TARGET_CHANNEL}"
-          echo "[*] Sonraki dilim: ${NEXT_SLOT} (UTC $(date -u -d @${NEXT_SLOT} '+%H:%M:%S'))"
 
           curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches" \
-            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"${TARGET_CHANNEL}\",\"slot_epoch\":\"${NEXT_SLOT}\",\"chain\":\"1\"}}"
-          echo "[*] Zincir tetiklendi -> kanal ${TARGET_CHANNEL}, dilim ${NEXT_SLOT}."
+            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"${TARGET_CHANNEL}\",\"slot_epoch\":\"\",\"chain\":\"1\"}}"
+          echo "[*] Zincir tetiklendi -> kanal ${TARGET_CHANNEL}."
