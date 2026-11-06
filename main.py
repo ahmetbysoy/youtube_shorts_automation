@@ -72,51 +72,47 @@ def _published_video_info() -> dict:
     return {k: v for k, v in info.items() if v}
 
 
-def run_step(step_name: str, command: list, env_overrides: dict | None = None) -> bool:
+def run_step(
+    step_name: str,
+    command: list,
+    env_overrides: dict | None = None,
+    timeout_seconds: int = 900,
+) -> bool:
+    """Alt süreci canlı loglarla çalıştır; her faz için kesin timeout uygula."""
     logging.info(f"[*] BAŞLATILIYOR: {step_name}")
+    logging.info(f"[*] KOMUT: {' '.join(map(str, command))}")
     step_env = os.environ.copy()
     if env_overrides:
         step_env.update(env_overrides)
     try:
-        result = subprocess.run(
+        # stdout/stderr doğrudan Actions konsoluna akar; capture_output tamponu yok.
+        subprocess.run(
             command,
             cwd=BASE_DIR,
             env=step_env,
             check=True,
-            capture_output=True,
-            text=True
+            stdout=sys.stdout,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=timeout_seconds,
         )
         logging.info(f"[+] BAŞARILI: {step_name}")
-        if result.stdout:
-            for line in result.stdout.splitlines():
-                show_tokens = (
-                    "INFO", "BAŞARILI", "🚀", "unsharp", "eq=", "Başlık", "Link :", "Durum:",
-                    # Faz 11: viral metadata + AI kapak kanitlari CI logunda gorunsun
-                    "AI ile dikkat", "Kapak resmi", "Kapak görseli", "Etkileşim CTA",
-                    "Trend hashtag", "YÜKLEME ATLANDI", "günlük yükleme",
-                    # Faz 12: silahlandirilmis kapak + zorunlu basari satiri
-                    "SİLAHLANDIRILMIŞ", "KAPAK RESMİ", "Yayınlanan video ID",
-                    # Faz 12.6: kapak hata/ fallback mesajlari da gorunur olsun
-                    "Kapak üretimi", "Kapak resmi yüklenemedi", "Kapak indirme hatası",
-                    "Kapak servisi", "Yerel yedek kapak", "rate limit", "[KAPAK]",
-                    # Faz 13: aciklama guvenligi + kaynak satiri kanitlari
-                    "Kaynak:", "KAYNAK", "GUVENLIK", "CTA guvenlik",
-                    "seçimi doğrulandı", "Studio PUBLIC", "YAYINLAMA İŞLEMİ",
-                )
-                if any(tok in line for tok in show_tokens):
-                    logging.info(f"  -> {line.strip()}")
         return True
+    except subprocess.TimeoutExpired:
+        logging.error(
+            f"[-] TIMEOUT: {step_name} {timeout_seconds} saniyede tamamlanmadı; "
+            "alt süreç sonlandırıldı."
+        )
+        return False
     except subprocess.CalledProcessError as e:
-        # 42 = YouTube günlük yükleme kotası doldu -> bu bir HATA değil, planlı bir atlama
+        # 42 = YouTube günlük yükleme kotası doldu -> planlı atlama.
         if e.returncode == 42:
             logging.warning(f"[⏭️ ATLANDI] {step_name}: YouTube günlük yükleme kotanı doldu.")
-            for line in (e.stdout or "").splitlines():
-                if any(tok in line for tok in ("Kapak", "CTA", "hashtag", "YÜKLEME", "kota", "günlük")):
-                    logging.info(f"  -> {line.strip()}")
             return True
-        logging.error(f"[-] KRİTİK HATA: {step_name}")
-        logging.error(f"Stdout: {e.stdout}")
-        logging.error(f"Stderr: {e.stderr}")
+        logging.error(f"[-] KRİTİK HATA: {step_name} (exit={e.returncode})")
+        return False
+    except OSError as e:
+        logging.exception(f"[-] Alt süreç başlatılamadı: {step_name}: {e}")
         return False
 
 def main():
@@ -143,6 +139,7 @@ def main():
         "FAZ 2: İçerik ve Ses Üretimi",
         [sys.executable, str(BASE_DIR / "content_engine.py"), "--force-fallback", "--channel_id", args.channel_id],
         env_overrides=step_env,
+        timeout_seconds=600,
     )
     if not step1_ok:
         logging.error("İçerik üretimi başarısız. Orkestrasyon durduruldu.")
@@ -154,6 +151,7 @@ def main():
         "FAZ 3: FFmpeg Montaj ve Altyazı",
         [sys.executable, str(BASE_DIR / "src" / "media_processing" / "media_processor.py")],
         env_overrides=step_env,
+        timeout_seconds=1200,
     )
     if not step2_ok:
         logging.error("Medya işleme başarısız. Orkestrasyon durduruldu.")
@@ -169,6 +167,7 @@ def main():
         "FAZ 5: Playwright YouTube Studio Yükleme",
         ["node", str(BASE_DIR / "youtube_studio_uploader.js")],
         env_overrides=step_env,
+        timeout_seconds=1200,
     )
     if not step3_ok:
         logging.error("YouTube yükleme başarısız. Orkestrasyon durduruldu.")
