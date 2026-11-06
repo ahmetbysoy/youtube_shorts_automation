@@ -754,9 +754,23 @@ async function uploadToYouTubeStudio() {
             }
         }
 
-        // Thumbnail limiti dialog'unu kapat ve sayfayı normalleştir
-        await page.keyboard.press('Escape').catch(() => {});
-        await page.waitForTimeout(1000);
+        // Thumbnail limiti veya diğer dialog'ları kapat, sayfayı normalleştir
+        try {
+            // Tüm açık dialog'ları kapat
+            const dialogs = page.locator('ytcp-dialog, tp-yt-paper-dialog, [role="dialog"]');
+            const dCount = await dialogs.count();
+            for (let di = 0; di < dCount; di++) {
+                const d = dialogs.nth(di);
+                if (await d.isVisible().catch(() => false)) {
+                    const closeBtn = d.locator('button:has-text("Kapat"), button:has-text("Close"), button:has-text("Tamam"), button:has-text("OK"), #close-button, ytcp-button[id="cancel-button"]').first();
+                    if (await closeBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+                        await closeBtn.click({ force: true }).catch(() => {});
+                    }
+                }
+            }
+            await page.keyboard.press('Escape').catch(() => {});
+            await page.waitForTimeout(2000);
+        } catch (_) {}
 
         // Kota koruması: YouTube günlük yükleme limiti dolduysa boşuna uğraşma (kapak yüklendikten SONRA)
         if (await detectDailyUploadLimit(page)) {
@@ -837,7 +851,7 @@ async function uploadToYouTubeStudio() {
         const publicRadio = page.locator(PUBLIC_RADIO_SEL).first();
         await publicRadio.scrollIntoViewIfNeeded().catch(() => {});
         try {
-            await publicRadio.waitFor({ state: 'visible', timeout: 25000 });
+            await publicRadio.waitFor({ state: 'visible', timeout: 45000 });
         } catch (waitErr) {
             if (await detectDailyUploadLimit(page)) {
                 console.error('⏭️ YÜKLEME ATLANDI: YouTube günlük yükleme kotanı dolmuş (limit gece yarısı sıfırlanır).');
