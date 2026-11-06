@@ -114,35 +114,34 @@ jobs:
           echo "[GATE] produce=${PRODUCE}"
 
       - name: APT Paket Arşivi Cache
-        uses: actions/cache@v4
+        id: apt-cache-restore
+        uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/apt-cache/archives
-          key: apt-debs-ubuntu-24.04-${{ hashFiles('.github/workflows/daily_shorts.yml') }}
-          restore-keys: |
-            apt-debs-ubuntu-24.04-
-
-      - name: APT Cache Dizinini Hazırla
-        run: |
-          mkdir -p "${RUNNER_TEMP}/apt-cache/archives/partial"
-          printf 'Dir::Cache::archives "%s/apt-cache/archives/";\n' "${RUNNER_TEMP}" > "${RUNNER_TEMP}/apt-cache/apt.conf"
-          echo "APT_CONFIG=${RUNNER_TEMP}/apt-cache/apt.conf" >> "$GITHUB_ENV"
-          echo "[CACHE] APT .deb arşivleri cache dizinine yönlendirildi."
+          key: apt-debs-ubuntu-24.04-v1
 
       - name: Sistem Paketlerini Kur (FFmpeg, Fontlar & Xvfb Sanal Ekran)
-        timeout-minutes: 5
+        timeout-minutes: 12
         run: |
-          # Ubuntu 24.04 runner'da ffmpeg genellikle önceden kurulu — kontrol et
+          mkdir -p "${RUNNER_TEMP}/apt-cache/archives/partial"
           if command -v ffmpeg &>/dev/null && command -v Xvfb &>/dev/null; then
-            echo "[✓] ffmpeg $(ffmpeg -version 2>&1 | head -1) — zaten kurulu, apt atlanıyor."
+            echo "[✓] ffmpeg ve Xvfb zaten kurulu; apt kurulumu atlandı."
           else
-            echo "[↓] Eksik paketler kuruluyor..."
-            timeout 180 sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
-            timeout 180 sudo apt-get install -y --no-install-recommends \
+            echo "[↓] Eksik sistem paketleri kuruluyor (en fazla 10 dakika)..."
+            timeout 240 sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=60 -qq
+            timeout 600 sudo apt-get install -y --no-install-recommends \
+              -o Dir::Cache::archives="${RUNNER_TEMP}/apt-cache/archives" \
               ffmpeg xvfb fonts-liberation fonts-dejavu-core libass9
-            echo "[✓] Kurulum tamamlandı."
+            echo "[✓] Sistem paketleri kuruldu."
           fi
-          # Fontconfig cache'i yenile (Montserrat yoksa sessizce atla)
           fc-cache -f 2>/dev/null || true
+
+      - name: APT Paket Cache Kaydet
+        if: ${{ always() && steps.apt-cache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/apt-cache/archives
+          key: apt-debs-ubuntu-24.04-v1
 
       - name: Python 3.11 Kur
         uses: actions/setup-python@v7
@@ -172,6 +171,7 @@ jobs:
             playwright-chromium-
 
       - name: Node & Playwright Tarayıcısını Yükle
+        id: node-playwright-install
         run: |
           export APT_CONFIG="${RUNNER_TEMP}/apt-cache/apt.conf"
           npm install
@@ -238,7 +238,7 @@ jobs:
       - name: "Kanal Hijyeni (Faz 12.5): Banner + About + Sabitlenmiş Yorum"
         # Gate 'false' dediyse (bekci kosusu) calisma: .env yok -> About metni
         # e-posta olmadan yazilir ve KANAL HAKKINDA alani yanlislikla ezilirdi.
-        if: ${{ always() && steps.gate.outputs.produce != 'false' }}
+        if: ${{ always() && steps.gate.outputs.produce != 'false' && steps.node-playwright-install.outcome == 'success' }}
         env:
           YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ' }}
           AFFILIATE_URL_DEFAULT: ${{ vars.AFFILIATE_URL_DEFAULT }}
