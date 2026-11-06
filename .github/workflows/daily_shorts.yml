@@ -113,6 +113,21 @@ jobs:
           echo "produce=${PRODUCE}" >> "$GITHUB_OUTPUT"
           echo "[GATE] produce=${PRODUCE}"
 
+      - name: APT Paket Arşivi Cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/apt-cache/archives
+          key: apt-debs-ubuntu-24.04-${{ hashFiles('.github/workflows/daily_shorts.yml') }}
+          restore-keys: |
+            apt-debs-ubuntu-24.04-
+
+      - name: APT Cache Dizinini Hazırla
+        run: |
+          mkdir -p "${RUNNER_TEMP}/apt-cache/archives/partial"
+          printf 'Dir::Cache::archives "%s/apt-cache/archives/";\\n' "${RUNNER_TEMP}" > "${RUNNER_TEMP}/apt-cache/apt.conf"
+          echo "APT_CONFIG=${RUNNER_TEMP}/apt-cache/apt.conf" >> "$GITHUB_ENV"
+          echo "[CACHE] APT .deb arşivleri cache dizinine yönlendirildi."
+
       - name: Sistem Paketlerini Kur (FFmpeg, Fontlar & Xvfb Sanal Ekran)
         timeout-minutes: 5
         run: |
@@ -158,6 +173,7 @@ jobs:
 
       - name: Node & Playwright Tarayıcısını Yükle
         run: |
+          export APT_CONFIG="${RUNNER_TEMP}/apt-cache/apt.conf"
           npm install
           if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
             echo "[✓] Playwright Chromium cache'den yüklendi, sistem deps kuruluyor..."
