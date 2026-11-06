@@ -259,6 +259,35 @@ jobs:
         if: always()
         run: python scripts/run_summary.py logs/run_status.json
 
+      - name: "Konu Geçmişini Repoya Kaydet (.used_topics.json persist)"
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # .used_topics.json varsa ve içerik değiştiyse repoya commit et
+          if [ ! -f ".used_topics.json" ]; then
+            echo "[*] .used_topics.json yok, atlanıyor."
+            exit 0
+          fi
+          CONTENT=$(cat .used_topics.json)
+          ENCODED=$(python3 -c "import base64,sys; print(base64.b64encode(sys.stdin.buffer.read()).decode())" < .used_topics.json)
+          # Mevcut SHA'yı al
+          EXISTING=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/.used_topics.json" \
+            | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('sha',''))" 2>/dev/null || echo "")
+          # Commit payload
+          if [ -n "$EXISTING" ]; then
+            PAYLOAD="{\"message\":\"chore: konu geçmişi güncellendi [skip ci]\",\"content\":\"${ENCODED}\",\"sha\":\"${EXISTING}\"}"
+          else
+            PAYLOAD="{\"message\":\"chore: konu geçmişi oluşturuldu [skip ci]\",\"content\":\"${ENCODED}\"}"
+          fi
+          RESULT=$(curl -s -X PUT \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/.used_topics.json" \
+            -d "$PAYLOAD")
+          echo "$RESULT" | python3 -c "import json,sys; d=json.load(sys.stdin); print('[OK] .used_topics.json repoya kaydedildi.') if 'content' in d else print('[WARN] Kaydetme:', str(d)[:120])" || echo "[WARN] JSON parse hatası"
+
   # ---------------------------------------------------------------------------
   # CRON KILIDI KIRMA: GitHub'ın 'schedule' tetikleyicisi throttle/yok sayılabiliyor.
   # Bu job, zamanlayıcı ölüyse iş akışını kendi kendine yeniden tetikler (workflow_dispatch).
