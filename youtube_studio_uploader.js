@@ -14,6 +14,14 @@ const PROFILE_DIR = path.join(os.tmpdir(), 'yt_studio_browser_profile');
 const AUTH_STATUS_PATH = path.join(BASE_DIR, 'logs', 'auth_status.json');
 const CODE_INPUT_FILE = '/tmp/yt_2fa_code.txt';
 
+async function requireNoIdentityVerification(page) {
+    const bodyText = await page.locator('body').innerText().catch(() => '');
+    if (!/kimliğinizi doğrulayın|verify your identity|confirm it'?s you|verify it'?s you|ekstra güvenlik/i.test(bodyText)) return;
+    const screenshot = path.join(BASE_DIR, 'logs', 'identity_verification_required.png');
+    await page.screenshot({ path: screenshot }).catch(() => {});
+    throw new Error('GOOGLE_IDENTITY_VERIFICATION_REQUIRED: YouTube ekranda hesap sahibinden kimlik doğrulaması istiyor. Google hesabını güvenilir bir cihaz/tarayıcıda doğrulayın; sonra güncel oturum çerezlerini GitHub Secrets içine yenileyin.');
+}
+
 function writeAuthStatus(state, details = {}) {
     try {
         fs.mkdirSync(path.dirname(AUTH_STATUS_PATH), { recursive: true });
@@ -786,6 +794,7 @@ async function uploadToYouTubeStudio() {
         // Studio bu alani zorunlu tutar. isVisible(timeout) beklemez: radio
         // gec render olursa eski kod secimi sessizce atlayip taslak birakiyordu.
         // Kanalin mevcut icerik politikasi: cocuklara ozel degil.
+        await requireNoIdentityVerification(page);
         const notForKids = page.locator('tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]').first();
         try {
             await notForKids.waitFor({ state: 'attached', timeout: 30000 });
@@ -825,6 +834,7 @@ async function uploadToYouTubeStudio() {
             }
         }
 
+        await requireNoIdentityVerification(page);
         console.log("[*] Görünürlük ayarı 'Herkese Açık' (Public) ekranına ilerleniyor...");
         const PUBLIC_RADIO_SEL = 'tp-yt-paper-radio-button[name="PUBLIC"]:visible, #public-radio-button:visible, input[value="PUBLIC"]:visible';
 
@@ -1049,7 +1059,11 @@ async function uploadToYouTubeStudio() {
 }
 
 uploadToYouTubeStudio().catch(err => {
-    writeAuthStatus('error', { message: String(err && err.message ? err.message : err) });
+    const message = String(err && err.message ? err.message : err);
+    const state = message.includes('GOOGLE_IDENTITY_VERIFICATION_REQUIRED')
+        ? 'identity_verification_required'
+        : 'error';
+    writeAuthStatus(state, { message });
     console.error("[-] KRİTİK HATA:", err);
     process.exit(1);
 });
