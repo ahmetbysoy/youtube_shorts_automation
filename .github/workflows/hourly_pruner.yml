@@ -125,7 +125,7 @@ jobs:
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
           PRUNE_MIN_VIEWS: ${{ vars.PRUNE_MIN_VIEWS || '100' }}
           PRUNE_MIN_AGE_MINUTES: ${{ vars.PRUNE_MIN_AGE_MINUTES || '60' }}
-          PRUNE_MAX_DELETIONS: ${{ vars.PRUNE_MAX_DELETIONS || '10' }}
+          PRUNE_MAX_DELETIONS: ${{ vars.PRUNE_MAX_DELETIONS || '999' }}
           PRUNE_MIN_REMAINING: ${{ vars.PRUNE_MIN_REMAINING || '1' }}
           # PRUNE_DRY_RUN: Silme modunu kontrol eder. Varsayılan false (silme aktif).
           # Güvenli test için Repo Variables'a PRUNE_DRY_RUN=true ekleyin.

@@ -221,32 +221,93 @@ async function performGoogleLoginIfNeeded(page) {
     }
 }
 
+/** Tek bir satırın verisini DOM'dan çıkarır */
+function extractRowData(r) {
+    const titleEl = r.querySelector('#video-title');
+    const link = r.querySelector('a[href*="/video/"]');
+    const href = link ? (link.getAttribute('href') || '') : '';
+    const idM = href.match(/\/video\/([\w-]+)/);
+    const cells = Array.from(r.querySelectorAll('[role="cell"]'));
+    const pick = (cls) => {
+        const c = cells.find(x => (x.className || '').toString().includes(cls));
+        return c ? (c.innerText || '').replace(/\s+/g, ' ').trim() : '';
+    };
+    const dateCell = pick('tablecell-date');
+    const descEl = r.querySelector('.tablecell-date .cell-description');
+    return {
+        videoId: idM ? idM[1] : '',
+        title: titleEl ? (titleEl.textContent || '').trim() : '',
+        visibility: pick('tablecell-visibility'),
+        dateText: dateCell,
+        statusText: descEl ? (descEl.textContent || '').trim() : '',
+        viewsText: pick('tablecell-views'),
+        commentsText: pick('tablecell-comments')
+    };
+}
+
+/**
+ * Sayfayı aşağı kaydırarak tüm ytcp-video-row elementlerini toplar.
+ * YouTube Studio sanal liste kullandığı için scroll yapılmadan
+ * sadece ekranda görünen ~30 satır DOM'a gelmektedir.
+ * MAX_SCROLL_ROUNDS ile sonsuz döngü engellenmiştir.
+ */
 async function collectRows(page) {
-    return await page.evaluate(() => {
-        const rows = Array.from(document.querySelectorAll('ytcp-video-row'));
-        return rows.map(r => {
-            const titleEl = r.querySelector('#video-title');
-            const link = r.querySelector('a[href*="/video/"]');
-            const href = link ? (link.getAttribute('href') || '') : '';
-            const idM = href.match(/\/video\/([\w-]+)/);
-            const cells = Array.from(r.querySelectorAll('[role="cell"]'));
-            const pick = (cls) => {
-                const c = cells.find(x => (x.className || '').toString().includes(cls));
-                return c ? (c.innerText || '').replace(/\s+/g, ' ').trim() : '';
-            };
-            const dateCell = pick('tablecell-date');
-            const descEl = r.querySelector('.tablecell-date .cell-description');
-            return {
-                videoId: idM ? idM[1] : '',
-                title: titleEl ? (titleEl.textContent || '').trim() : '',
-                visibility: pick('tablecell-visibility'),
-                dateText: dateCell,
-                statusText: descEl ? (descEl.textContent || '').trim() : '',
-                viewsText: pick('tablecell-views'),
-                commentsText: pick('tablecell-comments')
-            };
-        }).filter(v => v.videoId);
-    });
+    const MAX_SCROLL_ROUNDS = 60;   // maks 60 scroll = ~1800 video
+    const SCROLL_PAUSE_MS  = 1200;  // her scroll sonrası bekleme
+
+    const seen   = new Set();
+    const result = [];
+
+    for (let round = 0; round < MAX_SCROLL_ROUNDS; round++) {
+        // Mevcut DOM'daki satırları işle
+        const rows = await page.evaluate((extractFn) => {
+            const rows = Array.from(document.querySelectorAll('ytcp-video-row'));
+            return rows.map(r => {
+                const titleEl = r.querySelector('#video-title');
+                const link    = r.querySelector('a[href*="/video/"]');
+                const href    = link ? (link.getAttribute('href') || '') : '';
+                const idM     = href.match(/\/video\/([\w-]+)/);
+                const cells   = Array.from(r.querySelectorAll('[role="cell"]'));
+                const pick    = (cls) => {
+                    const c = cells.find(x => (x.className || '').toString().includes(cls));
+                    return c ? (c.innerText || '').replace(/\s+/g, ' ').trim() : '';
+                };
+                const dateCell = pick('tablecell-date');
+                const descEl   = r.querySelector('.tablecell-date .cell-description');
+                return {
+                    videoId:      idM ? idM[1] : '',
+                    title:        titleEl ? (titleEl.textContent || '').trim() : '',
+                    visibility:   pick('tablecell-visibility'),
+                    dateText:     dateCell,
+                    statusText:   descEl ? (descEl.textContent || '').trim() : '',
+                    viewsText:    pick('tablecell-views'),
+                    commentsText: pick('tablecell-comments')
+                };
+            }).filter(v => v.videoId);
+        });
+
+        let newFound = 0;
+        for (const row of rows) {
+            if (!seen.has(row.videoId)) {
+                seen.add(row.videoId);
+                result.push(row);
+                newFound++;
+            }
+        }
+
+        // Sayfanın en altına kaydır
+        const prevHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+        await page.waitForTimeout(SCROLL_PAUSE_MS);
+        const newHeight  = await page.evaluate(() => document.documentElement.scrollHeight);
+
+        // Yeni satır gelmedi VE sayfa uzamadıysa -> liste bitti
+        if (newFound === 0 && newHeight === prevHeight) {
+            log(`[*] Scroll tamamlandı: ${result.length} benzersiz video bulundu (${round + 1} scroll turu).`);
+            break;
+        }
+    }
+    return result;
 }
 
 /** Videonun yaşını (dakika) çözer: en güvenilir kaynaktan başlar */
