@@ -38,7 +38,7 @@ echo "[*] Auth/durum dosyalari (sifre taramasi yapilir, silinmez):"
 find "${LOGS_DIR}" -type f \( -iname "*auth*" -o -iname "*status*" \) -printf "  - %p\n" 2>/dev/null
 
 # 2) Gizli kalip taramasi (Google/YouTube cerez + bearer token kaliplari)
-PATTERNS='SIDCC|SAPISID|HSID|SSID|APISID|__Secure-[A-Z0-9_]+|Bearer [A-Za-z0-9._-]{20,}|AIza[0-9A-Za-z_-]{30,}|"refresh_token"|"access_token"|"client_secret"|"id_token"|"session_id"|"authToken"|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+PATTERNS='SIDCC|SAPISID|HSID|SSID|APISID|__Secure-[A-Z0-9_]+|Bearer [A-Za-z0-9._-]{20,}|AIza[0-9A-Za-z_-]{30,}|"refresh_token"|"access_token"|"client_secret"|"id_token"|"session_id"|"authToken"|-----BEGIN [A-Z ]*PRIVATE KEY-----|YT_PASSWORD=|YT_EMAIL='
 
 while IFS= read -r -d '' F; do
   if grep -qE "${PATTERNS}" "$F" 2>/dev/null; then
@@ -48,6 +48,8 @@ while IFS= read -r -d '' F; do
     sed -E -i 's/(Bearer )[A-Za-z0-9._-]{20,}/\1***REDACTED***/g' "$F" 2>/dev/null || true
     sed -E -i 's/(AIza)[0-9A-Za-z_-]{30,}/\1***REDACTED***/g' "$F" 2>/dev/null || true
     sed -E -i 's/("(refresh_token|access_token|client_secret)"[[:space:]]*:[[:space:]]*")[^"]*/\1***REDACTED***/g' "$F" 2>/dev/null || true
+    sed -E -i 's/(YT_PASSWORD=)[^[:space:]]*/\1***REDACTED***/g' "$F" 2>/dev/null || true
+    sed -E -i 's/(YT_EMAIL=)[^[:space:]]*/\1***REDACTED***/g' "$F" 2>/dev/null || true
     WARNINGS=$((WARNINGS + 1))
   fi
 done < <(find "${LOGS_DIR}" -type f -size -5M -print0 2>/dev/null)

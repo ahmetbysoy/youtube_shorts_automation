@@ -8,7 +8,7 @@ YouTube Shorts senaryo + seslendirme motoru.
 Mimari Katmanlar ("Sadece ücretsiz katmanlar & her aracın bir alternatifi"):
   1. LLM Senaryo Katmanı (60-80 kelime / 30-45 sn Shorts Senaryosu):
      - Birincil  : Groq Cloud Free API (`llama-3.3-70b-versatile` - GROQ_API_KEY)
-     - İkincil   : Google Gemini Free API (`gemini-3.1-flash-lite` - GEMINI_API_KEY)
+     - İkincil   : Google Gemini Free API (`gemini-2.0-flash-lite` - GEMINI_API_KEY)
      - Gerçeklik : Türkçe Wikipedia REST API üzerinden doğrulanmış kaynak özeti beslemesi
      - Tolerans  : API kesintisi, anahtar eksikliği veya kota aşımında (`try-except`)
                    devreye giren doğrulanmış 4'lü yedek (fallback) senaryo havuzu
@@ -50,9 +50,9 @@ DEFAULT_AUDIO_OUT = Path("voiceover.mp3")
 DEFAULT_TXT_OUT = Path("script.txt")
 DEFAULT_JSON_OUT = Path("script.json")
 DEFAULT_SRT_OUT = Path("voiceover.srt")
-HISTORY_FILE = Path(".used_topics.json")
+HISTORY_FILE = Path(__file__).parent / ".used_topics.json"
 ANALYTICS_FEEDBACK_FILE = Path("analytics_feedback.json")
-DEFAULT_AFFILIATE_FALLBACK_URL = "https://www.youtube.com/@mentansiytas?sub_confirmation=1"
+DEFAULT_AFFILIATE_FALLBACK_URL = os.environ.get("AFFILIATE_URL_DEFAULT", "https://www.youtube.com/@mentansiytas?sub_confirmation=1")
 
 SUPPORTED_VOICES = {
     "ahmet": "tr-TR-AhmetNeural",
@@ -607,7 +607,8 @@ def load_recent_titles() -> list[str]:
     try:
         data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
         return data[-25:] if isinstance(data, list) else []
-    except Exception:
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"[UYARI] HISTORY_FILE okunamadı ({HISTORY_FILE}): {exc}", file=sys.stderr)
         return []
 
 
@@ -749,7 +750,8 @@ def load_analytics_feedback(feedback_path: Path = ANALYTICS_FEEDBACK_FILE) -> di
     try:
         data = json.loads(feedback_path.read_text(encoding="utf-8"))
         return data if isinstance(data, dict) else {}
-    except Exception:
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"[UYARI] analytics_feedback.json okunamadı: {exc}", file=sys.stderr)
         return {}
 
 
@@ -770,8 +772,8 @@ def fetch_wikipedia_grounding(recent_titles: list[str]) -> dict[str, str] | None
             title = data.get("title", chosen_slug)
             if len(extract) > 80:
                 return {"title": title, "extract": extract}
-    except Exception:
-        pass
+    except (requests.RequestException, ValueError, KeyError) as exc:
+        print(f"[UYARI] Wikipedia grounding başarısız: {exc}", file=sys.stderr)
     return None
 
 
@@ -1235,7 +1237,7 @@ def call_groq_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[st
 
 def call_gemini_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[str, Any]:
     """Text model: only free-tier project use; key stays in a header, never the URL."""
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent"
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent"
     resp = requests.post(
         url,
         headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
@@ -1254,7 +1256,7 @@ def call_gemini_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[
     candidates = resp.json().get("candidates", [])
     parts = candidates[0]["content"]["parts"]
     content = "".join(p.get("text", "") for p in parts if isinstance(p, dict) and not p.get("thought"))
-    return validate_and_normalize_scenario(extract_json_object(content), "gemini:gemini-3.1-flash-lite")
+    return validate_and_normalize_scenario(extract_json_object(content), "gemini:gemini-2.0-flash-lite")
 
 
 def pick_fallback_scenario(
@@ -1371,7 +1373,7 @@ def generate_scenario(
         # 2. Katman: Google Gemini API (İkincil Alternatif)
         if gemini_key:
             try:
-                print("[LLM] İkincil sağlayıcı deneniyor: Google Gemini API (gemini-3.1-flash-lite)...")
+                print("[LLM] İkincil sağlayıcı deneniyor: Google Gemini API (gemini-2.0-flash-lite)...")
                 scenario = call_gemini_llm(system_prompt, user_prompt, gemini_key)
                 save_recent_title(scenario["title"])
                 return scenario
@@ -1450,7 +1452,8 @@ def probe_audio_duration(audio_path: Path) -> float:
             check=True,
         )
         return round(float(res.stdout.strip()), 3)
-    except Exception:
+    except (subprocess.SubprocessError, ValueError) as exc:
+        print(f"[UYARI] Ses süresi okunamadı: {exc}", file=sys.stderr)
         return 0.0
 
 
@@ -1501,22 +1504,24 @@ def _gtts_fallback_generate(text: str, audio_out: Path) -> list[dict[str, Any]]:
     tts = gTTS(text=text, lang="tr", slow=False)
     tts.save(str(tmp_raw))
 
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-y",
-            "-i",
-            str(tmp_raw),
-            "-filter:a",
-            "atempo=1.12",
-            "-vn",
-            str(audio_out),
-        ],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    tmp_raw.unlink(missing_ok=True)
+    try:
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(tmp_raw),
+                "-filter:a",
+                "atempo=1.12",
+                "-vn",
+                str(audio_out),
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    finally:
+        tmp_raw.unlink(missing_ok=True)
 
     duration_ms = probe_audio_duration(audio_out) * 1000.0
     words = text.split()
@@ -1545,7 +1550,16 @@ def synthesize_voiceover(
     """Birincil `edge-tts`, hata halinde yedek `gTTS` ile seslendirme ve zaman damgası üretir."""
     try:
         print(f"[TTS] Birincil seslendirme başlatıldı: edge-tts ({voice}, hız={rate})...")
-        word_timestamps = asyncio.run(_edge_tts_generate(text, voice, rate, audio_out))
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import nest_asyncio
+                nest_asyncio.apply()
+                word_timestamps = loop.run_until_complete(_edge_tts_generate(text, voice, rate, audio_out))
+            else:
+                word_timestamps = asyncio.run(_edge_tts_generate(text, voice, rate, audio_out))
+        except ImportError:
+            word_timestamps = asyncio.run(_edge_tts_generate(text, voice, rate, audio_out))
         if not audio_out.exists() or audio_out.stat().st_size < 1024:
             raise RuntimeError("Üretilen ses dosyası boş veya geçersiz.")
         duration_sec = probe_audio_duration(audio_out)
@@ -1569,7 +1583,11 @@ def run_content_pipeline(
     srt_out: Path = DEFAULT_SRT_OUT,
 ) -> dict[str, Any]:
     """Uçtan uca senaryo, seslendirme ve altyazı verisi üretim hattı."""
-    load_dotenv_file()
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(override=False)
+    except ImportError:
+        pass  # python-dotenv kurulu değilse env değişkenleri zaten yüklenmiş sayılır
     resolved_voice = SUPPORTED_VOICES.get(voice_choice, "tr-TR-AhmetNeural")
 
     # 1. Senaryo Üretimi

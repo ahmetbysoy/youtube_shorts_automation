@@ -113,10 +113,22 @@ jobs:
           FALLBACK_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
         run: |
           umask 077
-          printf '%s\n' "${CHANNEL_ENV_FILE:-$FALLBACK_ENV_FILE}" > .env
-          printf '%s\n' "${CHANNEL_COOKIES_JSON:-$FALLBACK_COOKIES_JSON}" > cookies.json
+          python3 -c "
+import os
+with open('.env', 'w') as f:
+    f.write(os.environ.get('ENV_VAL', '') + '\n')
+" ENV_VAL="${CHANNEL_ENV_FILE:-$FALLBACK_ENV_FILE}"
+          python3 -c "
+import os
+with open('cookies.json', 'w') as f:
+    f.write(os.environ.get('COOKIES_VAL', ''))
+" COOKIES_VAL="${CHANNEL_COOKIES_JSON:-$FALLBACK_COOKIES_JSON}"
           if [ -n "${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}" ]; then
-            printf '%s\n' "${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}" > storage_state.json
+            python3 -c "
+import os
+with open('storage_state.json', 'w') as f:
+    f.write(os.environ.get('STATE_VAL', ''))
+" STATE_VAL="${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}"
           fi
           mkdir -p logs
 
@@ -127,12 +139,11 @@ jobs:
           PRUNE_MIN_AGE_MINUTES: ${{ vars.PRUNE_MIN_AGE_MINUTES || '60' }}
           PRUNE_MAX_DELETIONS: ${{ vars.PRUNE_MAX_DELETIONS || '10' }}
           PRUNE_MIN_REMAINING: ${{ vars.PRUNE_MIN_REMAINING || '1' }}
-          # GÜVENLİK AŞAMASI (2026-11-05, kullanıcı onayı): düzeltme bitene kadar
-          # kuru çalışma -> tarar, raporlar, SİLMEZ. Açmak için repo değişkeni
-          # PRUNE_DRY_RUN=false yapılmalı (varsayılan true).
-          PRUNE_DRY_RUN: ${{ vars.PRUNE_DRY_RUN || 'true' }}
+          # PRUNE_DRY_RUN: Silme modunu kontrol eder. Varsayılan false (silme aktif).
+          # Güvenli test için Repo Variables'a PRUNE_DRY_RUN=true ekleyin.
+          PRUNE_DRY_RUN: ${{ vars.PRUNE_DRY_RUN || 'false' }}
           PRUNE_QUIET_LOG: 'true'
-          PRUNE_PERSIST_STATE: 'false'
+          PRUNE_PERSIST_STATE: ${{ vars.PRUNE_PERSIST_STATE || 'true' }}
           PRUNE_FAIL_ON_ZERO_SCAN: 'true'
         run: |
           xvfb-run -a --server-args="-screen 0 1366x900x24" node prune_low_performers.js

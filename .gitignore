@@ -48,3 +48,8 @@ output/*
 /video_list.txt
 /clip_*.mp4
 /pending_approval.json
+
+# Runtime Artifact Dosyaları (CI'da üretilir, repoya commit edilmez)
+analytics_feedback.json
+prune_state.json
+prune_report.json

@@ -177,11 +177,31 @@ jobs:
             exit 1
           fi
 
-          printf '%s\n' "$EFFECTIVE_ENV" > .env
-          printf '\nMATRIX_CHANNEL_ID=%s\n' "${{ matrix.channel_id }}" >> .env
-          printf '%s\n' "$EFFECTIVE_COOKIES" > cookies.json
+          # cat heredoc kullanımı: printf format specifier injection riskini önler
+          cat > .env << 'ENVEOF'
+$EFFECTIVE_ENV
+ENVEOF
+          # Gerçek değeri yaz (heredoc içinde expansion olmadığı için python ile)
+          python3 -c "
+import os, sys
+val = os.environ.get('EFFECTIVE_ENV_VAL', '')
+with open('.env', 'w') as f:
+    f.write(val + '\n')
+    f.write('MATRIX_CHANNEL_ID=${{ matrix.channel_id }}\n')
+" EFFECTIVE_ENV_VAL="$EFFECTIVE_ENV"
+          python3 -c "
+import os
+val = os.environ.get('EFFECTIVE_COOKIES_VAL', '')
+with open('cookies.json', 'w') as f:
+    f.write(val)
+" EFFECTIVE_COOKIES_VAL="$EFFECTIVE_COOKIES"
           if [ -n "$EFFECTIVE_STATE" ]; then
-            printf '%s\n' "$EFFECTIVE_STATE" > storage_state.json
+            python3 -c "
+import os
+val = os.environ.get('EFFECTIVE_STATE_VAL', '')
+with open('storage_state.json', 'w') as f:
+    f.write(val)
+" EFFECTIVE_STATE_VAL="$EFFECTIVE_STATE"
           fi
 
           python -c "import json; c=json.load(open('cookies.json')); print(f'[OK] Kanal ${{ matrix.channel_id }} cookies.json doğrulandı ({len(c)} çerez)')"
