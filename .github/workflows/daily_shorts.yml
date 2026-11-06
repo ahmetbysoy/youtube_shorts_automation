@@ -1,6 +1,8 @@
 name: 15-Minute Blitzkrieg Money Printer
 
 on:
+  push:
+    branches: [main]
   schedule:
     # FAZ 12: GitHub'ın en az throttle ettiği, asal olmayan dakikalar
     - cron: '0,13,27,41,55 * * * *'
