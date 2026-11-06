@@ -709,8 +709,12 @@ async function uploadToYouTubeStudio() {
         let thumbPath = null;
         // FAZ 12.6 / Islah 11: canli test modu -> AI kapak atlanir, yerel yedek kapak dogrudan kullanilir.
         const forceLocalThumbnail = String(process.env.FORCE_LOCAL_THUMBNAIL || '0') === '1';
-        const useFreeVision = !forceLocalThumbnail && process.env.GEMINI_FREE_VISION_ENABLED === '1';
-        if (forceLocalThumbnail) {
+        const skipThumbnail = String(process.env.SKIP_THUMBNAIL || '0') === '1';
+        const useFreeVision = !forceLocalThumbnail && !skipThumbnail && process.env.GEMINI_FREE_VISION_ENABLED === '1';
+
+        if (skipThumbnail) {
+            console.log('[KAPAK] SKIP_THUMBNAIL=1 -> thumbnail tamamen atlanıyor, video kapaksız yayınlanacak.');
+        } else if (forceLocalThumbnail) {
             console.log('[!] FORCE_LOCAL_THUMBNAIL=1 -> AI kapak atlandi, yerel yedek kapak kullanilacak; Gemini da devre disi.');
         } else if (useFreeVision) {
             // Mevcut kareyi seçer; Google ile yeni görüntü üretmez. Uygun kare
@@ -724,16 +728,15 @@ async function uploadToYouTubeStudio() {
                 console.log(`[!] Kapak üretimi başarısız: ${thumbErr.message}`);
             }
         }
-        if (!thumbPath) {
+        if (!thumbPath && !skipThumbnail) {
             // FAZ 12.6: AI kapak servisi rate limit verdi (HTTP 402) -> YEREL yedek kapak
-            // (scripts/generate_fallback_thumbnail.py) ile agresif kapak uretilir.
             console.log('[!] AI kapak servisi basarisiz -> yerel yedek kapak deniyor...');
             thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''), true);
             if (!thumbPath) {
-                console.log('[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak. (Manuel müdahale gerekebilir)');
+                console.log('[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak.');
             }
         }
-        if (thumbPath) {
+        if (thumbPath && !skipThumbnail) {
             try {
                 const thumbResult = await uploadCustomThumbnail(page, thumbPath);
                 if (thumbResult.ok) {
