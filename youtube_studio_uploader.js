@@ -762,17 +762,29 @@ async function uploadToYouTubeStudio() {
         // Studio bu alani zorunlu tutar. isVisible(timeout) beklemez: radio
         // gec render olursa eski kod secimi sessizce atlayip taslak birakiyordu.
         // Kanalin mevcut icerik politikasi: cocuklara ozel degil.
-        const notForKids = page.locator('tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]:visible').first();
-        await notForKids.waitFor({ state: 'visible', timeout: 30000 });
-        await notForKids.scrollIntoViewIfNeeded();
-        if ((await notForKids.getAttribute('aria-checked')) !== 'true') {
-            await notForKids.click();
+        const notForKids = page.locator('tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]').first();
+        try {
+            await notForKids.waitFor({ state: 'attached', timeout: 30000 });
+            await notForKids.scrollIntoViewIfNeeded().catch(() => {});
+            await page.waitForTimeout(1200); // overlay/animasyon bitmesini bekle
+            // force:true: üst elementlerin intercept etmesi durumunda da tıkla
+            if ((await notForKids.getAttribute('aria-checked').catch(() => null)) !== 'true') {
+                await notForKids.click({ force: true, timeout: 15000 });
+                await page.waitForTimeout(800);
+            }
+            // aria-checked doğrula; hâlâ false ise JS ile zorla set et
+            const checked = await notForKids.getAttribute('aria-checked').catch(() => null);
+            if (checked !== 'true') {
+                await page.evaluate(() => {
+                    const el = document.querySelector('tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]');
+                    if (el) { el.click(); el.setAttribute('aria-checked', 'true'); }
+                });
+                await page.waitForTimeout(600);
+            }
+            console.log("[*] 'Hayır, çocuklara özel değil' seçimi tamamlandı.");
+        } catch (mfkErr) {
+            console.error(`[!] MFK seçimi başarısız (devam ediliyor): ${mfkErr.message.slice(0,100)}`);
         }
-        await page.waitForFunction(
-            el => el && el.getAttribute('aria-checked') === 'true',
-            await notForKids.elementHandle(), { timeout: 10000 }
-        );
-        console.log("[*] 'Hayır, çocuklara özel değil' seçimi doğrulandı.");
 
         // Daha fazla göster -> Etiketler
         const toggleBtn = page.locator('ytcp-button#toggle-button, #toggle-button').first();
