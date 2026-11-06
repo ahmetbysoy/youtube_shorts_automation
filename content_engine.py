@@ -1986,9 +1986,9 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
     words = script_text.split()
     word_count = len(words)
 
-    if word_count < 55 or word_count > 95:
+    if word_count < 45 or word_count > 110:
         raise ValueError(
-            f"{provider_name} hedef kelime aralığı (60-80) dışında metin üretti ({word_count} kelime)."
+            f"{provider_name} hedef kelime aralığı (45-110) dışında metin üretti ({word_count} kelime)."
         )
 
     title = str(raw_data.get("title", "Tarihin Gizemli Gerçeği #Shorts")).strip()
