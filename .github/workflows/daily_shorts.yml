@@ -181,6 +181,7 @@ jobs:
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
           FORCE_LOCAL_THUMBNAIL: ${{ inputs.force_local_thumbnail || '0' }}
+          SKIP_THUMBNAIL: ${{ vars.SKIP_THUMBNAIL || '0' }}
           # Yalnız serbest kota için ayrılmış ve faturalandırması KAPALI proje.
           # Projeye ödeme bağlanırsa vars.GEMINI_FREE_VISION_ENABLED değerini hemen 0 yapın.
           GEMINI_FREE_VISION_ENABLED: ${{ vars.GEMINI_FREE_VISION_ENABLED || '0' }}
