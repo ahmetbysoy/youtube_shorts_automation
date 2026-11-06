@@ -97,11 +97,28 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Playwright Chromium Cache Yükle
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-chromium-
 
       - name: Playwright Chromium Yükle
         run: |
           npm install playwright
-          npx playwright install --with-deps chromium
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            echo "[✓] Playwright Chromium cache'den yüklendi, sistem deps kuruluyor..."
+            npx playwright install-deps chromium
+          else
+            echo "[↓] Playwright Chromium indiriliyor + sistem deps..."
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Oturum Bilgilerini Enjekte Et (Kanal ${{ matrix.channel_id }})
         env:
