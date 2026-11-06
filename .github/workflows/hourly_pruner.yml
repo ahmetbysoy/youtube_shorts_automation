@@ -202,15 +202,16 @@ jobs:
             exit 0
           fi
 
-          # 3) Minimum 30 dakika gap — döngü fırtınası önlemi
+          # 3) Minimum 55 dakika gap — döngü fırtınası önlemi (saatlik kuralın
+          #    dışında ikinci koşu olmasın; 6 Kas'ta 166 zincir koşusu görüldü)
           LAST_ANY=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?per_page=2" \
             | python3 -c "import json,sys,os; runs=json.load(sys.stdin).get('workflow_runs',[]); me=os.environ.get('GITHUB_RUN_ID',''); [print(r.get('created_at','')) or exit() for r in runs if str(r.get('id'))!=me]" 2>/dev/null || true)
           if [ -n "$LAST_ANY" ]; then
             LAST_ANY_EPOCH=$(date -u -d "$LAST_ANY" +%s 2>/dev/null || echo 0)
             GAP=$(( NOW - LAST_ANY_EPOCH ))
-            if [ "$GAP" -lt 1800 ]; then
-              echo "[OK] Son pruner ${GAP}s once baslamis (min 1800s) -> TETIKLENMEDI."
+            if [ "$GAP" -lt 3300 ]; then
+              echo "[OK] Son pruner ${GAP}s once baslamis (min 3300s) -> TETIKLENMEDI."
               exit 0
             fi
           fi

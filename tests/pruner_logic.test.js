@@ -64,14 +64,49 @@ check('Yaş çözümleme önceliği: RSS > state > göreli > mutlak', () => {
     assert.strictEqual(viaRelative.source, 'studio-relative');
     assert.strictEqual(Math.round(viaRelative.minutes), 120);
 
+    // Aynı gün tarihli video: 23:59 varsayımı negatif yaş üretirdi -> artık "bilinmiyor" (korunur)
     const viaDate = pruner.resolveAgeMinutes(video, {}, { videos: {} }, now);
-    assert.strictEqual(viaDate.source, 'studio-date-conservative');
-    assert.ok(viaDate.minutes < 0, 'bugün yayınlanan video muhafazakâr biçimde atlanmalı');
+    assert.strictEqual(viaDate.source, 'studio-date-same-day-unknown');
+    assert.strictEqual(viaDate.minutes, null, 'bugün yayınlanan video yaş-belirsiz sayılıp korunmalı');
+
+    // Önceki güne ait mutlak tarih: muhafazakâr (23:59) ama pozitif yaş
+    const viaOldDate = pruner.resolveAgeMinutes(
+        { videoId: 'z', dateText: '1 Kas 2026', statusText: 'Yayınlandı' }, {}, { videos: {} }, now
+    );
+    assert.strictEqual(viaOldDate.source, 'studio-date-conservative');
+    assert.strictEqual(Math.round(viaOldDate.minutes), 2160);
+
+    // İzleme sayfasından gelen kesin zaman RSS ile aynı öncelikte kullanılır
+    const viaWatch = pruner.resolveAgeMinutes(
+        video, { abc: { ts: Date.parse('2026-11-03T09:00:00Z'), source: 'watch-page' } }, { videos: {} }, now
+    );
+    assert.strictEqual(viaWatch.source, 'watch-page');
+    assert.strictEqual(Math.round(viaWatch.minutes), 180);
 
     const unknown = pruner.resolveAgeMinutes(
         { videoId: 'y', dateText: '', statusText: '' }, {}, { videos: {} }, now
     );
     assert.strictEqual(unknown.minutes, null);
+});
+
+check('Görüntülenme sıkı ayrıştırma: okunamayan değer null (0 değil)', () => {
+    assert.strictEqual(pruner.parseViewsStrict('0'), 0);
+    assert.strictEqual(pruner.parseViewsStrict('87'), 87);
+    assert.strictEqual(pruner.parseViewsStrict('1,2 B'), 1200);
+    assert.strictEqual(pruner.parseViewsStrict('—'), null);
+    assert.strictEqual(pruner.parseViewsStrict(''), null);
+    assert.strictEqual(pruner.parseViewsStrict(null), null);
+    assert.strictEqual(pruner.parseViewsStrict('Yükleniyor'), null);
+});
+
+check('Yalnızca PUBLIC satırlar hedeflenebilir', () => {
+    assert.strictEqual(pruner.isPublicRow({ visibility: 'Herkese açık', isDraft: false }), true);
+    assert.strictEqual(pruner.isPublicRow({ visibility: 'Public', isDraft: false }), true);
+    assert.strictEqual(pruner.isPublicRow({ visibility: 'Herkese açık', isDraft: true }), false);
+    assert.strictEqual(pruner.isPublicRow({ visibility: 'Gizli', isDraft: false }), false);
+    assert.strictEqual(pruner.isPublicRow({ visibility: 'Liste dışı', isDraft: false }), false);
+    assert.strictEqual(pruner.isPublicRow({ visibility: 'Taslak', isDraft: false }), false);
+    assert.strictEqual(pruner.isPublicRow({ visibility: '', isDraft: false }), false);
 });
 
 console.log(`\n${passed} test başarıyla geçti.`);

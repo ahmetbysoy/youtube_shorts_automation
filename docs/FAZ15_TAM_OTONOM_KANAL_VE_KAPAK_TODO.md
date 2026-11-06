@@ -105,3 +105,14 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 - Tespit 2: RSS yalnızca son 15 videoyu kapsıyor; kalan videolarda mutlak tarih "23:59" varsayımı NEGATİF yaş (-442 dk) üretiyor -> aynı gün yayınlanan videolar gece yarısına kadar hiç silinemiyor.
 - Tespit 3: GitHub'daki 0 tarama yerelde tekrarlamadı; GitHub tarafındaki oturum/secret veya yükleme farkı şüpheli, doğrulanmadı.
 - Sonraki adım (onay bekliyor): sayfalama, yaş hesabı, PUBLIC kontrolü ve görüntülenme okunamazsa koruma; ardından GitHub'da kuru çalışma ile doğrulama; en son silmeyi açma.
+
+
+## 2026-11-06/07 Actions incelemesi ve pruner çekirdek düzeltmesi
+
+- Kullanıcı kararı: `PRUNE_MAX_DELETIONS=999` ve `PRUNE_DRY_RUN=false` KALIYOR (bilinçli tercih; tek koşuda kanalın tamamı silinebilir, MIN_REMAINING=1).
+- 6 Kas 12:13–17:17: kullanıcı koşularıyla 120 kalıcı silme; kanalda 8 PUBLIC video kaldı (hepsi 100+).
+- Zincir fırtınası: 26 saatte 166 dispatch / 4 schedule. cron-kick min aralık 30 -> 55 dk yapıldı; doğrulama bekliyor.
+- Pruner 19:55'ten (6 Kas) beri çalışmadı: #422 schedule iptal (neden kanıtsız), zincir kırıldı.
+- Google oturumu: GitHub çerezleri geçersiz, şifreyle giriş; daily_shorts `GOOGLE_IDENTITY_VERIFICATION_REQUIRED` ile duruyor. Kullanıcı hesabı güvenilir cihazda doğrulayıp çerez secret'larını yenilemeli. Medya aramaları (Pixabay/Pexels) boş dönüyor.
+- Kod: kaydırma yerine gerçek sayfalama; izleme sayfasından kesin yayın zamanı; okunamayan görüntülenme = koruma; yalnız PUBLIC; silme sonrası tüm sayfalarda doğrulama. Canlı silme yolu gerçek silmeyle henüz test edilmedi.
+- Özel rapor: Drive `1g9KBK6XVAwEFA6fs0j9amBkxN1S4GtGu`.

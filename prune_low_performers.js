@@ -97,6 +97,17 @@ function parseTrNumber(raw) {
     return Math.round(val * mult);
 }
 
+/**
+ * Görüntülenme sütunu için SIKI ayrıştırma: sayı okunamıyorsa null döner
+ * (0 DEĞİL) -> video korunur. "—", "", "Yükleniyor" gibi değerler null'dır.
+ */
+function parseViewsStrict(raw) {
+    if (raw === null || raw === undefined) return null;
+    const s = String(raw).replace(/\u00a0/g, ' ').trim();
+    if (!/\d/.test(s)) return null;
+    return parseTrNumber(s);
+}
+
 /** "3 saat önce", "45 dakika önce", "2 gün önce" -> dakika */
 function parseRelativeMinutes(raw) {
     if (!raw) return null;
@@ -156,6 +167,45 @@ async function fetchPublishedTimes(channelId) {
         log(`[!] RSS hatası: ${err.message}`);
     }
     return map;
+}
+
+/**
+ * Herkese açık izleme sayfasından kesin yayın zamanı + görüntülenme + gizlilik.
+ * API anahtarı gerektirmez, ücretsizdir. RSS yalnızca son 15 videoyu kapsadığı
+ * için geri kalan videoların yaşı buradan çözülür.
+ */
+const WATCH_META_CACHE = {};
+async function fetchWatchPageMeta(videoId) {
+    if (WATCH_META_CACHE[videoId]) return WATCH_META_CACHE[videoId];
+    const out = { ts: null, views: null, isPrivate: null, isUnlisted: null, ok: false };
+    try {
+        const res = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Cookie': 'SOCS=CAI; CONSENT=YES+'
+            }
+        });
+        if (res.ok) {
+            const html = await res.text();
+            const pick = (k) => (html.match(new RegExp('"' + k + '":"([^"]+)"')) || [])[1] || null;
+            const pub = pick('publishDate') || pick('uploadDate');
+            // Yalnızca SAAT bilgisi içeren değer kesindir ("2026-11-04T22:39:54-08:00").
+            if (pub && /T\d{2}:\d{2}/.test(pub)) {
+                const ts = Date.parse(pub);
+                if (!isNaN(ts)) out.ts = ts;
+            }
+            const vc = pick('viewCount');
+            if (vc && /^\d+$/.test(vc)) out.views = parseInt(vc, 10);
+            const priv = html.match(/"isPrivate":(true|false)/);
+            const unl = html.match(/"isUnlisted":(true|false)/);
+            if (priv) out.isPrivate = priv[1] === 'true';
+            if (unl) out.isUnlisted = unl[1] === 'true';
+            out.ok = out.ts !== null;
+        }
+    } catch (_) {}
+    WATCH_META_CACHE[videoId] = out;
+    return out;
 }
 
 function loadState() {
@@ -221,100 +271,107 @@ async function performGoogleLoginIfNeeded(page) {
     }
 }
 
-/** Tek bir satırın verisini DOM'dan çıkarır */
-function extractRowData(r) {
-    const titleEl = r.querySelector('#video-title');
-    const link = r.querySelector('a[href*="/video/"]');
-    const href = link ? (link.getAttribute('href') || '') : '';
-    const idM = href.match(/\/video\/([\w-]+)/);
-    const cells = Array.from(r.querySelectorAll('[role="cell"]'));
-    const pick = (cls) => {
-        const c = cells.find(x => (x.className || '').toString().includes(cls));
-        return c ? (c.innerText || '').replace(/\s+/g, ' ').trim() : '';
-    };
-    const dateCell = pick('tablecell-date');
-    const descEl = r.querySelector('.tablecell-date .cell-description');
-    return {
-        videoId: idM ? idM[1] : '',
-        title: titleEl ? (titleEl.textContent || '').trim() : '',
-        visibility: pick('tablecell-visibility'),
-        dateText: dateCell,
-        statusText: descEl ? (descEl.textContent || '').trim() : '',
-        viewsText: pick('tablecell-views'),
-        commentsText: pick('tablecell-comments')
-    };
+async function collectRows(page) {
+    return await page.evaluate(() => {
+        const rows = Array.from(document.querySelectorAll('ytcp-video-row'));
+        return rows.map(r => {
+            const titleEl = r.querySelector('#video-title');
+            const link = r.querySelector('a[href*="/video/"]');
+            const href = link ? (link.getAttribute('href') || '') : '';
+            const idM = href.match(/\/video\/([\w-]+)/);
+            const cells = Array.from(r.querySelectorAll('[role="cell"]'));
+            const pick = (cls) => {
+                const c = cells.find(x => (x.className || '').toString().includes(cls));
+                return c ? (c.innerText || '').replace(/\s+/g, ' ').trim() : '';
+            };
+            const dateCell = pick('tablecell-date');
+            const descEl = r.querySelector('.tablecell-date .cell-description');
+            const isDraft = Boolean(r.querySelector('ytcp-button.edit-draft-button:not([hidden])'));
+            return {
+                isDraft,
+                videoId: idM ? idM[1] : '',
+                title: titleEl ? (titleEl.textContent || '').trim() : '',
+                visibility: pick('tablecell-visibility'),
+                dateText: dateCell,
+                statusText: descEl ? (descEl.textContent || '').trim() : '',
+                viewsText: pick('tablecell-views'),
+                commentsText: pick('tablecell-comments')
+            };
+        }).filter(v => v.videoId);
+    });
 }
 
-/**
- * Sayfayı aşağı kaydırarak tüm ytcp-video-row elementlerini toplar.
- * YouTube Studio sanal liste kullandığı için scroll yapılmadan
- * sadece ekranda görünen ~30 satır DOM'a gelmektedir.
- * MAX_SCROLL_ROUNDS ile sonsuz döngü engellenmiştir.
- */
-async function collectRows(page) {
-    const MAX_SCROLL_ROUNDS = 60;   // maks 60 scroll = ~1800 video
-    const SCROLL_PAUSE_MS  = 1200;  // her scroll sonrası bekleme
+/** Sayfa aralığı metni ("1–30 / 47") */
+async function readRangeText(page) {
+    return await page.evaluate(() => (document.body.innerText.match(/\d+\s*[–-]\s*\d+\s*\/\s*\d+/) || [])[0] || null).catch(() => null);
+}
 
-    const seen   = new Set();
-    const result = [];
-
-    for (let round = 0; round < MAX_SCROLL_ROUNDS; round++) {
-        // Mevcut DOM'daki satırları işle
-        const rows = await page.evaluate((extractFn) => {
-            const rows = Array.from(document.querySelectorAll('ytcp-video-row'));
-            return rows.map(r => {
-                const titleEl = r.querySelector('#video-title');
-                const link    = r.querySelector('a[href*="/video/"]');
-                const href    = link ? (link.getAttribute('href') || '') : '';
-                const idM     = href.match(/\/video\/([\w-]+)/);
-                const cells   = Array.from(r.querySelectorAll('[role="cell"]'));
-                const pick    = (cls) => {
-                    const c = cells.find(x => (x.className || '').toString().includes(cls));
-                    return c ? (c.innerText || '').replace(/\s+/g, ' ').trim() : '';
-                };
-                const dateCell = pick('tablecell-date');
-                const descEl   = r.querySelector('.tablecell-date .cell-description');
-                return {
-                    videoId:      idM ? idM[1] : '',
-                    title:        titleEl ? (titleEl.textContent || '').trim() : '',
-                    visibility:   pick('tablecell-visibility'),
-                    dateText:     dateCell,
-                    statusText:   descEl ? (descEl.textContent || '').trim() : '',
-                    viewsText:    pick('tablecell-views'),
-                    commentsText: pick('tablecell-comments')
-                };
-            }).filter(v => v.videoId);
-        });
-
-        let newFound = 0;
-        for (const row of rows) {
-            if (!seen.has(row.videoId)) {
-                seen.add(row.videoId);
-                result.push(row);
-                newFound++;
-            }
+/** Listeyi İLK sayfadan son sayfaya kadar tarar (sayfalama). */
+async function collectAllRows(page, listUrl, maxPages = 25) {
+    await page.goto(listUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForTimeout(6000);
+    await dismissModals(page);
+    await page.locator('ytcp-video-row').first().waitFor({ timeout: 30000 }).catch(() => {});
+    const all = [];
+    const seen = new Set();
+    let pagesVisited = 0;
+    for (let i = 0; i < maxPages; i++) {
+        const rows = await collectRows(page);
+        pagesVisited++;
+        for (const r of rows) {
+            if (!seen.has(r.videoId)) { seen.add(r.videoId); all.push(r); }
         }
-
-        // Sayfanın en altına kaydır
-        const prevHeight = await page.evaluate(() => document.documentElement.scrollHeight);
-        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-        await page.waitForTimeout(SCROLL_PAUSE_MS);
-        const newHeight  = await page.evaluate(() => document.documentElement.scrollHeight);
-
-        // Yeni satır gelmedi VE sayfa uzamadıysa -> liste bitti
-        if (newFound === 0 && newHeight === prevHeight) {
-            log(`[*] Scroll tamamlandı: ${result.length} benzersiz video bulundu (${round + 1} scroll turu).`);
-            break;
-        }
+        const range = await readRangeText(page);
+        const next = page.locator('ytcp-icon-button#navigate-after');
+        if (await next.count() === 0) break;
+        const disabled = await next.getAttribute('aria-disabled').catch(() => null);
+        if (disabled !== 'false') break;
+        await next.click().catch(() => {});
+        await page.waitForFunction(prev => {
+            const m = (document.body.innerText.match(/\d+\s*[–-]\s*\d+\s*\/\s*\d+/) || [])[0] || null;
+            return m && m !== prev;
+        }, range, { timeout: 20000 }).catch(() => {});
+        await page.waitForTimeout(1500);
     }
-    return result;
+    return { rows: all, pagesVisited };
+}
+
+/** Bir video satırını tüm sayfalarda arar; bulunca o sayfada kalır. */
+async function gotoVideoRow(page, listUrl, videoId, maxPages = 25) {
+    await page.goto(listUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForTimeout(5000);
+    await dismissModals(page);
+    await page.locator('ytcp-video-row').first().waitFor({ timeout: 30000 }).catch(() => {});
+    for (let i = 0; i < maxPages; i++) {
+        const cnt = await page.locator(`ytcp-video-row a[href*="/video/${videoId}"]`).count();
+        if (cnt > 0) return true;
+        const range = await readRangeText(page);
+        const next = page.locator('ytcp-icon-button#navigate-after');
+        if (await next.count() === 0) return false;
+        const disabled = await next.getAttribute('aria-disabled').catch(() => null);
+        if (disabled !== 'false') return false;
+        await next.click().catch(() => {});
+        await page.waitForFunction(prev => {
+            const m = (document.body.innerText.match(/\d+\s*[–-]\s*\d+\s*\/\s*\d+/) || [])[0] || null;
+            return m && m !== prev;
+        }, range, { timeout: 20000 }).catch(() => {});
+        await page.waitForTimeout(1500);
+    }
+    return false;
+}
+
+/** Yayında (PUBLIC) mı? Taslak / gizli / liste dışı / planlanmış videolar HEDEF DEĞİLDİR. */
+function isPublicRow(video) {
+    if (video.isDraft) return false;
+    const v = (video.visibility || '').toLowerCase();
+    return /herkese açık|public/.test(v);
 }
 
 /** Videonun yaşını (dakika) çözer: en güvenilir kaynaktan başlar */
 function resolveAgeMinutes(video, publishedMap, state, now) {
     const rss = publishedMap[video.videoId];
     if (rss) {
-        return { minutes: (now - rss.ts) / 60000, source: 'rss', exact: true };
+        return { minutes: (now - rss.ts) / 60000, source: rss.source || 'rss', exact: true };
     }
     const st = state.videos[video.videoId];
     if (st && st.first_seen_at) {
@@ -326,7 +383,10 @@ function resolveAgeMinutes(video, publishedMap, state, now) {
     }
     const abs = parseAbsoluteDateTr(video.dateText);
     if (abs) {
-        return { minutes: (now - abs.ts) / 60000, source: 'studio-date-conservative', exact: false };
+        const minutes = (now - abs.ts) / 60000;
+        // Aynı gün: 23:59 varsayımı NEGATİF yaş üretir -> yaş bilinmiyor say (korunur).
+        if (minutes < 0) return { minutes: null, source: 'studio-date-same-day-unknown', exact: false };
+        return { minutes, source: 'studio-date-conservative', exact: false };
     }
     return { minutes: null, source: 'unknown', exact: false };
 }
@@ -405,12 +465,20 @@ async function deleteVideoById(page, videoId) {
 
 /** Silme gerçekleşti mi? (satır listeden kayboldu mu?) */
 async function verifyDeletion(page, videoId) {
+    let goneFromPage = false;
     for (let i = 0; i < 15; i++) {
         await page.waitForTimeout(2000);
         const still = await page.locator(`ytcp-video-row a[href*="/video/${videoId}"]`).count();
-        if (still === 0) return { ok: true };
+        if (still === 0) { goneFromPage = true; break; }
     }
-    return { ok: false, reason: 'onay sonrası video listede görünmüyor (silinemedi)' };
+    if (!goneFromPage) return { ok: false, reason: 'onay sonrası video hâlâ listede (silinemedi)' };
+    // İkinci doğrulama: listeyi yeniden yükle ve TÜM sayfalarda ara.
+    const listUrl = page.url().split('?')[0];
+    await page.waitForTimeout(8000);
+    const found = await gotoVideoRow(page, listUrl, videoId).catch(() => null);
+    if (found === true) return { ok: false, reason: 'yeniden yüklemede video hâlâ listede (silinmemiş)' };
+    if (found === null) return { ok: false, reason: 'yeniden yükleme doğrulaması yapılamadı' };
+    return { ok: true, verified: 'absent_after_full_rescan' };
 }
 
 async function pruneLowPerformers() {
@@ -496,27 +564,40 @@ async function pruneLowPerformers() {
         let deletedCount = 0;
         let scannedTotal = 0;
 
+        let pagesTotal = 0;
         for (const url of tabs) {
-            await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-            await page.waitForTimeout(6000);
-            await dismissModals(page);
-
-            const rows = (await collectRows(page)).filter(r => {
+            const { rows: pageRows, pagesVisited } = await collectAllRows(page, url);
+            pagesTotal += pagesVisited;
+            const rows = pageRows.filter(r => {
                 if (seen.has(r.videoId)) return false;
                 seen.add(r.videoId);
                 return true;
             });
             scannedTotal += rows.length;
             report.scanned = scannedTotal;
-            log(`[*] ${url.includes('/short') ? 'Shorts' : 'Uzun video'} sekmesi: ${rows.length} satır tarandı.`);
+            log(`[*] ${url.includes('/short') ? 'Shorts' : 'Uzun video'} sekmesi: ${rows.length} satır tarandı (${pagesVisited} sayfa).`);
             log(`[*] Toplam ${scannedTotal} video taranıyor...`);
+
+            // RSS'te olmayan videolar için izleme sayfasından kesin yayın zamanı
+            for (const video of rows) {
+                if (publishedMap[video.videoId]) continue;
+                const meta = await fetchWatchPageMeta(video.videoId);
+                if (meta.ts !== null) publishedMap[video.videoId] = { ts: meta.ts, source: 'watch-page' };
+                await new Promise(r => setTimeout(r, 300));
+            }
 
             for (const video of rows) {
                 const title = video.title || 'Bilinmeyen Başlık';
-                const views = parseTrNumber(video.viewsText);
+                const studioViews = parseViewsStrict(video.viewsText);
+                const meta = WATCH_META_CACHE[video.videoId] || {};
+                const watchViews = typeof meta.views === 'number' ? meta.views : null;
+                // İki kaynaktan BÜYÜK olan görüntülenme esas alınır (asla erken silme).
+                const views = studioViews === null && watchViews === null
+                    ? null
+                    : Math.max(studioViews === null ? -1 : studioViews, watchViews === null ? -1 : watchViews);
                 const age = resolveAgeMinutes(video, publishedMap, state, now);
                 const ageText = age.minutes === null ? 'bilinmiyor' : `${Math.round(age.minutes)} dk (${age.source})`;
-                const base = `| Görüntüleme: ${views} | Yaş: ${ageText} | Durum: ${video.statusText || video.dateText}`;
+                const base = `| Görüntüleme: ${views === null ? 'okunamadı' : views} | Yaş: ${ageText} | Durum: ${video.statusText || video.dateText}`;
 
                 // İlk görülme kaydını tut
                 if (!state.videos[video.videoId]) {
@@ -532,6 +613,16 @@ async function pruneLowPerformers() {
                     report.protected.push({ videoId: video.videoId, title, views, reason: 'filtre' });
                     continue;
                 }
+                if (!isPublicRow(video) || meta.isPrivate === true || meta.isUnlisted === true) {
+                    logDetail(`[*] KORUNDU: '${title}' ${base} | Yayında (PUBLIC) değil: ${video.isDraft ? 'taslak' : (video.visibility || 'bilinmiyor')}`);
+                    report.protected.push({ videoId: video.videoId, title, views, reason: 'yayında-değil' });
+                    continue;
+                }
+                if (views === null) {
+                    logDetail(`[*] KORUNDU: '${title}' ${base} | Görüntülenme okunamadı`);
+                    report.protected.push({ videoId: video.videoId, title, views, reason: 'görüntülenme-okunamadı' });
+                    continue;
+                }
 
                 const tooYoung = age.minutes === null || age.minutes < MIN_AGE_MINUTES;
                 const tooGood = views >= MIN_VIEWS;
@@ -539,7 +630,7 @@ async function pruneLowPerformers() {
 
                 if (tooYoung) {
                     logDetail(`[*] KORUNDU: '${title}' ${base} | Henüz ${MIN_AGE_MINUTES} dk geçmedi`);
-                    report.protected.push({ videoId: video.videoId, title, views, reason: age.minutes === null ? 'yaş-belirsiz' : 'çok-yeni', ageMinutes: age.minutes });
+                    report.protected.push({ videoId: video.videoId, title, views, reason: age.minutes === null ? 'yaş-belirsiz' : 'çok-yeni', ageMinutes: age.minutes, ageSource: age.source });
                     continue;
                 }
                 if (tooGood) {
@@ -559,17 +650,24 @@ async function pruneLowPerformers() {
                 }
 
                 logDetail(`[!] HEDEF TESPİT EDİLDİ: '${title}' ${base} -> SİLİNİYOR!`);
-                report.targets.push({ videoId: video.videoId, title, views, ageMinutes: Math.round(age.minutes), ageSource: age.source });
+                report.targets.push({ videoId: video.videoId, title, views, studioViews, watchViews, ageMinutes: Math.round(age.minutes), ageSource: age.source });
 
                 if (DRY_RUN) {
                     logDetail(`[*] DRY-RUN: '${title}' silinmedi (PRUNE_DRY_RUN=true).`);
                     continue;
                 }
 
+                // Satır hangi sayfadaysa oraya git, sonra sil.
+                const located = await gotoVideoRow(page, url, video.videoId);
+                if (!located) {
+                    logDetail(`[-] SİLEME BAŞARISIZ: '${title}' -> satır hiçbir sayfada bulunamadı`);
+                    report.errors.push({ videoId: video.videoId, title, reason: 'satır bulunamadı' });
+                    continue;
+                }
                 const res = await deleteVideoById(page, video.videoId);
                 if (res.ok) {
-                    logDetail(`[+] BAŞARILI: '${title}' kalıcı olarak silindi.`);
-                    report.deleted.push({ videoId: video.videoId, title, views });
+                    logDetail(`[+] BAŞARILI: '${title}' kalıcı olarak silindi (${res.verified || 'doğrulandı'}).`);
+                    report.deleted.push({ videoId: video.videoId, title, views, verified: res.verified || null });
                     deletedCount++;
                     delete state.videos[video.videoId];
                     await page.waitForTimeout(2500);
@@ -579,6 +677,7 @@ async function pruneLowPerformers() {
                 }
             }
         }
+        report.pages_visited = pagesTotal;
 
         if (PERSIST_STATE) {
             saveState(state);
@@ -624,6 +723,8 @@ if (require.main === module) {
 
 module.exports = {
     parseTrNumber,
+    parseViewsStrict,
+    isPublicRow,
     parseRelativeMinutes,
     parseAbsoluteDateTr,
     resolveAgeMinutes,
