@@ -334,6 +334,43 @@ jobs:
       NEXT_CHANNEL: ${{ needs.channel-map.outputs.next_channel }}
       DISTINCT_COUNT: ${{ needs.channel-map.outputs.distinct_count }}
     steps:
+      - name: Depoyu Çek (Checkout - pruner tetikleyici betikleri için)
+        uses: actions/checkout@v7
+
+      # PRUNER SAATLİK TETİKLEYİCİ (2026-11-07, kullanıcı kararı):
+      # GitHub schedule bu repoda çok seyrek çalışıyor (günde ~3). daily_shorts
+      # ~14 dk'da bir koştuğu için, son pruner koşusu 55 dk'dan eskiyse ve aktif
+      # pruner koşusu yoksa hourly_pruner.yml buradan tetiklenir. Bu adım kendi
+      # başına çalışır; aşağıdaki zincir adımının exit 0'larından etkilenmez.
+      - name: Pruner Saatlik Zincirini Kontrol Et
+        continue-on-error: true
+        run: |
+          NOW=$(date -u +%s)
+          PRUNER="hourly_pruner.yml"
+          MIN_GAP=3300
+          LAST_PRUNER=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${PRUNER}/runs?per_page=1" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
+          if [ -n "$LAST_PRUNER" ]; then
+            LAST_PRUNER_EPOCH=$(date -u -d "$LAST_PRUNER" +%s 2>/dev/null || echo 0)
+            PGAP=$(( NOW - LAST_PRUNER_EPOCH ))
+            if [ "$PGAP" -lt "$MIN_GAP" ]; then
+              echo "[PRUNER] Son pruner ${PGAP}s once (min ${MIN_GAP}s) -> tetiklenmedi."
+              exit 0
+            fi
+          fi
+          PACTIVE=$(bash scripts/active_runs_count.sh "${PRUNER}" 2>/dev/null || echo 0)
+          PACTIVE="${PACTIVE:-0}"
+          if [ "${PACTIVE}" -gt 0 ]; then
+            echo "[PRUNER] Aktif pruner kosusu: ${PACTIVE} -> tetiklenmedi."
+            exit 0
+          fi
+          curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${PRUNER}/dispatches" \
+            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"all\",\"slot_epoch\":\"\"}}"
+          echo "[PRUNER] hourly_pruner.yml tetiklendi (son kosu ${PGAP:-?}s once)."
+
       - name: Zamanlayıcı Sağlığını Kontrol Et ve Zinciri Devam Ettir
         run: |
           NOW=$(date -u +%s)

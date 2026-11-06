@@ -176,6 +176,11 @@ jobs:
       NEXT_CHANNEL: ${{ needs.channel-map.outputs.next_channel }}
       DISTINCT_COUNT: ${{ needs.channel-map.outputs.distinct_count }}
     steps:
+      # scripts/active_runs_count.sh için checkout şart; yoksa betik bulunamaz ve
+      # "|| echo 0" ile aktif koşu yok sanılır (6 Kas zincir fırtınasına katkı).
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v7
+
       - name: Zamanlayıcı Sağlığını Kontrol Et ve Zinciri Devam Ettir
         run: |
           NOW=$(date -u +%s)
