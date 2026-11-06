@@ -114,14 +114,15 @@ jobs:
           echo "[GATE] produce=${PRODUCE}"
 
       - name: Sistem Paketlerini Kur (FFmpeg, Fontlar & Xvfb Sanal Ekran)
+        timeout-minutes: 5
         run: |
           # Ubuntu 24.04 runner'da ffmpeg genellikle önceden kurulu — kontrol et
           if command -v ffmpeg &>/dev/null && command -v Xvfb &>/dev/null; then
             echo "[✓] ffmpeg $(ffmpeg -version 2>&1 | head -1) — zaten kurulu, apt atlanıyor."
           else
             echo "[↓] Eksik paketler kuruluyor..."
-            sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
-            sudo apt-get install -y --no-install-recommends \
+            timeout 180 sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
+            timeout 180 sudo apt-get install -y --no-install-recommends \
               ffmpeg xvfb fonts-liberation fonts-dejavu-core libass9
             echo "[✓] Kurulum tamamlandı."
           fi
