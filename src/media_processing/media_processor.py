@@ -245,6 +245,46 @@ def fetch_wikimedia_media(keyword: str, duration_needed: float, used_urls: set[s
     return None
 
 
+def fetch_video_playwright(keyword: str, duration_needed: float, out_path: Path) -> Dict[str, Any] | None:
+    """
+    API key gerektirmeyen Playwright tabanlı video çekici.
+    Pixabay/Pexels oturumunu (cookies.json) kullanarak video indirir.
+    video_fetcher.js scriptini çağırır.
+    """
+    fetcher_js = BASE_DIR / "video_fetcher.js"
+    if not fetcher_js.exists():
+        print(f"[UYARI] video_fetcher.js bulunamadı: {fetcher_js}", file=sys.stderr)
+        return None
+
+    try:
+        result = subprocess.run(
+            ["node", str(fetcher_js), keyword, str(out_path)],
+            capture_output=True, text=True, timeout=120,
+            cwd=str(BASE_DIR)
+        )
+        # stdout'un son satırı indirilen dosya yolu
+        out_lines = [l.strip() for l in result.stdout.strip().splitlines() if l.strip()]
+        downloaded = out_lines[-1] if out_lines else ""
+
+        if result.returncode == 0 and downloaded and Path(downloaded).exists():
+            size = Path(downloaded).stat().st_size
+            if size > 50_000:
+                print(f"[INFO] Playwright video indirildi: {downloaded} ({size//1024//1024}MB)", flush=True)
+                return {
+                    "url": downloaded,
+                    "duration": duration_needed,
+                    "provider": "playwright-pixabay",
+                    "media_kind": "video",
+                    "local_path": downloaded,
+                }
+        print(f"[UYARI] video_fetcher.js başarısız (exit {result.returncode}): {result.stderr[-200:]}", file=sys.stderr)
+    except subprocess.TimeoutExpired:
+        print(f"[UYARI] video_fetcher.js timeout ({keyword})", file=sys.stderr)
+    except Exception as exc:
+        print(f"[UYARI] Playwright video hatası ({keyword}): {exc}", file=sys.stderr)
+    return None
+
+
 def download_media(url: str, save_path: Path) -> bool:
     try:
         print(f"[INFO] İndiriliyor: {url[:95]}...")
@@ -503,18 +543,31 @@ def run_media_pipeline() -> Path:
             keyword = keywords[clip_index % len(keywords)]
             print(f"[INFO] Aranan kelime ({clip_index + 1}): {keyword}")
 
-            video_meta = (
-                fetch_pexels_video(keyword, audio_duration - current_duration)
-                or fetch_pixabay_video(keyword, audio_duration - current_duration)
-                or fetch_wikimedia_media(keyword, audio_duration - current_duration, used_urls=used_urls)
-            )
+            # Önce Playwright (cookie-tabanlı, API key gerektirmez)
+            pw_out = work_dir / f"scene_{clip_index}_pw.mp4"
+            video_meta = fetch_video_playwright(keyword, audio_duration - current_duration, pw_out)
 
-            if video_meta and video_meta.get("url"):
-                used_urls.add(video_meta["url"])
+            # Playwright başarısız → API key varsa klasik yöntem
+            if not video_meta:
+                video_meta = (
+                    fetch_pexels_video(keyword, audio_duration - current_duration)
+                    or fetch_pixabay_video(keyword, audio_duration - current_duration)
+                    or fetch_wikimedia_media(keyword, audio_duration - current_duration, used_urls=used_urls)
+                )
+
+            if video_meta and (video_meta.get("url") or video_meta.get("local_path")):
                 media_kind = video_meta.get("media_kind", "video")
-                ext = ".jpg" if media_kind == "image" else ".webm"
-                raw_clip = work_dir / f"scene_{clip_index}{ext}"
-                if download_media(video_meta["url"], raw_clip) and _probe_has_video_stream(raw_clip):
+                # Playwright zaten indirdiyse tekrar indirme
+                local_path = video_meta.get("local_path")
+                if local_path and Path(local_path).exists():
+                    raw_clip = Path(local_path)
+                    already_downloaded = True
+                else:
+                    used_urls.add(video_meta["url"])
+                    ext = ".jpg" if media_kind == "image" else ".webm"
+                    raw_clip = work_dir / f"scene_{clip_index}{ext}"
+                    already_downloaded = download_media(video_meta["url"], raw_clip)
+                if already_downloaded and _probe_has_video_stream(raw_clip):
                     scenes.append({
                         "path": raw_clip,
                         "duration": per_scene_sec,
