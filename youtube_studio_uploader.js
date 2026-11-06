@@ -826,28 +826,48 @@ async function uploadToYouTubeStudio() {
         }
 
         console.log("[*] Görünürlük ayarı 'Herkese Açık' (Public) ekranına ilerleniyor...");
-        // FAZ 12.6: Kapak yuklemesinden sonra diyalog "Ayrıntılar" sekmesine doner ve
-        // "İleri" butonu video kontrolleri surerken PASIF kalir. Buton ENABLED olana
-        // kadar tekrar denenir (onceki tek seferlik zorla tiklama 25 sn timeout veriyordu).
         const PUBLIC_RADIO_SEL = 'tp-yt-paper-radio-button[name="PUBLIC"]:visible, #public-radio-button:visible, input[value="PUBLIC"]:visible';
-        for (let attempt = 0; attempt < 18; attempt++) {
+
+        // Önce video yüklemenin tamamlanmasını bekle (progress bar %100)
+        for (let pw = 0; pw < 30; pw++) {
+            const progressText = await page.locator('ytcp-video-upload-progress').innerText().catch(() => '');
+            const publicVisible = await page.locator(PUBLIC_RADIO_SEL).first().isVisible({ timeout: 500 }).catch(() => false);
+            if (publicVisible) { console.log('[*] PUBLIC zaten görünür, atlıyoruz.'); break; }
+            if (/100\s*%|Kontroller.*tam|İşleme.*tam|upload.*complete/i.test(progressText) || !progressText) break;
+            if (pw === 0) console.log(`[*] Video işleniyor, bekleniyor: ${progressText.replace(/\s+/g, ' ').trim().slice(0, 60)}`);
+            await page.waitForTimeout(3000);
+        }
+
+        // "İleri" butonuna tıkla — bir kez tıkla, sonra PUBLIC'i bekle
+        const nextBtn = page.locator('ytcp-button#next-button, #next-button').first();
+        for (let attempt = 0; attempt < 20; attempt++) {
+            // PUBLIC zaten açıksa dur
             const radioNow = page.locator(PUBLIC_RADIO_SEL).first();
-            if (await radioNow.isVisible({ timeout: 1500 }).catch(() => false)) {
-                console.log(`[*] Görünürlük sekmesi açıldı (deneme ${attempt + 1}).`);
+            if (await radioNow.isVisible({ timeout: 1000 }).catch(() => false)) {
+                console.log(`[*] Görünürlük sekmesi açıldı (${attempt} tıklama sonrası).`);
                 break;
             }
-            const nextBtn = page.locator('ytcp-button#next-button').first();
-            if (await nextBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-                const enabled = await nextBtn.isEnabled().catch(() => false);
-                if (enabled) {
-                    await nextBtn.click({ force: true }).catch(() => {});
-                    console.log(`[*] "İleri" tıklandı (deneme ${attempt + 1}).`);
-                } else {
-                    const progressText = await page.locator('ytcp-video-upload-progress').innerText().catch(() => '');
-                    console.log(`[*] "İleri" pasif (kontroller sürüyor): ${progressText.replace(/\s+/g, ' ').trim().slice(0, 60)} - bekleniyor...`);
+            // "Sonraki adıma geç" butonları (farklı Studio versiyonları)
+            const nextVariants = [
+                'ytcp-button#next-button',
+                '#next-button',
+                'ytcp-button:has-text("Sonraki")',
+                'ytcp-button:has-text("Next")',
+                'ytcp-button:has-text("İleri")',
+            ];
+            let clicked = false;
+            for (const sel of nextVariants) {
+                const btn = page.locator(sel).first();
+                if (await btn.isVisible({ timeout: 800 }).catch(() => false)) {
+                    await btn.scrollIntoViewIfNeeded().catch(() => {});
+                    await btn.click({ force: true }).catch(() => {});
+                    console.log(`[*] "İleri/Sonraki" tıklandı (deneme ${attempt + 1}, sel: ${sel.slice(0,30)}).`);
+                    clicked = true;
+                    break;
                 }
             }
-            await page.waitForTimeout(5000);
+            if (!clicked) console.log(`[*] "İleri" butonu görünmüyor (deneme ${attempt + 1}), bekleniyor...`);
+            await page.waitForTimeout(attempt < 3 ? 3000 : 5000);
         }
 
         // Herkese Açık (PUBLIC) seçeneğini işaretle - Faz 7 Tam Otonom Yayın!
