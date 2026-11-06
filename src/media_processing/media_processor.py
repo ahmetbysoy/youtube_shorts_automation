@@ -259,7 +259,7 @@ def fetch_video_playwright(keyword: str, duration_needed: float, out_path: Path)
     try:
         result = subprocess.run(
             ["node", str(fetcher_js), keyword, str(out_path)],
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, timeout=75,
             cwd=str(BASE_DIR)
         )
         # stdout'un son satırı indirilen dosya yolu
@@ -306,7 +306,7 @@ def _probe_has_video_stream(path: Path) -> bool:
         "-show_entries", "stream=codec_name,width,height",
         "-of", "json", str(path),
     ]
-    res = subprocess.run(cmd, capture_output=True, text=True)
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
     if res.returncode != 0:
         return False
     try:
@@ -465,9 +465,15 @@ def assemble_video_ffmpeg(
     print(f"[INFO] [CMD] {' '.join(cmd)}")
 
     try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print("[BAŞARILI] FFmpeg render tamamlandı!")
+        # Render süresi video uzunluğuna göre değişir; 10 dakikalık sert sınır.
+        subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=600)
+        print("[BAŞARILI] FFmpeg render tamamlandı!", flush=True)
+    except subprocess.TimeoutExpired as exc:
+        output_path.unlink(missing_ok=True)
+        print("[HATA] FFmpeg render 600 saniyede tamamlanmadı; geçici çıktı silindi.", file=sys.stderr, flush=True)
+        raise RuntimeError("FFmpeg render timeout (600s)") from exc
     except subprocess.CalledProcessError as exc:
+        output_path.unlink(missing_ok=True)
         print(f"[HATA] FFmpeg başarısız oldu!\nStdout: {exc.stdout}\nStderr: {exc.stderr}", file=sys.stderr)
         raise
 
@@ -481,7 +487,7 @@ def validate_output(output_path: Path) -> Dict[str, Any]:
         "-of", "json",
         str(output_path.resolve()),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=30)
     data = json.loads(result.stdout)
     streams = data.get("streams", [])
     v_stream = next(s for s in streams if s.get("codec_type") == "video")
@@ -539,7 +545,7 @@ def run_media_pipeline() -> Path:
         current_duration = 0.0
         clip_index = 0
 
-        while current_duration < (audio_duration + 1.0) and clip_index < len(keywords) * 3:
+        while current_duration < (audio_duration + 1.0) and clip_index < min(len(keywords) * 2, 8):
             keyword = keywords[clip_index % len(keywords)]
             print(f"[INFO] Aranan kelime ({clip_index + 1}): {keyword}")
 
