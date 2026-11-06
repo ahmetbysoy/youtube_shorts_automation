@@ -35,7 +35,7 @@ concurrency:
   # Zincir koşuları 'chain=1' ile AYRI grupta calisir -> zincir, devam eden
   # YAYINI iptal etmez (onceki fazda yayin yarida kesiliyordu).
   group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.chain || '0' }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -86,7 +86,7 @@ jobs:
 
   build-and-upload:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     needs: channel-map
     # Studio oturum kilidi: ayni anda tek oturum acilir (cerez/cerez catismasi olmasin)
     concurrency:
