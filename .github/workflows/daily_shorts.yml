@@ -124,6 +124,7 @@ jobs:
         timeout-minutes: 12
         run: |
           mkdir -p "${RUNNER_TEMP}/apt-cache/archives/partial"
+          echo "Dir::Cache::archives \"${RUNNER_TEMP}/apt-cache/archives/\";" | sudo tee /etc/apt/apt.conf.d/99actions-cache >/dev/null
           if command -v ffmpeg &>/dev/null && command -v Xvfb &>/dev/null; then
             echo "[✓] ffmpeg ve Xvfb zaten kurulu; apt kurulumu atlandı."
           else
@@ -135,13 +136,6 @@ jobs:
             echo "[✓] Sistem paketleri kuruldu."
           fi
           fc-cache -f 2>/dev/null || true
-
-      - name: APT Paket Cache Kaydet
-        if: ${{ always() && steps.apt-cache-restore.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ runner.temp }}/apt-cache/archives
-          key: apt-debs-ubuntu-24.04-v1
 
       - name: Python 3.11 Kur
         uses: actions/setup-python@v7
@@ -183,7 +177,15 @@ jobs:
             npx playwright install --with-deps chromium
           fi
 
+      - name: APT Paket Cache Kaydet
+        if: ${{ always() && steps.apt-cache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/apt-cache/archives
+          key: apt-debs-ubuntu-24.04-v1
+
       - name: Gizli Anahtarları ve Kanal Çerezlerini Enjekte Et (Kanal ${{ matrix.channel_id }})
+
         if: ${{ steps.gate.outputs.produce == 'true' }}
         env:
           CHANNEL_ENV_FILE: ${{ secrets[format('ENV_FILE_{0}', matrix.channel_id)] }}
