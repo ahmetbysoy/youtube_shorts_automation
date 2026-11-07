@@ -1,0 +1,179 @@
+name: "Araçları Kur (önbellekli)"
+description: >
+  Tüm iş akışlarının ortak araç kurulumu. Her şey önbellekten gelir, indirme yalnızca
+  önbellek boşken yapılır: apt .deb arşivi (xvfb/ffmpeg/fontlar), node_modules
+  (package-lock hash), Playwright Chromium (~/.cache/ms-playwright), pip (setup-python).
+  Playwright sistem kütüphaneleri: önbellekten gelen tarayıcı 1 kez açılış testiyle denenir;
+  açılıyorsa `playwright install-deps` (apt) hiç çalıştırılmaz.
+
+inputs:
+  apt_packages:
+    description: "Kurulacak apt paketleri (boşlukla ayrılmış). Boş = apt adımı yok."
+    required: false
+    default: "xvfb"
+  node:
+    description: "Node 20 + node_modules kur (true/false)"
+    required: false
+    default: "true"
+  playwright:
+    description: "Playwright Chromium kur (true/false)"
+    required: false
+    default: "true"
+  python:
+    description: "Python 3.11 + requirements.txt kur (true/false)"
+    required: false
+    default: "false"
+  pip_requirements:
+    description: "pip gereksinim dosyası"
+    required: false
+    default: "requirements.txt"
+
+outputs:
+  apt_cache_hit:
+    description: "apt .deb önbelleği bulundu mu"
+    value: ${{ steps.apt-cache.outputs.cache-hit }}
+  node_modules_cache_hit:
+    description: "node_modules önbelleği bulundu mu"
+    value: ${{ steps.nm-cache.outputs.cache-hit }}
+  playwright_cache_hit:
+    description: "Playwright tarayıcı önbelleği bulundu mu"
+    value: ${{ steps.pw-cache.outputs.cache-hit }}
+
+runs:
+  using: "composite"
+  steps:
+    # ------------------------------------------------------------------ APT
+    - name: "APT önbellek anahtarı (runner imajı + paket listesi)"
+      id: apt-key
+      if: inputs.apt_packages != ''
+      shell: bash
+      env:
+        PKGS: ${{ inputs.apt_packages }}
+      run: |
+        # ImageVersion runner tarafından verilir (ör. 20251103.1.0); imaj değişince .deb'ler yenilenir.
+        REL=$(lsb_release -rs 2>/dev/null || echo unknown)
+        H=$(printf '%s' "$PKGS" | tr -s ' ' '\n' | sort | tr '\n' ' ' | md5sum | cut -c1-10)
+        echo "key=apt-debs-${REL}-${ImageVersion:-noimg}-${H}" >> "$GITHUB_OUTPUT"
+        echo "[apt] anahtar: apt-debs-${REL}-${ImageVersion:-noimg}-${H}"
+
+    - name: "APT .deb arşivi önbelleği"
+      id: apt-cache
+      if: inputs.apt_packages != ''
+      uses: actions/cache@v4
+      with:
+        path: ~/.apt-debs
+        key: ${{ steps.apt-key.outputs.key }}
+
+    - name: "APT paketlerini kur (önbellekten dpkg -i; yoksa indir ve arşivle)"
+      if: inputs.apt_packages != ''
+      shell: bash
+      env:
+        PKGS: ${{ inputs.apt_packages }}
+      run: |
+        set -uo pipefail
+        MISSING=""
+        for p in $PKGS; do
+          dpkg -s "$p" >/dev/null 2>&1 || MISSING="$MISSING $p"
+        done
+        if [ -z "$MISSING" ]; then
+          echo "[apt ✓] Tüm paketler imajda zaten kurulu: $PKGS"
+          exit 0
+        fi
+        echo "[apt] Eksik:$MISSING"
+        DEBS="$HOME/.apt-debs"
+        mkdir -p "$DEBS"
+        if ls "$DEBS"/*.deb >/dev/null 2>&1; then
+          echo "[apt ✓] Önbellekten kuruluyor ($(ls "$DEBS"/*.deb | wc -l) .deb, internet yok)..."
+          if sudo dpkg -i "$DEBS"/*.deb >/tmp/dpkg.log 2>&1; then
+            STILL=""
+            for p in $MISSING; do dpkg -s "$p" >/dev/null 2>&1 || STILL="$STILL $p"; done
+            if [ -z "$STILL" ]; then echo "[apt ✓] Önbellekten kuruldu."; exit 0; fi
+            echo "[apt] Önbellek eksik kaldı:$STILL -> apt'ye düşülüyor."
+          else
+            tail -5 /tmp/dpkg.log || true
+            echo "[apt] dpkg -i başarısız (imaj değişmiş olabilir) -> apt'ye düşülüyor."
+          fi
+        fi
+        sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
+        # Önce yalnızca indir (arşiv önbelleğe girer), sonra arşivden kur.
+        sudo rm -f "$DEBS"/*.deb
+        sudo apt-get install -y --no-install-recommends --download-only \
+          -o Dir::Cache::archives="$DEBS" $MISSING
+        sudo apt-get install -y --no-install-recommends \
+          -o Dir::Cache::archives="$DEBS" $MISSING
+        sudo rm -rf "$DEBS/partial" "$DEBS/lock"
+        sudo chown -R "$(id -u):$(id -g)" "$DEBS"
+        echo "[apt ✓] Kuruldu ve $(ls "$DEBS"/*.deb 2>/dev/null | wc -l) .deb arşivlendi (sonraki koşular internetsiz)."
+
+    # ------------------------------------------------------------------ PYTHON
+    - name: "Python 3.11 (pip önbellekli)"
+      if: inputs.python == 'true'
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.11"
+        cache: "pip"
+        cache-dependency-path: ${{ inputs.pip_requirements }}
+
+    - name: "pip bağımlılıkları"
+      if: inputs.python == 'true'
+      shell: bash
+      run: |
+        python -m pip install --quiet --upgrade pip
+        pip install --quiet -r "${{ inputs.pip_requirements }}"
+        echo "[pip ✓] $(pip list 2>/dev/null | wc -l) paket hazır."
+
+    # ------------------------------------------------------------------ NODE
+    - name: "Node.js 20"
+      if: inputs.node == 'true'
+      uses: actions/setup-node@v7
+      with:
+        node-version: "20"
+
+    - name: "node_modules önbelleği"
+      id: nm-cache
+      if: inputs.node == 'true'
+      uses: actions/cache@v4
+      with:
+        path: node_modules
+        key: node-modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json', 'package.json') }}
+
+    - name: "npm bağımlılıkları (önbellek yoksa)"
+      if: inputs.node == 'true' && steps.nm-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        if [ -f package-lock.json ]; then npm ci --no-audit --no-fund --loglevel=error; else npm install --no-audit --no-fund --loglevel=error; fi
+        echo "[npm ✓] node_modules kuruldu (önbelleğe alınacak)."
+
+    - name: "npm önbellekten geldi"
+      if: inputs.node == 'true' && steps.nm-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: echo "[npm ✓] node_modules önbellekten geldi, npm install atlandı."
+
+    # ------------------------------------------------------------------ PLAYWRIGHT
+    - name: "Playwright Chromium önbelleği"
+      id: pw-cache
+      if: inputs.playwright == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json', 'package.json') }}
+
+    - name: "Playwright Chromium (önbellek yoksa indir; sistem kütüphaneleri yalnızca gerekirse)"
+      if: inputs.playwright == 'true'
+      shell: bash
+      run: |
+        set -uo pipefail
+        if [ "${{ steps.pw-cache.outputs.cache-hit }}" != "true" ]; then
+          echo "[pw ↓] Chromium indiriliyor (önbellek boş)..."
+          npx playwright install chromium
+        else
+          echo "[pw ✓] Chromium önbellekten geldi."
+        fi
+        # Açılış testi: tarayıcı açılıyorsa apt (install-deps) HİÇ çalışmaz.
+        SMOKE='const {chromium}=require("playwright");chromium.launch({headless:true}).then(b=>b.close()).then(()=>{console.log("[pw ✓] Chromium açılış testi geçti, install-deps atlandı.");process.exit(0)}).catch(e=>{console.error("[pw] açılış testi başarısız:",String(e.message).split("\n")[0]);process.exit(1)})'
+        if timeout 60 node -e "$SMOKE"; then
+          exit 0
+        fi
+        echo "[pw ↓] Sistem kütüphaneleri kuruluyor (install-deps)..."
+        npx playwright install-deps chromium
+        timeout 60 node -e "$SMOKE" || { echo "::error::Chromium install-deps sonrası da açılmadı"; exit 1; }

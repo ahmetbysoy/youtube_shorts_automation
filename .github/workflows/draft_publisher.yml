@@ -1,0 +1,171 @@
+name: Draft Publisher (Taslakları 20 dk'da bir yayınla)
+
+# NEDEN (kullanıcı kararı 2026-11-07):
+#   Yükleme sırasında Google "Kimliğinizi doğrulayın" (telefon onayı) modalı çıkarsa uploader
+#   artık BEKLEMEZ: video Studio'da TASLAK kalır (exit 43, koşu yeşil). Bu iş akışı her 20 dakikada
+#   taslak listesine bakar; taslak varsa "Küçük resim → Videodan seç" ile kare seçer, "Çocuklara
+#   özel değil" + "Herkese açık" ile yayınlar. Taslak yoksa saniyeler içinde yeşil çıkar. Modal
+#   burada da çıkarsa beklemez (DOM atlama yok), taslak kalır, sonraki turda tekrar denenir.
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+    inputs:
+      max_per_run:
+        description: "Bu turda en fazla kaç taslak yayınlansın"
+        required: false
+        default: '2'
+        type: string
+      dry_run:
+        description: "1 = Yayınla'ya basma (kuru deneme)"
+        required: false
+        default: '0'
+        type: string
+
+# Studio oturumu kilidi: uploader (daily_shorts) ile AYNI grup -> aynı anda iki Studio oturumu açılmaz.
+concurrency:
+  group: studio-upload-lock
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  publish-drafts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      MAX_PER_RUN: ${{ inputs.max_per_run || vars.DRAFT_PUBLISH_PER_RUN || '2' }}
+      PICK_MODE: ${{ vars.DRAFT_PICK_MODE || 'first' }}
+      YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ' }}
+    steps:
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v7
+
+      - name: Araçları Kur (önbellekli — xvfb + node_modules + Chromium)
+        uses: ./.github/actions/setup-tools
+        with:
+          apt_packages: xvfb
+          node: 'true'
+          playwright: 'true'
+          python: 'false'
+
+      - name: Oturum Bilgilerini Enjekte Et
+        env:
+          CHANNEL_ENV_FILE: ${{ secrets.ENV_FILE_1 }}
+          CHANNEL_COOKIES_JSON: ${{ secrets.COOKIES_JSON_1 }}
+          CHANNEL_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON_1 }}
+          FALLBACK_ENV_FILE: ${{ secrets.ENV_FILE }}
+          FALLBACK_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+          FALLBACK_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+        run: |
+          umask 077
+          EFFECTIVE_COOKIES="${CHANNEL_COOKIES_JSON:-$FALLBACK_COOKIES_JSON}"
+          EFFECTIVE_STATE="${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}"
+          if [ -z "$EFFECTIVE_COOKIES" ] && [ -z "$EFFECTIVE_STATE" ]; then
+            echo "::error::COOKIES_JSON / STORAGE_STATE_JSON secret'ları boş; oturum yok."
+            exit 1
+          fi
+          printf '%s\n' "${CHANNEL_ENV_FILE:-$FALLBACK_ENV_FILE}" > .env
+          [ -n "$EFFECTIVE_COOKIES" ] && printf '%s\n' "$EFFECTIVE_COOKIES" > cookies.json
+          [ -n "$EFFECTIVE_STATE" ] && printf '%s\n' "$EFFECTIVE_STATE" > storage_state.json
+          python3 - <<'PY'
+          import json, os
+          n = 0
+          if os.path.exists('cookies.json'):
+              n = len(json.load(open('cookies.json')))
+          elif os.path.exists('storage_state.json'):
+              n = len(json.load(open('storage_state.json')).get('cookies', []))
+          print(f"[OK] Oturum yüklendi ({n} çerez)")
+          PY
+
+      - name: Taslakları Yayınla (Videodan seç → MFK → Herkese açık)
+        id: publish
+        env:
+          CI: '1'
+          IDENTITY_MODE: skip
+          OUT_DIR: logs/draft_publish
+          DRY: ${{ inputs.dry_run || '0' }}
+        run: |
+          set +e
+          mkdir -p logs/draft_publish
+          ARGS=(publish "$MAX_PER_RUN")
+          [ "$DRY" = "1" ] && ARGS+=(--dry)
+          echo "[*] studio_draft_publish.cjs ${ARGS[*]} (PICK_MODE=$PICK_MODE, IDENTITY_MODE=skip)"
+          timeout 780 xvfb-run -a --server-args="-screen 0 1366x900x24" node scripts/studio_draft_publish.cjs "${ARGS[@]}"
+          RC=$?
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          if [ "$RC" = "2" ]; then
+            echo "::error::Studio oturumu geçersiz (giriş sayfasına yönlendi). COOKIES_JSON/STORAGE_STATE_JSON yenilenmeli."
+          elif [ "$RC" != "0" ]; then
+            echo "::warning::Taslak yayınlayıcı rc=$RC (ayrıntı: logs/draft_publish/publish_status.log)"
+          fi
+          exit $RC
+
+      - name: "Oturum Çerezlerini Güncelle (REPO_PAT varsa)"
+        if: always() && steps.publish.outputs.rc == '0'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.REPO_PAT }}
+        run: |
+          if [ -z "${GH_TOKEN}" ]; then echo "[ATLANDI] REPO_PAT yok."; exit 0; fi
+          python3 -m pip install -q --user pynacl >/dev/null 2>&1 || python3 -m pip install -q --user --break-system-packages pynacl >/dev/null 2>&1 || true
+          update_secret() {
+            local NAME="$1" FILE="$2"
+            [ -f "$FILE" ] || return 0
+            [ "$(wc -c < "$FILE")" -lt 100 ] && return 0
+            local PK_JSON KEY_ID PUB_KEY ENC
+            PK_JSON=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/secrets/public-key")
+            KEY_ID=$(echo "$PK_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['key_id'])")
+            PUB_KEY=$(echo "$PK_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['key'])")
+            ENC=$(python3 -c "import base64,sys; from nacl.public import PublicKey,SealedBox; pk=PublicKey(base64.b64decode(sys.argv[1])); print(base64.b64encode(SealedBox(pk).encrypt(open(sys.argv[2],'rb').read())).decode())" "$PUB_KEY" "$FILE" 2>/dev/null) || { echo "[UYARI] ${NAME}: şifreleme başarısız"; return 0; }
+            curl -s -X PUT -H "Authorization: Bearer ${GH_TOKEN}" -H "Content-Type: application/json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/secrets/${NAME}" \
+              -d "{\"encrypted_value\":\"${ENC}\",\"key_id\":\"${KEY_ID}\"}" > /dev/null
+            echo "[OK] Secret ${NAME} güncellendi"
+          }
+          update_secret "COOKIES_JSON" "cookies.json"
+          update_secret "COOKIES_JSON_1" "cookies.json"
+          update_secret "STORAGE_STATE_JSON" "storage_state.json"
+          update_secret "STORAGE_STATE_JSON_1" "storage_state.json"
+
+      - name: "Tek Satır Özet"
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json, os
+          p = 'logs/draft_publish/draft_publish_status.json'
+          if not os.path.exists(p):
+              msg = "Taslak yayınlayıcı: durum dosyası yok (erken hata)"
+          else:
+              d = json.load(open(p))
+              pub = d.get('published') or []
+              if d.get('session_invalid'):
+                  msg = "OTURUM GEÇERSİZ — çerezler yenilenmeli"
+              elif d.get('identity_modal'):
+                  msg = f"KİMLİK MODALI çıktı → beklenmedi, taslak korundu (yayınlanan: {len(pub)})"
+              elif d.get('no_drafts') and not pub:
+                  msg = "Taslak yok — yapılacak iş yok"
+              elif pub:
+                  msg = "YAYINLANDI: " + "; ".join(f"{x.get('title','?')[:50]} ({x.get('videoId') or '?'}{', DRY' if x.get('dry') else ''})" for x in pub)
+              else:
+                  msg = "Hata: " + (d.get('error') or '?')
+          print("::notice::" + msg)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+              f.write(f"### Draft Publisher\n{msg}\n")
+          PY
+
+      - name: "Artifact Güvenlik Denetimi (çerez/token redakte)"
+        if: always()
+        run: bash scripts/sanitize_logs.sh logs
+
+      - name: "Logları Yedekle (Artifact)"
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: draft-publisher-${{ github.run_number }}
+          path: logs/
+          retention-days: 3
+          if-no-files-found: ignore

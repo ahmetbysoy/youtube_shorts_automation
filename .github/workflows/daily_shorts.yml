@@ -113,58 +113,16 @@ jobs:
           echo "produce=${PRODUCE}" >> "$GITHUB_OUTPUT"
           echo "[GATE] produce=${PRODUCE}"
 
-      - name: Sistem Paketlerini Kur (FFmpeg, Fontlar & Xvfb Sanal Ekran)
-        run: |
-          # Ubuntu 24.04 runner'da ffmpeg genellikle önceden kurulu — kontrol et
-          if command -v ffmpeg &>/dev/null && command -v Xvfb &>/dev/null; then
-            echo "[✓] ffmpeg $(ffmpeg -version 2>&1 | head -1) — zaten kurulu, apt atlanıyor."
-          else
-            echo "[↓] Eksik paketler kuruluyor..."
-            sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
-            sudo apt-get install -y --no-install-recommends \
-              ffmpeg xvfb fonts-liberation fonts-dejavu-core libass9
-            echo "[✓] Kurulum tamamlandı."
-          fi
-          # Fontconfig cache'i yenile (Montserrat yoksa sessizce atla)
-          fc-cache -f 2>/dev/null || true
-
-      - name: Python 3.11 Kur
-        uses: actions/setup-python@v7
+      - name: "Araçları Kur (önbellekli: apt .deb + pip + node_modules + Chromium; her koşuda yeniden indirme yok)"
+        uses: ./.github/actions/setup-tools
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          apt_packages: ffmpeg xvfb fonts-liberation fonts-dejavu-core libass9
+          python: 'true'
+          node: 'true'
+          playwright: 'true'
 
-      - name: Node.js 20 Kur
-        uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - name: Python Bağımlılıklarını Yükle
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Playwright Chromium Cache Yükle
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-chromium-
-
-      - name: Node & Playwright Tarayıcısını Yükle
-        run: |
-          npm install
-          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
-            echo "[✓] Playwright Chromium cache'den yüklendi, sistem deps kuruluyor..."
-            npx playwright install-deps chromium
-          else
-            echo "[↓] Playwright Chromium indiriliyor + sistem deps..."
-            npx playwright install --with-deps chromium
-          fi
+      - name: Font önbelleğini yenile
+        run: fc-cache -f 2>/dev/null || true
 
       - name: Gizli Anahtarları ve Kanal Çerezlerini Enjekte Et (Kanal ${{ matrix.channel_id }})
         if: ${{ steps.gate.outputs.produce == 'true' }}
@@ -410,6 +368,38 @@ jobs:
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${PRUNER}/dispatches" \
             -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"all\",\"slot_epoch\":\"\"}}"
           echo "[PRUNER] hourly_pruner.yml tetiklendi (son kosu ${PGAP:-?}s once)."
+
+      # DRAFT PUBLISHER 20 DK TETİKLEYİCİ (2026-11-07, kullanıcı kararı):
+      # GitHub schedule güvenilmez; son draft_publisher koşusu 19 dk'dan eskiyse ve aktif koşusu
+      # yoksa buradan tetiklenir. Kendi başına çalışır, zincir mantığına dokunmaz.
+      - name: Draft Publisher 20 dk Zincirini Kontrol Et
+        continue-on-error: true
+        run: |
+          NOW=$(date -u +%s)
+          WF="draft_publisher.yml"
+          MIN_GAP=1140
+          LAST=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WF}/runs?per_page=1" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
+          if [ -n "$LAST" ]; then
+            LAST_EPOCH=$(date -u -d "$LAST" +%s 2>/dev/null || echo 0)
+            GAP=$(( NOW - LAST_EPOCH ))
+            if [ "$GAP" -lt "$MIN_GAP" ]; then
+              echo "[DRAFT] Son draft_publisher ${GAP}s once (min ${MIN_GAP}s) -> tetiklenmedi."
+              exit 0
+            fi
+          fi
+          ACTIVE=$(bash scripts/active_runs_count.sh "${WF}" 2>/dev/null || echo 0)
+          ACTIVE="${ACTIVE:-0}"
+          if [ "${ACTIVE}" -gt 0 ]; then
+            echo "[DRAFT] Aktif draft_publisher kosusu: ${ACTIVE} -> tetiklenmedi."
+            exit 0
+          fi
+          curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WF}/dispatches" \
+            -d '{"ref":"main","inputs":{"max_per_run":"2","dry_run":"0"}}'
+          echo "[DRAFT] draft_publisher.yml tetiklendi (son kosu ${GAP:-?}s once)."
 
       - name: Zamanlayıcı Sağlığını Kontrol Et ve Zinciri Devam Ettir
         run: |

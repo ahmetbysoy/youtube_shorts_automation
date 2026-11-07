@@ -5,16 +5,47 @@
 //   node scripts/studio_draft_publish.cjs inspect           -> ilk taslağı aç, kare seçiciyi incele (yayınlamaz)
 //   node scripts/studio_draft_publish.cjs publish [N]       -> en fazla N taslak yayınla (vars. 1); --dry = Yayınla'ya basma
 // Ortam: STATE (storage_state yolu), IDENTITY_WAIT_SEC (vars. 300), YT_EMAIL/YT_PASSWORD (.env)
+//   IDENTITY_MODE=wait|skip  -> wait: telefon onayı beklenir (sandbox); skip: CI — modal çıkınca BEKLEMEZ,
+//                               taslak olduğu gibi kalır, çıkış 0 (sonraki 20 dk turunda tekrar denenir).
+//   OUT_DIR (vars. session_capture), YT_CHANNEL_ID (vars. UCBZVbwc7s7TeUCcOaN58oHQ), PICK_MODE=first|quality
+//   CI=1 iken STATE verilmezse: kök storage_state.json, yoksa kök cookies.json'dan oturum kurulur.
+// Çıkış kodları: 0 = yayınlandı / taslak yok / kimlik modalı (skip) ; 1 = hata ; 2 = oturum geçersiz (giriş sayfası)
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
 
-const CH = 'UCBZVbwc7s7TeUCcOaN58oHQ';
-const OUT = path.join(__dirname, '..', 'session_capture');
+const ROOT = path.join(__dirname, '..');
+const CH = process.env.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ';
+const OUT = process.env.OUT_DIR || path.join(ROOT, 'session_capture');
 fs.mkdirSync(OUT, { recursive: true });
-const STATE = process.env.STATE || path.join(OUT, 'storage_state.json');
+const IS_CI = process.env.CI === '1' || process.env.CI === 'true' || !!process.env.GITHUB_ACTIONS;
+const IDENTITY_MODE = (process.env.IDENTITY_MODE || (IS_CI ? 'skip' : 'wait')).toLowerCase();
+function resolveState() {
+  if (process.env.STATE) return process.env.STATE;
+  const candidates = IS_CI
+    ? [path.join(ROOT, 'storage_state.json'), path.join(OUT, 'storage_state.json')]
+    : [path.join(OUT, 'storage_state.json'), path.join(ROOT, 'storage_state.json')];
+  for (const c of candidates) { try { if (fs.statSync(c).size > 100) return c; } catch (_) {} }
+  // storage_state yoksa cookies.json'dan üret (uploader'ın kaydettiği Playwright cookie dizisi)
+  const ck = path.join(ROOT, 'cookies.json');
+  try {
+    const cookies = JSON.parse(fs.readFileSync(ck, 'utf8'));
+    if (Array.isArray(cookies) && cookies.length) {
+      const target = path.join(ROOT, 'storage_state.json');
+      fs.writeFileSync(target, JSON.stringify({ cookies, origins: [] }, null, 2));
+      return target;
+    }
+  } catch (_) {}
+  return candidates[0];
+}
+const STATE = resolveState();
 const IDENTITY_WAIT_SEC = Number(process.env.IDENTITY_WAIT_SEC || 300);
+const STATUS_FILE = path.join(OUT, 'draft_publish_status.json');
+const RESULTS = { mode: IDENTITY_MODE, published: [], skipped: [], identity_modal: false, no_drafts: false, session_invalid: false, error: '' };
+function writeStatus() { try { fs.writeFileSync(STATUS_FILE, JSON.stringify({ at: new Date().toISOString(), ...RESULTS }, null, 2)); } catch (_) {} }
+class IdentitySkip extends Error {}
+class SessionInvalid extends Error {}
 const IDENTITY_MODAL_RE = /Kimliğinizi doğrulayın|Verify it'?s you|Kimliğinizi doğrulamamız/i;
 const LIST_URL = `https://studio.youtube.com/channel/${CH}/videos/short?filter=%5B%7B%22name%22%3A%22VISIBILITY%22%2C%22value%22%3A%5B%22DRAFT%22%5D%7D%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D`;
 const EMAIL = process.env.YT_EMAIL || '';
@@ -74,6 +105,13 @@ async function waitForReauth(reauthPage, mainPage, startedAt) {
 async function handleIdentityModal(page, context, attempt = 1) {
   const modal = await findIdentityModal(page);
   if (!modal) return false;
+  if (IDENTITY_MODE === 'skip') {
+    // Kullanıcı kararı (2026-11-07): CI'da telefon onayı beklenmez, DOM ile atlanmaz; taslak kalır.
+    await shot(page, 'identity_modal_skipped');
+    log('[KIMLIK] "Kimliğinizi doğrulayın" modalı çıktı → BEKLENMİYOR (IDENTITY_MODE=skip); taslak olduğu gibi kalıyor, sonraki turda tekrar denenecek.');
+    RESULTS.identity_modal = true;
+    throw new IdentitySkip('identity_modal');
+  }
   if (attempt > 2) throw new Error('IDENTITY: modal 2 denemeden sonra hâlâ açık');
   log('[KIMLIK] "Kimliğinizi doğrulayın" modalı → Sonraki (DOM atlama yok)');
   await shot(page, 'identity_modal');
@@ -102,11 +140,31 @@ async function handleIdentityModal(page, context, attempt = 1) {
 }
 
 // ---------------- Studio akışı ----------------
+function assertStudioSession(page) {
+  const u = page.url();
+  if (/accounts\.google\.com|ServiceLogin|signin/i.test(u)) {
+    RESULTS.session_invalid = true;
+    throw new SessionInvalid('oturum geçersiz: Studio yerine Google giriş sayfası açıldı (' + u.split('?')[0] + ')');
+  }
+}
+
 async function openFirstDraft(page, context) {
   await page.goto(LIST_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await sleep(4000);
+  assertStudioSession(page);
   if (await handleIdentityModal(page, context)) { await page.goto(LIST_URL, { waitUntil: 'domcontentloaded', timeout: 60000 }); await sleep(4000); }
-  await page.locator('ytcp-video-row').first().waitFor({ state: 'visible', timeout: 45000 }).catch(() => {});
+  // Taslak satırı YA DA boş liste metni gelene kadar bekle (boş listede 45 s beklememek için)
+  const emptyRe = /İçerik bulunamadı|içerik yok|Hiç içerik|No content|Nothing found|bulunamadı/i;
+  const deadline = Date.now() + 45000;
+  let hasRow = false;
+  while (Date.now() < deadline) {
+    if (await page.locator('ytcp-video-row').first().isVisible().catch(() => false)) { hasRow = true; break; }
+    const body = (await page.locator('ytcp-video-section-content, #video-list, ytcp-content-section').first().innerText().catch(() => '')) || '';
+    if (emptyRe.test(body)) break;
+    assertStudioSession(page);
+    await sleep(1500);
+  }
+  if (!hasRow) { await shot(page, 'draft_list_empty'); return null; }
   await sleep(2000);
   // Başlıksız ("final short") taslaklar atlanır: ilk uygun satır seçilir
   const rows = page.locator('ytcp-video-row');
@@ -228,6 +286,7 @@ async function publishOne(page, context, dry, tag) {
   for (let i = 0; i < 5; i++) {
     await dlg.locator('#next-button').click({ timeout: 10000 });
     await sleep(1800);
+    await handleIdentityModal(page, context); // skip modunda IdentitySkip fırlatır (taslak kalır)
     const pub = dlg.locator('tp-yt-paper-radio-button[name="PUBLIC"]').first();
     if (await pub.isVisible().catch(() => false)) { onVis = true; break; }
   }
@@ -276,16 +335,33 @@ async function publishOne(page, context, dry, tag) {
     } else if (mode === 'publish') {
       for (let i = 0; i < n; i++) {
         const r = await publishOne(page, context, dry, `pub_${Date.now()}`);
+        if (r.none) { RESULTS.no_drafts = true; break; }
+        if (r.skipped) { RESULTS.skipped.push(r.title); break; }
+        if (r.done || r.dry) RESULTS.published.push({ title: r.title, videoId: r.videoId, dry: !!r.dry });
         if (!r.done) break;
         await sleep(4000);
       }
+      log(`ÖZET: yayınlanan=${RESULTS.published.length} taslak_yok=${RESULTS.no_drafts} kimlik_modalı=${RESULTS.identity_modal}`);
     }
-    fs.writeFileSync(STATE, JSON.stringify(await context.storageState(), null, 2));
+    const st = await context.storageState();
+    fs.writeFileSync(STATE, JSON.stringify(st, null, 2));
+    if (IS_CI) fs.writeFileSync(path.join(ROOT, 'cookies.json'), JSON.stringify(st.cookies, null, 2));
   } catch (e) {
-    log('HATA: ' + e.message.slice(0, 300));
-    await shot(page, 'publish_error');
-    process.exitCode = 1;
+    if (e instanceof IdentitySkip) {
+      log('Kimlik modalı nedeniyle tur sonlandırıldı (taslak korunuyor, çıkış 0).');
+    } else if (e instanceof SessionInvalid) {
+      log('HATA: ' + e.message.slice(0, 300));
+      RESULTS.error = e.message.slice(0, 300);
+      await shot(page, 'session_invalid');
+      process.exitCode = 2;
+    } else {
+      log('HATA: ' + e.message.slice(0, 300));
+      RESULTS.error = e.message.slice(0, 300);
+      await shot(page, 'publish_error');
+      process.exitCode = 1;
+    }
   } finally {
+    writeStatus();
     await browser.close();
   }
 })();

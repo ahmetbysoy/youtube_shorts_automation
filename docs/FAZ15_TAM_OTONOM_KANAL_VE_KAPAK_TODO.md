@@ -152,3 +152,14 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
   kimlik modalı çıkarsa "Sonraki" + telefon onayı bekler (DOM atlama yok); "final short" başlıklı taslaklar atlanır. `--dry` kuru mod.
 - Yayınlanan: SXZd8a12n-Y "Tesla'ya Söz Verilen Parayı Edison Vermedi!" (aday #1; oEmbed public doğruladı; kapak CDN yayılımı bekleniyor).
 - Kullanıcı kararları: önce 1 video; eski taslaklarda her zaman 1. aday. Kimlik modalı sandbox'ta 11:35'te çıktı, 11:43'ten sonra çıkmadı.
+
+### 2026-11-07 ~12:10 UTC — Kimlik modalı = taslak bırak; Draft Publisher (20 dk); ortak araç önbelleği
+- Kullanıcı kararları: FAZ 5'te kimlik modalı çıkarsa telefon onayı BEKLENMEZ, video taslak kalır (exit 43, koşu yeşil,
+  run_status=draft_left). Yeni `draft_publisher.yml` her 20 dk (cron */20 + daily_shorts cron-kick'ten tetikleme) en fazla 2 taslağı
+  "Videodan seç → 1. aday → MFK → Herkese açık" ile yayınlar; taslak yoksa hızlı yeşil çıkar; modal çıkarsa beklemez (DOM atlama yok).
+  Oturum kilidi `studio-upload-lock` uploader ile ortak. Oturum geçersizse rc=2 (kırmızı, çerez yenilenmeli).
+- `.github/actions/setup-tools`: apt .deb arşivi (ImageVersion+paket listesi anahtarı, hit'te `dpkg -i` internetsiz), node_modules
+  (lock hash), Playwright Chromium (hit'te açılış testi geçerse install-deps apt'si atlanır), pip. daily_shorts/hourly_pruner/
+  daily_analytics/draft_publisher bunu kullanır. Sandbox'ta apt adımı doğrulandı (cowsay ile 2 koşu); CI'da ilk koşu önbelleği doldurur.
+- Sandbox kuru deneme (CI modu, IDENTITY_MODE=skip): "Roma'yı Bitiren Son İmparator" taslağı → aday #1 → MFK → PUBLIC → DRY ok (cIAzxwN4o3s).
+- Doğrulanmadı: CI'da gerçek draft_publisher koşusu ve önbellek hit süreleri (ilk koşular sonrası kontrol edilecek).

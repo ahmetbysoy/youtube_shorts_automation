@@ -18,6 +18,7 @@ from pathlib import Path
 STATUS_LABEL = {
     "uploaded": "YÜKLENDİ",
     "quota_skipped": "KOTA - ATLANDI",
+    "draft_left": "TASLAK BIRAKILDI (kimlik modali; draft_publisher yayinlar)",
     "error": "HATA",
     "started": "DEVAM EDİYOR",
 }

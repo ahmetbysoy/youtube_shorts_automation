@@ -25,6 +25,44 @@ function writeAuthStatus(state, details = {}) {
     } catch (_) {}
 }
 
+// Google "Kimliğinizi doğrulayın" (telefon onayı) modalı. Kullanıcı kararı (2026-11-07):
+// CI'da telefon onayı BEKLENMEZ ve DOM ile ATLANMAZ -> video Studio'da TASLAK kalır,
+// 20 dk'lık draft_publisher.yml iş akışı taslağı yayınlar. Exit 43 = planlı "taslak bırakıldı".
+const IDENTITY_MODAL_RE = /Kimliğinizi doğrulayın|Verify it'?s you|Kimliğinizi doğrulamamız/i;
+async function findIdentityModal(page) {
+    for (const sel of ['tp-yt-paper-dialog', 'ytcp-dialog', 'ytcp-confirmation-dialog', '[role="dialog"]', '[role="alertdialog"]']) {
+        const dialogs = page.locator(sel);
+        const n = await dialogs.count().catch(() => 0);
+        for (let i = 0; i < n; i++) {
+            const d = dialogs.nth(i);
+            if (!(await d.isVisible({ timeout: 200 }).catch(() => false))) continue;
+            const txt = (await d.innerText().catch(() => '')) || '';
+            if (IDENTITY_MODAL_RE.test(txt)) return d;
+        }
+    }
+    return null;
+}
+async function leaveAsDraftOnIdentityModal(page, context, title) {
+    console.log('[KIMLIK] "Kimliğinizi doğrulayın" modalı çıktı -> telefon onayı BEKLENMEYECEK; video TASLAK olarak bırakılıyor (draft_publisher.yml 20 dk içinde yayınlar).');
+    await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'identity_modal_draft_left.png') }).catch(() => {});
+    // Aktarım %100 bitmeden kapatılırsa taslak bozuk kalır: ilerleme metnini bekle (en fazla 3 dk)
+    const deadline = Date.now() + 180000;
+    while (Date.now() < deadline) {
+        const t = ((await page.locator('ytcp-video-upload-progress').innerText().catch(() => '')) || '').replace(/\s+/g, ' ').trim();
+        if (!t || !(/%\s*\d+|\d+\s*%|yükleniyor|uploading/i.test(t))) break;
+        await page.waitForTimeout(3000);
+    }
+    const videoId = await page.locator('ytcp-uploads-dialog').evaluate((d) => {
+        const a = d.querySelector('a.ytcp-video-info, ytcp-video-info a, a[href*="youtu"]');
+        const m = (a?.href || '').match(/(?:youtu\.be\/|shorts\/|v=)([\w-]{11})/);
+        return m ? m[1] : (d.getAttribute('video-id') || '');
+    }).catch(() => '');
+    writeAuthStatus('draft_left', { title, videoId, reason: 'identity_modal', channelUrl: page.url() });
+    if (context) await persistAllSessionArtifacts(context).catch(() => {});
+    console.log(`[KIMLIK] Taslak bırakıldı (video id: ${videoId || '?'}). Çıkış kodu 43 (planlı).`);
+    process.exit(43);
+}
+
 function saveSecureFile(filePath, content) {
     fs.writeFileSync(filePath, content, { encoding: 'utf8', mode: 0o600 });
 }
@@ -968,6 +1006,9 @@ async function uploadToYouTubeStudio() {
                     await page.waitForTimeout(attempt < 5 ? 2000 : 4000);
                     break;
                 }
+            }
+            if (await findIdentityModal(page)) {
+                await leaveAsDraftOnIdentityModal(page, context, title);
             }
             if (!clicked) {
                 const pageTitle = await page.title().catch(() => '');

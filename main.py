@@ -109,6 +109,11 @@ def run_step(
         if e.returncode == 42:
             logging.warning(f"[⏭️ ATLANDI] {step_name}: YouTube günlük yükleme kotanı doldu.")
             return True
+        # 43 = Google kimlik dogrulama modali -> telefon onayi beklenmedi, video TASLAK kaldi
+        # (draft_publisher.yml 20 dk icinde yayinlar). Planli durum, kosu kirmizi olmaz.
+        if e.returncode == 43:
+            logging.warning(f"[📝 TASLAK] {step_name}: kimlik modali cikti, video taslak olarak birakildi.")
+            return True
         logging.error(f"[-] KRİTİK HATA: {step_name} (exit={e.returncode})")
         return False
     except OSError as e:
@@ -184,7 +189,14 @@ def main():
         sys.exit(1)
 
     published = _published_video_info()
-    if published:
+    auth_state = ""
+    try:
+        auth_state = json.loads((LOG_DIR / "auth_status.json").read_text(encoding="utf-8")).get("state", "")
+    except Exception:
+        pass
+    if auth_state == "draft_left":
+        write_status("draft_left", args.channel_id, stage="upload", **{k: v for k, v in published.items() if k != "visibility"})
+    elif published:
         write_status("uploaded", args.channel_id, **published)
     else:
         # exit code 42 = gunkluk yukleme kotasi doldu -> planli atlama

@@ -15,22 +15,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Depoyu Çek (Checkout)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Sistem Paketlerini Kur (Xvfb)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-
-      - name: Node.js 20 & Playwright Kur
-        uses: actions/setup-node@v4
+      - name: "Araçları Kur (önbellekli: xvfb .deb + node_modules + Chromium)"
+        uses: ./.github/actions/setup-tools
         with:
-          node-version: '20'
-
-      - name: Playwright Chromium Yükle
-        run: |
-          npm install
-          npx playwright install --with-deps chromium
+          apt_packages: xvfb
+          node: 'true'
+          playwright: 'true'
+          python: 'false'
 
       - name: Oturum Bilgilerini Enjekte Et
         env:

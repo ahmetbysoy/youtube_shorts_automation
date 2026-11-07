@@ -88,41 +88,13 @@ jobs:
       - name: Depoyu Çek (Checkout)
         uses: actions/checkout@v7
 
-      - name: Sistem Paketlerini Kur (Xvfb)
-        run: |
-          if command -v Xvfb &>/dev/null; then
-            echo "[✓] Xvfb zaten kurulu, apt atlanıyor."
-          else
-            sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
-            sudo apt-get install -y --no-install-recommends xvfb
-          fi
-
-      - name: Node.js 20 Kur
-        uses: actions/setup-node@v7
+      - name: "Araçları Kur (önbellekli: xvfb .deb + node_modules + Chromium)"
+        uses: ./.github/actions/setup-tools
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - name: Playwright Chromium Cache Yükle
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-chromium-
-
-      - name: Playwright Chromium Yükle
-        run: |
-          npm install playwright
-          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
-            echo "[✓] Playwright Chromium cache'den yüklendi, sistem deps kuruluyor..."
-            npx playwright install-deps chromium
-          else
-            echo "[↓] Playwright Chromium indiriliyor + sistem deps..."
-            npx playwright install --with-deps chromium
-          fi
+          apt_packages: xvfb
+          node: 'true'
+          playwright: 'true'
+          python: 'false'
 
       - name: Oturum Bilgilerini Enjekte Et (Kanal ${{ matrix.channel_id }})
         env:
