@@ -1,31 +1,40 @@
 {
-  "scraped_at": "2026-11-06T13:42:00.082Z",
+  "scraped_at": "2026-11-07T12:23:41.439Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 6,
   "winning_topic": "Bilim",
   "boost_active": false,
-  "outperformance_ratio": 0,
+  "outperformance_ratio": 1,
   "discarded_topics": [],
   "optimization_directive": "Tüm konularda dengeli yüksek dopaminli kanca (hook) üretimine devam et.",
   "topic_scores": [
     {
       "niche": "Bilim",
-      "video_count": 4,
-      "avg_views": 0,
+      "video_count": 6,
+      "avg_views": 4.17,
       "avg_view_duration_sec": 0,
-      "avg_score": 0
-    },
-    {
-      "niche": "Tarih",
-      "video_count": 2,
-      "avg_views": 0,
-      "avg_view_duration_sec": 0,
-      "avg_score": 0
+      "avg_score": 4.17
     }
   ],
   "recent_videos": [
     {
       "videoId": "",
+      "title": "Roma'yı Bitiren Son İmparator Sadece 16 Yaşındaydı! #Shorts",
+      "niche": "Bilim",
+      "views": 0,
+      "avgViewDurationSec": 0,
+      "compositeScore": 0
+    },
+    {
+      "videoId": "SXZd8a12n-Y",
+      "title": "Tesla'ya Söz Verilen Parayı Edison Vermedi! #Shorts",
+      "niche": "Bilim",
+      "views": 3,
+      "avgViewDurationSec": 0,
+      "compositeScore": 3
+    },
+    {
+      "videoId": "",
       "title": "final short",
       "niche": "Bilim",
       "views": 0,
@@ -33,44 +42,28 @@
       "compositeScore": 0
     },
     {
-      "videoId": "",
-      "title": "final short",
+      "videoId": "c00qhT9Vcbs",
+      "title": "Evrenin Yüzde 95'i Karanlık Madde ve Enerji! #Shorts",
       "niche": "Bilim",
-      "views": 0,
+      "views": 5,
       "avgViewDurationSec": 0,
-      "compositeScore": 0
+      "compositeScore": 5
     },
     {
-      "videoId": "",
-      "title": "final short",
+      "videoId": "t6YpWotfoug",
+      "title": "Yunuslar Uyurken Beyninin Yarısı Uyanık Kalır! #Shorts",
       "niche": "Bilim",
-      "views": 0,
+      "views": 16,
       "avgViewDurationSec": 0,
-      "compositeScore": 0
+      "compositeScore": 16
     },
     {
-      "videoId": "",
-      "title": "Piramitlerden 7 Bin Yıl Daha Eski Tapınak: Göbeklitepe! #Shorts",
-      "niche": "Tarih",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
-    },
-    {
-      "videoId": "",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "niche": "Tarih",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
-    },
-    {
-      "videoId": "",
-      "title": "Yaşlanmayı Geri Alan Denizanası: Turritopsis! #Shorts",
+      "videoId": "FR2yZi8_66w",
+      "title": "En Az Bilen En Çok Bildiğini Zanneder: Dunning-Kruger! #Shorts",
       "niche": "Bilim",
-      "views": 0,
+      "views": 1,
       "avgViewDurationSec": 0,
-      "compositeScore": 0
+      "compositeScore": 1
     }
   ]
 }
