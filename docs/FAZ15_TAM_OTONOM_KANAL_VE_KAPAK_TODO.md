@@ -117,3 +117,12 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 - Kod: kaydırma yerine gerçek sayfalama; izleme sayfasından kesin yayın zamanı; okunamayan görüntülenme = koruma; yalnız PUBLIC; silme sonrası tüm sayfalarda doğrulama. Canlı silme yolu gerçek silmeyle henüz test edilmedi.
 - Özel rapor: Drive `1g9KBK6XVAwEFA6fs0j9amBkxN1S4GtGu`.
 - 2026-11-07: #423/#424 yeni pruner kodu GitHub'da başarılı (8 tarandı, 0 hedef); #424 cron-kick 55 dk kuralıyla durdu. Kullanıcı kararı: pruner saatlik tetikleme daily_shorts cron-kick üzerinden (son pruner >55 dk ve aktif yoksa). Her iki cron-kick'e checkout eklendi (active_runs_count.sh daha önce hiç çalışmıyordu -> fırtınaya katkı). Doğrulama: sonraki daily_shorts koşusunda pruner dispatch bekleniyor.
+
+## 2026-11-07 (gece, devam) — Oturum yenileme, YAML onarımı, kimlik doğrulama bekleme
+- Google oturumu sandbox'ta şifre + telefon onayıyla yenilendi; `cookies/storage_state/session.har` Drive YouTube klasörüne tarih damgalı yüklendi. Bağımsız headless testte şifresiz Studio girişi doğrulandı.
+- `594a6fb` (paralel ajan) `daily_shorts.yml`'i geçersiz YAML yapmıştı (#284/#285 hiç başlamadı) → `7796446` ile onarıldı; silinen pruner piggyback adımı geri eklendi (#286'da pruner #426'yı tetiklediği gözlendi).
+- "Taze Cookie → Secret" adımı `GITHUB_TOKEN` ile çalışamaz (KeyError key_id) → `REPO_PAT` yoksa açıkça atlanır, `continue-on-error`.
+- #286: yeni çerezlerle Studio'ya girildi, video yüklendi, ancak Studio dialogunda Google **"Kimliğinizi doğrulayın"** modalı çıktı → PUBLIC'e ulaşılamadı (taslak kaldı). Sandbox'ta aynı oturumla modal ÇIKMADI (bu IP bugün doğrulandı).
+- Uploader'a `handleIdentityVerificationModal` eklendi: modal → "Sonraki" → (şifre) → telefon onayı en fazla `IDENTITY_WAIT_SEC` (300 s) beklenir; onay yoksa `GOOGLE_IDENTITY_VERIFICATION_REQUIRED` ile fail-closed, video taslak kalır. DOM atlama yok. Test: `tests/identity_modal.test.cjs` (3 senaryo).
+- Sandbox'tan 1 taslak yayınlandı ve doğrulandı: `-c6RE6zwqec` (Japonya 1400 yıl). Kalan 14 taslak (2 başlıksız "final short", 3 kopya konu) bekliyor; pruner riski nedeniyle kademeli yayın kararı.
+- Açık: OAuth `token.json` üretilemez (client_secret yok, kullanıcı atladı); medya sorguları hâlâ boş; CI'da telefon-onay akışı gerçek koşuda henüz doğrulanmadı.

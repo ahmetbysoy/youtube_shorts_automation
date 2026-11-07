@@ -36,7 +36,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     headless: false,
     args: ['--disable-blink-features=AutomationControlled', '--no-first-run', '--no-default-browser-check', '--lang=tr-TR'],
   });
+  const REUSE = process.env.REUSE_STORAGE_STATE || '';
+  const START_URL = process.env.START_URL || '';
   const context = await browser.newContext({
+    ...(REUSE && fs.existsSync(REUSE) ? { storageState: REUSE } : {}),
     viewport: { width: 1366, height: 860 },
     locale: 'tr-TR',
     timezoneId: 'Europe/Istanbul',
@@ -67,7 +70,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     } catch (e) { log('snapshot hata: ' + e.message); }
   }
 
-  try {
+  if (REUSE) {
+    log('Mevcut oturum yeniden kullanılıyor (şifreli giriş atlanır)');
+    await page.goto(START_URL || 'https://studio.youtube.com/', { waitUntil: 'domcontentloaded', timeout: 60000 }).catch((e) => log('goto hata: ' + e.message));
+    await sleep(5000); await snapshot('ACILIS');
+  } else try {
     await page.goto('https://accounts.google.com/ServiceLogin?service=youtube&continue=https%3A%2F%2Fstudio.youtube.com%2F&hl=tr', { waitUntil: 'domcontentloaded', timeout: 60000 });
     await sleep(2000);
     const emailBox = page.locator('input[type="email"]');
@@ -109,6 +116,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
           await inp.fill(code); await sleep(500); await page.keyboard.press('Enter');
         } else if (cmd.startsWith('click:')) {
           await page.getByText(cmd.slice(6).trim(), { exact: false }).first().click({ timeout: 10000 });
+        } else if (cmd.startsWith('css:')) {
+          await page.locator(cmd.slice(4).trim()).first().click({ timeout: 10000 });
+        } else if (cmd.startsWith('role:')) {
+          await page.getByRole('button', { name: cmd.slice(5).trim() }).first().click({ timeout: 10000 });
         } else if (cmd.startsWith('goto:')) {
           await page.goto(cmd.slice(5).trim(), { waitUntil: 'domcontentloaded', timeout: 60000 });
         } else if (cmd.startsWith('type:')) {

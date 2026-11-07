@@ -219,11 +219,18 @@ jobs:
           xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py --channel_id ${{ matrix.channel_id }}
 
       - name: "Oturum Cookie'lerini Güncelle (Taze Cookie → GitHub Secret)"
+        # GITHUB_TOKEN repo secret'i yazamaz (403 -> KeyError key_id). Yalnizca REPO_PAT
+        # secret'i tanimliysa calisir; yoksa ATLANIR. Kosuyu asla kirmizi yapmaz.
         if: always()
+        continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.REPO_PAT }}
           CHANNEL_ID: ${{ matrix.channel_id }}
         run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "[ATLANDI] REPO_PAT secret'i tanimli degil -> cerezler GitHub Secret'a yazilmadi (GITHUB_TOKEN bu yetkiye sahip degil)."
+            exit 0
+          fi
           # Uploader login sonrası yeni cookies.json ve storage_state.json yazdıysa
           # bunları GitHub Secret'a geri yaz — böylece bir sonraki run taze oturumla başlar.
           update_secret() {

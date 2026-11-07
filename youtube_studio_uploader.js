@@ -80,6 +80,130 @@ async function dismissStudioModalsIfPresent(page) {
     await page.waitForTimeout(500);
 }
 
+// ---------------------------------------------------------------------------
+// GOOGLE "KİMLİĞİNİZİ DOĞRULAYIN" MODALI (2026-11-07, kullanıcı kararı)
+// GitHub runner'dan yüklemede Google, Studio dialogu içinde "Kimliğinizi doğrulayın
+// / Verify it's you" penceresi açıyor. DOM ile ATLANMAZ. Yapılan: modaldaki
+// "Sonraki"ye basılır, Google şifre isterse girilir, telefona giden "Sen misin?"
+// bildirimi IDENTITY_WAIT_SEC (varsayılan 300 s) boyunca beklenir. Onay gelmezse
+// video taslak olarak kalır ve çalışma 'identity_verification_required' ile biter.
+// ---------------------------------------------------------------------------
+const IDENTITY_MODAL_RE = /Kimliğinizi doğrulayın|Verify it'?s you|Verify your identity|Devam etmek için kimliğinizi doğrulamamız gerekiyor/i;
+const IDENTITY_WAIT_SEC = Math.max(30, Number(process.env.IDENTITY_WAIT_SEC || 300));
+
+async function findIdentityModal(page) {
+    const dialogSels = ['tp-yt-paper-dialog', 'ytcp-dialog', 'ytcp-confirmation-dialog', '[role="dialog"]', '[role="alertdialog"]'];
+    for (const sel of dialogSels) {
+        const dialogs = page.locator(sel);
+        const n = await dialogs.count().catch(() => 0);
+        for (let i = 0; i < n; i++) {
+            const d = dialogs.nth(i);
+            if (!(await d.isVisible({ timeout: 300 }).catch(() => false))) continue;
+            const txt = (await d.innerText().catch(() => '')) || '';
+            if (IDENTITY_MODAL_RE.test(txt)) return d;
+        }
+    }
+    return null;
+}
+
+async function waitForReauthCompletion(reauthPage, context, startedAt, mainPage = null) {
+    const email = process.env.YT_EMAIL || '';
+    const password = process.env.YT_PASSWORD || '';
+    const isPopup = Boolean(mainPage) && mainPage !== reauthPage;
+    let lastNote = '';
+    while ((Date.now() - startedAt) / 1000 < IDENTITY_WAIT_SEC) {
+        if (reauthPage.isClosed()) return { ok: true, how: 'popup_closed' };
+        let url = '';
+        try { url = reauthPage.url(); } catch (_) { return { ok: true, how: 'popup_closed' }; }
+        if (isPopup) {
+            // Popup akışı: başarı = ana sayfadaki modalın kaybolması (popup kapanmasa bile)
+            if (!(await findIdentityModal(mainPage))) return { ok: true, how: 'modal_cleared' };
+        } else if (/studio\.youtube\.com/.test(url) && !(await findIdentityModal(reauthPage))) {
+            return { ok: true, how: 'returned_to_studio' };
+        }
+        const body = ((await reauthPage.locator('body').innerText().catch(() => '')) || '').replace(/\s+/g, ' ');
+
+        // Şifre ekranı → şifreyi gir (sır loglanmaz)
+        const pwd = reauthPage.locator('input[type="password"]:visible').first();
+        if (password && await pwd.isVisible({ timeout: 300 }).catch(() => false)) {
+            await pwd.fill(password).catch(() => {});
+            await reauthPage.keyboard.press('Enter').catch(() => {});
+            console.log('[KIMLIK] Şifre tekrar girildi, Google yanıtı bekleniyor...');
+            await new Promise(r => setTimeout(r, 4000));
+            continue;
+        }
+        // Hesap seçimi ekranı
+        if (email) {
+            const acct = reauthPage.locator(`div[data-identifier="${email}"], li:has-text("${email}")`).first();
+            if (await acct.isVisible({ timeout: 300 }).catch(() => false)) {
+                await acct.click().catch(() => {});
+                await new Promise(r => setTimeout(r, 3000));
+                continue;
+            }
+        }
+        // Telefon onayı ekranı → kullanıcı telefondan onaylayana kadar bekle
+        const m = body.match(/telefonunuzdaki\s+(\d{1,3})\s+sayısına|tap\s+(\d{1,3})\s+on your phone|(\d{1,3})\s+sayısına dokun/i);
+        const note = m ? `Telefonda "Evet" + ${m[1] || m[2] || m[3]} sayısına dokunun` :
+            /bildirim|notification|Check your phone|telefonunuzu kontrol/i.test(body) ? 'Telefon bildirimini onaylayın' : '';
+        if (note && note !== lastNote) {
+            lastNote = note;
+            console.log(`[KIMLIK] Google telefon doğrulaması istiyor → ${note} (en fazla ${IDENTITY_WAIT_SEC}s bekleniyor)`);
+            writeAuthStatus('identity_verification_waiting', { note, url });
+        }
+        if (/Doğrulama kodu|verification code|SMS|Kodu girin|Enter the code/i.test(body) && !/bildirim/i.test(body)) {
+            writeAuthStatus('identity_verification_code_required', { url, promptText: body.slice(0, 300) });
+            return { ok: false, how: 'code_required' };
+        }
+        // Popup bekleme sırasında kapanabilir → hata yerine döngü başına dön
+        await new Promise(r => setTimeout(r, 3000));
+    }
+    return { ok: false, how: 'timeout' };
+}
+
+async function handleIdentityVerificationModal(page, context, attempt = 1) {
+    const modal = await findIdentityModal(page);
+    if (!modal) return false;
+    if (attempt > 2) throw new Error('GOOGLE_IDENTITY_VERIFICATION_REQUIRED: modal 2 denemeden sonra hâlâ açık');
+    console.log('[KIMLIK] Google "Kimliğinizi doğrulayın" penceresi algılandı → "Sonraki" ile doğrulama akışı başlatılıyor (DOM atlama YOK).');
+    writeAuthStatus('identity_verification_required', { url: page.url() });
+    await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'identity_modal.png') }).catch(() => {});
+
+    const startedAt = Date.now();
+    const popupPromise = context.waitForEvent('page', { timeout: 15000 }).catch(() => null);
+    const nextBtn = modal.locator('button:has-text("Sonraki"), button:has-text("Next"), ytcp-button:has-text("Sonraki"), ytcp-button:has-text("Next"), #confirm-button').first();
+    if (await nextBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await nextBtn.click().catch(() => {});
+    } else {
+        console.log('[KIMLIK] Modalda "Sonraki" butonu bulunamadı.');
+        return false;
+    }
+    const popup = await popupPromise;
+    const reauthPage = popup || page;
+    await reauthPage.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(() => {});
+    console.log(`[KIMLIK] Doğrulama sayfası: ${popup ? 'yeni pencere' : 'aynı sekme'} → ${reauthPage.url().split('?')[0]}`);
+
+    const result = await waitForReauthCompletion(reauthPage, context, startedAt, page);
+    if (!result.ok) {
+        console.error(`[KIMLIK] Doğrulama tamamlanmadı (${result.how}, ${Math.round((Date.now() - startedAt) / 1000)}s). Video TASLAK olarak kalır.`);
+        await reauthPage.screenshot({ path: path.join(BASE_DIR, 'logs', 'identity_challenge.png') }).catch(() => {});
+        throw new Error(`GOOGLE_IDENTITY_VERIFICATION_REQUIRED: telefon onayı gelmedi (${result.how})`);
+    }
+    console.log(`[KIMLIK] Doğrulama tamamlandı (${result.how}, ${Math.round((Date.now() - startedAt) / 1000)}s).`);
+    writeAuthStatus('identity_verification_passed', { how: result.how });
+    if (!popup && !/studio\.youtube\.com/.test(page.url())) {
+        await page.waitForURL(/studio\.youtube\.com/, { timeout: 60000 }).catch(() => {});
+    }
+    await page.waitForTimeout(3000);
+    // Doğrulama sonrası taze oturumu hemen kaydet (sonraki koşular için)
+    await persistAllSessionArtifacts(context).catch(() => {});
+    // Modal hâlâ duruyorsa bir kez daha dene (Google bazen 2 adım ister)
+    if (await findIdentityModal(page)) {
+        console.log('[KIMLIK] Modal hâlâ açık; akış bir kez daha deneniyor...');
+        return handleIdentityVerificationModal(page, context, attempt + 1);
+    }
+    return true;
+}
+
 async function isAuthenticatedInStudio(page) {
     const url = page.url();
     if (url.includes('accounts.google.com') || url.includes('ServiceLogin')) {
@@ -860,6 +984,8 @@ async function uploadToYouTubeStudio() {
                 console.log(`[*] Görünürlük sekmesi açıldı (${attempt} tıklama sonrası).`);
                 break;
             }
+            // Google kimlik doğrulama modalı varsa önce o çözülür (telefon onayı beklenir)
+            if (await handleIdentityVerificationModal(page, context)) continue;
             const nextVariants = [
                 'ytcp-button#next-button:not([disabled])',
                 '#next-button:not([disabled])',
@@ -1066,8 +1192,12 @@ async function uploadToYouTubeStudio() {
     }
 }
 
-uploadToYouTubeStudio().catch(err => {
-    writeAuthStatus('error', { message: String(err && err.message ? err.message : err) });
-    console.error("[-] KRİTİK HATA:", err);
-    process.exit(1);
-});
+module.exports = { findIdentityModal, handleIdentityVerificationModal, waitForReauthCompletion, IDENTITY_MODAL_RE };
+
+if (require.main === module) {
+    uploadToYouTubeStudio().catch(err => {
+        writeAuthStatus('error', { message: String(err && err.message ? err.message : err) });
+        console.error("[-] KRİTİK HATA:", err);
+        process.exit(1);
+    });
+}

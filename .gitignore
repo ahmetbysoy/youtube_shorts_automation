@@ -56,3 +56,6 @@ prune_report.json
 
 # Etkileşimli giriş oturum yakalama çıktıları (çerez/HAR içerir, asla commit etme)
 session_capture/
+
+session_capture_login1/
+session_capture*/
