@@ -590,53 +590,53 @@ async function selectMatchingAutoStill(page, coverPath) {
     if (!coverPath || !fs.existsSync(coverPath)) {
         return { ok: false, reason: 'output/cover.jpg yok (FAZ 3.5 kapak gommemis)' };
     }
-    const cellSelector = 'ytcp-video-thumbnail-editor ytcp-still-cell, ytcp-thumbnail-editor ytcp-still-cell, ytcp-still-cell';
-    // Adaylar video islenirken gec gelir; en fazla 90 sn bekle.
+    // Sandbox gozlemi (2026-11-07): adaylar "Kucuk resim -> Videodan sec" diyalogunda
+    // (tp-yt-paper-dialog "Videonuzdan bir kare secin", 3 x ytcp-still-cell, "Bitti").
+    const dlg = page.locator('ytcp-uploads-dialog');
+    const openBtn = dlg.locator('ytcp-video-thumbnail-editor, ytcp-thumbnail-editor').locator('text=/Videodan seç|Select from video/').first();
+    await openBtn.scrollIntoViewIfNeeded().catch(() => {});
     const deadline = Date.now() + 90000;
-    const cells = page.locator(cellSelector);
+    while (Date.now() < deadline && !(await openBtn.isVisible().catch(() => false))) await page.waitForTimeout(3000);
+    await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'thumbnail_section.png') }).catch(() => {});
+    if (!(await openBtn.isVisible().catch(() => false))) return { ok: false, reason: '"Videodan seç" düğmesi görünmedi' };
+    await openBtn.click({ timeout: 10000 });
+    const picker = page.locator('tp-yt-paper-dialog:visible').filter({ hasText: /Videonuzdan bir kare seçin|Select a frame/ }).last();
+    await picker.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    const cells = picker.locator('button[role="option"]');
     let count = 0;
-    const readSrcs = () => cells.evaluateAll(els => els.map(e => { const i = e.querySelector('img'); return i ? (i.currentSrc || i.src || '') : ''; })).catch(() => []);
-    while (Date.now() < deadline) {
-        count = await cells.count().catch(() => 0);
-        if (count > 0 && (await readSrcs()).some(Boolean)) break;
-        await page.waitForTimeout(3000);
-    }
-    await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'thumbnail_section.png'), fullPage: false }).catch(() => {});
-    if (!count) return { ok: false, reason: 'Studio otomatik kare adayi gorunmedi (Shorts icin sunulmamis olabilir)' };
-
-    const srcs = await readSrcs();
+    const d2 = Date.now() + 45000;
+    while (Date.now() < d2) { count = await cells.count().catch(() => 0); if (count > 0) break; await page.waitForTimeout(2000); }
+    if (!count) { await picker.locator('ytcp-button:has-text("İptal")').first().click().catch(() => {}); return { ok: false, reason: 'kare adayı gelmedi' }; }
+    const srcs = await cells.evaluateAll(els => els.map(e => { const i = e.querySelector('img'); return i ? (i.currentSrc || i.src || '') : ''; }));
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stills_'));
     const files = [];
     for (let i = 0; i < srcs.length; i++) {
-        const src = srcs[i];
-        if (!src) { files.push(''); continue; }
         try {
+            if (!srcs[i]) { files.push(''); continue; }
             let buf;
-            if (src.startsWith('data:')) {
-                buf = Buffer.from(src.split(',')[1] || '', 'base64');
-            } else {
-                const resp = await page.request.get(src, { timeout: 15000 });
-                buf = Buffer.from(await resp.body());
-            }
-            const f = path.join(tmpDir, `still_${i}.img`);
-            fs.writeFileSync(f, buf);
-            files.push(f);
+            if (srcs[i].startsWith('data:')) buf = Buffer.from(srcs[i].split(',')[1] || '', 'base64');
+            else { const resp = await page.request.get(srcs[i], { timeout: 15000 }); buf = Buffer.from(await resp.body()); }
+            const f = path.join(tmpDir, `still_${i}.img`); fs.writeFileSync(f, buf); files.push(f);
         } catch (_) { files.push(''); }
     }
-    if (!files.some(Boolean)) return { ok: false, reason: `kare adaylari indirilemedi (${srcs.length} aday)` };
-
-    const py = require('child_process').spawnSync('python3', [path.join(BASE_DIR, 'scripts', 'pick_matching_still.py'), coverPath, ...files], { encoding: 'utf8', timeout: 60000 });
     let best = null;
-    try { best = JSON.parse((py.stdout || '').trim().split('\n').pop()); } catch (_) {}
-    if (!best || typeof best.index !== 'number') {
-        return { ok: false, reason: `benzerlik hesabi basarisiz (${(py.stderr || '').trim().slice(0, 120)})` };
+    if (files.some(Boolean)) {
+        const py = require('child_process').spawnSync('python3', [path.join(BASE_DIR, 'scripts', 'pick_matching_still.py'), coverPath, ...files], { encoding: 'utf8', timeout: 60000 });
+        try { best = JSON.parse((py.stdout || '').trim().split('\n').pop()); } catch (_) {}
+    }
+    if (!best || typeof best.index !== 'number' || !best.matched) {
+        // Eslesen aday yok -> secimi degistirme (kullanici karari: yoksa YouTube'un/1. adayin kalmasi)
+        await picker.locator('ytcp-button:has-text("İptal"), button:has-text("İptal")').first().click().catch(() => {});
+        return { ok: false, reason: `kapağa benzeyen aday yok (${count} aday${best ? `, en yakın fark=${best.distance}` : ''})`, total: count };
     }
     const cell = cells.nth(best.index);
-    await cell.scrollIntoViewIfNeeded().catch(() => {});
-    await cell.click({ force: true, timeout: 10000 });
-    await page.waitForTimeout(1200);
-    const selected = await cell.evaluate(el => el.getAttribute('aria-checked') === 'true' || el.hasAttribute('selected') || el.classList.contains('selected') || el.getAttribute('aria-pressed') === 'true').catch(() => false);
-    return { ok: true, index: best.index, distance: best.distance, matched: best.matched, selectedAttr: selected, total: srcs.length };
+    if ((await cell.getAttribute('aria-selected').catch(() => null)) !== 'true') { await cell.click({ timeout: 10000 }); await page.waitForTimeout(1000); }
+    const selected = (await cell.getAttribute('aria-selected').catch(() => null)) === 'true';
+    const done = picker.locator('ytcp-button:has-text("Bitti"), button:has-text("Bitti"), ytcp-button:has-text("Done")').first();
+    const enabled = await done.evaluate(b => !(b.hasAttribute('disabled') || b.getAttribute('aria-disabled') === 'true')).catch(() => true);
+    if (enabled) { await done.click({ timeout: 10000 }); await page.waitForTimeout(3000); }
+    else { await picker.locator('ytcp-button:has-text("İptal")').first().click().catch(() => {}); }
+    return { ok: selected, index: best.index, distance: best.distance, matched: best.matched, selectedAttr: selected, total: count, applied: enabled };
 }
 
 /** THUMBNAIL_MODE=custom: eski ozel kapak akisi (pollinations/PIL -> Studio'ya dosya yukleme). Davranis aynen korundu. */

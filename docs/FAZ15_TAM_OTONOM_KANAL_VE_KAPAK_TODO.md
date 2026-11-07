@@ -142,3 +142,13 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 - Doğrulanan: sandbox'ta gerçek final_short.mp4 ile kare 0.0–0.3 s = kapak, 0.5 s geçiş, 0.7 s video; süre 38.90 s sabit; `tests/test_cover_frame.py` 2 PASS.
 - Doğrulanmayan: YouTube'un otomatik aday kareleri arasına ilk kareyi koyup koymadığı ve Shorts için desktop Studio'da kare seçicinin görünüp görünmediği — ilk gerçek CI yüklemesinde loglardan teyit edilecek.
 - Altyapı notu: çalışma alanı 136 MB > 128 MB snapshot sınırı olduğu için yerel repo iki kez eski duruma döndü; 37 eski yedek zip silindi (65 MB).
+
+### 2026-11-07 ~11:50 UTC — Studio kare seçici gözlemi + sandbox taslak yayınlayıcı
+- Gözlem (canlı Studio, taslak düzenle diyaloğu): Shorts "Küçük resim" alanında "Dosya yükle" + **"Videodan seç"**; ikincisi
+  "Videonuzdan bir kare seçin" diyaloğunu açar: 3 otomatik aday (`ytcp-still-cell > button[role=option][aria-selected]`), "İptal"/"Bitti".
+  Serbest zaman çubuğu yok. Kullanıcı bugün 3 taslağı (c00qhT9Vcbs, t6YpWotfoug, FR2yZi8_66w) bu yolla elle yayınladı.
+- Uploader `selectMatchingAutoStill` buna göre yeniden yazıldı: Videodan seç → cover.jpg'a en yakın aday (fark<40) → Bitti; eşleşme yoksa İptal (seçim değişmez).
+- Yeni `scripts/studio_draft_publish.cjs` (sandbox): taslak → Videodan seç → aday (PICK_MODE=first|quality) → MFK → Herkese açık → Yayınla;
+  kimlik modalı çıkarsa "Sonraki" + telefon onayı bekler (DOM atlama yok); "final short" başlıklı taslaklar atlanır. `--dry` kuru mod.
+- Yayınlanan: SXZd8a12n-Y "Tesla'ya Söz Verilen Parayı Edison Vermedi!" (aday #1; oEmbed public doğruladı; kapak CDN yayılımı bekleniyor).
+- Kullanıcı kararları: önce 1 video; eski taslaklarda her zaman 1. aday. Kimlik modalı sandbox'ta 11:35'te çıktı, 11:43'ten sonra çıkmadı.

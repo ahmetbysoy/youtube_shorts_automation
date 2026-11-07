@@ -47,7 +47,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     recordHar: { path: path.join(OUT, 'session.har'), content: 'omit' },
   });
   await context.addInitScript(() => { Object.defineProperty(navigator, 'webdriver', { get: () => undefined }); });
-  const page = await context.newPage();
+  let page = await context.newPage();
+  context.on('page', (np) => { log('YENİ SAYFA/POPUP açıldı: ' + np.url().slice(0, 120)); });
   let saved = false;
 
   async function saveAll(tag) {
@@ -116,6 +117,24 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
           await inp.fill(code); await sleep(500); await page.keyboard.press('Enter');
         } else if (cmd.startsWith('click:')) {
           await page.getByText(cmd.slice(6).trim(), { exact: false }).first().click({ timeout: 10000 });
+        } else if (cmd.startsWith('fclick:')) {
+          // Tüm frame'lerde (iframe dahil) görünen metne tıkla
+          const txt = cmd.slice(7).trim(); let done = false;
+          for (const f of page.frames()) {
+            const loc = f.getByText(txt, { exact: false }).first();
+            if (await loc.count().catch(() => 0)) {
+              try { await loc.click({ timeout: 8000 }); done = true; log(`fclick OK frame=${f.url().slice(0, 80)}`); break; } catch (e) { log('fclick deneme: ' + e.message.slice(0, 80)); }
+            }
+          }
+          if (!done) log('fclick: metin hiçbir frame\'de tıklanamadı: ' + txt);
+        } else if (cmd === 'pages') {
+          const ps = context.pages();
+          for (let k = 0; k < ps.length; k++) log(`PAGE[${k}] ${ps[k] === page ? '*' : ' '} ${ps[k].url().slice(0, 140)}`);
+        } else if (cmd.startsWith('use:')) {
+          const k = parseInt(cmd.slice(4).trim(), 10); const ps = context.pages();
+          if (ps[k]) { page = ps[k]; await page.bringToFront().catch(() => {}); log(`Aktif sayfa -> [${k}] ${page.url().slice(0, 120)}`); } else log('use: sayfa yok');
+        } else if (cmd === 'frames') {
+          for (const f of page.frames()) { const t = await f.evaluate(() => document.body ? document.body.innerText.replace(/\s+/g, ' ').slice(0, 300) : '').catch(() => '?'); log(`FRAME ${f.url().slice(0, 100)} :: ${t}`); }
         } else if (cmd.startsWith('css:')) {
           await page.locator(cmd.slice(4).trim()).first().click({ timeout: 10000 });
         } else if (cmd.startsWith('role:')) {
