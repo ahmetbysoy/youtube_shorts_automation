@@ -831,8 +831,19 @@ async function uploadToYouTubeStudio() {
         await openUploadModal(page);
 
         console.log("[*] Video dosyası seçiliyor...");
-        const fileInput = page.locator('input[type="file"]').first();
-        await fileInput.waitFor({ state: 'attached', timeout: 45000 });
+        // Google kimlik doğrulama modalı artık yükleme penceresi açılırken de çıkabiliyor (#293):
+        // dosya girdisini beklerken modal görülürse önce telefon onayı akışı çalışır, sonra pencere yeniden açılır.
+        let fileInput = page.locator('input[type="file"]').first();
+        for (let fiTry = 0; fiTry < 3; fiTry++) {
+            if (await handleIdentityVerificationModal(page, context)) {
+                console.log('[KIMLIK] Doğrulama sonrası yükleme penceresi yeniden açılıyor...');
+                await page.waitForTimeout(2000);
+                await openUploadModal(page);
+            }
+            const attached = await fileInput.waitFor({ state: 'attached', timeout: 15000 }).then(() => true).catch(() => false);
+            if (attached) break;
+            if (fiTry === 2) await fileInput.waitFor({ state: 'attached', timeout: 15000 }); // son deneme: gerçek hatayı fırlat
+        }
         await fileInput.setInputFiles(VIDEO_PATH);
 
         console.log("[*] Video yükleniyor, detaylar giriliyor... (Bu işlem video boyutuna göre 1-2 dakika sürebilir)");
