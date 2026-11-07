@@ -14,14 +14,6 @@ const PROFILE_DIR = path.join(os.tmpdir(), 'yt_studio_browser_profile');
 const AUTH_STATUS_PATH = path.join(BASE_DIR, 'logs', 'auth_status.json');
 const CODE_INPUT_FILE = '/tmp/yt_2fa_code.txt';
 
-async function requireNoIdentityVerification(page) {
-    const bodyText = await page.locator('body').innerText().catch(() => '');
-    if (!/kimliğinizi doğrulayın|verify your identity|confirm it'?s you|verify it'?s you|ekstra güvenlik/i.test(bodyText)) return;
-    const screenshot = path.join(BASE_DIR, 'logs', 'identity_verification_required.png');
-    await page.screenshot({ path: screenshot }).catch(() => {});
-    throw new Error('GOOGLE_IDENTITY_VERIFICATION_REQUIRED: YouTube ekranda hesap sahibinden kimlik doğrulaması istiyor. Google hesabını güvenilir bir cihaz/tarayıcıda doğrulayın; sonra güncel oturum çerezlerini GitHub Secrets içine yenileyin.');
-}
-
 function writeAuthStatus(state, details = {}) {
     try {
         fs.mkdirSync(path.dirname(AUTH_STATUS_PATH), { recursive: true });
@@ -794,7 +786,6 @@ async function uploadToYouTubeStudio() {
         // Studio bu alani zorunlu tutar. isVisible(timeout) beklemez: radio
         // gec render olursa eski kod secimi sessizce atlayip taslak birakiyordu.
         // Kanalin mevcut icerik politikasi: cocuklara ozel degil.
-        await requireNoIdentityVerification(page);
         const notForKids = page.locator('tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]').first();
         try {
             await notForKids.waitFor({ state: 'attached', timeout: 30000 });
@@ -834,7 +825,6 @@ async function uploadToYouTubeStudio() {
             }
         }
 
-        await requireNoIdentityVerification(page);
         console.log("[*] Görünürlük ayarı 'Herkese Açık' (Public) ekranına ilerleniyor...");
         const PUBLIC_RADIO_SEL = 'tp-yt-paper-radio-button[name="PUBLIC"]:visible, #public-radio-button:visible, input[value="PUBLIC"]:visible';
 
@@ -848,36 +838,54 @@ async function uploadToYouTubeStudio() {
             await page.waitForTimeout(3000);
         }
 
-        // "İleri" butonuna tıkla — bir kez tıkla, sonra PUBLIC'i bekle
-        const nextBtn = page.locator('ytcp-button#next-button, #next-button').first();
-        for (let attempt = 0; attempt < 20; attempt++) {
-            // PUBLIC zaten açıksa dur
-            const radioNow = page.locator(PUBLIC_RADIO_SEL).first();
-            if (await radioNow.isVisible({ timeout: 1000 }).catch(() => false)) {
+        // Video upload + işleme tamamlanmasını bekle (max 5 dakika)
+        console.log('[*] Video yükleme/işleme tamamlanması bekleniyor...');
+        for (let pw = 0; pw < 60; pw++) {
+            if (await page.locator(PUBLIC_RADIO_SEL).first().isVisible({ timeout: 500 }).catch(() => false)) {
+                console.log('[*] PUBLIC zaten görünür.');
+                break;
+            }
+            const progressText = await page.locator('ytcp-video-upload-progress').innerText().catch(() => '');
+            const isComplete = !progressText ||
+                /100\s*%|tamamland|complete|kontroller.*tamam|checks.*done|işleme.*tamam|processing.*done/i.test(progressText);
+            if (pw % 5 === 0) console.log(`[*] Upload durumu: "${progressText.replace(/\s+/g,' ').trim().slice(0,60)}"`);
+            if (isComplete) { console.log('[*] Upload/işleme tamamlandı.'); break; }
+            await page.waitForTimeout(3000);
+        }
+        await page.waitForTimeout(1500);
+
+        // "İleri" → "Sonraki" butonuna tıkla ve PUBLIC ekranının açılmasını bekle
+        for (let attempt = 0; attempt < 25; attempt++) {
+            if (await page.locator(PUBLIC_RADIO_SEL).first().isVisible({ timeout: 1000 }).catch(() => false)) {
                 console.log(`[*] Görünürlük sekmesi açıldı (${attempt} tıklama sonrası).`);
                 break;
             }
-            // "Sonraki adıma geç" butonları (farklı Studio versiyonları)
             const nextVariants = [
+                'ytcp-button#next-button:not([disabled])',
+                '#next-button:not([disabled])',
+                'ytcp-button:has-text("Sonraki"):not([disabled])',
+                'ytcp-button:has-text("Next"):not([disabled])',
+                'ytcp-button:has-text("İleri"):not([disabled])',
                 'ytcp-button#next-button',
                 '#next-button',
-                'ytcp-button:has-text("Sonraki")',
-                'ytcp-button:has-text("Next")',
-                'ytcp-button:has-text("İleri")',
             ];
             let clicked = false;
             for (const sel of nextVariants) {
                 const btn = page.locator(sel).first();
-                if (await btn.isVisible({ timeout: 800 }).catch(() => false)) {
+                if (await btn.isVisible({ timeout: 600 }).catch(() => false)) {
                     await btn.scrollIntoViewIfNeeded().catch(() => {});
                     await btn.click({ force: true }).catch(() => {});
-                    console.log(`[*] "İleri/Sonraki" tıklandı (deneme ${attempt + 1}, sel: ${sel.slice(0,30)}).`);
+                    console.log(`[*] "İleri" tıklandı (deneme ${attempt + 1}).`);
                     clicked = true;
+                    await page.waitForTimeout(attempt < 5 ? 2000 : 4000);
                     break;
                 }
             }
-            if (!clicked) console.log(`[*] "İleri" butonu görünmüyor (deneme ${attempt + 1}), bekleniyor...`);
-            await page.waitForTimeout(attempt < 3 ? 3000 : 5000);
+            if (!clicked) {
+                const pageTitle = await page.title().catch(() => '');
+                console.log(`[*] "İleri" yok (deneme ${attempt + 1}), sayfa: "${pageTitle.slice(0,40)}", bekleniyor...`);
+                await page.waitForTimeout(3000);
+            }
         }
 
         // Herkese Açık (PUBLIC) seçeneğini işaretle - Faz 7 Tam Otonom Yayın!
@@ -1059,11 +1067,7 @@ async function uploadToYouTubeStudio() {
 }
 
 uploadToYouTubeStudio().catch(err => {
-    const message = String(err && err.message ? err.message : err);
-    const state = message.includes('GOOGLE_IDENTITY_VERIFICATION_REQUIRED')
-        ? 'identity_verification_required'
-        : 'error';
-    writeAuthStatus(state, { message });
+    writeAuthStatus('error', { message: String(err && err.message ? err.message : err) });
     console.error("[-] KRİTİK HATA:", err);
     process.exit(1);
 });

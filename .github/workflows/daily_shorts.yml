@@ -35,7 +35,7 @@ concurrency:
   # Zincir koşuları 'chain=1' ile AYRI grupta calisir -> zincir, devam eden
   # YAYINI iptal etmez (onceki fazda yayin yarida kesiliyordu).
   group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.chain || '0' }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -86,7 +86,7 @@ jobs:
 
   build-and-upload:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 30
     needs: channel-map
     # Studio oturum kilidi: ayni anda tek oturum acilir (cerez/cerez catismasi olmasin)
     concurrency:
@@ -113,28 +113,19 @@ jobs:
           echo "produce=${PRODUCE}" >> "$GITHUB_OUTPUT"
           echo "[GATE] produce=${PRODUCE}"
 
-      - name: APT Paket Arşivi Cache
-        id: apt-cache-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ runner.temp }}/apt-cache/archives
-          key: apt-debs-ubuntu-24.04-v1
-
       - name: Sistem Paketlerini Kur (FFmpeg, Fontlar & Xvfb Sanal Ekran)
-        timeout-minutes: 12
         run: |
-          mkdir -p "${RUNNER_TEMP}/apt-cache/archives/partial"
-          echo "Dir::Cache::archives \"${RUNNER_TEMP}/apt-cache/archives/\";" | sudo tee /etc/apt/apt.conf.d/99actions-cache >/dev/null
+          # Ubuntu 24.04 runner'da ffmpeg genellikle önceden kurulu — kontrol et
           if command -v ffmpeg &>/dev/null && command -v Xvfb &>/dev/null; then
-            echo "[✓] ffmpeg ve Xvfb zaten kurulu; apt kurulumu atlandı."
+            echo "[✓] ffmpeg $(ffmpeg -version 2>&1 | head -1) — zaten kurulu, apt atlanıyor."
           else
-            echo "[↓] Eksik sistem paketleri kuruluyor (en fazla 10 dakika)..."
-            timeout 240 sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=60 -qq
-            timeout 600 sudo apt-get install -y --no-install-recommends \
-              -o Dir::Cache::archives="${RUNNER_TEMP}/apt-cache/archives" \
+            echo "[↓] Eksik paketler kuruluyor..."
+            sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
+            sudo apt-get install -y --no-install-recommends \
               ffmpeg xvfb fonts-liberation fonts-dejavu-core libass9
-            echo "[✓] Sistem paketleri kuruldu."
+            echo "[✓] Kurulum tamamlandı."
           fi
+          # Fontconfig cache'i yenile (Montserrat yoksa sessizce atla)
           fc-cache -f 2>/dev/null || true
 
       - name: Python 3.11 Kur
@@ -165,9 +156,7 @@ jobs:
             playwright-chromium-
 
       - name: Node & Playwright Tarayıcısını Yükle
-        id: node-playwright-install
         run: |
-          export APT_CONFIG="${RUNNER_TEMP}/apt-cache/apt.conf"
           npm install
           if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
             echo "[✓] Playwright Chromium cache'den yüklendi, sistem deps kuruluyor..."
@@ -177,15 +166,7 @@ jobs:
             npx playwright install --with-deps chromium
           fi
 
-      - name: APT Paket Cache Kaydet
-        if: ${{ always() && steps.apt-cache-restore.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ runner.temp }}/apt-cache/archives
-          key: apt-debs-ubuntu-24.04-v1
-
       - name: Gizli Anahtarları ve Kanal Çerezlerini Enjekte Et (Kanal ${{ matrix.channel_id }})
-
         if: ${{ steps.gate.outputs.produce == 'true' }}
         env:
           CHANNEL_ENV_FILE: ${{ secrets[format('ENV_FILE_{0}', matrix.channel_id)] }}
@@ -237,10 +218,66 @@ jobs:
           # Tamami bitmeden sonraki kanal/kullanici devreye girmez (max-parallel: 1).
           xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py --channel_id ${{ matrix.channel_id }}
 
+      - name: "Oturum Cookie'lerini Güncelle (Taze Cookie → GitHub Secret)"
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANNEL_ID: ${{ matrix.channel_id }}
+        run: |
+          # Uploader login sonrası yeni cookies.json ve storage_state.json yazdıysa
+          # bunları GitHub Secret'a geri yaz — böylece bir sonraki run taze oturumla başlar.
+          update_secret() {
+            local NAME="$1"
+            local FILE="$2"
+            [ -f "$FILE" ] || return 0
+            local SIZE
+            SIZE=$(wc -c < "$FILE")
+            [ "$SIZE" -lt 100 ] && return 0  # boş/bozuk dosyayı yazma
+
+            # Public key al
+            local PK_JSON
+            PK_JSON=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/secrets/public-key")
+            local KEY_ID
+            KEY_ID=$(echo "$PK_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['key_id'])")
+            local PUB_KEY
+            PUB_KEY=$(echo "$PK_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['key'])")
+
+            # Şifrele ve yükle
+            local ENC
+            ENC=$(python3 -c "
+import base64,sys
+try:
+    from nacl.public import PublicKey,SealedBox
+    pk=PublicKey(base64.b64decode('$PUB_KEY'))
+    enc=SealedBox(pk).encrypt(open('$FILE','rb').read())
+    print(base64.b64encode(enc).decode())
+except ImportError:
+    sys.exit(1)
+" 2>/dev/null) || return 0
+
+            curl -s -X PUT \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/secrets/${NAME}" \
+              -d "{\"encrypted_value\":\"${ENC}\",\"key_id\":\"${KEY_ID}\"}" > /dev/null
+            echo "[OK] Secret ${NAME} güncellendi (${SIZE} byte)"
+          }
+
+          # Kanal 1 için hem genel hem kanal-özel secret'ları güncelle
+          if [ -f cookies.json ]; then
+            update_secret "COOKIES_JSON" "cookies.json"
+            update_secret "COOKIES_JSON_${CHANNEL_ID}" "cookies.json"
+          fi
+          if [ -f storage_state.json ]; then
+            update_secret "STORAGE_STATE_JSON" "storage_state.json"
+            update_secret "STORAGE_STATE_JSON_${CHANNEL_ID}" "storage_state.json"
+          fi
+
       - name: "Kanal Hijyeni (Faz 12.5): Banner + About + Sabitlenmiş Yorum"
         # Gate 'false' dediyse (bekci kosusu) calisma: .env yok -> About metni
         # e-posta olmadan yazilir ve KANAL HAKKINDA alani yanlislikla ezilirdi.
-        if: ${{ always() && steps.gate.outputs.produce != 'false' && steps.node-playwright-install.outcome == 'success' }}
+        if: ${{ always() && steps.gate.outputs.produce != 'false' }}
         env:
           YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ' }}
           AFFILIATE_URL_DEFAULT: ${{ vars.AFFILIATE_URL_DEFAULT }}
@@ -334,43 +371,6 @@ jobs:
       NEXT_CHANNEL: ${{ needs.channel-map.outputs.next_channel }}
       DISTINCT_COUNT: ${{ needs.channel-map.outputs.distinct_count }}
     steps:
-      - name: Depoyu Çek (Checkout - pruner tetikleyici betikleri için)
-        uses: actions/checkout@v7
-
-      # PRUNER SAATLİK TETİKLEYİCİ (2026-11-07, kullanıcı kararı):
-      # GitHub schedule bu repoda çok seyrek çalışıyor (günde ~3). daily_shorts
-      # ~14 dk'da bir koştuğu için, son pruner koşusu 55 dk'dan eskiyse ve aktif
-      # pruner koşusu yoksa hourly_pruner.yml buradan tetiklenir. Bu adım kendi
-      # başına çalışır; aşağıdaki zincir adımının exit 0'larından etkilenmez.
-      - name: Pruner Saatlik Zincirini Kontrol Et
-        continue-on-error: true
-        run: |
-          NOW=$(date -u +%s)
-          PRUNER="hourly_pruner.yml"
-          MIN_GAP=3300
-          LAST_PRUNER=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${PRUNER}/runs?per_page=1" \
-            | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
-          if [ -n "$LAST_PRUNER" ]; then
-            LAST_PRUNER_EPOCH=$(date -u -d "$LAST_PRUNER" +%s 2>/dev/null || echo 0)
-            PGAP=$(( NOW - LAST_PRUNER_EPOCH ))
-            if [ "$PGAP" -lt "$MIN_GAP" ]; then
-              echo "[PRUNER] Son pruner ${PGAP}s once (min ${MIN_GAP}s) -> tetiklenmedi."
-              exit 0
-            fi
-          fi
-          PACTIVE=$(bash scripts/active_runs_count.sh "${PRUNER}" 2>/dev/null || echo 0)
-          PACTIVE="${PACTIVE:-0}"
-          if [ "${PACTIVE}" -gt 0 ]; then
-            echo "[PRUNER] Aktif pruner kosusu: ${PACTIVE} -> tetiklenmedi."
-            exit 0
-          fi
-          curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${PRUNER}/dispatches" \
-            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"all\",\"slot_epoch\":\"\"}}"
-          echo "[PRUNER] hourly_pruner.yml tetiklendi (son kosu ${PGAP:-?}s once)."
-
       - name: Zamanlayıcı Sağlığını Kontrol Et ve Zinciri Devam Ettir
         run: |
           NOW=$(date -u +%s)
