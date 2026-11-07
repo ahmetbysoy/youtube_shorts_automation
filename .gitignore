@@ -53,3 +53,6 @@ output/*
 analytics_feedback.json
 prune_state.json
 prune_report.json
+
+# Etkileşimli giriş oturum yakalama çıktıları (çerez/HAR içerir, asla commit etme)
+session_capture/
