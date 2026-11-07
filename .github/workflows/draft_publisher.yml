@@ -55,11 +55,14 @@ jobs:
           playwright: 'true'
           python: 'false'
 
+      # Oturum önceliği: *_DRAFT (telefon onayından geçmiş sandbox oturumu; 2026-11-07 deneyi, ana
+      # secret'lara dokunulmaz) -> *_1 -> genel. Çerez yenilemesi de yalnızca *_DRAFT'a yazılır.
       - name: Oturum Bilgilerini Enjekte Et
         env:
           CHANNEL_ENV_FILE: ${{ secrets.ENV_FILE_1 }}
-          CHANNEL_COOKIES_JSON: ${{ secrets.COOKIES_JSON_1 }}
-          CHANNEL_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON_1 }}
+          CHANNEL_COOKIES_JSON: ${{ secrets.COOKIES_JSON_DRAFT || secrets.COOKIES_JSON_1 }}
+          CHANNEL_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON_DRAFT || secrets.STORAGE_STATE_JSON_1 }}
+          DRAFT_SESSION: ${{ secrets.STORAGE_STATE_JSON_DRAFT != '' && '1' || '0' }}
           FALLBACK_ENV_FILE: ${{ secrets.ENV_FILE }}
           FALLBACK_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
           FALLBACK_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
@@ -81,7 +84,7 @@ jobs:
               n = len(json.load(open('cookies.json')))
           elif os.path.exists('storage_state.json'):
               n = len(json.load(open('storage_state.json')).get('cookies', []))
-          print(f"[OK] Oturum yüklendi ({n} çerez)")
+          print(f"[OK] Oturum yüklendi ({n} çerez; kaynak: {'STORAGE_STATE_JSON_DRAFT (sandbox oturumu)' if os.environ.get('DRAFT_SESSION') == '1' else 'ana secret'})")
           PY
 
       - name: Taslakları Yayınla (Videodan seç → MFK → Herkese açık)
@@ -129,10 +132,9 @@ jobs:
               -d "{\"encrypted_value\":\"${ENC}\",\"key_id\":\"${KEY_ID}\"}" > /dev/null
             echo "[OK] Secret ${NAME} güncellendi"
           }
-          update_secret "COOKIES_JSON" "cookies.json"
-          update_secret "COOKIES_JSON_1" "cookies.json"
-          update_secret "STORAGE_STATE_JSON" "storage_state.json"
-          update_secret "STORAGE_STATE_JSON_1" "storage_state.json"
+          # Yalnızca publisher'a ait oturum yenilenir; uploader'ın secret'larına yazılmaz.
+          update_secret "COOKIES_JSON_DRAFT" "cookies.json"
+          update_secret "STORAGE_STATE_JSON_DRAFT" "storage_state.json"
 
       - name: "Tek Satır Özet"
         if: always()
