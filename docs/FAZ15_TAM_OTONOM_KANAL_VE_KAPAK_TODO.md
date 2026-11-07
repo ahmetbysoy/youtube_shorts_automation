@@ -131,3 +131,14 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 - `youtube_studio_uploader.js` 594a6fb sürümüne geri alındı (kimlik modalı → telefon onayı bekleme akışı ve `tests/identity_modal.test.cjs` silindi). Kullanıcı isteği: "eskisi gibi olsun".
 - Sonuç (dürüst): Google runner'dan yüklemede "Kimliğinizi doğrulayın" isterse koşu eskisi gibi İleri deneyip zaman aşımıyla düşer, video taslak kalır. #291/#295'te akış çalışmış ama telefon onayı gelmemişti.
 - Korunanlar: YAML onarımı, pruner piggyback, Cookie→Secret adımının REPO_PAT ile çalışması, dosya-seçimi öncesi hiçbir ek bekleme yok.
+
+### 2026-11-07 ~10:00 UTC — KALICI KAPAK ÇÖZÜMÜ: kapak videonun içine gömülüyor (kullanıcı kararı)
+- Yeni FAZ 3.5 `scripts/embed_cover_frame.py` (main.py'de FAZ 3 sonrası, hata olsa da yayın durmaz):
+  ücretsiz pollinations görseli (thumbnail_prompt) → yoksa videonun en kontrastlı karesi → `generate_fallback_thumbnail.py --base-image` ile başlık+rozet → `output/cover.jpg`;
+  FFmpeg overlay ile videonun ilk 0.6 sn'sine bindirilir (ses/altyazı/süre değişmez, 0.2 sn alpha-fade).
+- Uploader `THUMBNAIL_MODE=frame` (varsayılan): Studio'ya AYRI kapak dosyası yüklenmez (günlük özel küçük resim kotası bitti);
+  Studio otomatik kare adayı sunarsa `scripts/pick_matching_still.py` ile cover.jpg'a en yakını tıklanır (en iyi çaba; `logs/thumbnail_section.png`).
+  `THUMBNAIL_MODE=custom`: eski yol `legacyCustomThumbnailFlow` içinde aynen duruyor.
+- Doğrulanan: sandbox'ta gerçek final_short.mp4 ile kare 0.0–0.3 s = kapak, 0.5 s geçiş, 0.7 s video; süre 38.90 s sabit; `tests/test_cover_frame.py` 2 PASS.
+- Doğrulanmayan: YouTube'un otomatik aday kareleri arasına ilk kareyi koyup koymadığı ve Shorts için desktop Studio'da kare seçicinin görünüp görünmediği — ilk gerçek CI yüklemesinde loglardan teyit edilecek.
+- Altyapı notu: çalışma alanı 136 MB > 128 MB snapshot sınırı olduğu için yerel repo iki kez eski duruma döndü; 37 eski yedek zip silindi (65 MB).

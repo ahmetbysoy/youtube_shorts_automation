@@ -580,6 +580,123 @@ async function uploadCustomThumbnail(page, thumbPath) {
     return { ok: true, customApplied: true };
 }
 
+/**
+ * FAZ 3.5 (kapak karesi gomulu video): Studio'nun otomatik urettigi kare adaylari
+ * arasindan output/cover.jpg'a en cok benzeyeni secer. Ayri kapak dosyasi YUKLEMEZ
+ * (gunluk ozel kucuk resim kotasina girmez). Adaylar cikmazsa YouTube'un secimine birakir.
+ * Donus: { ok, reason, index, distance }
+ */
+async function selectMatchingAutoStill(page, coverPath) {
+    if (!coverPath || !fs.existsSync(coverPath)) {
+        return { ok: false, reason: 'output/cover.jpg yok (FAZ 3.5 kapak gommemis)' };
+    }
+    const cellSelector = 'ytcp-video-thumbnail-editor ytcp-still-cell, ytcp-thumbnail-editor ytcp-still-cell, ytcp-still-cell';
+    // Adaylar video islenirken gec gelir; en fazla 90 sn bekle.
+    const deadline = Date.now() + 90000;
+    const cells = page.locator(cellSelector);
+    let count = 0;
+    const readSrcs = () => cells.evaluateAll(els => els.map(e => { const i = e.querySelector('img'); return i ? (i.currentSrc || i.src || '') : ''; })).catch(() => []);
+    while (Date.now() < deadline) {
+        count = await cells.count().catch(() => 0);
+        if (count > 0 && (await readSrcs()).some(Boolean)) break;
+        await page.waitForTimeout(3000);
+    }
+    await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'thumbnail_section.png'), fullPage: false }).catch(() => {});
+    if (!count) return { ok: false, reason: 'Studio otomatik kare adayi gorunmedi (Shorts icin sunulmamis olabilir)' };
+
+    const srcs = await readSrcs();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stills_'));
+    const files = [];
+    for (let i = 0; i < srcs.length; i++) {
+        const src = srcs[i];
+        if (!src) { files.push(''); continue; }
+        try {
+            let buf;
+            if (src.startsWith('data:')) {
+                buf = Buffer.from(src.split(',')[1] || '', 'base64');
+            } else {
+                const resp = await page.request.get(src, { timeout: 15000 });
+                buf = Buffer.from(await resp.body());
+            }
+            const f = path.join(tmpDir, `still_${i}.img`);
+            fs.writeFileSync(f, buf);
+            files.push(f);
+        } catch (_) { files.push(''); }
+    }
+    if (!files.some(Boolean)) return { ok: false, reason: `kare adaylari indirilemedi (${srcs.length} aday)` };
+
+    const py = require('child_process').spawnSync('python3', [path.join(BASE_DIR, 'scripts', 'pick_matching_still.py'), coverPath, ...files], { encoding: 'utf8', timeout: 60000 });
+    let best = null;
+    try { best = JSON.parse((py.stdout || '').trim().split('\n').pop()); } catch (_) {}
+    if (!best || typeof best.index !== 'number') {
+        return { ok: false, reason: `benzerlik hesabi basarisiz (${(py.stderr || '').trim().slice(0, 120)})` };
+    }
+    const cell = cells.nth(best.index);
+    await cell.scrollIntoViewIfNeeded().catch(() => {});
+    await cell.click({ force: true, timeout: 10000 });
+    await page.waitForTimeout(1200);
+    const selected = await cell.evaluate(el => el.getAttribute('aria-checked') === 'true' || el.hasAttribute('selected') || el.classList.contains('selected') || el.getAttribute('aria-pressed') === 'true').catch(() => false);
+    return { ok: true, index: best.index, distance: best.distance, matched: best.matched, selectedAttr: selected, total: srcs.length };
+}
+
+/** THUMBNAIL_MODE=custom: eski ozel kapak akisi (pollinations/PIL -> Studio'ya dosya yukleme). Davranis aynen korundu. */
+async function legacyCustomThumbnailFlow(page, { title, thumbnailPrompt, scriptData }) {
+        // --- FAZ 11: AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor ---
+        console.log('[*] SİLAHLANDIRILMIŞ AI KAPAK (THUMBNAIL) ÜRETİLİYOR VE YÜKLENİYOR...');
+    console.log('[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...');
+        let thumbPath = null;
+        // FAZ 12.6 / Islah 11: canli test modu -> AI kapak atlanir, yerel yedek kapak dogrudan kullanilir.
+        const forceLocalThumbnail = String(process.env.FORCE_LOCAL_THUMBNAIL || '0') === '1';
+        const skipThumbnail = false;
+        const useFreeVision = !forceLocalThumbnail && !skipThumbnail && process.env.GEMINI_FREE_VISION_ENABLED === '1';
+
+        if (skipThumbnail) {
+            console.log('[KAPAK] SKIP_THUMBNAIL=1 -> thumbnail tamamen atlanıyor, video kapaksız yayınlanacak.');
+        } else if (forceLocalThumbnail) {
+            console.log('[!] FORCE_LOCAL_THUMBNAIL=1 -> AI kapak atlandi, yerel yedek kapak kullanilacak; Gemini da devre disi.');
+        } else if (useFreeVision) {
+            // Mevcut kareyi seçer; Google ile yeni görüntü üretmez. Uygun kare
+            // yoksa aynı fonksiyon yerel temsili kart döndürür.
+            console.log('[KAPAK] Ücretsiz Gemini kare incelemesi; doğrulanmamış seçim kapalıysa temsili yedek kullanılır. Görsel üretim API çağrılmaz.');
+            thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''));
+        } else {
+            try {
+                thumbPath = await generateAiThumbnail(thumbnailPrompt);
+            } catch (thumbErr) {
+                console.log(`[!] Kapak üretimi başarısız: ${thumbErr.message}`);
+            }
+        }
+        if (!thumbPath && !skipThumbnail) {
+            // FAZ 12.6: AI kapak servisi rate limit verdi (HTTP 402) -> YEREL yedek kapak
+            console.log('[!] AI kapak servisi basarisiz -> yerel yedek kapak deniyor...');
+            thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''), true);
+            if (!thumbPath) {
+                console.log('[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak.');
+            }
+        }
+        if (thumbPath && !skipThumbnail) {
+            try {
+                const thumbResult = await uploadCustomThumbnail(page, thumbPath);
+                if (thumbResult.ok) {
+                    console.log('[KAPAK] Dosya gönderildi ve Studio önizlemesi değişti.');
+                } else if (thumbResult.dailyThumbnailLimit) {
+                    console.log('[KAPAK] Günlük thumbnail limiti dolmuş — video thumbnail\'siz devam ediyor.');
+                    // Dialog kapandı, devam et — throw etme
+                } else {
+                    console.log(`[!] Kapak yüklenemedi (${thumbResult.reason}) — devam ediliyor.`);
+                }
+            } catch (thumbUploadErr) {
+                // THUMBNAIL_QUOTA_DIALOG_BLOCKED dahil tüm thumbnail hatalarını yut
+                console.log(`[!] Kapak yükleme hatası yutuldu (${thumbUploadErr.message.slice(0,80)}) — devam ediliyor.`);
+            } finally {
+                if (fs.existsSync(thumbPath)) {
+                    try { fs.unlinkSync(thumbPath); } catch (_) {}
+                }
+            }
+        }
+
+}
+
 async function uploadToYouTubeStudio() {
     const previousId = path.join(BASE_DIR, 'logs', 'channel_video_id.txt');
     if (fs.existsSync(previousId)) fs.unlinkSync(previousId);
@@ -703,58 +820,29 @@ async function uploadToYouTubeStudio() {
         await fillContentEditable(page, 'ytcp-social-suggestions-textbox#description-textarea', description);
         await page.waitForTimeout(800);
 
-        // --- FAZ 11: AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor ---
-        console.log('[*] SİLAHLANDIRILMIŞ AI KAPAK (THUMBNAIL) ÜRETİLİYOR VE YÜKLENİYOR...');
-    console.log('[*] AI ile dikkat çekici kapak (thumbnail) oluşturuluyor ve yükleniyor...');
-        let thumbPath = null;
-        // FAZ 12.6 / Islah 11: canli test modu -> AI kapak atlanir, yerel yedek kapak dogrudan kullanilir.
-        const forceLocalThumbnail = String(process.env.FORCE_LOCAL_THUMBNAIL || '0') === '1';
+        // --- KAPAK ---
+        // Varsayilan (THUMBNAIL_MODE=frame): kapak FAZ 3.5'te videonun ilk 0.6 sn'sine gomuldu;
+        // Studio'ya AYRI kapak dosyasi yuklenmez (gunluk ozel kucuk resim kotasi yok).
+        // Studio otomatik kare adaylari sunarsa output/cover.jpg'a en yakin olani secilir.
+        // THUMBNAIL_MODE=custom: eski yol (pollinations/PIL kapak -> Studio'ya dosya yukleme).
+        const thumbnailMode = String(process.env.THUMBNAIL_MODE || 'frame').toLowerCase();
         const skipThumbnail = String(process.env.SKIP_THUMBNAIL || '0') === '1';
-        const useFreeVision = !forceLocalThumbnail && !skipThumbnail && process.env.GEMINI_FREE_VISION_ENABLED === '1';
-
         if (skipThumbnail) {
-            console.log('[KAPAK] SKIP_THUMBNAIL=1 -> thumbnail tamamen atlanıyor, video kapaksız yayınlanacak.');
-        } else if (forceLocalThumbnail) {
-            console.log('[!] FORCE_LOCAL_THUMBNAIL=1 -> AI kapak atlandi, yerel yedek kapak kullanilacak; Gemini da devre disi.');
-        } else if (useFreeVision) {
-            // Mevcut kareyi seçer; Google ile yeni görüntü üretmez. Uygun kare
-            // yoksa aynı fonksiyon yerel temsili kart döndürür.
-            console.log('[KAPAK] Ücretsiz Gemini kare incelemesi; doğrulanmamış seçim kapalıysa temsili yedek kullanılır. Görsel üretim API çağrılmaz.');
-            thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''));
-        } else {
+            console.log('[KAPAK] SKIP_THUMBNAIL=1 -> kapak adimi tamamen atlandi.');
+        } else if (thumbnailMode !== 'custom') {
+            console.log('[KAPAK] Mod=frame: kapak video icine gomulu; Studio kare adaylari kontrol ediliyor (ayri dosya yuklenmez).');
             try {
-                thumbPath = await generateAiThumbnail(thumbnailPrompt);
-            } catch (thumbErr) {
-                console.log(`[!] Kapak üretimi başarısız: ${thumbErr.message}`);
-            }
-        }
-        if (!thumbPath && !skipThumbnail) {
-            // FAZ 12.6: AI kapak servisi rate limit verdi (HTTP 402) -> YEREL yedek kapak
-            console.log('[!] AI kapak servisi basarisiz -> yerel yedek kapak deniyor...');
-            thumbPath = generateLocalFallbackThumbnail(title, readScenarioField(scriptData, 'topic', ''), true);
-            if (!thumbPath) {
-                console.log('[!] Kapak resmi yüklenemedi, YouTube otomatik seçim yapacak.');
-            }
-        }
-        if (thumbPath && !skipThumbnail) {
-            try {
-                const thumbResult = await uploadCustomThumbnail(page, thumbPath);
-                if (thumbResult.ok) {
-                    console.log('[KAPAK] Dosya gönderildi ve Studio önizlemesi değişti.');
-                } else if (thumbResult.dailyThumbnailLimit) {
-                    console.log('[KAPAK] Günlük thumbnail limiti dolmuş — video thumbnail\'siz devam ediyor.');
-                    // Dialog kapandı, devam et — throw etme
+                const stillResult = await selectMatchingAutoStill(page, path.join(BASE_DIR, 'output', 'cover.jpg'));
+                if (stillResult.ok) {
+                    console.log(`[KAPAK] Otomatik kare adayi secildi: #${stillResult.index + 1}/${stillResult.total} (fark=${stillResult.distance}, eslesme=${stillResult.matched ? 'evet' : 'zayif'}, secili-nitelik=${stillResult.selectedAttr}).`);
                 } else {
-                    console.log(`[!] Kapak yüklenemedi (${thumbResult.reason}) — devam ediliyor.`);
+                    console.log(`[KAPAK] Kare adayi secilemedi: ${stillResult.reason}. YouTube kendi karesini kullanacak (ilk kare = gomulu kapak).`);
                 }
-            } catch (thumbUploadErr) {
-                // THUMBNAIL_QUOTA_DIALOG_BLOCKED dahil tüm thumbnail hatalarını yut
-                console.log(`[!] Kapak yükleme hatası yutuldu (${thumbUploadErr.message.slice(0,80)}) — devam ediliyor.`);
-            } finally {
-                if (fs.existsSync(thumbPath)) {
-                    try { fs.unlinkSync(thumbPath); } catch (_) {}
-                }
+            } catch (stillErr) {
+                console.log(`[KAPAK] Kare secimi hatasi yutuldu (${String(stillErr.message || stillErr).slice(0, 100)}); devam ediliyor.`);
             }
+        } else {
+            await legacyCustomThumbnailFlow(page, { title, thumbnailPrompt, scriptData });
         }
 
         // Thumbnail limiti veya diğer dialog'ları kapat, sayfayı normalleştir

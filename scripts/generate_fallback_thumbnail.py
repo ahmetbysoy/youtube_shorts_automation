@@ -189,6 +189,7 @@ def main() -> int:
     parser.add_argument("--video", default="", help="output/final_short.mp4 (konu karesi icin)")
     parser.add_argument("--topic", default="", help="kisa konu rozeti (Bilim/Tarih/Uzay)")
     parser.add_argument("--strict-subject", action="store_true", help="konu eslesmesi dogrulanmazsa rastgele kare yerine metin karti")
+    parser.add_argument("--base-image", default="", help="hazir (orn. ucretsiz AI) gorsel; verilirse video karesi yerine bu kullanilir")
     args = parser.parse_args()
 
     out = Path(args.out)
@@ -200,7 +201,16 @@ def main() -> int:
 
     # --- 1) Konu karesi: videodan en kontrastli kare -----------------------------
     base_img: Image.Image | None = None
-    video_path = Path(args.video) if args.video else None
+    base_image_path = Path(args.base_image) if args.base_image else None
+    if base_image_path and base_image_path.exists() and base_image_path.stat().st_size > 1000:
+        try:
+            with Image.open(base_image_path) as raw:
+                base_img = cover_crop(raw.convert("RGB"), W, H)
+            print(f"[*] Hazir gorsel kapak tabani olarak kullanildi: {base_image_path.name}")
+        except Exception as exc:  # bozuk indirme -> video karesine dus
+            print(f"[!] Hazir gorsel acilamadi ({exc}); video karesine dusuluyor.")
+            base_img = None
+    video_path = Path(args.video) if (args.video and base_img is None) else None
     # Esik dusuk tutulur: kucuk/duz renkli test videolari da gecerli birer mp4'tur
     # (gecerlilik ffmpeg kare alma adiminda dogrulanir).
     if video_path and video_path.exists() and video_path.stat().st_size > 1000:
@@ -310,7 +320,7 @@ def main() -> int:
 
     img.save(out, "JPEG", quality=92)
     size_kb = round(out.stat().st_size / 1024)
-    mode = "konu kareli" if base_img is not None else "metin karti"
+    mode = "hazir gorselli" if (base_img is not None and base_image_path and video_path is None) else ("konu kareli" if base_img is not None else "metin karti")
     print(f"[*] Yerel yedek kapak uretildi ({mode}): {out} ({size_kb} KB, {W}x{H})")
     return 0
 

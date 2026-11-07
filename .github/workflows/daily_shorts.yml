@@ -209,6 +209,10 @@ jobs:
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
           FORCE_LOCAL_THUMBNAIL: ${{ inputs.force_local_thumbnail || '0' }}
           SKIP_THUMBNAIL: ${{ vars.SKIP_THUMBNAIL || '0' }}
+          # frame (varsayilan): kapak FAZ 3.5'te videonun ilk 0.6 sn'sine gomulur, Studio'ya ayri
+          # kapak dosyasi YUKLENMEZ (gunluk ozel kucuk resim kotasi yok). custom = eski yol.
+          THUMBNAIL_MODE: ${{ vars.THUMBNAIL_MODE || 'frame' }}
+          COVER_SECONDS: ${{ vars.COVER_SECONDS || '0.6' }}
           # Yalnız serbest kota için ayrılmış ve faturalandırması KAPALI proje.
           # Projeye ödeme bağlanırsa vars.GEMINI_FREE_VISION_ENABLED değerini hemen 0 yapın.
           GEMINI_FREE_VISION_ENABLED: ${{ vars.GEMINI_FREE_VISION_ENABLED || '0' }}
