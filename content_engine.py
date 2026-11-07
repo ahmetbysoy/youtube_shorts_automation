@@ -38,6 +38,7 @@ import random
 import re
 import subprocess
 import sys
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -1497,6 +1498,52 @@ def save_recent_title(title: str) -> None:
     )
 
 
+# --- FAZ 13.4: baslik benzerlik kontrolu (tekrar korumasi uretili) -----------
+# Turkce title'larda ekler, baglaclar ve genel kelimeler konu eslesmesini
+# sisirmemeli. Noktalama ve turkce karakterler normalize edilir.
+_TITLE_STOPWORDS = frozenset(
+    "bir daha kadar sonra sadece tarihin gercek gercegi shorts neden nasil oldu "
+    "hangi dunyanin uzayda antik yillik milyar olan var yok degil ile icin mi m u"
+    .split()
+)
+
+
+def title_tokens(text: str) -> set[str]:
+    """Baslik metninden >=4 harfli, stopword olmayan kelime tokenleri cikarir.
+
+    audit_repeat_candidates.py'deki tokens() ile ayni mantik; content_engine
+    icinde yerel olarak tanimlandi ki modul bagimliligi olmasin.
+    """
+    s = str(text or "")
+    s = s.replace("I", "ı").replace("İ", "i").lower().replace("ı", "i")
+    s = "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
+    return {w for w in re.findall(r"[a-z]+", s) if len(w) >= 4 and w not in _TITLE_STOPWORDS}
+
+
+def is_similar_to_recent(title: str, recent_titles: list[str], threshold: float = 0.30) -> bool:
+    """Yeni baslik, onceki basliklarla %esik'den fazla benzerse True dondurur.
+
+    Jaccard token overlap kullanilir: |kesisim| / |birlestirme|.
+    Ornek: "Gobeklitepe! #Shorts" ve "Piramitlerden 7 Bin Yil Daha Eski Tapinak:
+    Gobeklitepe! #Shorts" ortak token = {gobeklitepe}, birlestirme ~ 12, jaccard ~ 0.08
+    (farkli baslik, gecmez). Ayni konu, farkli kelimeleme -> dusuk skor, gecmez.
+    Ayni baslik tamamiyle ayni -> jaccard = 1.0, engellenir.
+    """
+    new_tokens = title_tokens(title)
+    if not new_tokens:
+        return False
+    for old in recent_titles:
+        old_tokens = title_tokens(old)
+        if not old_tokens:
+            continue
+        common = new_tokens & old_tokens
+        union = new_tokens | old_tokens
+        jaccard = len(common) / len(union) if union else 0.0
+        if jaccard >= threshold:
+            return True
+    return False
+
+
 def classify_content_niche(topic: str, title: str, script_text: str = "") -> str:
     """Senaryonun alt nişini ('Uzay', 'Tarih', 'Bilim') anahtar kelimelerle tespit eder."""
     combined = f"{topic} {title} {script_text}".lower()
@@ -2176,15 +2223,19 @@ def pick_fallback_scenario(
         now_utc = datetime.now(timezone.utc)
         slot_15m = int(now_utc.timestamp()) // 900
 
-        # History filtresi: daha önce yayınlananları havuzdan çıkar
-        # En az 10 senaryo kalırsa filtreyi uygula; yoksa tüm havuzu kullan
-        filtered_pool = [item for item in pool if item["title"] not in recent_titles]
+        # History filtresi: daha once yayinlananlari (tam esitlik veya %30 benzerlikle) havuzdan cikar
+        # En az 10 senaryo kalirsa filtreyi uygula; yoksa tum havuzu kullan
+        filtered_pool = [
+            item for item in pool
+            if item["title"] not in recent_titles
+            and not is_similar_to_recent(item["title"], recent_titles)
+        ]
         if len(filtered_pool) >= 10:
             pool = filtered_pool
-            print(f"[INFO] History filtresi: {len(FALLBACK_SCENARIOS) - len(pool)} senaryo atlandı, "
-                  f"{len(pool)} senaryo kaldı.")
+            print(f"[INFO] History filtresi: {len(FALLBACK_SCENARIOS) - len(pool)} senaryo atlandi, "
+                  f"{len(pool)} senaryo kaldi.")
         else:
-            print(f"[INFO] History filtresi: tüm senaryolar kullanılmış, havuz sıfırlanıyor.")
+            print(f"[INFO] History filtresi: tum senaryolar kullanilmis, havuz sifirlaniyor.")
 
         # Analitik boost aktifse 5 zaman diliminin 4'ünde (%80) kazanan niş havuzuna öncelik ver
         if boost_active and winning_topic and (slot_15m % 5 != 4):
