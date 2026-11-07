@@ -26,8 +26,41 @@ const reauthHtml = (mode) => `<html><body>
   ${mode === 'ok' ? '<script>setTimeout(function(){ window.close(); },3000)</script>' : ''}
   </body></html>`;
 
+// Şifre + "Doğrulanamadı → Tekrar dene" senaryosu için sahte Google sayfaları
+const pwdHtml = `<html><head><meta charset="utf-8"></head><body><h1>Hoş geldiniz</h1>
+  <input type="password" id="p"><button id="passwordNext" onclick="location.href='/denied'">Sonraki</button></body></html>`;
+const deniedHtml = `<html><head><meta charset="utf-8"></head><body><h1>Doğrulanamadı</h1>
+  <p>Google'ın telefonunuza gönderdiği istemde Hayır seçeneğine dokunduğunuz için şu anda devam edemezsiniz.</p>
+  <button onclick="location.href='/phone'">Tekrar dene</button></body></html>`;
+const phoneOkHtml = `<html><head><meta charset="utf-8"></head><body>
+  <p>Bildirimdeki Evet'e ve ardından telefonunuzdaki 17 sayısına dokunarak siz olduğunuzu doğrulayın.</p>
+  <script>setTimeout(function(){ window.close(); },3000)</script></body></html>`;
+
 (async () => {
   const browser = await chromium.launch({ headless: true });
+  // --- Senaryo: şifre 1 kez → Doğrulanamadı → Tekrar dene (1 kez) → telefon onayı → ok
+  {
+    let pwdVisits = 0, pwdSubmits = 0;
+    const context = await browser.newContext();
+    await context.route('**/*', (route) => {
+      const u = new URL(route.request().url());
+      if (u.hostname === 'accounts.google.com') {
+        if (u.pathname === '/reauth') { pwdVisits++; return route.fulfill({ contentType: 'text/html; charset=utf-8', body: pwdHtml }); }
+        if (u.pathname === '/denied') { pwdSubmits++; return route.fulfill({ contentType: 'text/html; charset=utf-8', body: deniedHtml }); }
+        if (u.pathname === '/phone') return route.fulfill({ contentType: 'text/html; charset=utf-8', body: phoneOkHtml });
+      }
+      return route.fulfill({ contentType: 'text/html; charset=utf-8', body: studioHtml('pwd') });
+    });
+    const page = await context.newPage();
+    await page.goto('https://studio.youtube.com/fake');
+    const t0 = Date.now();
+    const ok = await up.handleIdentityVerificationModal(page, context);
+    const dt = Math.round((Date.now() - t0) / 1000);
+    assert.strictEqual(ok, true, 'pwd senaryosu başarıyla bitmeli');
+    assert.strictEqual(pwdSubmits, 1, 'şifre tam 1 kez gönderilmeli, gönderilen=' + pwdSubmits);
+    console.log(`PASS pwd→denied→retry→phone (${dt}s, şifre gönderimi=${pwdSubmits})`);
+    await context.close();
+  }
   for (const mode of ['ok', 'wait']) {
     const context = await browser.newContext();
     await context.route('**/*', (route) => {

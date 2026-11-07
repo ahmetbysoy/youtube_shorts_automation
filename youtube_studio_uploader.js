@@ -111,6 +111,8 @@ async function waitForReauthCompletion(reauthPage, context, startedAt, mainPage 
     const password = process.env.YT_PASSWORD || '';
     const isPopup = Boolean(mainPage) && mainPage !== reauthPage;
     let lastNote = '';
+    let passwordSubmittedAt = 0;   // şifre yalnızca 1 kez girilir (2 kez girilince 2 ayrı telefon istemi/sayı doğuyordu)
+    let retryClicked = false;      // "Doğrulanamadı → Tekrar dene" yalnızca 1 kez
     while ((Date.now() - startedAt) / 1000 < IDENTITY_WAIT_SEC) {
         if (reauthPage.isClosed()) return { ok: true, how: 'popup_closed' };
         let url = '';
@@ -123,13 +125,35 @@ async function waitForReauthCompletion(reauthPage, context, startedAt, mainPage 
         }
         const body = ((await reauthPage.locator('body').innerText().catch(() => '')) || '').replace(/\s+/g, ' ');
 
-        // Şifre ekranı → şifreyi gir (sır loglanmaz)
+        // "Doğrulanamadı" (telefonda Hayır / zaman aşımı) → bir kez "Tekrar dene"
+        if (/Doğrulanamadı|Couldn'?t verify|Hayır seçeneğine dokunduğunuz/i.test(body)) {
+            if (!retryClicked) {
+                retryClicked = true;
+                console.log('[KIMLIK] Google "Doğrulanamadı" dedi (telefonda Hayır?) → bir kez "Tekrar dene" tıklanıyor.');
+                writeAuthStatus('identity_verification_retry', { url });
+                await reauthPage.locator('button:has-text("Tekrar dene"), button:has-text("Try again")').first().click({ timeout: 5000 }).catch(() => {});
+                passwordSubmittedAt = 0;
+                await new Promise(r => setTimeout(r, 4000));
+                continue;
+            }
+            return { ok: false, how: 'denied_on_phone' };
+        }
+        // Şifre ekranı → şifreyi yalnızca BİR kez gir (sır loglanmaz); 25 sn içinde tekrar görünürse bekle
         const pwd = reauthPage.locator('input[type="password"]:visible').first();
         if (password && await pwd.isVisible({ timeout: 300 }).catch(() => false)) {
+            if (passwordSubmittedAt && Date.now() - passwordSubmittedAt < 25000) {
+                await new Promise(r => setTimeout(r, 3000));
+                continue;
+            }
+            if (passwordSubmittedAt) {
+                console.log('[KIMLIK] Şifre alanı 25 sn sonra hâlâ görünüyor → şifre reddedilmiş olabilir; akış durduruluyor.');
+                return { ok: false, how: 'password_rejected' };
+            }
             await pwd.fill(password).catch(() => {});
-            await reauthPage.keyboard.press('Enter').catch(() => {});
-            console.log('[KIMLIK] Şifre tekrar girildi, Google yanıtı bekleniyor...');
-            await new Promise(r => setTimeout(r, 4000));
+            await reauthPage.locator('#passwordNext, button:has-text("Sonraki"), button:has-text("İleri"), button:has-text("Next")').first().click({ timeout: 3000 }).catch(async () => { await reauthPage.keyboard.press('Enter').catch(() => {}); });
+            passwordSubmittedAt = Date.now();
+            console.log('[KIMLIK] Şifre girildi (1 kez), Google yanıtı bekleniyor...');
+            await new Promise(r => setTimeout(r, 5000));
             continue;
         }
         // Hesap seçimi ekranı
