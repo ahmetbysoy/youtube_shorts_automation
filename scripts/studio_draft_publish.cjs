@@ -314,7 +314,7 @@ async function publishOne(page, context, dry, tag) {
   const [mode, nArg] = process.argv.slice(2);
   const dry = process.argv.includes('--dry');
   const n = Math.max(1, parseInt(nArg || '1', 10) || 1);
-  const browser = await chromium.launch({ headless: false, args: ['--disable-blink-features=AutomationControlled', '--no-first-run', '--lang=tr-TR'] });
+  const browser = await chromium.launch({ headless: true, args: ['--disable-blink-features=AutomationControlled', '--no-first-run', '--lang=tr-TR', '--no-sandbox'] });
   const context = await browser.newContext({
     storageState: STATE, viewport: { width: 1366, height: 900 }, locale: 'tr-TR', timezoneId: 'Europe/Istanbul',
     userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',

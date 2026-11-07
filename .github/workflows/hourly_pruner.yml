@@ -1,203 +1,66 @@
-name: Hourly Low-View Pruner (Ölü Ağırlık Temizleyici - Faz 10)
+name: Every 30 min: Publish Drafts + Prune Low-View Videos
 
 on:
   schedule:
-    # Her saat başı (XX:00) "ölü ağırlık" videoları taranır ve kalıcı olarak silinir.
-    # FAZ 12: saatlik pruner - asal olmayan dakika (throttle azaltma)
-    - cron: '7 * * * *'
+    # Her 30 dakikada bir: draft'ları PUBLIC yap + 1 saatten eski, <100 izlenme videoları sil
+    - cron: '*/30 * * * *'
   workflow_dispatch:
-    inputs:
-      target_channel:
-        description: "Test edilecek tekil kanal ID (ör: 1) veya tüm matris için 'all'"
-        required: false
-        default: 'all'
-        type: string
-      slot_epoch:
-        description: "Zincir tetikleyicisi için hedef saat dilimi (epoch saniye)."
-        required: false
-        default: ''
-        type: string
-
-# Aynı anda birden fazla temizlik oturumu açılmasın (Studio oturum çakışması)
-concurrency:
-  group: pruner-workflow-${{ github.ref }}
-  cancel-in-progress: false
 
 permissions:
   contents: write
-  actions: write
+
+concurrency:
+  group: publish-and-prune-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  # Kanal haritasi: ayni hesabi isaret eden kanallar ayiklanir (bosuna tarama olmasin).
-  channel-map:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    outputs:
-      distinct_csv: ${{ steps.map.outputs.distinct_csv }}
-      next_channel: ${{ steps.map.outputs.next_channel }}
-      distinct_count: ${{ steps.map.outputs.distinct_count }}
-    steps:
-      - name: Depoyu Çek (Checkout)
-        uses: actions/checkout@v7
-
-      - name: Kanal Benzersizlik Analizi
-        id: map
-        env:
-          C1: ${{ secrets.COOKIES_JSON_1 }}
-          S1: ${{ secrets.STORAGE_STATE_JSON_1 }}
-          C2: ${{ secrets.COOKIES_JSON_2 }}
-          S2: ${{ secrets.STORAGE_STATE_JSON_2 }}
-          C3: ${{ secrets.COOKIES_JSON_3 }}
-          S3: ${{ secrets.STORAGE_STATE_JSON_3 }}
-          C4: ${{ secrets.COOKIES_JSON_4 }}
-          S4: ${{ secrets.STORAGE_STATE_JSON_4 }}
-          C5: ${{ secrets.COOKIES_JSON_5 }}
-          S5: ${{ secrets.STORAGE_STATE_JSON_5 }}
-          C6: ${{ secrets.COOKIES_JSON_6 }}
-          S6: ${{ secrets.STORAGE_STATE_JSON_6 }}
-          C7: ${{ secrets.COOKIES_JSON_7 }}
-          S7: ${{ secrets.STORAGE_STATE_JSON_7 }}
-          C8: ${{ secrets.COOKIES_JSON_8 }}
-          S8: ${{ secrets.STORAGE_STATE_JSON_8 }}
-          C9: ${{ secrets.COOKIES_JSON_9 }}
-          S9: ${{ secrets.STORAGE_STATE_JSON_9 }}
-          C10: ${{ secrets.COOKIES_JSON_10 }}
-          S10: ${{ secrets.STORAGE_STATE_JSON_10 }}
-        run: |
-          bash scripts/channel_map.sh
-
-  prune-videos:
+  publish-and-prune:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    needs: channel-map
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        # distinct_csv duz stringtir ("1" veya "1,2"); JSON dizi GitHub tarafindan
-        # secret sanilip maskelenir. split() dizi verir, join() dizi bekler.
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', join(needs.channel-map.outputs.distinct_csv, '","'))) }}
-
-    # 10 kanallı matris aynı YouTube Studio oturumunu paylaşabildiği için
-    # temizlik işleri sıraya alınır (aynı anda çakışma olmaz).
-    concurrency:
-      group: pruner-studio-lock
-      cancel-in-progress: false
 
     steps:
       - name: Depoyu Çek (Checkout)
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
-      - name: "Araçları Kur (önbellekli: xvfb .deb + node_modules + Chromium)"
-        uses: ./.github/actions/setup-tools
-        with:
-          apt_packages: xvfb
-          node: 'true'
-          playwright: 'true'
-          python: 'false'
+      - name: Sistem Kütüphaneleri + Node + Playwright Chromium
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            xvfb \
+            libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+            libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+            libgbm1 libpango-1.0-0 libcairo2 libasound2
+          npm ci
+          npx playwright install chromium --with-deps
 
-      - name: Oturum Bilgilerini Enjekte Et (Kanal ${{ matrix.channel_id }})
+      - name: Kimlik Bilgilerini Enjekte Et (Google Drive'dan alınan oturum)
         env:
-          CHANNEL_ENV_FILE: ${{ secrets[format('ENV_FILE_{0}', matrix.channel_id)] }}
-          CHANNEL_COOKIES_JSON: ${{ secrets[format('COOKIES_JSON_{0}', matrix.channel_id)] }}
-          CHANNEL_STORAGE_STATE_JSON: ${{ secrets[format('STORAGE_STATE_JSON_{0}', matrix.channel_id)] }}
-          FALLBACK_ENV_FILE: ${{ secrets.ENV_FILE }}
-          FALLBACK_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
-          FALLBACK_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+          STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+          COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
         run: |
           umask 077
-          printf '%s\n' "${CHANNEL_ENV_FILE:-$FALLBACK_ENV_FILE}" > .env
-          printf '%s\n' "${CHANNEL_COOKIES_JSON:-$FALLBACK_COOKIES_JSON}" > cookies.json
-          if [ -n "${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}" ]; then
-            printf '%s\n' "${CHANNEL_STORAGE_STATE_JSON:-$FALLBACK_STORAGE_STATE_JSON}" > storage_state.json
-          fi
-          mkdir -p logs
+          mkdir -p session_capture
+          printf '%s' "${STORAGE_STATE_JSON}" > storage_state.json
+          printf '%s' "${COOKIES_JSON}" > cookies.json
 
-      - name: "Ölü Ağırlık Temizleyicisini Çalıştır (Faz 10)"
+      - name: Tüm Taslakları PUBLIC Yap (studio_draft_publish)
         env:
-          MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
-          PRUNE_MIN_VIEWS: ${{ vars.PRUNE_MIN_VIEWS || '100' }}
-          PRUNE_MIN_AGE_MINUTES: ${{ vars.PRUNE_MIN_AGE_MINUTES || '60' }}
-          PRUNE_MAX_DELETIONS: ${{ vars.PRUNE_MAX_DELETIONS || '999' }}
-          PRUNE_MIN_REMAINING: ${{ vars.PRUNE_MIN_REMAINING || '1' }}
-          # PRUNE_DRY_RUN: Silme modunu kontrol eder. Varsayılan false (silme aktif).
-          # Güvenli test için Repo Variables'a PRUNE_DRY_RUN=true ekleyin.
-          PRUNE_DRY_RUN: ${{ vars.PRUNE_DRY_RUN || 'false' }}
-          PRUNE_QUIET_LOG: 'true'
-          PRUNE_PERSIST_STATE: ${{ vars.PRUNE_PERSIST_STATE || 'true' }}
-          PRUNE_FAIL_ON_ZERO_SCAN: 'true'
-        run: |
-          xvfb-run -a --server-args="-screen 0 1366x900x24" node prune_low_performers.js
+          YT_EMAIL: ${{ secrets.YT_EMAIL }}
+          YT_PASSWORD: ${{ secrets.YT_PASSWORD }}
+          IDENTITY_MODE: skip
+          PICK_MODE: first
+          HEADLESS: true
+        run: xvfb-run -a --server-args="-screen 0 1366x900x24" node scripts/studio_draft_publish.cjs publish 15
 
-      # GÜVENLİK AŞAMASI: ayrıntılı rapor (video başlık/ID) herkese açık repoya
-      # commit edilmez ve artifact olarak yüklenmez; yalnızca sayısal özet kalır.
-
-      - name: "Temizlik Özeti (Tek Satır)"
-        if: always()
-        run: python scripts/pruner_summary.py prune_report.json
-
-  # CRON KILIDI KIRMA: Saatlik zamanlayıcı çalışmıyorsa zincir kendini tetikler.
-  cron-kick:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    needs: [channel-map, prune-videos]
-    # IPTAL EDILEN kosu yeni kosu TETIKLEMEZ (iptal firtinasinin koku)
-    if: ${{ !cancelled() }}
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NEXT_CHANNEL: ${{ needs.channel-map.outputs.next_channel }}
-      DISTINCT_COUNT: ${{ needs.channel-map.outputs.distinct_count }}
-    steps:
-      # scripts/active_runs_count.sh için checkout şart; yoksa betik bulunamaz ve
-      # "|| echo 0" ile aktif koşu yok sanılır (6 Kas zincir fırtınasına katkı).
-      - name: Depoyu Çek (Checkout)
-        uses: actions/checkout@v7
-
-      - name: Zamanlayıcı Sağlığını Kontrol Et ve Zinciri Devam Ettir
-        run: |
-          NOW=$(date -u +%s)
-          WORKFLOW="hourly_pruner.yml"
-
-          # 1) Schedule zamanlayıcı yakın zamanda çalıştıysa zincir gerekmez
-          LAST=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?event=schedule&per_page=1" \
-            | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
-          if [ -n "$LAST" ]; then
-            LAST_EPOCH=$(date -u -d "$LAST" +%s)
-            AGE=$(( NOW - LAST_EPOCH ))
-            if [ "$AGE" -lt 5400 ]; then
-              echo "[OK] Saatlik zamanlayici CANLI (${AGE}s once) -> zincir tetiklenmiyor."
-              exit 0
-            fi
-          fi
-
-          # 2) Aktif başka bir pruner koşusu varsa tetikleme
-          ACTIVE_COUNT=$(bash scripts/active_runs_count.sh "${WORKFLOW}" 2>/dev/null || echo 0)
-          ACTIVE_COUNT="${ACTIVE_COUNT:-0}"
-          if [ "${ACTIVE_COUNT}" -gt 0 ]; then
-            echo "[OK] Aktif kosu: ${ACTIVE_COUNT} -> TETIKLENMEDI."
-            exit 0
-          fi
-
-          # 3) Minimum 55 dakika gap — döngü fırtınası önlemi (saatlik kuralın
-          #    dışında ikinci koşu olmasın; 6 Kas'ta 166 zincir koşusu görüldü)
-          LAST_ANY=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?per_page=2" \
-            | python3 -c "import json,sys,os; runs=json.load(sys.stdin).get('workflow_runs',[]); me=os.environ.get('GITHUB_RUN_ID',''); [print(r.get('created_at','')) or exit() for r in runs if str(r.get('id'))!=me]" 2>/dev/null || true)
-          if [ -n "$LAST_ANY" ]; then
-            LAST_ANY_EPOCH=$(date -u -d "$LAST_ANY" +%s 2>/dev/null || echo 0)
-            GAP=$(( NOW - LAST_ANY_EPOCH ))
-            if [ "$GAP" -lt 3300 ]; then
-              echo "[OK] Son pruner ${GAP}s once baslamis (min 3300s) -> TETIKLENMEDI."
-              exit 0
-            fi
-          fi
-
-          # 4) Zinciri tetikle (slot_epoch bekleme yok)
-          TARGET_CHANNEL="${NEXT_CHANNEL:-1}"
-          echo "[*] Pruner zinciri tetikleniyor -> kanal ${TARGET_CHANNEL}"
-          curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/dispatches" \
-            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"${TARGET_CHANNEL}\",\"slot_epoch\":\"\"}}"
-          echo "[*] Zincir tetiklendi -> kanal ${TARGET_CHANNEL}."
+      - name: 1 Saatten Eski <100 Izlenme Videolarını Temizle (prune_low_performers)
+        env:
+          PRUNE_MIN_VIEWS: 100
+          PRUNE_MIN_AGE_MINUTES: 60
+          PRUNE_MAX_DELETIONS: 10
+          PRUNE_MIN_REMAINING: 1
+          PRUNE_DRY_RUN: false
+          PRUNE_QUIET_LOG: true
+          PRUNE_PERSIST_STATE: true
+          PRUNE_FAIL_ON_ZERO_SCAN: true
+          HEADLESS: true
+        run: xvfb-run -a --server-args="-screen 0 1366x900x24" node prune_low_performers.js
