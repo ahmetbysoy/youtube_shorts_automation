@@ -126,3 +126,8 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
 - Uploader'a `handleIdentityVerificationModal` eklendi: modal → "Sonraki" → (şifre) → telefon onayı en fazla `IDENTITY_WAIT_SEC` (300 s) beklenir; onay yoksa `GOOGLE_IDENTITY_VERIFICATION_REQUIRED` ile fail-closed, video taslak kalır. DOM atlama yok. Test: `tests/identity_modal.test.cjs` (3 senaryo).
 - Sandbox'tan 1 taslak yayınlandı ve doğrulandı: `-c6RE6zwqec` (Japonya 1400 yıl). Kalan 14 taslak (2 başlıksız "final short", 3 kopya konu) bekliyor; pruner riski nedeniyle kademeli yayın kararı.
 - Açık: OAuth `token.json` üretilemez (client_secret yok, kullanıcı atladı); medya sorguları hâlâ boş; CI'da telefon-onay akışı gerçek koşuda henüz doğrulanmadı.
+
+### 2026-11-07 02:30 UTC — Kullanıcı kararı: telefon-onayı bekleme KALDIRILDI
+- `youtube_studio_uploader.js` 594a6fb sürümüne geri alındı (kimlik modalı → telefon onayı bekleme akışı ve `tests/identity_modal.test.cjs` silindi). Kullanıcı isteği: "eskisi gibi olsun".
+- Sonuç (dürüst): Google runner'dan yüklemede "Kimliğinizi doğrulayın" isterse koşu eskisi gibi İleri deneyip zaman aşımıyla düşer, video taslak kalır. #291/#295'te akış çalışmış ama telefon onayı gelmemişti.
+- Korunanlar: YAML onarımı, pruner piggyback, Cookie→Secret adımının REPO_PAT ile çalışması, dosya-seçimi öncesi hiçbir ek bekleme yok.
