@@ -15,7 +15,6 @@ storage_state.json
 browser_profile/
 .playwright-session/
 .oauth_state.json
-.used_topics.json
 secrets/
 settings.yaml
 
