@@ -163,3 +163,12 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
   daily_analytics/draft_publisher bunu kullanır. Sandbox'ta apt adımı doğrulandı (cowsay ile 2 koşu); CI'da ilk koşu önbelleği doldurur.
 - Sandbox kuru deneme (CI modu, IDENTITY_MODE=skip): "Roma'yı Bitiren Son İmparator" taslağı → aday #1 → MFK → PUBLIC → DRY ok (cIAzxwN4o3s).
 - Doğrulanmadı: CI'da gerçek draft_publisher koşusu ve önbellek hit süreleri (ilk koşular sonrası kontrol edilecek).
+
+### 2026-11-07 ~12:40 UTC — draft_publisher CI sonucu (DOĞRULANDI): kimlik modalı IP kaynaklı
+- Koşu #2 (ana secret oturumu) ve #6 (telefon onayından geçmiş sandbox oturumu, STORAGE_STATE_JSON_DRAFT): her ikisinde de
+  taslak açılır açılmaz "Kimliğinizi doğrulayın" modalı çıktı → beklenmedi, taslak korundu, koşu yeşil (37-49 sn).
+  Aynı oturum sandbox'ta modal görmeden aday #1 → MFK → PUBLIC adımlarını geçiyor → engel GitHub runner IP'si, oturum değil.
+- Sonuç: GitHub Actions'tan Studio yayını (uploader FAZ 5 ve draft_publisher) Google doğrulaması olmadan şu an mümkün değil.
+  Seçenekler: sandbox'tan yayın (çalışıyor), ev IP'sinde self-hosted runner, veya kullanıcının telefondan onayı.
+- Önbellek doğrulandı: #6'da node_modules + Chromium "Cache restored", araç kurulumu 12 sn, install-deps apt'si çalışmadı.
+- *_DRAFT secret'ları publisher'a özel; ana COOKIES_JSON/STORAGE_STATE_JSON'a dokunulmadı.
