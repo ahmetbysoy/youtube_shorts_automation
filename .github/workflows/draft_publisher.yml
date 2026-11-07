@@ -23,9 +23,12 @@ on:
         default: '0'
         type: string
 
-# Studio oturumu kilidi: uploader (daily_shorts) ile AYNI grup -> aynı anda iki Studio oturumu açılmaz.
+# Kendi kilidi: aynı anda iki draft_publisher çalışmaz. Uploader'ın "studio-upload-lock" grubu
+# PAYLAŞILMAZ: daily_shorts ~10 dk'da bir koştuğu için GitHub'ın "grup başına 1 bekleyen" kuralı
+# bu işi sürekli iptal edip aç bırakıyordu (ilk koşu 12:09Z'de kilitte bekledi). Aynı hesabın iki
+# Studio sekmesi aynı anda açık olabilir; çerez yenilemesi yalnızca uploader'da yapılır.
 concurrency:
-  group: studio-upload-lock
+  group: draft-publisher-lock
   cancel-in-progress: false
 
 permissions:
