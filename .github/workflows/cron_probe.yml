@@ -15,14 +15,48 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   probe:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Zamanlayıcı Nabzı
+      - name: Zamanlayıcı Nabzı ve Saatlik Bekçi (Pruner & Shorts)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "PROBE OK - Zamanlayıcı çalışıyor. UTC: $(date -u '+%Y-%m-%d %H:%M:%S')"
           echo "Tetikleyici: ${{ github.event_name }} | Run: ${{ github.run_number }}"
-          echo "Aktif iş akışı sayısı: $(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/actions/workflows | grep -c '"id"')"
+          echo "Aktif iş akışı sayısı: $(curl -s -H "Authorization: Bearer ${GH_TOKEN}" https://api.github.com/repos/${{ github.repository }}/actions/workflows | grep -c '"id"')"
+          NOW=$(date -u +%s)
+          # 1) hourly_pruner.yml son 3600s (1 saat) içinde çalışmadıysa uyandır
+          LAST_P=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/hourly_pruner.yml/runs?per_page=1" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
+          if [ -n "$LAST_P" ]; then
+            PE=$(date -u -d "$LAST_P" +%s 2>/dev/null || echo 0)
+            PGAP=$(( NOW - PE ))
+            if [ "$PGAP" -ge 3600 ]; then
+              echo "[PROBE] hourly_pruner.yml ${PGAP}s gecikmiş -> tetikleniyor..."
+              curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/hourly_pruner.yml/dispatches" \
+                -d '{"ref":"main","inputs":{"target_channel":"all","slot_epoch":""}}' || true
+            fi
+          fi
+          # 2) daily_shorts.yml son 9000s (2.5 saat) içinde çalışmadıysa uyandır
+          LAST_S=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/daily_shorts.yml/runs?per_page=1" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
+          if [ -n "$LAST_S" ]; then
+            SE=$(date -u -d "$LAST_S" +%s 2>/dev/null || echo 0)
+            SGAP=$(( NOW - SE ))
+            if [ "$SGAP" -ge 9000 ]; then
+              echo "[PROBE] daily_shorts.yml ${SGAP}s gecikmiş -> tetikleniyor..."
+              curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/daily_shorts.yml/dispatches" \
+                -d '{"ref":"main","inputs":{"target_channel":"1","slot_epoch":"","chain":"1"}}' || true
+            fi
+          fi

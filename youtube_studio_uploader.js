@@ -360,7 +360,28 @@ async function openUploadModal(page) {
     await assertNoIdentityVerification(page, 'after_direct_upload_route');
 }
 
+async function hideSuggestionDropdowns(page) {
+    await page.evaluate(() => {
+        const selectors = [
+            'tp-yt-iron-dropdown',
+            'ytcp-mention-suggestions',
+            'ytcp-social-suggestion-input',
+            'ytcp-paper-menu-button tp-yt-iron-dropdown'
+        ];
+        for (const sel of selectors) {
+            document.querySelectorAll(sel).forEach(el => {
+                if (el && !el.closest('ytcp-uploads-dialog')) {
+                    el.style.display = 'none';
+                } else if (el && el.tagName && el.tagName.toLowerCase() === 'tp-yt-iron-dropdown') {
+                    el.style.display = 'none';
+                }
+            });
+        }
+    }).catch(() => {});
+}
+
 async function fillContentEditable(page, containerSelector, value) {
+    await hideSuggestionDropdowns(page);
     const candidates = [
         `${containerSelector} #textbox`,
         containerSelector
@@ -368,11 +389,29 @@ async function fillContentEditable(page, containerSelector, value) {
     for (const sel of candidates) {
         const box = page.locator(sel).first();
         if (await box.isVisible({ timeout: 15000 }).catch(() => false)) {
-            await box.click({ force: true });
-            await page.waitForTimeout(300);
-            await page.keyboard.press('Control+A');
-            await page.keyboard.press('Backspace');
-            await page.keyboard.insertText(value);
+            await box.scrollIntoViewIfNeeded().catch(() => {});
+            await box.evaluate((el, val) => {
+                el.focus();
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                const inserted = document.execCommand('insertText', false, val);
+                if (!inserted || (el.textContent || '').trim() !== String(val).trim()) {
+                    el.textContent = val;
+                    el.dispatchEvent(new InputEvent('input', {
+                        bubbles: true,
+                        cancelable: true,
+                        inputType: 'insertText',
+                        data: val
+                    }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                el.blur();
+            }, String(value));
+            await page.waitForTimeout(250);
+            await hideSuggestionDropdowns(page);
             return;
         }
     }
@@ -750,7 +789,7 @@ async function legacyCustomThumbnailFlow(page, { title, thumbnailPrompt, scriptD
             try {
                 const thumbResult = await uploadCustomThumbnail(page, thumbPath);
                 if (thumbResult.ok) {
-                    console.log('[KAPAK] Dosya gönderildi ve Studio önizlemesi değişti.');
+                    console.log('[KAPAK] Studio önizlemesi değişti; yayın sonrası kalıcı kayıt ayrıca doğrulanmalı.');
                 } else if (thumbResult.dailyThumbnailLimit) {
                     console.log('[KAPAK] Günlük thumbnail limiti dolmuş — video thumbnail\'siz devam ediyor.');
                     // Dialog kapandı, devam et — throw etme
@@ -897,6 +936,15 @@ async function uploadToYouTubeStudio() {
         await fillContentEditable(page, 'ytcp-social-suggestions-textbox#description-textarea', description);
         await page.waitForTimeout(800);
 
+        // Başlığın açıklama metni tarafından ezilmediğini ve <=100 kr olduğunu doğrula
+        const currentTitleText = await page.locator('ytcp-social-suggestions-textbox#title-textarea #textbox').first().innerText().catch(() => '');
+        const cleanCurrentTitle = String(currentTitleText || '').trim();
+        if (!cleanCurrentTitle || cleanCurrentTitle.length > 100 || cleanCurrentTitle !== title.trim()) {
+            console.log(`[!] Başlık doğrulaması sapma algıladı (${cleanCurrentTitle.length} kr) -> başlık yeniden yazılıyor...`);
+            await fillContentEditable(page, 'ytcp-social-suggestions-textbox#title-textarea', title);
+            await page.waitForTimeout(500);
+        }
+
         // --- KAPAK ---
         // Varsayilan (THUMBNAIL_MODE=frame): kapak FAZ 3.5'te videonun ilk 0.6 sn'sine gomuldu;
         // Studio'ya AYRI kapak dosyasi yuklenmez (gunluk ozel kucuk resim kotasi yok).
@@ -922,23 +970,9 @@ async function uploadToYouTubeStudio() {
             await legacyCustomThumbnailFlow(page, { title, thumbnailPrompt, scriptData });
         }
 
-        // Thumbnail limiti veya diğer dialog'ları kapat, sayfayı normalleştir
-        try {
-            // Tüm açık dialog'ları kapat
-            const dialogs = page.locator('ytcp-dialog, tp-yt-paper-dialog, [role="dialog"]');
-            const dCount = await dialogs.count();
-            for (let di = 0; di < dCount; di++) {
-                const d = dialogs.nth(di);
-                if (await d.isVisible().catch(() => false)) {
-                    const closeBtn = d.locator('button:has-text("Kapat"), button:has-text("Close"), button:has-text("Tamam"), button:has-text("OK"), #close-button, ytcp-button[id="cancel-button"]').first();
-                    if (await closeBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-                        await closeBtn.click({ force: true }).catch(() => {});
-                    }
-                }
-            }
-            await page.keyboard.press('Escape').catch(() => {});
-            await page.waitForTimeout(2000);
-        } catch (_) {}
+        // Yalnızca kapak kotası uyarı diyalogu varsa kapat; ana ytcp-uploads-dialog #close-button'a ASLA dokunma!
+        await dismissThumbnailLimitDialog(page).catch(() => {});
+        await hideSuggestionDropdowns(page);
 
         // Kota koruması: YouTube günlük yükleme limiti dolduysa boşuna uğraşma (kapak yüklendikten SONRA)
         if (await detectDailyUploadLimit(page)) {
@@ -991,69 +1025,38 @@ async function uploadToYouTubeStudio() {
         }
 
         console.log("[*] Görünürlük ayarı 'Herkese Açık' (Public) ekranına ilerleniyor...");
+        // FAZ 12.6: Kapak yuklemesinden sonra diyalog "Ayrıntılar" sekmesine doner ve
+        // "İleri" butonu video kontrolleri surerken PASIF kalir. Buton ENABLED olana
+        // kadar tekrar denenir.
         const PUBLIC_RADIO_SEL = 'tp-yt-paper-radio-button[name="PUBLIC"]:visible, #public-radio-button:visible, input[value="PUBLIC"]:visible';
-
-        // Önce video yüklemenin tamamlanmasını bekle (progress bar %100)
-        for (let pw = 0; pw < 30; pw++) {
-            const progressText = await page.locator('ytcp-video-upload-progress').innerText().catch(() => '');
-            const publicVisible = await page.locator(PUBLIC_RADIO_SEL).first().isVisible({ timeout: 500 }).catch(() => false);
-            if (publicVisible) { console.log('[*] PUBLIC zaten görünür, atlıyoruz.'); break; }
-            if (/100\s*%|Kontroller.*tam|İşleme.*tam|upload.*complete/i.test(progressText) || !progressText) break;
-            if (pw === 0) console.log(`[*] Video işleniyor, bekleniyor: ${progressText.replace(/\s+/g, ' ').trim().slice(0, 60)}`);
-            await page.waitForTimeout(3000);
-        }
-
-        // Video upload + işleme tamamlanmasını bekle (max 5 dakika)
-        console.log('[*] Video yükleme/işleme tamamlanması bekleniyor...');
-        for (let pw = 0; pw < 60; pw++) {
-            if (await page.locator(PUBLIC_RADIO_SEL).first().isVisible({ timeout: 500 }).catch(() => false)) {
-                console.log('[*] PUBLIC zaten görünür.');
+        for (let attempt = 0; attempt < 18; attempt++) {
+            const radioNow = page.locator(PUBLIC_RADIO_SEL).first();
+            if (await radioNow.isVisible({ timeout: 1500 }).catch(() => false)) {
+                console.log(`[*] Görünürlük sekmesi açıldı (deneme ${attempt + 1}).`);
                 break;
-            }
-            const progressText = await page.locator('ytcp-video-upload-progress').innerText().catch(() => '');
-            const isComplete = !progressText ||
-                /100\s*%|tamamland|complete|kontroller.*tamam|checks.*done|işleme.*tamam|processing.*done/i.test(progressText);
-            if (pw % 5 === 0) console.log(`[*] Upload durumu: "${progressText.replace(/\s+/g,' ').trim().slice(0,60)}"`);
-            if (isComplete) { console.log('[*] Upload/işleme tamamlandı.'); break; }
-            await page.waitForTimeout(3000);
-        }
-        await page.waitForTimeout(1500);
-
-        // "İleri" → "Sonraki" butonuna tıkla ve PUBLIC ekranının açılmasını bekle
-        for (let attempt = 0; attempt < 25; attempt++) {
-            if (await page.locator(PUBLIC_RADIO_SEL).first().isVisible({ timeout: 1000 }).catch(() => false)) {
-                console.log(`[*] Görünürlük sekmesi açıldı (${attempt} tıklama sonrası).`);
-                break;
-            }
-            const nextVariants = [
-                'ytcp-button#next-button:not([disabled])',
-                '#next-button:not([disabled])',
-                'ytcp-button:has-text("Sonraki"):not([disabled])',
-                'ytcp-button:has-text("Next"):not([disabled])',
-                'ytcp-button:has-text("İleri"):not([disabled])',
-                'ytcp-button#next-button',
-                '#next-button',
-            ];
-            let clicked = false;
-            for (const sel of nextVariants) {
-                const btn = page.locator(sel).first();
-                if (await btn.isVisible({ timeout: 600 }).catch(() => false)) {
-                    await btn.scrollIntoViewIfNeeded().catch(() => {});
-                    await btn.click({ force: true }).catch(() => {});
-                    console.log(`[*] "İleri" tıklandı (deneme ${attempt + 1}).`);
-                    clicked = true;
-                    await page.waitForTimeout(attempt < 5 ? 2000 : 4000);
-                    break;
-                }
             }
             if (await findIdentityModal(page)) {
                 await leaveAsDraftOnIdentityModal(page, context, title);
             }
-            if (!clicked) {
-                const pageTitle = await page.title().catch(() => '');
-                console.log(`[*] "İleri" yok (deneme ${attempt + 1}), sayfa: "${pageTitle.slice(0,40)}", bekleniyor...`);
-                await page.waitForTimeout(3000);
+            const nextBtn = page.locator('ytcp-button#next-button, #next-button').first();
+            if (await nextBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+                const ariaDisabled = await nextBtn.getAttribute('aria-disabled').catch(() => null);
+                const enabled = (await nextBtn.isEnabled().catch(() => false)) && ariaDisabled !== 'true';
+                if (enabled) {
+                    await nextBtn.scrollIntoViewIfNeeded().catch(() => {});
+                    await nextBtn.click({ force: true }).catch(() => {});
+                    console.log(`[*] "İleri" tıklandı (deneme ${attempt + 1}).`);
+                } else {
+                    const checkTitle = ((await page.locator('ytcp-social-suggestions-textbox#title-textarea #textbox').first().innerText().catch(() => '')) || '').trim();
+                    if (checkTitle.length > 100) {
+                        console.log(`[!] "İleri" pasif ve başlık >100 kr (${checkTitle.length}) -> başlık düzeltiliyor...`);
+                        await fillContentEditable(page, 'ytcp-social-suggestions-textbox#title-textarea', title);
+                    }
+                    const progressText = await page.locator('ytcp-video-upload-progress').innerText().catch(() => '');
+                    console.log(`[*] "İleri" pasif (kontroller sürüyor): ${progressText.replace(/\s+/g, ' ').trim().slice(0, 60)} - bekleniyor...`);
+                }
             }
+            await page.waitForTimeout(5000);
         }
 
         // Herkese Açık (PUBLIC) seçeneğini işaretle - Faz 7 Tam Otonom Yayın!

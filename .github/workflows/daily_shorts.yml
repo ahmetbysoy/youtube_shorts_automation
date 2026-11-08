@@ -2,8 +2,8 @@ name: 15-Minute Blitzkrieg Money Printer
 
 on:
   schedule:
-    # FAZ 12: GitHub'ın en az throttle ettiği, asal olmayan dakikalar
-    - cron: '0,13,27,41,55 * * * *'
+    # REBEL (2026-11-08 Kullanıcı Kararı): 2-3 saatte 1 video (günde 8-12 kaliteli Short), asal olmayan dakika (:13)
+    - cron: '13 */2 * * *'
   workflow_dispatch:
     inputs:
       target_channel:
@@ -161,6 +161,7 @@ jobs:
           python -c "import json; c=json.load(open('cookies.json')); print(f'[OK] Kanal ${{ matrix.channel_id }} cookies.json doğrulandı ({len(c)} çerez)')"
 
       - name: Run Orchestrator (Main Pipeline)
+        id: orchestrator
         if: ${{ steps.gate.outputs.produce == 'true' }}
         env:
           PYTHONUNBUFFERED: "1"
@@ -287,7 +288,7 @@ jobs:
         run: python scripts/run_summary.py logs/run_status.json
 
       - name: "Konu Geçmişini Repoya Kaydet (.used_topics.json persist)"
-        if: always()
+        if: ${{ steps.gate.outputs.produce == 'true' && steps.orchestrator.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -302,11 +303,11 @@ jobs:
           EXISTING=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/.used_topics.json" \
             | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('sha',''))" 2>/dev/null || echo "")
-          # Commit payload
+          # Commit payload ([skip ci] KULLANILMAZ: GitHub schedule tetikleyicisini susturur)
           if [ -n "$EXISTING" ]; then
-            PAYLOAD="{\"message\":\"chore: konu geçmişi güncellendi [skip ci]\",\"content\":\"${ENCODED}\",\"sha\":\"${EXISTING}\"}"
+            PAYLOAD="{\"message\":\"chore: konu geçmişi güncellendi\",\"content\":\"${ENCODED}\",\"sha\":\"${EXISTING}\"}"
           else
-            PAYLOAD="{\"message\":\"chore: konu geçmişi oluşturuldu [skip ci]\",\"content\":\"${ENCODED}\"}"
+            PAYLOAD="{\"message\":\"chore: konu geçmişi oluşturuldu\",\"content\":\"${ENCODED}\"}"
           fi
           RESULT=$(curl -s -X PUT \
             -H "Authorization: Bearer ${GH_TOKEN}" \
@@ -366,7 +367,7 @@ jobs:
           curl -s -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${PRUNER}/dispatches" \
-            -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"all\",\"slot_epoch\":\"\"}}"
+            -d '{"ref":"main","inputs":{"target_channel":"1","slot_epoch":""}}'
           echo "[PRUNER] hourly_pruner.yml tetiklendi (son kosu ${PGAP:-?}s once)."
 
       # DRAFT PUBLISHER 20 DK TETİKLEYİCİ (2026-11-07, kullanıcı kararı):
@@ -445,15 +446,15 @@ jobs:
             exit 0
           fi
 
-          # Son run'dan bu yana en az 3 dakika geçmeli (döngü fırtınası önlemi)
+          # Son run'dan bu yana en az 2 saat (7200 sn) geçmeli (kullanıcı kararı: 2-3 saatte 1 video, döngü fırtınası önlemi)
           LAST_ANY=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW}/runs?per_page=1" \
             | python3 -c "import json,sys;d=json.load(sys.stdin);r=d.get('workflow_runs') or [];print(r[0]['created_at'] if r else '')" 2>/dev/null || true)
           if [ -n "$LAST_ANY" ]; then
             LAST_ANY_EPOCH=$(date -u -d "$LAST_ANY" +%s)
             GAP=$(( NOW - LAST_ANY_EPOCH ))
-            if [ "$GAP" -lt 180 ]; then
-              echo "[OK] Son run ${GAP} saniye once baslamis (min 180s) -> zincir TETIKLENMEDI."
+            if [ "$GAP" -lt 7200 ]; then
+              echo "[OK] Son run ${GAP} saniye once baslamis (min 7200s / 2 saat) -> zincir TETIKLENMEDI."
               exit 0
             fi
           fi

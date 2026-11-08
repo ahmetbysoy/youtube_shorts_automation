@@ -166,13 +166,20 @@ async function openFirstDraft(page, context) {
   }
   if (!hasRow) { await shot(page, 'draft_list_empty'); return null; }
   await sleep(2000);
-  // Başlıksız ("final short") taslaklar atlanır: ilk uygun satır seçilir
+  // Başlıksız ("final short") veya başlığı açıklama metniyle bozulmuş (>100 kr / URL içeren) taslaklar atlanır
   const rows = page.locator('ytcp-video-row');
   const rc = await rows.count();
   let row = null, title = '';
   for (let i = 0; i < rc; i++) {
     const t = (await rows.nth(i).locator('#video-title').innerText().catch(() => '')).trim();
-    if (!/^final short$/i.test(t)) { row = rows.nth(i); title = t; break; }
+    const isCorruptedTitle = !t || /^final short$/i.test(t) || /^Benzer videolar için abone ol/i.test(t) || /https?:\/\//i.test(t) || t.length > 100;
+    if (isCorruptedTitle) {
+      log(`[ATLA] Uygunsuz/bozuk başlıklı taslak atlandı (#${i + 1}): "${t.slice(0, 60)}"`);
+      continue;
+    }
+    row = rows.nth(i);
+    title = t;
+    break;
   }
   if (!row) return null;
   await row.scrollIntoViewIfNeeded().catch(() => {});

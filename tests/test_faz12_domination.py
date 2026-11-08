@@ -130,7 +130,7 @@ class TestFaz12AggressiveThumbnail(unittest.TestCase):
 class TestFaz12CronThrottle(unittest.TestCase):
     def test_cron_uses_non_peak_minutes(self) -> None:
         yml = DAILY_WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("cron: '0,13,27,41,55 * * * *'", yml)
+        self.assertIn("cron: '13 */2 * * *'", yml)
 
     def test_cancel_in_progress_true(self) -> None:
         yml = DAILY_WORKFLOW.read_text(encoding="utf-8")
@@ -203,6 +203,14 @@ class TestFaz12CronThrottle(unittest.TestCase):
         # eski tek-seferlik 3 deneme yerine dongu + bekleme
         self.assertIn("for (let attempt = 0; attempt < 18; attempt++)", src)
         self.assertIn("kontroller sürüyor", src)
+
+    def test_uploader_prevents_title_overwrite_and_dialog_self_close(self) -> None:
+        """Hashtag dropdown odagi bozmamali (Run #550) ve ana yukleme diyalogu kapatilmamali (Run #549)."""
+        src = UPLOADER_JS.read_text(encoding="utf-8")
+        self.assertIn("hideSuggestionDropdowns", src)
+        self.assertIn("document.execCommand('insertText', false, val)", src)
+        self.assertIn("cleanCurrentTitle.length > 100", src)
+        self.assertNotIn('#close-button, ytcp-button[id="cancel-button"]', src)
 
     def test_chain_runs_do_not_cancel_active_publish(self) -> None:
         """Zincir koşusu AYRI concurrency grubunda olmali; aksi halde yayin yarida kesiliyor."""

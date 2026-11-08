@@ -95,7 +95,7 @@ class TestFaz11ViralMetadata(unittest.TestCase):
 
     def test_workflows_use_exact_cron_and_have_chain_backup(self) -> None:
         daily = DAILY_WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("cron: '0,13,27,41,55 * * * *'", daily)
+        self.assertIn("cron: '13 */2 * * *'", daily)
         self.assertIn("permissions:", daily)
         self.assertIn("contents: write", daily)
         self.assertIn("actions: write", daily)
@@ -114,7 +114,7 @@ class TestFaz11ViralMetadata(unittest.TestCase):
         for wf in [DAILY_WORKFLOW, PRUNER_WORKFLOW, PROBE_WORKFLOW]:
             text = wf.read_text(encoding="utf-8")
             for line in text.splitlines():
-                if "git commit -m" in line:
+                if "git commit -m" in line or "PAYLOAD=" in line:
                     self.assertNotIn("skip ci", line.lower(), f"{wf.name} içinde [skip ci] var")
 
     def test_channel_map_script_detects_duplicate_accounts(self) -> None:
