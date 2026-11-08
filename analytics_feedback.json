@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-11-07T12:23:41.439Z",
+  "scraped_at": "2026-11-08T12:42:42.858Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 6,
   "winning_topic": "Bilim",
@@ -11,27 +11,51 @@
     {
       "niche": "Bilim",
       "video_count": 6,
-      "avg_views": 4.17,
+      "avg_views": 0,
       "avg_view_duration_sec": 0,
-      "avg_score": 4.17
+      "avg_score": 0
     }
   ],
   "recent_videos": [
     {
       "videoId": "",
-      "title": "Roma'yı Bitiren Son İmparator Sadece 16 Yaşındaydı! #Shorts",
+      "title": "İnternet'in Toplam Ağırlığı Bir Çilek Kadar! #Shorts",
       "niche": "Bilim",
       "views": 0,
       "avgViewDurationSec": 0,
       "compositeScore": 0
     },
     {
-      "videoId": "SXZd8a12n-Y",
-      "title": "Tesla'ya Söz Verilen Parayı Edison Vermedi! #Shorts",
+      "videoId": "",
+      "title": "Dünyanın En Soğuk Köyünde 500 Kişi Yaşıyor! #Shorts",
       "niche": "Bilim",
-      "views": 3,
+      "views": 0,
       "avgViewDurationSec": 0,
-      "compositeScore": 3
+      "compositeScore": 0
+    },
+    {
+      "videoId": "ub2fzLaDxeU",
+      "title": "Evrenin Yüzde 95'i Karanlık Madde ve Enerji! #Shorts",
+      "niche": "Bilim",
+      "views": 0,
+      "avgViewDurationSec": 0,
+      "compositeScore": 0
+    },
+    {
+      "videoId": "fCkmjJmSQ_A",
+      "title": "Fransız İhtilali Ekmek Kıtlığıyla Başladı! #Shorts",
+      "niche": "Bilim",
+      "views": 0,
+      "avgViewDurationSec": 0,
+      "compositeScore": 0
+    },
+    {
+      "videoId": "ZQ7An78NTTw",
+      "title": "Karınca Kolonisi Merkezi Komutan Olmadan Karar Alır! #Shorts",
+      "niche": "Bilim",
+      "views": 0,
+      "avgViewDurationSec": 0,
+      "compositeScore": 0
     },
     {
       "videoId": "",
@@ -40,30 +64,6 @@
       "views": 0,
       "avgViewDurationSec": 0,
       "compositeScore": 0
-    },
-    {
-      "videoId": "c00qhT9Vcbs",
-      "title": "Evrenin Yüzde 95'i Karanlık Madde ve Enerji! #Shorts",
-      "niche": "Bilim",
-      "views": 5,
-      "avgViewDurationSec": 0,
-      "compositeScore": 5
-    },
-    {
-      "videoId": "t6YpWotfoug",
-      "title": "Yunuslar Uyurken Beyninin Yarısı Uyanık Kalır! #Shorts",
-      "niche": "Bilim",
-      "views": 16,
-      "avgViewDurationSec": 0,
-      "compositeScore": 16
-    },
-    {
-      "videoId": "FR2yZi8_66w",
-      "title": "En Az Bilen En Çok Bildiğini Zanneder: Dunning-Kruger! #Shorts",
-      "niche": "Bilim",
-      "views": 1,
-      "avgViewDurationSec": 0,
-      "compositeScore": 1
     }
   ]
 }
