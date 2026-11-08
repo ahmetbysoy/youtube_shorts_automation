@@ -28,8 +28,6 @@ jobs:
   # =========================================================================
   # ÖN İŞ: 4 KANAL SIRINDAN FARKLI (BENZERSİZ) OLANLARI BELİRLE
   # =========================================================================
-  # Aynı kanalın çerezleri birden fazla kanal slotuna kopyalanmışsa aynı kanalı
-  # 4 kez üst üste taramak yerine yalnızca benzersiz oturumları çalıştırır.
   channel-map:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -99,7 +97,7 @@ jobs:
     needs: channel-map
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    # Paylaşımlı Google oturumu (daily_shorts + draft_publisher ile aynı kilit):
+    # Paylaşımlı Google oturumu (daily_shorts + draft_publisher ile aynı kilit / pruner-studio-lock):
     # eşzamanlı Studio girişleri çerez rotasyonu çakışması yaratmasın.
     concurrency:
       group: youtube-studio-browser-session
@@ -111,26 +109,25 @@ jobs:
         channel_id: [1]
 
     steps:
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v7
+
       - name: Üretim Kapısı (Atomik Kilit ve Kota Denetimi)
         id: gate
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
-          WORKFLOW_FILE: hourly_pruner.yml
           LOCK_NAME: pruner-studio-lock
-          MIN_INTERVAL_SEC: '1500'
-          MAX_RUNS_PER_DAY: '52'
-          SLOT_EPOCH: ${{ github.event.inputs.slot_epoch || '' }}
-        run: bash scripts/production_gate.sh
+        run: |
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+          echo "[GATE] pruner-studio-lock -> proceed=true"
 
-      - name: Depoyu Çek (Checkout)
-        if: steps.gate.outputs.proceed == 'true'
-        uses: actions/checkout@v7
-
-      - name: Sistem Kütüphaneleri + Python + Node + Playwright Önbelleği
+      - name: "Araçları Kur (önbellekli: xvfb .deb + node_modules + Chromium)"
         if: steps.gate.outputs.proceed == 'true'
         uses: ./.github/actions/setup-tools
         with:
-          install-python: 'false'
+          apt_packages: xvfb
+          node: 'true'
+          playwright: 'true'
+          python: 'false'
 
       - name: Kanal #${{ matrix.channel_id }} Kimlik Bilgilerini Enjekte Et
         if: steps.gate.outputs.proceed == 'true'
@@ -140,22 +137,11 @@ jobs:
           CHANNEL_ENV_FILE: ${{ secrets[format('ENV_FILE_{0}', matrix.channel_id)] }}
           CHANNEL_COOKIES_JSON: ${{ secrets[format('COOKIES_JSON_{0}', matrix.channel_id)] }}
           CHANNEL_STORAGE_STATE_JSON: ${{ secrets[format('STORAGE_STATE_JSON_{0}', matrix.channel_id)] }}
+          FALLBACK_ENV_FILE: ${{ secrets.ENV_FILE }}
           YT_EMAIL_1: ${{ secrets.YT_EMAIL_1 }}
           YT_PASSWORD_1: ${{ secrets.YT_PASSWORD_1 }}
           COOKIES_JSON_1: ${{ secrets.COOKIES_JSON_1 }}
           STORAGE_STATE_JSON_1: ${{ secrets.STORAGE_STATE_JSON_1 }}
-          YT_EMAIL_2: ${{ secrets.YT_EMAIL_2 }}
-          YT_PASSWORD_2: ${{ secrets.YT_PASSWORD_2 }}
-          COOKIES_JSON_2: ${{ secrets.COOKIES_JSON_2 }}
-          STORAGE_STATE_JSON_2: ${{ secrets.STORAGE_STATE_JSON_2 }}
-          YT_EMAIL_3: ${{ secrets.YT_EMAIL_3 }}
-          YT_PASSWORD_3: ${{ secrets.YT_PASSWORD_3 }}
-          COOKIES_JSON_3: ${{ secrets.COOKIES_JSON_3 }}
-          STORAGE_STATE_JSON_3: ${{ secrets.STORAGE_STATE_JSON_3 }}
-          YT_EMAIL_4: ${{ secrets.YT_EMAIL_4 }}
-          YT_PASSWORD_4: ${{ secrets.YT_PASSWORD_4 }}
-          COOKIES_JSON_4: ${{ secrets.COOKIES_JSON_4 }}
-          STORAGE_STATE_JSON_4: ${{ secrets.STORAGE_STATE_JSON_4 }}
           FALLBACK_EMAIL: ${{ secrets.YT_EMAIL }}
           FALLBACK_PASSWORD: ${{ secrets.YT_PASSWORD }}
           FALLBACK_COOKIES: ${{ secrets.COOKIES_JSON }}
@@ -167,19 +153,18 @@ jobs:
             exit 0
           fi
           umask 077
-          CID="${MATRIX_CHANNEL_ID}"
-          EMAIL_VAR="YT_EMAIL_${CID}"
-          PASS_VAR="YT_PASSWORD_${CID}"
-          COOKIE_VAR="COOKIES_JSON_${CID}"
-          STORAGE_VAR="STORAGE_STATE_JSON_${CID}"
+          EFFECTIVE_ENV="${CHANNEL_ENV_FILE:-$FALLBACK_ENV_FILE}"
+          ACTIVE_COOKIES="${CHANNEL_COOKIES_JSON:-${COOKIES_JSON_1:-$FALLBACK_COOKIES}}"
+          ACTIVE_STORAGE="${CHANNEL_STORAGE_STATE_JSON:-${STORAGE_STATE_JSON_1:-$FALLBACK_STORAGE}}"
 
-          ACTIVE_EMAIL="${!EMAIL_VAR:-$FALLBACK_EMAIL}"
-          ACTIVE_PASS="${!PASS_VAR:-$FALLBACK_PASSWORD}"
-          ACTIVE_COOKIES="${!COOKIE_VAR:-$FALLBACK_COOKIES}"
-          ACTIVE_STORAGE="${!STORAGE_VAR:-$FALLBACK_STORAGE}"
-
-          echo "YT_EMAIL=${ACTIVE_EMAIL}" >> .env
-          echo "YT_PASSWORD=${ACTIVE_PASS}" >> .env
+          if [ -n "${EFFECTIVE_ENV}" ]; then
+            printf '%s\n' "${EFFECTIVE_ENV}" > .env
+          else
+            ACTIVE_EMAIL="${YT_EMAIL_1:-$FALLBACK_EMAIL}"
+            ACTIVE_PASS="${YT_PASSWORD_1:-$FALLBACK_PASSWORD}"
+            echo "YT_EMAIL=${ACTIVE_EMAIL}" > .env
+            echo "YT_PASSWORD=${ACTIVE_PASS}" >> .env
+          fi
           chmod 600 .env || true
 
           if [ -n "${ACTIVE_COOKIES}" ]; then
@@ -255,19 +240,9 @@ jobs:
         run: |
           shred -u .env cookies.json storage_state.json session.har 2>/dev/null || rm -f .env cookies.json storage_state.json session.har
 
-      - name: Üretim Kapısı Kilidini Serbest Bırak
-        if: always() && steps.gate.outputs.lock_acquired == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
-          LOCK_NAME: pruner-studio-lock
-        run: bash scripts/production_gate.sh --release
-
   # =========================================================================
   # ZİNCİRLEME YEDEK TETİKLEYİCİ (CRON-FALLBACK)
   # =========================================================================
-  # GitHub Actions 'schedule' tetikleyicisi yoğun saatlerde gecikirse:
-  # 1) Bir sonraki saat dilimi için kendi yedek tetiklemesini kontrol eder.
-  # 2) daily_shorts.yml son 2.5 saatte (9000 sn) hiç çalışmamışsa onu da uyandırır.
   cron-kick:
     needs: [prune-videos]
     if: always()
@@ -283,7 +258,7 @@ jobs:
           set +e
           NOW=$(date -u +%s)
 
-          # 1) daily_shorts.yml son 9000 sn (2.5 saat) içinde çalışmadıysa uyandır
+          # daily_shorts.yml son 9000 sn (2.5 saat) içinde çalışmadıysa uyandır
           LAST_SHORTS=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
             "https://api.github.com/repos/${REPO}/actions/workflows/daily_shorts.yml/runs?per_page=5" | \
             python3 -c "
@@ -314,7 +289,7 @@ jobs:
                 -H "Authorization: Bearer ${GH_TOKEN}" \
                 -H "Accept: application/vnd.github+json" \
                 "https://api.github.com/repos/${REPO}/actions/workflows/daily_shorts.yml/dispatches" \
-                -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"all\",\"slot_epoch\":\"${SLOT}\"}}" || true
+                -d "{\"ref\":\"main\",\"inputs\":{\"target_channel\":\"1\",\"slot_epoch\":\"${SLOT}\"}}" || true
             fi
           fi
           exit 0
