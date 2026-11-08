@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## 2026-11-08 — REBEL Faz 2 & Faz 3: Senaryo Havuzu Genişletme (`77 -> 127`), Wikimedia CC BY-SA Lisans Atfı, İlk 3 Saniye Hook Altyazısı ve Canlı Pruner Doğrulaması
+
+- `content_engine.py`: `FALLBACK_SCENARIOS` havuzu doğrulanmış Wikipedia/UNESCO/NASA kaynaklı **50 yeni senaryo** ile `77 -> 127` senaryoya çıkarıldı (`75` adet kanalda hiç yayınlanmamış taze senaryo). Ayrıca `load_channel_live_titles()` ile `prune_state.json` içindeki tüm canlı kanal geçmişi mükerrer konu kilidine dahil edildi.
+- `src/media_processing/media_processor.py`:
+  - **Wikimedia Commons CC BY / CC BY-SA Otomatik Lisans Atfı**: `iiprop: url|size|mime|extmetadata` üzerinden `LicenseShortName`, `Artist`, `Attribution` okunarak `CC BY` / `CC BY-SA` gerektiren görseller kullanıldığında `script.json` açıklamasına (`Görsel Lisans: ...`) otomatik atıf satırı eklenir (`Public domain` / `CC0` görsellerde gereksiz satır eklenmez).
+  - **İlk 3 Saniye (`Style: Hook`) ASS Altyazı Vurgusu**: `0:00:00.`–`0:00:02.` aralığındaki ilk 3 saniyelik kanca altyazıları `Style: Hook` (`62pt`, altın-sarı ton, kalın kontur ve elastik `82% -> 106% -> 100%` pop-in animasyonu) ile vurgulanır.
+- `prune_low_performers.js` & `.github/workflows/hourly_pruner.yml`: Bozuk taslak (`DRAFT` + `>100` kr / URL / dosya adı) yaş şartı aranmaksızın imha desteği ve `PRUNE_MAX_DELETIONS=25` kapasitesi eklendi (`4974995`). Canlı `Run #464` (`42493476920`) başarıyla tamamlanarak 13 düşük izlenmeli videoyu daha sildi ve kanal video sayısını `93 -> 83 -> 70` seviyesine indirdi (`23` toplam silme).
+- `analytics_scraper.js` & `analytics_feedback.json`: Yalnızca yeni yüklenen son 12 videoyu değil, kanalın olgunlaşmış (`views >= 10`) videolarını da baz alacak şekilde güncellendi (`Tarih` ort. `662.0`, `Bilim` ort. `469.0`, `Uzay` ort. `454.0` izlenme).
+
 ## 2026-11-08 — REBEL Otonom Kanal Onarımı: Başlık Ezilmesi, Diyalog Kapanması, Pruner v7 ve 2–3 Saatlik Yayın Temposu
 
 - `youtube_studio_uploader.js` içinde `#Shorts` ile biten başlık yazıldığında açılan `tp-yt-iron-dropdown` öneri listesinin `#description-textarea` odaklamasını bozup ~300 karakterlik açıklamayı Başlık kutusuna yazması (`Run #550` / `studio_error.png` kanıtı) ve kapak adımı sonrasındaki genel `[role="dialog"] #close-button` döngüsünün `ytcp-uploads-dialog` penceresini kapatması (`Run #549` kanıtı) düzeltildi.

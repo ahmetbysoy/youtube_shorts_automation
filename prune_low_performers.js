@@ -24,11 +24,18 @@
  *   - prune_state.json   (video ID -> ilk görülme zamanı)
  */
 
-const { chromium } = require('playwright');
+let chromium = null;
+try {
+    ({ chromium } = require('playwright'));
+} catch (_) {
+    // Birim testlerinde (node_modules olmadan) saf mantık fonksiyonlarının import edilebilmesi için
+}
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-require('dotenv').config();
+try {
+    require('dotenv').config();
+} catch (_) {}
 
 const BASE_DIR = __dirname;
 const COOKIES_PATH = path.join(BASE_DIR, 'cookies.json');

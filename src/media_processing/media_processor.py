@@ -147,9 +147,28 @@ def _build_query_variants(keyword: str) -> List[str]:
     return variants
 
 
+def _strip_html(raw: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", str(raw or ""))
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _extract_wikimedia_credit(page: Dict[str, Any], ii: Dict[str, Any]) -> str:
+    """Wikimedia Commons extmetadata alanından CC BY / CC BY-SA lisans ve yazar atfını üretir."""
+    ext = (ii or {}).get("extmetadata") or {}
+    lic = _strip_html((ext.get("LicenseShortName") or {}).get("value", ""))
+    attr_req = str((ext.get("AttributionRequired") or {}).get("value", "")).lower()
+    artist = _strip_html((ext.get("Artist") or {}).get("value", "")) or _strip_html((ext.get("Credit") or {}).get("value", ""))
+    file_title = str((page or {}).get("title", "")).replace("File:", "").strip()
+    needs_attr = ("cc" in lic.lower() and "cc0" not in lic.lower()) or "by" in lic.lower() or attr_req in ("true", "1", "yes")
+    if not needs_attr:
+        return ""
+    parts = [p for p in (file_title[:60], artist[:50], lic or "CC BY-SA") if p]
+    return f"Görsel/Video Atfı (Wikimedia Commons): {' — '.join(parts)}"
+
+
 def fetch_wikimedia_media(keyword: str, duration_needed: float, used_urls: set[str] | None = None) -> Dict[str, Any] | None:
     """
-    Üçüncül Medya Katmanı (sıfır anahtar; dosya bazlı lisans/atıf doğrulaması gerekir):
+    Üçüncül Medya Katmanı (dosya bazlı otomatik CC BY / CC BY-SA lisans/atıf doğrulamalı):
     Pexels/Pixabay anahtarı yoksa veya kota dolmuşsa Wikimedia Commons resmi API'sinden
     gerçek belgesel/doğa videoları (.webm/.mp4) veya yüksek çözünürlüklü arşiv görselleri çeker.
     """
@@ -170,7 +189,7 @@ def fetch_wikimedia_media(keyword: str, duration_needed: float, used_urls: set[s
                     "gsrnamespace": 6,
                     "gsrlimit": 15,
                     "prop": "imageinfo",
-                    "iiprop": "url|size|mime",
+                    "iiprop": "url|size|mime|extmetadata",
                     "format": "json",
                 },
                 headers=headers,
@@ -188,14 +207,15 @@ def fetch_wikimedia_media(keyword: str, duration_needed: float, used_urls: set[s
                 size = int(ii.get("size") or 0)
                 mime = str(ii.get("mime", "")).lower()
                 if url and url not in used and 500_000 <= size <= 28_000_000 and ("video/webm" in mime or "video/mp4" in mime):
-                    valid_videos.append(url)
+                    valid_videos.append((url, _extract_wikimedia_credit(page, ii)))
             if valid_videos:
-                chosen = valid_videos[0]
+                chosen_url, credit = valid_videos[0]
                 return {
-                    "url": chosen,
+                    "url": chosen_url,
                     "duration": 10.5,
                     "provider": "wikimedia-commons-video",
                     "media_kind": "video",
+                    "credit": credit,
                 }
         except Exception as exc:
             print(f"[UYARI] Wikimedia video arama hatası ({q}): {exc}", file=sys.stderr)
@@ -212,7 +232,7 @@ def fetch_wikimedia_media(keyword: str, duration_needed: float, used_urls: set[s
                     "gsrnamespace": 6,
                     "gsrlimit": 15,
                     "prop": "imageinfo",
-                    "iiprop": "url|size|mime",
+                    "iiprop": "url|size|mime|extmetadata",
                     "iiurlwidth": 1920,
                     "format": "json",
                 },
@@ -230,14 +250,15 @@ def fetch_wikimedia_media(keyword: str, duration_needed: float, used_urls: set[s
                 thumb_url = ii.get("thumburl") or ii.get("url") or ""
                 mime = str(ii.get("mime", "")).lower()
                 if thumb_url and thumb_url not in used and ("image/jpeg" in mime or "image/png" in mime):
-                    valid_images.append(thumb_url)
+                    valid_images.append((thumb_url, _extract_wikimedia_credit(page, ii)))
             if valid_images:
-                chosen = valid_images[0]
+                chosen_url, credit = valid_images[0]
                 return {
-                    "url": chosen,
+                    "url": chosen_url,
                     "duration": 10.5,
                     "provider": "wikimedia-commons-archive",
                     "media_kind": "image",
+                    "credit": credit,
                 }
         except Exception as exc:
             print(f"[UYARI] Wikimedia görsel arama hatası ({q}): {exc}", file=sys.stderr)
@@ -349,6 +370,7 @@ ScaledBorderAndShadow: yes
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Default,Montserrat-Bold,56,&H0000FFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,1.5,0,1,5,3,2,70,70,250,1
+Style: Hook,Montserrat-Bold,62,&H0026FFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,2.0,0,1,6,4,2,70,70,250,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -363,8 +385,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             start_ass = _srt_time_to_ass(start_raw)
             end_ass = _srt_time_to_ass(end_raw)
             text = " ".join(lines[2:]).replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
-            pop_fx = r"{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}"
-            events.append(f"Dialogue: 0,{start_ass},{end_ass},Default,,0,0,0,,{pop_fx}{text}")
+            is_hook = start_ass.startswith(("0:00:00.", "0:00:01.", "0:00:02."))
+            style_name = "Hook" if is_hook else "Default"
+            pop_fx = (
+                r"{\fscx82\fscy82\bord6\t(0,90,\fscx106\fscy106)\t(90,150,\fscx100\fscy100)}"
+                if is_hook
+                else r"{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}"
+            )
+            events.append(f"Dialogue: 0,{start_ass},{end_ass},{style_name},,0,0,0,,{pop_fx}{text}")
 
     ass_path.write_text(ass_header + "\n".join(events) + "\n", encoding="utf-8")
     print(f"[INFO] ASS altyazı dosyası oluşturuldu: {ass_path} ({len(events)} dinamik blok)")
@@ -579,6 +607,7 @@ def run_media_pipeline() -> Path:
                         "duration": per_scene_sec,
                         "media_kind": media_kind,
                         "provider": video_meta["provider"],
+                        "credit": str(video_meta.get("credit") or "").strip(),
                     })
                     current_duration += per_scene_sec
                     print(
@@ -594,6 +623,18 @@ def run_media_pipeline() -> Path:
 
         if not scenes:
             raise RuntimeError("Hiçbir video/medya klibi indirilemedi! API anahtarlarını veya ağı kontrol et.")
+
+        # Wikimedia Commons CC BY / CC BY-SA klipleri kullanıldıysa lisans/yazar atfını açıklamaya otomatik ekle
+        credits = list(dict.fromkeys(s["credit"] for s in scenes if s.get("credit")))
+        if credits:
+            desc = str(script_data.get("description") or "").strip()
+            missing_credits = [c for c in credits if c not in desc]
+            if missing_credits:
+                script_data["description"] = (desc + "\n\n" + "\n".join(missing_credits)).strip()[:4900]
+                script_Data_credits = list(dict.fromkeys((script_data.get("media_credits") or []) + credits))
+                script_data["media_credits"] = script_Data_credits
+                script_json.write_text(json.dumps(script_data, ensure_ascii=False, indent=2), encoding="utf-8")
+                print(f"[LİSANS] {len(missing_credits)} adet Wikimedia CC BY/BY-SA atfı script.json açıklamasına eklendi.")
 
         ass_path = OUTPUT_DIR / "final.ass"
         convert_srt_to_ass(srt_file, ass_path)

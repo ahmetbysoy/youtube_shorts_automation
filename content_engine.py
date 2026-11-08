@@ -44,7 +44,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-import edge_tts
+try:
+    import edge_tts
+except ImportError:  # pragma: no cover
+    edge_tts = None  # type: ignore[assignment]
 import requests
 
 DEFAULT_AUDIO_OUT = Path("voiceover.mp3")
@@ -1459,6 +1462,725 @@ FALLBACK_SCENARIOS: list[dict[str, Any]] = [
             "Bu deney kuantum bilgisayarlar ve iletişim teknolojisi için devrimsel sonuçlar doğurabilir."
         ),
         "visual_keywords": ["light beam slow down", "quantum physics laboratory", "laser experiment science", "photon physics visualization"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Fatih Sultan Mehmet Gemileri Karadan Nasıl Yürüttü? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/İstanbul%27un_Fethi",
+        "description": "1453 Haliç zinciri ve kızaklarla taşınan Osmanlı donanması #tarih #shorts",
+        "hook": "Bizans Haliç'in girişine dev bir zincir gerdiğinde Osmanlı donanmasının geçmesi imkânsız görünüyordu.",
+        "script_text": (
+            "Bizans Haliç'in girişine dev bir zincir gerdiğinde Osmanlı donanmasının geçmesi imkânsız görünüyordu. "
+            "Ancak 22 Nisan 1453 gecesi Fatih Sultan Mehmet tarihin en cüretkâr askeri manevralarından birini başlattı. "
+            "Tophane kıyısından Kasımpaşa sırtlarına kadar döşenen yağlanmış ahşap kızaklar üzerinden "
+            "yetmişe yakın savaş gemisi öküzler ve binlerce asker yardımıyla karadan çekildi. "
+            "Sabah olduğunda Haliç'te Osmanlı yelkenlilerini gören Bizans savunması iki cepheye bölündü ve kuşatmanın kaderi değişti."
+        ),
+        "visual_keywords": ["ottoman ship sailing", "constantinople medieval walls", "wooden ship ropes", "golden horn istanbul"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "1518'de Yüzlerce İnsanı Durmadan Dans Ettiren Salgın! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/1518_Dans_Salgını",
+        "description": "Strazburg'da 1518 yılında yaşanan gizemli dans vebası #tarih #shorts",
+        "hook": "1518 yazında Strazburg sokaklarında bir kadın aniden dans etmeye başladı ve günlerce duramadı.",
+        "script_text": (
+            "1518 yazında Strazburg sokaklarında bir kadın aniden dans etmeye başladı ve günlerce duramadı. "
+            "Bir hafta içinde otuz dört kişi, bir ay içinde ise yaklaşık dört yüz kişi bu tuhaf harekete katıldı. "
+            "İnsanlar ayakları kanayana ve yorgunluktan yere yığılana kadar kontrolsüzce zıplıyordu. "
+            "Dönemin belediye meclisi ve hekimleri çavdar küfü zehirlenmesi ile kitlesel psikojenik hastalık arasında kalan bu olayı "
+            "ancak müzikleri yasaklayıp hastaları şifahaneye taşıyarak durdurabildi."
+        ),
+        "visual_keywords": ["strasbourg medieval street", "historical crowd dancing", "old european town", "medieval manuscript art"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Babil'in Asma Bahçeleri Gerçekte Ninova'da mıydı? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Babil%27in_Asma_Bahçeleri",
+        "description": "Antik dünyanın yedi harikasından yeri hâlâ tartışılan tek eser #tarih #shorts",
+        "hook": "Antik dünyanın yedi harikasından biri olan Babil'in Asma Bahçeleri aslında Babil'de olmayabilir.",
+        "script_text": (
+            "Antik dünyanın yedi harikasından biri olan Babil'in Asma Bahçeleri aslında Babil'de olmayabilir. "
+            "Arkeologlar Babil kalıntılarında bu devasa teraslara dair hiçbir çivi yazısı kaydı bulamadı. "
+            "Oxford Üniversitesi'nden Stephanie Dalley'nin araştırması, bahçelerin gerçekte Asur Kralı Sanherib tarafından "
+            "üç yüz kilometre kuzeydeki Ninova şehrinde kurulduğunu gösteriyor. "
+            "Arşimet vidası benzeri bronz su pompalarıyla sulanan bu mühendislik harikası yüzyıllar boyunca Babil ile karıştırıldı."
+        ),
+        "visual_keywords": ["ancient mesopotamia temple", "hanging gardens waterfall", "cuneiform clay tablet", "ancient ruins desert"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Çin İmparatorunu Korumak İçin Yapılan 8 Bin Toprak Asker! #Shorts",
+        "source": "UNESCO — https://whc.unesco.org/en/list/441/",
+        "description": "Toprak Askerler ordusunda neden hiçbir yüz birbirine benzemiyor? #tarih #shorts",
+        "hook": "1974 yılında Çin'de su kuyusu kazan köylüler yerin altında koca bir imparatorluk ordusuyla karşılaştı.",
+        "script_text": (
+            "1974 yılında Çin'de su kuyusu kazan köylüler yerin altında koca bir imparatorluk ordusuyla karşılaştı. "
+            "İlk Çin İmparatoru Çin Şi Huang'ın mezarını korumak için milattan önce üçüncü yüzyılda yapılan "
+            "sekiz binden fazla gerçek boyutlu pişmiş toprak asker tek tek işlenmişti. "
+            "En çarpıcı ayrıntı ise askerlerin bıyıklarından kulak kıvrımlarına kadar her birinin yüz ifadesinin benzersiz olmasıdır; "
+            "üstelik imparatorun asıl mezar odası cıva nehirleri şüphesiyle hâlâ açılmadı."
+        ),
+        "visual_keywords": ["terracotta warriors china", "ancient chinese sculptures", "archaeological excavation pit", "imperial tomb museum"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Bir Denizaltıyı Tuvalet Arızası Yüzünden Kaybetmek: U-1206! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/U-1206",
+        "description": "İkinci Dünya Savaşı'nda yüksek basınçlı valf hatasıyla batan denizaltı #tarih #shorts",
+        "hook": "İkinci Dünya Savaşı'nın en gelişmiş Alman denizaltılarından biri düşman torpidosuyla değil, tuvalet arızasıyla battı.",
+        "script_text": (
+            "İkinci Dünya Savaşı'nın en gelişmiş Alman denizaltılarından biri düşman torpidosuyla değil, tuvalet arızasıyla battı. "
+            "Nisan 1945'te Kuzey Denizi'nde seyreden U-1206 denizaltısında derin su basıncına dayanıklı karmaşık bir sifon sistemi vardı. "
+            "Valfler yanlış sırayla açılınca deniz suyu hızla içeri doldu ve zemindeki dev bataryalara ulaştı. "
+            "Ortaya çıkan ölümcül klor gazı yüzünden komutan yüzeye çıkmak zorunda kaldı "
+            "ve İngiliz devriye uçaklarına yakalanan mürettebat gemiyi terk etti."
+        ),
+        "visual_keywords": ["submarine underwater ocean", "vintage naval control room", "north sea waves", "periscope water surface"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Piri Reis Haritası 1513'te Güney Amerika'yı Nasıl Çizdi? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Pîrî_Reis_Haritası",
+        "description": "Topkapı Sarayı'nda bulunan 1513 tarihli ceylan derisi dünya haritası #tarih #shorts",
+        "hook": "1929'da Topkapı Sarayı arşivinde bulunan ceylan derisi bir harita kartografi tarihini sarstı.",
+        "script_text": (
+            "1929'da Topkapı Sarayı arşivinde bulunan ceylan derisi bir harita kartografi tarihini sarstı. "
+            "Osmanlı denizcisi Piri Reis'in 1513 yılında Gelibolu'da çizdiği bu harita, "
+            "Avrupa ve Afrika kıyılarının yanı sıra yeni keşfedilen Güney Amerika sahillerini şaşırtıcı bir doğrulukla gösteriyordu. "
+            "Piri Reis harita kenarındaki notlarında Arap, Portekiz ve Kristof Kolomb'a ait yirmi farklı eski haritayı "
+            "tek bir ölçekte birleştirerek bu eşsiz eseri oluşturduğunu bizzat kaydetmiştir."
+        ),
+        "visual_keywords": ["antique world map", "compass old parchment", "sailing ship ocean", "istanbul palace archive"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Antik Mısır dilini Çözen Üç Dilli Şifre: Rosetta Taşı! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Rosetta_Taşı",
+        "description": "1400 yıl boyunca kimsenin okuyamadığı hiyeroglifler nasıl çözüldü? #tarih #shorts",
+        "hook": "Bin dört yüz yıl boyunca yeryüzündeki hiç kimse Mısır tapınaklarındaki hiyerogliflerin ne anlattığını okuyamadı.",
+        "script_text": (
+            "Bin dört yüz yıl boyunca yeryüzündeki hiç kimse Mısır tapınaklarındaki hiyerogliflerin ne anlattığını okuyamadı. "
+            "Ta ki 1799'da Reşid kasabasında siyah granodiyorit bir dikilitaş bulunana kadar. "
+            "Rosetta Taşı'nın üzerinde aynı kraliyet kararnamesi hem hiyeroglif hem Demotik hem de Antik Yunanca olarak yazılmıştı. "
+            "Fransız dilbilimci Jean-François Champollion 1822'de Yunanca metni anahtar olarak kullanıp firavun isimlerini eşleştirdi "
+            "ve binlerce yıllık Mısır kayıtlarının kilidini tamamen açtı."
+        ),
+        "visual_keywords": ["rosetta stone hieroglyphs", "ancient egyptian carvings", "museum stone artifact", "pharaoh temple wall"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Yazısız İmparatorluk İnkalar Düğümlerle Nasıl Hesap Yaptı? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Kipu",
+        "description": "İnka İmparatorluğu'nun renkli ipler ve düğümlerden oluşan Kipu sistemi #tarih #shorts",
+        "hook": "Güney Amerika'nın en büyük imparatorluğunu kuran İnkalar tek bir harf veya tekerlek kullanmadan milyonları yönetti.",
+        "script_text": (
+            "Güney Amerika'nın en büyük imparatorluğunu kuran İnkalar tek bir harf veya tekerlek kullanmadan milyonları yönetti. "
+            "Bunun yerine Kipu adı verilen renkli lama ve pamuk iplerine atılmış özel düğüm dizilerini kullandılar. "
+            "Her düğümün şekli, ip üzerindeki konumu ve büküm yönü onluk tabanda nüfus sayımlarını, "
+            "vergi kayıtlarını ve erzak depolarındaki stokları hatasız biçimde kodluyordu. "
+            "Koşucu haberciler bu düğümlü kayıtları And Dağları'nın taş yollarında elden ele taşıyordu."
+        ),
+        "visual_keywords": ["machu picchu andes", "knotted ropes textile", "ancient inca ruins", "mountain stone trail"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Roma Betonları 2 Bin Yıldır Deniz Suyunda Neden Çökmüyor? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Roma_betonu",
+        "description": "Modern beton 50 yılda aşınırken Antik Roma limanlarının sırrı neydi? #tarih #shorts",
+        "hook": "Modern deniz betonları birkaç on yılda çatlamaya başlarken Antik Roma dalgakıranları iki bin yıldır ayakta duruyor.",
+        "script_text": (
+            "Modern deniz betonları birkaç on yılda çatlamaya başlarken Antik Roma dalgakıranları iki bin yıldır ayakta duruyor. "
+            "MIT ve Berkeley araştırmacıları Roma harcının sırrını volkanik kül ve sönmemiş kireç karışımında buldu. "
+            "Sıcak karıştırma tekniğiyle harcın içinde kalan küçük kireç parçacıkları, "
+            "betonda mikro çatlak oluştuğunda yağmur veya deniz suyuyla tepkimeye girerek çatlağı kendi kendine yeniden dolduruyor. "
+            "Yani Roma betonu zaman geçtikçe zayıflamak yerine kendi kendini onarıyor."
+        ),
+        "visual_keywords": ["pantheon rome dome", "roman aqueduct stone", "mediterranean sea waves", "ancient harbor ruins"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "1816 Yazsız Yıl: Haziran Ayında Neden Kar Yağdı? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Yazsız_Yıl",
+        "description": "Tambora Yanardağı patlamasının dünyayı dondurduğu 1816 yılı #tarih #shorts",
+        "hook": "1816 yılında Avrupa ve Kuzey Amerika'da yaz mevsimi hiç gelmedi; haziran ayında göller dondu.",
+        "script_text": (
+            "1816 yılında Avrupa ve Kuzey Amerika'da yaz mevsimi hiç gelmedi; haziran ayında göller dondu. "
+            "Bu küresel soğumanın nedeni bir yıl önce Endonezya'daki Tambora Yanardağı'nın son on bin yılın en şiddetli patlamasını yaşamasıydı. "
+            "Stratosfere yükselen milyonlarca ton kükürt dioksit güneş ışığını perdeleyerek küresel sıcaklığı düşürdü. "
+            "Hasatlar yandı, kıtlık başladı ve İsviçre'de fırtınadan eve kapanan Mary Shelley bu karanlık yazda Frankenstein romanını yazdı."
+        ),
+        "visual_keywords": ["volcano ash eruption", "snow storm forest", "dark stormy clouds", "vintage nineteenth century"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "1919'da Boston Sokaklarını Basan Dev Melas Dalgası! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Büyük_Boston_Melas_Felaketi",
+        "description": "Saatte 56 kilometre hızla şehri yutan 8 milyon litrelik şurup seli #tarih #shorts",
+        "hook": "1919 yılında Boston şehrinde sekiz buçuk milyon litrelik dev bir şeker pekmezi tankı aniden patladı.",
+        "script_text": (
+            "1919 yılında Boston şehrinde sekiz buçuk milyon litrelik dev bir şeker pekmezi tankı aniden patladı. "
+            "Yüksekliği yedi metreyi bulan yoğun melas dalgası saatte elli altı kilometre hızla sokaklara yayıldı. "
+            "Soğuk kış havasında hızla katılaşan yapışkan sıvı binaları temelinden söktü ve tren raylarını büktü. "
+            "Fizikçiler melasın kayma incelmesi özelliği nedeniyle ilk anda tahmin edilenden çok daha hızlı aktığını "
+            "ancak soğudukça ölümcül bir tuzağa dönüştüğünü ortaya koydu."
+        ),
+        "visual_keywords": ["industrial steel tank", "historical city street", "dark thick liquid", "winter harbor port"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "1325'te Tek Bir Tahta Kova Yüzünden Çıkan Gerçek Savaş! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Kova_Savaşı",
+        "description": "Modena ve Bologna şehir devletleri arasındaki Kova Savaşı #tarih #shorts",
+        "hook": "1325 yılında İtalya'daki iki şehir arasında kuyu başından çalınan meşe bir kova yüzünden meydan savaşı çıktı.",
+        "script_text": (
+            "1325 yılında İtalya'daki iki şehir arasında kuyu başından çalınan meşe bir kova yüzünden meydan savaşı çıktı. "
+            "Modena askerleri rakip Bologna şehrine gizlice girip merkez kuyusunun tahta kovasını ganimet olarak kaçırdı. "
+            "Gururu kırılan Bologna kovayı geri almak için otuz iki bin kişilik bir ordu topladı. "
+            "Zapolino Muharebesi'nde iki bin kişi hayatını kaybetti ama Modena savaşı kazandı "
+            "ve o meşe kova bugün hâlâ Modena belediye binasında sergileniyor."
+        ),
+        "visual_keywords": ["medieval italian tower", "wooden well bucket", "medieval soldiers battle", "historic bologna street"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Çölün Ortasında 2 Bin Yıllık Kaya Şehri: Petra! #Shorts",
+        "source": "UNESCO — https://whc.unesco.org/en/list/326/",
+        "description": "Nebatilerin pembe kumtaşı kayalara oyduğu su mühendisliği harikası Petra #tarih #shorts",
+        "hook": "Ürdün çölünün ortasında dar bir kanyonun sonunda kayalara tek parça halinde oyulmuş kırk metrelik bir tapınak yükselir.",
+        "script_text": (
+            "Ürdün çölünün ortasında dar bir kanyonun sonunda kayalara tek parça halinde oyulmuş kırk metrelik bir tapınak yükselir. "
+            "Nebatiler milattan önce dördüncü yüzyılda kurdukları Petra şehrini pembe kumtaşı uçurumları yukarıdan aşağıya doğru yontarak inşa etti. "
+            "Yılda yalnızca birkaç kez yağmur alan bu kurak vadide pişmiş toprak borular, barajlar ve yeraltı sarnıçları kurarak "
+            "otuz bin kişinin yaşadığı yemyeşil bir ticaret vahası yarattılar."
+        ),
+        "visual_keywords": ["petra jordan canyon", "desert sandstone monument", "ancient rock carving", "middle east caravan"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "1637'de Tek Bir Lale Soğanı Bir Ev Fiyatına Satıldı! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Lale_çılgınlığı",
+        "description": "Hollanda Altın Çağı'nda tarihin ilk ekonomik balonu: Lale Çılgınlığı #tarih #shorts",
+        "hook": "1637 yılında Hollanda'da nadir bir lale soğanı Amsterdam'da kanal kıyısındaki bir malikâneyle aynı fiyata satılıyordu.",
+        "script_text": (
+            "1637 yılında Hollanda'da nadir bir lale soğanı Amsterdam'da kanal kıyısındaki bir malikâneyle aynı fiyata satılıyordu. "
+            "Osmanlı topraklarından Avrupa'ya ulaşan laleler, yapraklarında alacalı desenler oluşturan bir bitki virüsü sayesinde "
+            "statü sembolüne dönüştü. "
+            "Tüccarlar henüz topraktan çıkmamış soğanlar üzerine vadeli sözleşmeler imzaladı "
+            "ancak şubat 1637'de alıcılar müzayedeye gelmeyince fiyatlar bir gecede çöktü ve tarihin ilk finansal balonlarından biri patladı."
+        ),
+        "visual_keywords": ["tulip field netherlands", "amsterdam canal houses", "gold coins trade", "colorful tulip flower"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "224 Metre Boyunda Dev Heykel: Rodos Heykeli Nasıldı? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Rodos_Heykeli",
+        "description": "Antik dünyanın en yüksek bronz heykeli depremde yıkılınca neden 800 yıl yerde kaldı? #tarih #shorts",
+        "hook": "Antik Rodos limanında yükselen otuz üç metrelik bronz Güneş Tanrısı heykeli Özgürlük Anıtı'nın gövdesiyle aynı boydaydı.",
+        "script_text": (
+            "Antik Rodos limanında yükselen otuz üç metrelik bronz Güneş Tanrısı heykeli Özgürlük Anıtı'nın gövdesiyle aynı boydaydı. "
+            "MÖ 280 yılında kuşatmadan kalan bronz silahların eritilmesiyle on iki yılda tamamlandı. "
+            "Ancak sadece elli dört yıl sonra şiddetli bir depremde dizlerinden kırılarak devrildi. "
+            "Kâhinler heykelin yeniden dikilmesini uğursuz sayınca devasa bronz parçalar sekiz yüz yıl boyunca olduğu yerde kaldı."
+        ),
+        "visual_keywords": ["ancient greek harbor", "bronze statue monument", "aegean sea island", "ancient columns ruins"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "600 Yıldır Kimsenin Okuyamadığı Gizemli Kitap: Voynich! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Voynich_el_yazması",
+        "description": "Karbon testiyle 15. yüzyıla tarihlenen ve kriptologların çözemediği el yazması #tarih #shorts",
+        "hook": "Yale Üniversitesi kasasında saklanan iki yüz kırk sayfalık bir kitabın tek bir cümlesi bile altı yüz yıldır okunamadı.",
+        "script_text": (
+            "Yale Üniversitesi kasasında saklanan iki yüz kırk sayfalık bir kitabın tek bir cümlesi bile altı yüz yıldır okunamadı. "
+            "Radyokarbon testiyle 1404 ile 1438 yılları arasına tarihlenen Voynich El Yazması, "
+            "dünyada var olmayan bitkilerin çizimleri, astronomik diyagramlar ve bilinmeyen bir alfabeyle dolu. "
+            "İkinci Dünya Savaşı'nın en usta şifre çözücüleri ve modern yapay zekâ modelleri "
+            "metnin doğal dil istatistiklerine uyduğunu doğrulasa da anlamını hâlâ çözemedi."
+        ),
+        "visual_keywords": ["ancient manuscript book", "mysterious botanical drawing", "medieval parchment calligraphy", "old library archive"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Nötron Yıldızlarının Çekirdeğinde 'Nükleer Makarna' Var! #Shorts",
+        "source": "NASA — https://science.nasa.gov/universe/stars/neutron-stars/",
+        "description": "Evrendeki en sağlam madde: çelikten 10 milyar kat güçlü nükleer makarna #bilim #uzay #shorts",
+        "hook": "Evrendeki en güçlü maddenin adı astrofizikçiler tarafından resmen nükleer makarna olarak konuldu.",
+        "script_text": (
+            "Evrendeki en güçlü maddenin adı astrofizikçiler tarafından resmen nükleer makarna olarak konuldu. "
+            "Ömrünü tamamlayan dev yıldızların çökmüş çekirdeği olan nötron yıldızlarının kabuğunun altında, "
+            "proton ve nötronlar korkunç kütleçekim basıncıyla spagetti ve lazanya katmanlarına benzer şekillerde sıkışır. "
+            "Süper bilgisayar simülasyonlarına göre bu nükleer makarna yapısını kırmak için "
+            "çeliği kırmaktan tam on milyar kat daha fazla kuvvet gerekir."
+        ),
+        "visual_keywords": ["neutron star cosmos", "supernova explosion space", "astrophysics simulation glow", "deep space pulsar"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Güneş Sisteminin En Yüksek Dağı Everest'in 3 Katı: Olympus Mons! #Shorts",
+        "source": "NASA — https://science.nasa.gov/mars/facts/",
+        "description": "Mars'taki 21,9 kilometrelik dev kalkan yanardağı Olympus Mons #uzay #bilim #shorts",
+        "hook": "Mars yüzeyinde yükselen Olympus Mons yanardağı o kadar büyüktür ki zirvesi gezegenin atmosferinin dışına taşar.",
+        "script_text": (
+            "Mars yüzeyinde yükselen Olympus Mons yanardağı o kadar büyüktür ki zirvesi gezegenin atmosferinin dışına taşar. "
+            "Yirmi bir virgül dokuz kilometre yüksekliğe ulaşan bu dev kalkan yanardağı Everest Dağı'nın neredeyse üç katıdır "
+            "ve taban alanı tüm Fransa topraklarını kaplayacak genişliktedir. "
+            "Mars'ta Dünya'daki gibi hareketli tektonik plakalar olmadığı için "
+            "lavlar milyarlarca yıl boyunca hep aynı noktadan üst üste birikerek bu devi oluşturdu."
+        ),
+        "visual_keywords": ["mars planet surface", "volcano crater space", "red planet landscape", "space probe orbit"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Jüpiter'in Kırmızı Leke Fırtınası Dünya'dan Daha Büyük! #Shorts",
+        "source": "NASA — https://science.nasa.gov/jupiter/jupiter-facts/",
+        "description": "En az 300 yıldır durmadan dönen dev antisiklon fırtınası #uzay #bilim #shorts",
+        "hook": "Jüpiter'in üzerindeki Büyük Kırmızı Leke, içine tüm Dünya gezegenini yutabilecek büyüklükte bir fırtınadır.",
+        "script_text": (
+            "Jüpiter'in üzerindeki Büyük Kırmızı Leke, içine tüm Dünya gezegenini yutabilecek büyüklükte bir fırtınadır. "
+            "En az üç yüz yıldır kesintisiz dönen bu dev antisiklonun rüzgâr hızları saatte dört yüz otuz kilometreyi aşar. "
+            "Dünya'daki kasırgalar karaya çarptığında sürtünmeyle dağılırken "
+            "gaz devi Jüpiter'de katı bir yüzey bulunmadığı için fırtına yüzyıllar boyunca enerjisini kaybetmeden dönmeye devam eder."
+        ),
+        "visual_keywords": ["jupiter planet storm", "great red spot", "gas giant clouds", "space telescope planet"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Satürn'ün Uydusu Titan'da Su Yerine Sıvı Metan Yağmuru Yağar! #Shorts",
+        "source": "NASA — https://science.nasa.gov/saturn/moons/titan/",
+        "description": "Güneş sisteminde Dünya dışında yüzeyinde nehir ve deniz bulunan tek gök cismi #uzay #shorts",
+        "hook": "Güneş sisteminde Dünya dışında yüzeyinde akarsular, göller ve denizler bulunan tek bir yer var: Satürn'ün uydusu Titan.",
+        "script_text": (
+            "Güneş sisteminde Dünya dışında yüzeyinde akarsular, göller ve denizler bulunan tek bir yer var: Satürn'ün uydusu Titan. "
+            "Ancak eksi yüz yetmiş dokuz derece sıcaklıktaki bu uyduda su kaya kadar sert bir buza dönüşmüştür. "
+            "Titan'daki bulutlardan yağmur olarak yağan ve nehirleri dolduran sıvı aslında sıvı metan ve etandır. "
+            "Yoğun atmosferi ve düşük yer çekimi sayesinde bir insan Titan'da kollarına kanat taksa uçabilirdi."
+        ),
+        "visual_keywords": ["saturn rings space", "titan moon atmosphere", "alien planet lake", "cassini spacecraft orbit"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Ay'daki Astronot Ayak İzleri Milyonlarca Yıl Silinmeyecek! #Shorts",
+        "source": "NASA — https://science.nasa.gov/moon/facts/",
+        "description": "Apollo astronotlarının bıraktığı ayak izleri neden hiç bozulmuyor? #uzay #bilim #shorts",
+        "hook": "1969 yılında Ay toprağına basılan ilk ayak izleri aradan geçen on yıllara rağmen ilk günkü kadar net duruyor.",
+        "script_text": (
+            "1969 yılında Ay toprağına basılan ilk ayak izleri aradan geçen on yıllara rağmen ilk günkü kadar net duruyor. "
+            "Çünkü Ay'da rüzgâr, yağmur, akarsu veya volkanik hareketlilik yaratan bir atmosfer yoktur. "
+            "Yüzeydeki regolit tozunu yalnızca çok yavaş gerçekleşen mikro göktaşı çarpmaları aşındırabilir. "
+            "NASA hesaplamalarına göre Apollo astronotlarının bıraktığı izler on ila yüz milyon yıl boyunca silinmeden kalacak."
+        ),
+        "visual_keywords": ["astronaut footprint moon", "lunar surface crater", "apollo moonwalk space", "earthrise from moon"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Güneş Her Saniye 4 Milyon Ton Kütlesini Işığa Dönüştürür! #Shorts",
+        "source": "NASA — https://science.nasa.gov/sun/facts/",
+        "description": "Güneş çekirdeğindeki nükleer füzyon ve E=mc² dönüşümü #uzay #fizik #shorts",
+        "hook": "Güneş her bir saniyede dört milyon ton kütlesini doğrudan saf enerjiye ve ışığa dönüştürerek uzaya saçar.",
+        "script_text": (
+            "Güneş her bir saniyede dört milyon ton kütlesini doğrudan saf enerjiye ve ışığa dönüştürerek uzaya saçar. "
+            "On beş milyon derece sıcaklıktaki çekirdekte her saniye altı yüz milyon ton hidrojen helyuma dönüşürken "
+            "aradaki dört milyon tonluk kütle farkı Einstein'ın ünlü denklemi uyarınca ışınıma dönüşür. "
+            "Buna rağmen Güneş o kadar devasadır ki beş milyar yıllık ömrü boyunca toplam kütlesinin yalnızca binde üçünü kaybedecektir."
+        ),
+        "visual_keywords": ["sun solar flare", "burning star plasma", "solar eclipse corona", "space sunspot close"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Merkür Güneş'e En Yakın Gezegen Ama En Sıcağı Değil! #Shorts",
+        "source": "NASA — https://science.nasa.gov/mercury/facts/",
+        "description": "Merkür Güneş'in dibindeyken neden Venüs ondan daha sıcaktır? #uzay #bilim #shorts",
+        "hook": "Güneş'e en yakın gezegen Merkür olmasına rağmen Güneş sisteminin en sıcak gezegeni o değildir.",
+        "script_text": (
+            "Güneş'e en yakın gezegen Merkür olmasına rağmen Güneş sisteminin en sıcak gezegeni o değildir. "
+            "Merkür'ün ısıyı hapsedecek kalın bir atmosferi olmadığı için gündüzleri dört yüz otuz dereceye çıkan yüzey sıcaklığı "
+            "geceleri eksi yüz seksen dereceye kadar düşer. "
+            "Güneş'e ikinci sıradaki Venüs ise yoğun karbondioksit bulutlarının yarattığı kontrolsüz sera etkisi yüzünden "
+            "gece gündüz dört yüz altmış beş derecede kurşunu eritecek kadar sıcak kalır."
+        ),
+        "visual_keywords": ["mercury planet craters", "solar system planets", "venus thick clouds", "sun heat space"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Dünya'nın İç Çekirdeği Güneş Yüzeyi Kadar Sıcak! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Yer%27in_iç_çekirdeği",
+        "description": "Ayaklarımızın 5 bin kilometre altındaki katı demir-nikel küre neden erimiyor? #bilim #shorts",
+        "hook": "Ayaklarımızın beş bin kilometre altında Güneş'in yüzeyiyle aynı sıcaklıkta dev bir demir küre dönüyor.",
+        "script_text": (
+            "Ayaklarımızın beş bin kilometre altında Güneş'in yüzeyiyle aynı sıcaklıkta dev bir demir küre dönüyor. "
+            "Dünya'nın iç çekirdeğinin sıcaklığı yaklaşık beş bin dört yüz santigrat derecedir. "
+            "Normalde demir bu sıcaklıkta çoktan buharlaşması gerekirken, "
+            "üzerindeki üç buçuk milyon atmosferlik muazzam basınç atomları birbirine kenetleyerek çekirdeği katı halde tutar "
+            "ve gezegenimizi kozmik radyasyondan koruyan manyetik kalkanı besler."
+        ),
+        "visual_keywords": ["earth core layers", "molten lava magma", "planet magnetic field", "geology earth cross"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Tek Bir İnsanın DNA'sını Uç Uca Ekleseniz Plüton'a Ulaşır! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/DNA",
+        "description": "Hücre çekirdeğine sığan 2 metrelik DNA zincirinin toplam uzunluğu #bilim #biyoloji #shorts",
+        "hook": "Vücudunuzdaki tek bir hücrenin içinde bulunan DNA sarmalını açıp düzleştirseniz boyu yaklaşık iki metre olur.",
+        "script_text": (
+            "Vücudunuzdaki tek bir hücrenin içinde bulunan DNA sarmalını açıp düzleştirseniz boyu yaklaşık iki metre olur. "
+            "İnsan vücudunda bulunan trilyonlarca çekirdekli hücredeki tüm DNA ipliklerini uç uca eklediğinizde ise "
+            "toplam uzunluk on milyarlarca kilometreye ulaşır. "
+            "Bu mesafe Dünya'dan Güneş sisteminin sınırındaki cüce gezegen Plüton'a gidip geri dönmeye yetecek kadar uzundur."
+        ),
+        "visual_keywords": ["dna double helix", "microscope cell biology", "genetic code strand", "deep space pluto"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Mide Asidiniz Jileti Eritir Ama Midenizi Neden Eritmez? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Mide_öz_suyu",
+        "description": "pH değeri 1,5 olan hidroklorik asit ve kendini 3 günde bir yenileyen mukoza #bilim #shorts",
+        "hook": "İnsan midesindeki hidroklorik asit o kadar güçlüdür ki paslanmaz çelik bir jileti bile aşındırabilir.",
+        "script_text": (
+            "İnsan midesindeki hidroklorik asit o kadar güçlüdür ki paslanmaz çelik bir jileti bile aşındırabilir. "
+            "pH değeri bir buçuk ile iki arasında olan bu güçlü asit midenin kendi duvarını yakmaz; "
+            "çünkü mide yüzeyi bikarbonat açısından zengin yoğun bir mukus kalkanıyla kaplıdır. "
+            "Ayrıca mide iç yüzeyindeki epitel hücreleri her üç ila beş günde bir tamamen yenilenerek olası hasarı anında kapatır."
+        ),
+        "visual_keywords": ["science chemistry acid", "microscope cells biology", "laboratory glass beaker", "human anatomy medical"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Mantis Karidesi Kaynar Su Çıkaran Yumruk Atar! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Mantis_karidesi",
+        "description": "22 kalibrelik mermi hızıyla vuran ve kavitasyon kabarcığı üreten deniz canlısı #bilim #shorts",
+        "hook": "Okyanus tabanında yaşayan on santimetrelik mantis karidesi, yirmi iki kalibrelik mermi hızıyla yumruk atar.",
+        "script_text": (
+            "Okyanus tabanında yaşayan on santimetrelik mantis karidesi, yirmi iki kalibrelik mermi hızıyla yumruk atar. "
+            "Saniyede yirmi üç metre hıza ulaşan bu darbe o kadar hızlıdır ki önündeki suyu buharlaştırarak kavitasyon kabarcıkları oluşturur. "
+            "Bu mikro kabarcıklar çöktüğünde ikinci bir şok dalgası ve anlık ışık parlaması üretir; "
+            "böylece karidesin yumruğu hedefi ıskalasa bile oluşan basınç dalgası yengeç kabuğunu parçalar."
+        ),
+        "visual_keywords": ["mantis shrimp coral", "underwater ocean reef", "colorful marine life", "water bubble shockwave"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Kalbi ve Beyni Olmadan Labirent Çözen Canlı: Cıvık Mantar! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Physarum_polycephalum",
+        "description": "Tokyo metro ağını mühendislerle aynı verimlilikte yeniden çizen tek hücreli #bilim #shorts",
+        "hook": "Beyni, sinir sistemi veya gözü olmayan sarı bir cıvık mantar, Tokyo demiryolu ağını mühendisler kadar kusursuz tasarladı.",
+        "script_text": (
+            "Beyni, sinir sistemi veya gözü olmayan sarı bir cıvık mantar, Tokyo demiryolu ağını mühendisler kadar kusursuz tasarladı. "
+            "Physarum polycephalum adlı bu tek hücreli organizma, yulaf ezmesi parçalarının Tokyo çevresindeki şehirler gibi dizildiği deneyde "
+            "yirmi altı saat içinde tüm noktaları en kısa ve en güvenli tüplerle birbirine bağladı. "
+            "Biyologlar bu canlının kimyasal titreşimlerle hafıza benzeri kararlar alabildiğini kanıtladı."
+        ),
+        "visual_keywords": ["yellow slime mold", "petri dish laboratory", "tokyo train network", "microscope biological growth"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Grönland Köpekbalığı 400 Yıl Yaşayıp Tarihe Tanıklık Ediyor! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Grönland_köpek_balığı",
+        "description": "Omurgalılar dünyasının en uzun ömürlü canlısı nasıl 400 yıl yaşıyor? #bilim #doğa #shorts",
+        "hook": "Kuzey Atlantik'in buzlu sularında bugün yüzmekte olan bazı Grönland köpekbalıkları Osmanlı'nın yükseliş döneminde doğdu.",
+        "script_text": (
+            "Kuzey Atlantik'in buzlu sularında bugün yüzmekte olan bazı Grönland köpekbalıkları Osmanlı'nın yükseliş döneminde doğdu. "
+            "Kopenhag Üniversitesi'nin göz merceği radyokarbon analizleri, bu omurgalıların dört yüz yıla kadar yaşayabildiğini gösterdi. "
+            "Sıfır derecenin altındaki sularda yılda yalnızca bir santimetre büyüyen bu canlılar, "
+            "aşırı yavaş metabolizmaları sayesinde erişkinliğe bile ancak yüz elli yaşında ulaşıyor."
+        ),
+        "visual_keywords": ["shark underwater ocean", "arctic ice water", "deep sea creature", "cold ocean diving"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Mavi Balinanın Kalbi Küçük Bir Otomobil Boyutundadır! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Mavi_balina",
+        "description": "Dünya tarihinde yaşamış en büyük hayvan olan mavi balinanın anatomisi #bilim #doğa #shorts",
+        "hook": "Yeryüzünde yaşamış en büyük dinozordan bile daha ağır olan mavi balinanın yalnızca kalbi yüz seksen kilogramdır.",
+        "script_text": (
+            "Yeryüzünde yaşamış en büyük dinozordan bile daha ağır olan mavi balinanın yalnızca kalbi yüz seksen kilogramdır. "
+            "Küçük bir otomobil boyutundaki bu dev kalp, balina derine daldığında dakikada yalnızca dört ila sekiz kez atar "
+            "ve her atışta iki yüzยirmi litre kan pompalar. "
+            "Aort damarı o kadar geniştir ki bir su borusu gibi içinden bir çocuk rahatlıkla geçebilir."
+        ),
+        "visual_keywords": ["blue whale ocean", "giant whale swimming", "deep blue sea", "marine mammal nature"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Sıfırın Altında 271 Derecede Kavanozdan Tırmanıp Kaçan Sıvı Helyum! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Süperakışkanlık",
+        "description": "Sürtünmesi tamamen sıfırlanan süperakışkan helyumun yer çekimine meydan okuması #fizik #shorts",
+        "hook": "Helyum gazını mutlak sıfırın iki derece üstüne kadar soğuttuğunuzda fizik kurallarına meydan okuyan bir süperakışkana dönüşür.",
+        "script_text": (
+            "Helyum gazını mutlak sıfırın iki derece üstüne kadar soğuttuğunuzda fizik kurallarına meydan okuyan bir süperakışkana dönüşür. "
+            "Eksi iki yüz yetmiş bir derecede iç sürtünmesi tamamen sıfırlanan sıvı helyum, "
+            "içine konulduğu cam kabın duvarlarından ince bir film halinde yukarı doğru tırmanarak dışarı taşar. "
+            "Kuantum mekaniğinin gözle görülebilen bu halinde sıvıyı bir kez döndürdüğünüzde sonsuza dek durmadan dönebilir."
+        ),
+        "visual_keywords": ["liquid nitrogen cryogenics", "physics laboratory experiment", "cold vapor glass", "quantum science lab"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Sezyum Atom Saati 100 Milyon Yılda Sadece 1 Saniye Şaşar! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Atom_saati",
+        "description": "Modern dünyada 1 saniye nasıl tanımlanır ve GPS uyduları atom saati olmadan neden çalışmaz? #bilim #shorts",
+        "hook": "Kolunuzdaki saat ayda birkaç saniye şaşarken modern atom saatleri yüz milyon yılda bir saniye bile geri kalmaz.",
+        "script_text": (
+            "Kolunuzdaki saat ayda birkaç saniye şaşarken modern atom saatleri yüz milyon yılda bir saniye bile geri kalmaz. "
+            "Uluslararası birim sisteminde bir saniye, Sezyum-133 atomunun tam dokuz milyar yüz doksan iki milyon kez titreşmesiyle tanımlanır. "
+            "Telefonunuzdaki GPS navigasyon sistemi uydulardaki bu atom saatlerinin milyarda bir saniyelik zaman farkını ölçerek "
+            "dünya üzerindeki konumunuzu birkaç metre hassasiyetle bulur."
+        ),
+        "visual_keywords": ["atomic clock laser", "satellite orbit earth", "precision physics lab", "time gears technology"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Kıtalar Tırnaklarımızın Uzama Hızıyla Hareket Ediyor! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Levha_tektoniği",
+        "description": "Avrupa ile Amerika her yıl birbirinden kaç santimetre uzaklaşıyor? #bilim #coğrafya #shorts",
+        "hook": "Üzerinde yaşadığımız kıtalar aslında dev manto tabakasının üzerinde parmak tırnaklarımızın uzama hızıyla yüzüyor.",
+        "script_text": (
+            "Üzerinde yaşadığımız kıtalar aslında dev manto tabakasının üzerinde parmak tırnaklarımızın uzama hızıyla yüzüyor. "
+            "Levha tektoniği ölçümlerine göre Kuzey Amerika ile Avrupa kıtası her yıl birbirinden yaklaşık iki buçuk santimetre uzaklaşır. "
+            "Bu küçük hareket milyonlarca yıl boyunca biriktiğinde okyanusları açar, "
+            "Hindistan levhasının Avrasya'ya çarpmasıyla olduğu gibi Himalaya Dağları'nı gökyüzüne doğru yükseltmeye devam eder."
+        ),
+        "visual_keywords": ["himalaya mountains peak", "earth continents globe", "tectonic rift iceland", "ocean ridge geology"],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Dünyanın Tüm Tohumlarını Saklayan Kıyamet Ambarı: Svalbard! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Svalbard_Küresel_Tohum_Deposu",
+        "description": "Kuzey Kutbu'na 1300 km uzaklıkta dağın 120 metre içine oyulan tohum kasası #bilim #shorts",
+        "hook": "Kuzey Kutbu yakınlarındaki buzlu bir dağın yüz yirmi metre derinliğinde insanlığın tarım sigortası saklanıyor.",
+        "script_text": (
+            "Kuzey Kutbu yakınlarındaki buzlu bir dağın yüz yirmi metre derinliğinde insanlığın tarım sigortası saklanıyor. "
+            "Norveç'e bağlı Svalbard takımadalarında kurulan Küresel Tohum Deposu, "
+            "dünyanın dört bir yanından gelen bir milyondan fazla bitki tohumu örneğini eksi on sekiz derecede koruyor. "
+            "Elektrik tamamen kesilse bile çevredeki kalıcı donmuş toprak sayesinde tohumlar yüzyıllar boyunca bozulmadan kalabiliyor."
+        ),
+        "visual_keywords": ["arctic snow mountain", "seed vault storage", "frozen tundra norway", "plant seeds agriculture"],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Okulda Öğretilen Dil Tat Haritası 100 Yıllık Bir Çeviri Hatası! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Dil_haritası",
+        "description": "Dilimizin ucu tatlıyı, yanları ekşiyi mi alır? Gerçek bilimsel açıklama #bilim #shorts",
+        "hook": "Okul kitaplarında dilin ucunun yalnızca tatlıyı, arkasının acıyı aldığı söylenen şema aslında yanlış bir çeviriydi.",
+        "script_text": (
+            "Okul kitaplarında dilin ucunun yalnızca tatlıyı, arkasının acıyı aldığı söylenen şema aslında yanlış bir çeviriydi. "
+            "1901 tarihli bir Alman makalesindeki küçük duyarlılık farkları 1942'de İngilizceye aktarılırken "
+            "sanki her bölge tek bir tadı algılıyormuş gibi yanlış yorumlandı. "
+            "Modern nörobiyoloji, tatlı, tuzlu, ekşi, acı ve umami olmak üzere beş temel tadın "
+            "dil üzerindeki tüm tat tomurcukları tarafından algılanabildiğini kanıtlamıştır."
+        ),
+        "visual_keywords": ["Culinary tasting food", "science microscope receptor", "fresh lemon citrus", "neuroscience brain taste"],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Dünya'nın En Sessiz Odasında Kendi Kan Akışınızı Duyarsınız! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Yankısız_oda",
+        "description": "Eksi 20 desibel ses seviyesine sahip yankısız odaların akustik sırrı #bilim #shorts",
+        "hook": "Dünyanın en sessiz odasında arka plan gürültüsü sıfırın bile altındadır; içeride duyduğunuz tek ses kendi vücudunuzdur.",
+        "script_text": (
+            "Dünyanın en sessiz odasında arka plan gürültüsü sıfırın bile altındadır; içeride duyduğunuz tek ses kendi vücudunuzdur. "
+            "Microsoft ve Orfield laboratuvarlarındaki yankısız odalar, fiberglas kamalar ve çelik yaylar üzerinde yüzen duvarlarla "
+            "ses dalgalarının yüzde doksan dokuz virgül dokuzunu emer. "
+            "Eksi yirmi desibele inen bu ortamda birkaç dakika sonra kalp atışınızı, "
+            "akciğerlerinizdeki havayı ve damarlarınızdaki kanın uğultusunu net biçimde işitirsiniz."
+        ),
+        "visual_keywords": ["acoustic foam studio", "sound wave visualization", "quiet dark room", "audio engineering lab"],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Bambu Bitkisi Tek Bir Günde 90 Santimetre Uzayabilir! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Bambu",
+        "description": "Saatte neredeyse 4 santimetre büyüyen dünyanın en hızlı bitkisi #doğa #bilim #shorts",
+        "hook": "Bazı bambu türleri o kadar hızlı büyür ki sabırlıysanız uzamasını neredeyse gözünüzle takip edebilirsiniz.",
+        "script_text": (
+            "Bazı bambu türleri o kadar hızlı büyür ki sabırlıysanız uzamasını neredeyse gözünüzle takip edebilirsiniz. "
+            "Buğdaygiller ailesinden olan dev bambu türleri uygun yağış ve sıcaklıkta yirmi dört saat içinde doksan santimetreye kadar boy atar. "
+            "Üstelik çelikten daha yüksek çekme dayanımına sahip lifli gövdesi sayesinde "
+            "Asya'da gökdelen iskelelerinden depreme dayanıklı köprülere kadar pek çok yapıda kullanılır."
+        ),
+        "visual_keywords": ["green bamboo forest", "tall bamboo stalks", "tropical rainforest nature", "plant growth timelapse"],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Pasifik Okyanusu Tüm Kıtaların Toplamından DahaBüyüktür! #Shorts".replace("DahaBüyüktür", "Daha Büyüktür"),
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Büyük_Okyanus",
+        "description": "165 milyon kilometrekarelik Büyük Okyanus'un inanılmaz ölçeği #coğrafya #bilim #shorts",
+        "hook": "Büyük Okyanus o kadar devasadır ki dünyadaki tüm kıtaları ve adaları birleştirip içine koysanız yine de boş yer kalır.",
+        "script_text": (
+            "Büyük Okyanus o kadar devasadır ki dünyadaki tüm kıtaları ve adaları birleştirip içine koysanız yine de boş yer kalır. "
+            "Yüz altmış beş milyon kilometrekarelik alanıyla Dünya yüzeyinin yaklaşık üçte birini tek başına kaplar. "
+            "Hatta Güney Amerika'daki Kolombiya kıyısından Asya'daki Malay Yarımadası'na uzanan en geniş noktasında "
+            "yan yana beş tane Ay sığacak kadar büyük bir su kütlesi uzanır."
+        ),
+        "visual_keywords": ["pacific ocean waves", "planet earth blue", "deep ocean horizon", "satellite view ocean"],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Kargalar Kendilerine Kötü Davranan Yüzleri Yıllarca Unutmaz! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Karga",
+        "description": "Seattle Üniversitesi'nin maskeli karga hafızası deneyi #bilim #doğa #shorts",
+        "hook": "Bir kargaya kötü davranırsanız yalnızca o karga değil, mahalledeki diğer kargalar da yüzünüzü yıllarca hatırlar.",
+        "script_text": (
+            "Bir kargaya kötü davranırsanız yalnızca o karga değil, mahalledeki diğer kargalar da yüzünüzü yıllarca hatırlar. "
+            "Washington Üniversitesi'nde yapılan ünlü deneyde araştırmacılar özel bir maske takarak kargaları yakalayıp bıraktı. "
+            "Yıllar sonra aynı maskeyle kampüste yürüyen kişilere, o gün orada olmayan genç kargalar bile "
+            "alarm çığlıkları atarak tepki gösterdi; çünkü yetişkin kargalar tehlikeli yüz bilgisini sürüye öğretmişti."
+        ),
+        "visual_keywords": ["black crow bird", "intelligent bird tree", "raven flying sky", "wildlife nature observation"],
+    },
+    {
+        "topic": "İlginç Bilgiler",
+        "title": "Eyfel Kulesi Yaz Aylarında Sıcaktan 15 Santimetre Uzar! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Eyfel_Kulesi",
+        "description": "Isıl genleşme nedeniyle yazın boyu uzayan ve güneşe göre eğilen demir kule #bilim #shorts",
+        "hook": "Paris'in simgesi Eyfel Kulesi kışın ve yazın aynı boyda değildir; sıcak havalarda on beş santimetreye kadar uzar.",
+        "script_text": (
+            "Paris'in simgesi Eyfel Kulesi kışın ve yazın aynı boyda değildir; sıcak havalarda on beş santimetreye kadar uzar. "
+            "Yedi bin üç yüz ton dövme demirden inşa edilen kafes yapı, güneş altında ısındığında "
+            "metal atomlarının titreşimi artar ve ısıl genleşme meydana gelir. "
+            "Ayrıca güneş kulenin yalnızca bir cephesini ısıttığında tepe noktası güneşten uzağa doğru birkaç santimetre eğilir."
+        ),
+        "visual_keywords": ["eiffel tower paris", "iron structure architecture", "sunny paris skyline", "steel beams engineering"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Mimar Sinan Süleymaniye'de Devekuşu Yumurtasını Neden Kullandı? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Süleymaniye_Camii",
+        "description": "Süleymaniye Camii'ndeki akustik küpler, is odası ve örümcek kovucu yumurtalar #tarih #shorts",
+        "hook": "Mimar Sinan, Süleymaniye Camii'nin avizelerinin arasına süs olsun diye değil, örümcekleri uzak tutmak için devekuşu yumurtaları astı.",
+        "script_text": (
+            "Mimar Sinan, Süleymaniye Camii'nin avizelerinin arasına süs olsun diye değil, örümcekleri uzak tutmak için devekuşu yumurtaları astı. "
+            "Yüzyıllar boyunca kurudukça yaydığı özel koku sayesinde yüksek kubbelerde örümcek ağı oluşmasını engelledi. "
+            "Bununla da yetinmeyen Sinan, kandillerden çıkan siyah dumanı hava akımıyla tek bir is odasında topladı "
+            "ve bu isten en kaliteli hat mürekkebini üreterek sıfır atıklı bir mühendislik kurdu."
+        ),
+        "visual_keywords": ["suleymaniye mosque istanbul", "ottoman dome architecture", "calligraphy ink art", "historic chandelier mosque"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "1349'da Altın Değerinde Tutulan Baharat: Karabiber! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Baharat_Yolu",
+        "description": "Orta Çağ Avrupa'sında vergi ve kira ödemekte kullanılan karabiber taneleri #tarih #shorts",
+        "hook": "Bugün her yemek masasında duran karabiber, Orta Çağ Avrupa'sında gramı gramına altınla takas edilen bir servetti.",
+        "script_text": (
+            "Bugün her yemek masasında duran karabiber, Orta Çağ Avrupa'sında gramı gramına altınla takas edilen bir servetti. "
+            "Hindistan'ın Malabar kıyılarından binlerce kilometrelik Baharat Yolu'nu aşarak gelen karabiber taneleri "
+            "vergi ödemelerinde, çeyizlerde ve ev kiralarında nakit para yerine geçiyordu. "
+            "Hatta Londra limanındaki rıhtım işçilerinin ceplerine tek bir tane bile saklamaması için kıyafetlerinin cepleri dikilirdi."
+        ),
+        "visual_keywords": ["black pepper spices", "medieval trade ship", "gold coins scale", "spice market bazaar"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Birinci Dünya Savaşı'nda Cephede Noel Ateşkesi: 1914! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Noel_Ateşkesi",
+        "description": "1914 Aralık ayında siperlerden çıkıp hediyeleşen askerlerin gerçek hikâyesi #tarih #shorts",
+        "hook": "1914 yılının dondurucu aralık gecesinde Batı Cephesi'ndeki siperlerde silahlar komutanların emri olmadan aniden sustu.",
+        "script_text": (
+            "1914 yılının dondurucu aralık gecesinde Batı Cephesi'ndeki siperlerde silahlar komutanların emri olmadan aniden sustu. "
+            "Alman ve İngiliz askerleri siperlerinden çıkıp tarafsız bölgede buluştu, düğme ve çikolata takas etti. "
+            "Yüz bin kadar askerin katıldığı bu gayriresmî ateşkeste donmuş toprakta futbol maçları bile oynandı; "
+            "ancak üst komutanlık bu kardeşlik görüntüsünden korkarak sonraki yıllarda benzer buluşmaları kesin emirle yasakladı."
+        ),
+        "visual_keywords": ["winter snow trench", "vintage world war", "soldiers historic photo", "frosty field winter"],
+    },
+    {
+        "topic": "Tarih",
+        "title": "Çatalhöyük'te Sokak ve Kapı Yoktu, Evlere Çatıdan Girilirdi! #Shorts",
+        "source": "UNESCO — https://whc.unesco.org/en/list/1405/",
+        "description": "Konya Ovası'ndaki 9 bin yıllık Neolitik kent Çatalhöyük'ün mimarisi #tarih #arkeoloji #shorts",
+        "hook": "Dokuz bin yıl önce Konya Ovası'nda kurulan Çatalhöyük'te ne tek bir sokak ne de evlerin önünde kapı vardı.",
+        "script_text": (
+            "Dokuz bin yıl önce Konya Ovası'nda kurulan Çatalhöyük'te ne tek bir sokak ne de evlerin önünde kapı vardı. "
+            "Sekiz bine yakın insanın yaşadığı bu Neolitik yerleşimde kerpiç evler aralarında hiç boşluk bırakılmadan bitişik inşa edilmişti. "
+            "İnsanlar günlük hayatlarını düz damların üzerinde sürdürüyor, evlerinin içine ise tavandaki delikten ahşap merdivenle iniyordu; "
+            "bu tasarım kenti hem yırtıcı hayvanlara hem de dış saldırılara karşı doğal bir kaleye dönüştürüyordu."
+        ),
+        "visual_keywords": ["neolithic mudbrick houses", "archaeological site anatolia", "ancient pottery artifact", "rooftop ladder village"],
+    },
+    {
+        "topic": "Tarih",
+        "title": " İskender'in Feneri Geceleri 50 Kilometre Öteden Görülüyordu! #Shorts".strip(),
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/İskenderiye_Feneri",
+        "description": "Yüzyıllar boyunca insan yapımı en yüksek kulelerden biri olan Pharos Feneri #tarih #shorts",
+        "hook": "Akdeniz'deki gemicilere yol gösteren İskenderiye Feneri, yüz metreyi aşan boyuyla antik dünyanın gökdeleniydi.",
+        "script_text": (
+            "Akdeniz'deki gemicilere yol gösteren İskenderiye Feneri, yüz metreyi aşan boyuyla antik dünyanın gökdeleniydi. "
+            "Pharos Adası üzerine beyaz taş bloklar ve erimiş kurşun kenetlerle inşa edilen kulenin tepesinde "
+            "gündüzleri güneş ışığını yansıtan dev cilalı bronz aynalar, geceleri ise hiç sönmeyen büyük bir ateş yanıyordu. "
+            "Üç büyük depreme kadar bin altı yüz yıl ayakta kalan fenerin taşları daha sonra Kayıtbay Kalesi'nin yapımında kullanıldı."
+        ),
+        "visual_keywords": ["ancient lighthouse sea", "mediterranean harbor night", "stone fortress coast", "ocean waves beacon"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Dünya'nın En Derin Sondajı 12 Kilometrede Neden Durduruldu? #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Kola_Süperderin_Sondajı",
+        "description": "Kola Yarımadası'nda 20 yıl süren ve 12.262 metreye inen bilimsel sondaj #bilim #shorts",
+        "hook": "İnsanlığın yerin altına kazdığı en derin delik olan Kola Süperderin Sondajı on iki bin iki yüz altmış iki metreye ulaştı.",
+        "script_text": (
+            "İnsanlığın yerin altına kazdığı en derin delik olan Kola Süperderin Sondajı on iki bin iki yüz altmış iki metreye ulaştı. "
+            "1970'te başlayan projede bilim insanları yedi kilometre derinlikte iki milyar yıllık mikroskobik plankton fosilleriyle karşılaştı. "
+            "Ancak on iki kilometreyi geçtiklerinde sıcaklık beklenen yüz derece yerine yüz seksen dereceye fırladı; "
+            "kayalar erimiş plastik gibi davranıp matkap uçlarını sıkıştırınca sondaj 1992'de durduruldu."
+        ),
+        "visual_keywords": ["drilling rig industrial", "deep earth core", "geology rock samples", "arctic tundra russia"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Halley Kuyruklu Yıldızı 2061 Yılında Geri Dönecek! #Shorts",
+        "source": "NASA — https://science.nasa.gov/solar-system/comets/1p-halley/",
+        "description": "İnsan ömründe iki kez görülebilen tek parlak kuyruklu yıldız #uzay #bilim #shorts",
+        "hook": "Güneş etrafındaki turunu yaklaşık yetmiş beş yılda tamamlayan Halley Kuyruklu Yıldızı şimdi geri dönüş yolunda.",
+        "script_text": (
+            "Güneş etrafındaki turunu yaklaşık yetmiş beş yılda tamamlayan Halley Kuyruklu Yıldızı şimdi geri dönüş yolunda. "
+            "En son 1986 yılında iç Güneş sisteminden geçen on beş kilometre uzunluğundaki bu buz ve toz çekirdeği, "
+            "Aralık 2023'te Neptün yörüngesinin ötesindeki en uzak noktasına ulaştı ve yeniden Güneş'e doğru hızlanmaya başladı. "
+            "Takvimler 2061 yazını gösterdiğinde gökyüzünde bir kez daha çıplak gözle parlayacak."
+        ),
+        "visual_keywords": ["bright comet night", "starry sky galaxy", "solar system orbit", "deep space ice"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Uluslararası Uzay İstasyonu Günde 16 Kez Gün Doğumu Görür! #Shorts",
+        "source": "NASA — https://www.nasa.gov/international-space-station/",
+        "description": "Saatte 28 bin kilometre hızla Dünya etrafında dönen uzay laboratuvarı #uzay #bilim #shorts",
+        "hook": "Başımızın dört yüz kilometre üzerindeki Uluslararası Uzay İstasyonu'nda yaşayan astronotlar her doksan dakikada bir dünyayı turlar.",
+        "script_text": (
+            "Başımızın dört yüz kilometre üzerindeki Uluslararası Uzay İstasyonu'nda yaşayan astronotlar her doksan dakikada bir dünyayı turlar. "
+            "Saatte yirmi sekiz bin kilometre hızla uçan bu dev yörünge laboratuvarında "
+            "yirmi dört saat içinde tam on altı kez güneş doğar ve on altı kez güneş batar. "
+            "Futbol sahası büyüklüğündeki istasyon, biyolojiden malzeme fiziğine kadar binlerce mikro yer çekimi deneyine ev sahipliği yapıyor."
+        ),
+        "visual_keywords": ["international space station", "earth orbit sunrise", "astronaut cupola window", "planet earth night"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Bukalemunlar Kamuflaj İçin Değil, Duygularını Anlatmak İçin Renk Değiştirir! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Bukalemun",
+        "description": "Bukalemun derisindeki nano kristaller ışığı nasıl kırar? #bilim #doğa #shorts",
+        "hook": "Bukalemunların bulunduğu dalın rengine uyum sağlamak için renk değiştirdiği düşüncesi yaygın bir yanılgıdır.",
+        "script_text": (
+            "Bukalemunların bulunduğu dalın rengine uyum sağlamak için renk değiştirdiği düşüncesi yaygın bir yanılgıdır. "
+            "Cenevre Üniversitesi araştırmacıları, bukalemunların asıl olarak vücut sıcaklığını ayarlamak ve diğer bukalemunlara mesaj vermek için renk değiştirdiğini gösterdi. "
+            "Derilerinin altındaki iridofor hücrelerinde bulunan mikroskobik kristallerin arasındaki mesafeyi kasılıp gevşeyerek değiştirirler; "
+            "böylece pigment boyası üretmeden tıpkı bir prizma gibi yansıyan ışığın dalga boyunu saniyeler içinde kaydırırlar."
+        ),
+        "visual_keywords": ["colorful chameleon lizard", "tropical green leaf", "reptile eye macro", "prism light rainbow"],
+    },
+    {
+        "topic": "Bilim",
+        "title": "Ağaçlar Yer Altındaki Mantar Ağıyla Birbirine Haber Gönderir! #Shorts",
+        "source": "Wikipedia (tr) — https://tr.wikipedia.org/wiki/Mikoriza",
+        "description": "Orman tabanındaki mikoriza mantar ağı ve ağaçların besin paylaşımı #bilim #doğa #shorts",
+        "hook": "Bir ormanda yürürken gördüğünüz ağaçlar aslında toprağın altında devasa bir biyolojik iletişim ağıyla birbirine bağlıdır.",
+        "script_text": (
+            "Bir ormanda yürürken gördüğünüz ağaçlar aslında toprağın altında devasa bir biyolojik iletişim ağıyla birbirine bağlıdır. "
+            "Mikoriza adı verilen ince mantar iplikçikleri ağaç köklerini birbirine bağlayarak karbon, su ve azot alışverişi sağlar. "
+            "Böcek saldırısına uğrayan bir ağaç bu mantar ağı üzerinden komşu ağaçlara kimyasal uyarı sinyalleri gönderir "
+            "ve komşu ağaçlar henüz böcekler kendilerine ulaşmadan yapraklarında savunma salgıları üretmeye başlar."
+        ),
+        "visual_keywords": ["ancient forest trees", "mushroom mycelium roots", "sunlight through forest", "tree roots soil"],
     },
 ]
 

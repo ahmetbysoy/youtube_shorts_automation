@@ -8,6 +8,7 @@ from pathlib import Path
 from src.media_processing.media_processor import (
     FINAL_OUTPUT,
     _escape_ffmpeg_filter_path,
+    _extract_wikimedia_credit,
     _is_real_api_key,
     _srt_time_to_ass,
     convert_srt_to_ass,
@@ -44,9 +45,36 @@ class TestFaz3MediaProcessor(unittest.TestCase):
             self.assertIn("PlayResX: 1080", text)
             self.assertIn("PlayResY: 1920", text)
             self.assertIn("Style: Default,Montserrat-Bold,56,&H0000FFFF", text)
+            self.assertIn("Style: Hook,Montserrat-Bold,62,&H0026FFFF", text)
             self.assertIn(",250,1", text)
             self.assertIn("Napolyon Bonapart'ın,", text)
+            self.assertIn("Dialogue: 0,0:00:00.10,0:00:01.50,Hook", text)
             self.assertEqual(text.count("Dialogue: 0,"), 2)
+
+    def test_wikimedia_cc_by_sa_credit_extraction(self) -> None:
+        cc_by_sa = _extract_wikimedia_credit(
+            {"title": "File:Sample_artifact.jpg"},
+            {
+                "extmetadata": {
+                    "Artist": {"value": '<a href="https://commons.wikimedia.org/wiki/User:Test">Dr. Jane Doe</a>'},
+                    "LicenseShortName": {"value": "CC BY-SA 4.0"},
+                }
+            },
+        )
+        self.assertIsNotNone(cc_by_sa)
+        self.assertIn("Dr. Jane Doe", cc_by_sa)
+        self.assertIn("CC BY-SA 4.0", cc_by_sa)
+        # Public Domain görsellerde gereksiz atıf satırı üretilmez
+        public_domain = _extract_wikimedia_credit(
+            {"title": "File:Hubble.jpg"},
+            {
+                "extmetadata": {
+                    "Artist": {"value": "NASA"},
+                    "LicenseShortName": {"value": "Public domain"},
+                }
+            },
+        )
+        self.assertEqual(public_domain, "")
 
     def test_escape_ffmpeg_filter_path(self) -> None:
         escaped = _escape_ffmpeg_filter_path(Path("/tmp/a:b'c.ass"))

@@ -4,9 +4,12 @@ import sys
 import unittest
 from unittest.mock import MagicMock
 
-# content_engine icindeki harici bagimliliklari mock'la
-sys.modules["edge_tts"] = MagicMock()
-sys.modules["requests"] = MagicMock()
+# content_engine icindeki harici bagimliliklari yalnizca kurulu degilse mock'la
+for _mod in ("edge_tts", "requests"):
+    try:
+        __import__(_mod)
+    except ImportError:
+        sys.modules[_mod] = MagicMock()
 
 sys.path.insert(0, "/home/user/yts")
 
