@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## 2026-11-08 — REBEL Otonom Kanal Onarımı: Başlık Ezilmesi, Diyalog Kapanması, Pruner v7 ve 2–3 Saatlik Yayın Temposu
+
+- `youtube_studio_uploader.js` içinde `#Shorts` ile biten başlık yazıldığında açılan `tp-yt-iron-dropdown` öneri listesinin `#description-textarea` odaklamasını bozup ~300 karakterlik açıklamayı Başlık kutusuna yazması (`Run #550` / `studio_error.png` kanıtı) ve kapak adımı sonrasındaki genel `[role="dialog"] #close-button` döngüsünün `ytcp-uploads-dialog` penceresini kapatması (`Run #549` kanıtı) düzeltildi.
+- `scripts/studio_draft_publish.cjs` (`openFirstDraft`) başlığı bozulmuş (`>100` kr / URL içeren) taslakları atlayacak şekilde güncellendi.
+- `.github/workflows/hourly_pruner.yml` içinde `actions/checkout@v4` → `actions/checkout@v7` yükseltmesi yapıldı, `checkout` ilk sıraya alındı ve kullanıcı onayıyla aktif silme (`PRUNE_DRY_RUN=false`, `PRUNE_MAX_DELETIONS=10`, `PRUNE_MIN_REMAINING=1`) etkinleştirildi. Canlı `Run #463` (`42489246221`) ile 91 video taranıp 1 saatten eski ve `0` izlenmeli 10 video silindi (`absent_after_full_rescan` doğrulamalı).
+- `.github/workflows/daily_shorts.yml` ve `hourly_pruner.yml` otomatik commit mesajlarından `[skip ci]` kaldırıldı; yayın temposu kullanıcı onayıyla 2–3 saatte 1 video (`cron: '13 */2 * * *'`, `cron-kick` `GAP >= 7200` sn) olarak sabitlendi. Canlı `Run #553` (`42490021694`) ile `0i4TP6IhE3M` (`Orta Çağ'da İnsanlar Gece Ortasında Kalkıp Kitap Okurdu! #Shorts`) PUBLIC olarak yayınlandı ve `cron-kick` adımının erken yeniden tetikleme yapmadığı (`Son run 349 saniye once baslamis (min 7200s / 2 saat) -> zincir TETIKLENMEDI`) doğrulandı.
+
 ## 2026-11-05 — Gerçek kapak kotası yolu ve Gemini yanlış eşleşmesi
 
 - #123 gerçek Commons klibinde CC BY-SA 4.0 + atıf zorunluluğu, PUBLIC açıklamada ise klibe ait atfın görünmediği gözlemlendi. Otomatik dosya bazlı lisans/atıf kontrolü yok; mevcut video açıklamaları kullanıcı izni olmadan değiştirilmedi.
