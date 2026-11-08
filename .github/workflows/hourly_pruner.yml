@@ -1,8 +1,8 @@
-name: Every 30 min: Publish Drafts + Prune Low-View Videos
+name: Every 30 min: Prune Low-View YouTube Videos
 
 on:
   schedule:
-    # Her 30 dakikada bir: draft'ları PUBLIC yap + 1 saatten eski, <100 izlenme videoları sil
+    # Her 30 dakikada bir: 1 saatten eski ve <100 izlenme videoları sil
     - cron: '*/30 * * * *'
   workflow_dispatch:
 
@@ -10,11 +10,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-and-prune-${{ github.ref }}
+  group: prune-workflow-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  publish-and-prune:
+  prune-videos:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
 
@@ -42,15 +42,6 @@ jobs:
           mkdir -p session_capture
           printf '%s' "${STORAGE_STATE_JSON}" > storage_state.json
           printf '%s' "${COOKIES_JSON}" > cookies.json
-
-      - name: Tüm Taslakları PUBLIC Yap (studio_draft_publish)
-        env:
-          YT_EMAIL: ${{ secrets.YT_EMAIL }}
-          YT_PASSWORD: ${{ secrets.YT_PASSWORD }}
-          IDENTITY_MODE: skip
-          PICK_MODE: first
-          HEADLESS: true
-        run: xvfb-run -a --server-args="-screen 0 1366x900x24" node scripts/studio_draft_publish.cjs publish 15
 
       - name: 1 Saatten Eski <100 Izlenme Videolarını Temizle (prune_low_performers)
         env:
