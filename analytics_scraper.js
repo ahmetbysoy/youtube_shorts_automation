@@ -21,7 +21,7 @@ const PROFILE_DIR = path.join(os.tmpdir(), 'yt_studio_analytics_profile');
 function classifyNiche(title) {
     const t = String(title || '').toLowerCase();
     const spaceTokens = ['uzay', 'gezegen', 'güneş', 'venüs', 'neptün', 'uranüs', 'yıldız', 'nötron', 'voyager', 'astronot', 'galaksi', 'samanyolu', "ay'a", 'tunguska'];
-    const historyTokens = ['tarih', 'savaş', 'antik', 'napolyon', 'göbeklitepe', 'pompeii', 'kleopatra', 'firavun', 'mısır', 'antikythera', 'zanzibar', 'krakatoa', 'emu'];
+    const historyTokens = ['tarih', 'savaş', 'antik', 'napolyon', 'göbeklitepe', 'pompeii', 'kleopatra', 'firavun', 'mısır', 'antikythera', 'zanzibar', 'krakatoa', 'emu', 'moğol', 'imparatorlu', 'orta çağ', 'oxford', 'roma', 'viking', 'olimpiyat', 'köle'];
     if (spaceTokens.some(tok => t.includes(tok))) return 'Uzay';
     if (historyTokens.some(tok => t.includes(tok))) return 'Tarih';
     return 'Bilim';
@@ -136,23 +136,26 @@ async function scrapeStudioAnalytics() {
             await page.waitForTimeout(5000);
         }
 
-        // Tablodaki video satırlarını kazı
+        // Tablodaki video satırlarını kazı (taslakları ve bozuk başlıkları filtrele)
         let videos = await page.evaluate(() => {
             const rows = Array.from(document.querySelectorAll('ytcp-video-row'));
-            return rows.slice(0, 20).map(row => {
+            return rows.slice(0, 50).map(row => {
                 const titleEl = row.querySelector('#video-title');
                 const linkEl = row.querySelector('a[href*="/video/"]');
                 const cells = Array.from(row.querySelectorAll('[role="cell"], .tablecell-views, .cell-body')).map(c => c.innerText.trim());
                 const rawRowText = row.innerText || '';
                 const href = linkEl ? linkEl.getAttribute('href') : '';
                 const vidMatch = href ? href.match(/\/video\/([\w-]+)/) : null;
+                const title = titleEl ? titleEl.textContent.trim() : '';
+                const isDraft = /\b(taslak|draft)\b/i.test(rawRowText) || /^final short$/i.test(title) || title.length > 100;
                 return {
                     videoId: vidMatch ? vidMatch[1] : '',
-                    title: titleEl ? titleEl.textContent.trim() : '',
+                    title,
+                    isDraft,
                     cells,
                     rawRowText
                 };
-            }).filter(v => v.title);
+            }).filter(v => v.title && v.videoId && !v.isDraft);
         });
 
         // Eğer /videos/short sekmesinde satır yoksa genel /videos/upload listesini dene
@@ -161,35 +164,51 @@ async function scrapeStudioAnalytics() {
             await page.waitForTimeout(5000);
             videos = await page.evaluate(() => {
                 const rows = Array.from(document.querySelectorAll('ytcp-video-row'));
-                return rows.slice(0, 20).map(row => {
+                return rows.slice(0, 50).map(row => {
                     const titleEl = row.querySelector('#video-title');
                     const linkEl = row.querySelector('a[href*="/video/"]');
                     const cells = Array.from(row.querySelectorAll('[role="cell"], .tablecell-views, .cell-body')).map(c => c.innerText.trim());
+                    const rawRowText = row.innerText || '';
                     const href = linkEl ? linkEl.getAttribute('href') : '';
                     const vidMatch = href ? href.match(/\/video\/([\w-]+)/) : null;
+                    const title = titleEl ? titleEl.textContent.trim() : '';
+                    const isDraft = /\b(taslak|draft)\b/i.test(rawRowText) || /^final short$/i.test(title) || title.length > 100;
                     return {
                         videoId: vidMatch ? vidMatch[1] : '',
-                        title: titleEl ? titleEl.textContent.trim() : '',
+                        title,
+                        isDraft,
                         cells,
-                        rawRowText: row.innerText || ''
+                        rawRowText
                     };
-                }).filter(v => v.title);
+                }).filter(v => v.title && v.videoId && !v.isDraft);
             });
         }
 
-        const enrichedVideos = [];
-        // En son 6 videonun tekil analitik sayfasından Ortalama İzleme Süresi (AVD) bilgisini de çek
-        for (const v of videos.slice(0, 6)) {
-            let views = 0;
-            // Studio tablo hücrelerinde sayısal izlenme sütununu yakala
+        // Her satırın tablo izlenmesini önceden ayrıştır; izlenmesi >0 olan gerçek performanslı videoları öne al
+        for (const v of videos) {
+            let tableViews = 0;
             for (const c of v.cells.slice(2)) {
                 if (/^\d[\d.,\s]*([BbKkMm])?$/.test(c)) {
-                    views = parseMetricNumber(c);
+                    tableViews = parseMetricNumber(c);
                     break;
                 }
             }
+            v.tableViews = tableViews;
+        }
+        const matureViews = videos.filter(v => v.tableViews >= 10).sort((a, b) => b.tableViews - a.tableViews);
+        const withViews = videos.filter(v => v.tableViews > 0).sort((a, b) => b.tableViews - a.tableViews);
+        const zeroViews = videos.filter(v => v.tableViews === 0);
+        const candidateVideos = (
+            matureViews.length >= 4 ? matureViews : (withViews.length >= 6 ? withViews : [...withViews, ...zeroViews])
+        ).slice(0, 15);
+
+        const enrichedVideos = [];
+        // En yüksek performanslı ilk 6 videonun tekil analitik sayfasından Ortalama İzleme Süresi (AVD) bilgisini de çek
+        for (let idx = 0; idx < candidateVideos.length; idx++) {
+            const v = candidateVideos[idx];
+            let views = v.tableViews || 0;
             let avgViewDurationSec = 0;
-            if (v.videoId) {
+            if (v.videoId && idx < 6) {
                 await page.goto(`https://studio.youtube.com/video/${v.videoId}/analytics/tab-overview/period-default`, {
                     waitUntil: 'domcontentloaded',
                     timeout: 30000

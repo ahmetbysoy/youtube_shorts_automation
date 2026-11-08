@@ -1498,6 +1498,25 @@ def save_recent_title(title: str) -> None:
     )
 
 
+PRUNE_STATE_FILE = Path(__file__).parent / "prune_state.json"
+
+
+def load_channel_live_titles() -> list[str]:
+    """prune_state.json içindeki aktif kanal videolarının başlıklarını döndürür (mükerrer yayın kilidi)."""
+    if not PRUNE_STATE_FILE.exists():
+        return []
+    try:
+        data = json.loads(PRUNE_STATE_FILE.read_text(encoding="utf-8"))
+        videos = data.get("videos", {}) if isinstance(data, dict) else {}
+        return [
+            str(v.get("title", "")).strip()
+            for v in videos.values()
+            if isinstance(v, dict) and str(v.get("title", "")).strip()
+        ]
+    except Exception:
+        return []
+
+
 # --- FAZ 13.4: baslik benzerlik kontrolu (tekrar korumasi uretili) -----------
 # Turkce title'larda ekler, baglaclar ve genel kelimeler konu eslesmesini
 # sisirmemeli. Noktalama ve turkce karakterler normalize edilir.
@@ -2223,13 +2242,22 @@ def pick_fallback_scenario(
         now_utc = datetime.now(timezone.utc)
         slot_15m = int(now_utc.timestamp()) // 900
 
-        # History filtresi: daha once yayinlananlari (tam esitlik veya %30 benzerlikle) havuzdan cikar
-        # En az 10 senaryo kalirsa filtreyi uygula; yoksa tum havuzu kullan
+        # History + Canlı Kanal Envanteri filtresi: hem .used_topics.json hem prune_state.json içindeki
+        # aktif kanal videoları havuzdan çıkarılır (aynı videonun 2-4 kez yüklenmesini engeller).
+        live_channel_titles = load_channel_live_titles()
+        combined_recent = list(dict.fromkeys(list(recent_titles) + live_channel_titles))
         filtered_pool = [
             item for item in pool
-            if item["title"] not in recent_titles
-            and not is_similar_to_recent(item["title"], recent_titles)
+            if item["title"] not in combined_recent
+            and not is_similar_to_recent(item["title"], combined_recent)
         ]
+        if len(filtered_pool) < 10:
+            # Yedek: yalnızca son 25 (.used_topics.json) ile filtrele
+            filtered_pool = [
+                item for item in pool
+                if item["title"] not in recent_titles
+                and not is_similar_to_recent(item["title"], recent_titles)
+            ]
         if len(filtered_pool) >= 10:
             pool = filtered_pool
             print(f"[INFO] History filtresi: {len(FALLBACK_SCENARIOS) - len(pool)} senaryo atlandi, "

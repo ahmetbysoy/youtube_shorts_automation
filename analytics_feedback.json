@@ -1,69 +1,83 @@
 {
-  "scraped_at": "2026-11-08T12:42:42.858Z",
+  "scraped_at": "2026-11-08T15:09:15.069790Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 6,
-  "winning_topic": "Bilim",
-  "boost_active": false,
-  "outperformance_ratio": 1,
+  "winning_topic": "Tarih",
+  "boost_active": true,
+  "outperformance_ratio": 1.41,
   "discarded_topics": [],
-  "optimization_directive": "Tüm konularda dengeli yüksek dopaminli kanca (hook) üretimine devam et.",
+  "optimization_directive": "Canlı kanal kazananı 'Tarih' (ort. 662.0 izlenme; en yüksek: 976 izlenme 'Moğol İmparatorluğu'). Yeni senaryolarda 'Tarih' ve 'Bilim' (ort. 469.0 izlenme) yüksek dopaminli kancalarına öncelik ver.",
   "topic_scores": [
     {
-      "niche": "Bilim",
-      "video_count": 6,
-      "avg_views": 0,
+      "niche": "Tarih",
+      "video_count": 2,
+      "avg_views": 662.0,
       "avg_view_duration_sec": 0,
-      "avg_score": 0
+      "avg_score": 662.0
+    },
+    {
+      "niche": "Bilim",
+      "video_count": 3,
+      "avg_views": 469.0,
+      "avg_view_duration_sec": 0,
+      "avg_score": 469.0
+    },
+    {
+      "niche": "Uzay",
+      "video_count": 1,
+      "avg_views": 454.0,
+      "avg_view_duration_sec": 0,
+      "avg_score": 454.0
     }
   ],
   "recent_videos": [
     {
-      "videoId": "",
+      "videoId": "4Dvf_l9Q6n8",
+      "title": "Moğol İmparatorluğu Tarihin En Büyük Kara İmparatorluğuydu! #Shorts",
+      "niche": "Tarih",
+      "views": 976,
+      "avgViewDurationSec": 0,
+      "compositeScore": 976.0
+    },
+    {
+      "videoId": "Cp3HO7YvGVE",
+      "title": "İnsan Beyninin Kapasitesi 2.5 Milyon Gigabayt! #Shorts",
+      "niche": "Bilim",
+      "views": 586,
+      "avgViewDurationSec": 0,
+      "compositeScore": 586.0
+    },
+    {
+      "videoId": "TzCx9McARLo",
       "title": "İnternet'in Toplam Ağırlığı Bir Çilek Kadar! #Shorts",
       "niche": "Bilim",
-      "views": 0,
+      "views": 479,
       "avgViewDurationSec": 0,
-      "compositeScore": 0
+      "compositeScore": 479.0
     },
     {
-      "videoId": "",
-      "title": "Dünyanın En Soğuk Köyünde 500 Kişi Yaşıyor! #Shorts",
-      "niche": "Bilim",
-      "views": 0,
+      "videoId": "Dnrz557kQVc",
+      "title": "Dünya'daki Ağaç Sayısı Samanyolu'ndaki Yıldızlardan Fazladır! #Shorts",
+      "niche": "Uzay",
+      "views": 454,
       "avgViewDurationSec": 0,
-      "compositeScore": 0
+      "compositeScore": 454.0
     },
     {
-      "videoId": "ub2fzLaDxeU",
-      "title": "Evrenin Yüzde 95'i Karanlık Madde ve Enerji! #Shorts",
-      "niche": "Bilim",
-      "views": 0,
+      "videoId": "T6liimSvnVg",
+      "title": "İnsan Hakları Bildirisi'ni Kaleme Alan Köle Sahipleriydi! #Shorts",
+      "niche": "Tarih",
+      "views": 348,
       "avgViewDurationSec": 0,
-      "compositeScore": 0
+      "compositeScore": 348.0
     },
     {
-      "videoId": "fCkmjJmSQ_A",
-      "title": "Fransız İhtilali Ekmek Kıtlığıyla Başladı! #Shorts",
+      "videoId": "Si_ZLcEnOmE",
+      "title": "Tamamen Karanlıkta Kalırsanız Beyin Halüsinasyon Üretir! #Shorts",
       "niche": "Bilim",
-      "views": 0,
+      "views": 342,
       "avgViewDurationSec": 0,
-      "compositeScore": 0
-    },
-    {
-      "videoId": "ZQ7An78NTTw",
-      "title": "Karınca Kolonisi Merkezi Komutan Olmadan Karar Alır! #Shorts",
-      "niche": "Bilim",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
-    },
-    {
-      "videoId": "",
-      "title": "final short",
-      "niche": "Bilim",
-      "views": 0,
-      "avgViewDurationSec": 0,
-      "compositeScore": 0
+      "compositeScore": 342.0
     }
   ]
 }

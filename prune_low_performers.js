@@ -613,20 +613,29 @@ async function pruneLowPerformers() {
                     report.protected.push({ videoId: video.videoId, title, views, reason: 'filtre' });
                     continue;
                 }
-                if (!isPublicRow(video) || meta.isPrivate === true || meta.isUnlisted === true) {
+                const isCorruptedDraft = Boolean(
+                    video.isDraft && (
+                        !title ||
+                        /^final short$/i.test(title.trim()) ||
+                        /^Benzer videolar için abone ol/i.test(title.trim()) ||
+                        /https?:\/\//i.test(title) ||
+                        title.trim().length > 100
+                    )
+                );
+                if (!isCorruptedDraft && (!isPublicRow(video) || meta.isPrivate === true || meta.isUnlisted === true)) {
                     logDetail(`[*] KORUNDU: '${title}' ${base} | Yayında (PUBLIC) değil: ${video.isDraft ? 'taslak' : (video.visibility || 'bilinmiyor')}`);
                     report.protected.push({ videoId: video.videoId, title, views, reason: 'yayında-değil' });
                     continue;
                 }
-                if (views === null) {
+                if (!isCorruptedDraft && views === null) {
                     logDetail(`[*] KORUNDU: '${title}' ${base} | Görüntülenme okunamadı`);
                     report.protected.push({ videoId: video.videoId, title, views, reason: 'görüntülenme-okunamadı' });
                     continue;
                 }
 
-                const tooYoung = age.minutes === null || age.minutes < MIN_AGE_MINUTES;
-                const tooGood = views >= MIN_VIEWS;
-                const wouldEmptyChannel = (scannedTotal - deletedCount) <= MIN_REMAINING;
+                const tooYoung = !isCorruptedDraft && (age.minutes === null || age.minutes < MIN_AGE_MINUTES);
+                const tooGood = !isCorruptedDraft && (views >= MIN_VIEWS);
+                const wouldEmptyChannel = !isCorruptedDraft && ((scannedTotal - deletedCount) <= MIN_REMAINING);
 
                 if (tooYoung) {
                     logDetail(`[*] KORUNDU: '${title}' ${base} | Henüz ${MIN_AGE_MINUTES} dk geçmedi`);
