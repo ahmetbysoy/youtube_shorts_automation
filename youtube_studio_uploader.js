@@ -28,9 +28,16 @@ function writeAuthStatus(state, details = {}) {
 // Google "Kimliğinizi doğrulayın" (telefon onayı) modalı. Kullanıcı kararı (2026-11-07):
 // CI'da telefon onayı BEKLENMEZ ve DOM ile ATLANMAZ -> video Studio'da TASLAK kalır,
 // 20 dk'lık draft_publisher.yml iş akışı taslağı yayınlar. Exit 43 = planlı "taslak bırakıldı".
-const IDENTITY_MODAL_RE = /Kimliğinizi doğrulayın|Verify it'?s you|Kimliğinizi doğrulamamız/i;
+const IDENTITY_MODAL_RE = /Kimliğinizi doğrulayın|Kimliğinizi doğrulamamız|Verify (?:it'?s you|your identity)|Confirm (?:it'?s you|your identity)|extra security layer|ekstra güvenlik katmanı/i;
 async function findIdentityModal(page) {
-    for (const sel of ['tp-yt-paper-dialog', 'ytcp-dialog', 'ytcp-confirmation-dialog', '[role="dialog"]', '[role="alertdialog"]']) {
+    const dialogSelectors = [
+        'tp-yt-paper-dialog',
+        'ytcp-dialog',
+        'ytcp-confirmation-dialog',
+        '[role="dialog"]',
+        '[role="alertdialog"]'
+    ];
+    for (const sel of dialogSelectors) {
         const dialogs = page.locator(sel);
         const n = await dialogs.count().catch(() => 0);
         for (let i = 0; i < n; i++) {
@@ -40,7 +47,28 @@ async function findIdentityModal(page) {
             if (IDENTITY_MODAL_RE.test(txt)) return d;
         }
     }
+
+    // Google bazen güvenlik katmanını bilinen dialog etiketlerinin dışında render ediyor.
+    // Bu durumda görünür sayfa metnini de kontrol et.
+    const bodyText = (await page.locator('body').innerText().catch(() => '')) || '';
+    if (IDENTITY_MODAL_RE.test(bodyText)) return page.locator('body');
     return null;
+}
+
+async function assertNoIdentityVerification(page, stage) {
+    const modal = await findIdentityModal(page);
+    if (!modal) return;
+
+    const screenshotPath = path.join(BASE_DIR, 'logs', 'identity_verification_required.png');
+    await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => {});
+
+    const err = new Error(
+        'GOOGLE_IDENTITY_VERIFICATION_REQUIRED: Google hesabı devam etmeden önce manuel kimlik doğrulaması istiyor. ' +
+        'Bu güvenlik adımı otomatik olarak atlanmayacak; Google hesabında doğrulama tamamlandıktan sonra iş akışı yeniden çalıştırılmalı.'
+    );
+    err.code = 'GOOGLE_IDENTITY_VERIFICATION_REQUIRED';
+    err.stage = stage;
+    throw err;
 }
 async function leaveAsDraftOnIdentityModal(page, context, title) {
     console.log('[KIMLIK] "Kimliğinizi doğrulayın" modalı çıktı -> telefon onayı BEKLENMEYECEK; video TASLAK olarak bırakılıyor (draft_publisher.yml 20 dk içinde yayınlar).');
@@ -266,7 +294,9 @@ async function performGoogleLogin(page) {
 }
 
 async function openUploadModal(page) {
+    await assertNoIdentityVerification(page, 'before_upload_modal');
     await dismissStudioModalsIfPresent(page);
+    await assertNoIdentityVerification(page, 'after_studio_modal_cleanup');
 
     // Yöntem 1: Sağ üst "+ Oluştur / Create" butonu veya doğrudan yükleme ikonu
     const createSelectors = [
@@ -286,6 +316,7 @@ async function openUploadModal(page) {
             console.log(`[*] Yükleme tetikleyicisine tıklanıyor (${sel})...`);
             await btn.click({ force: true });
             await page.waitForTimeout(1200);
+            await assertNoIdentityVerification(page, 'upload_trigger_click');
 
             // Eğer zaten input[type="file"] eklendiyse tamam
             if (await page.locator('input[type="file"]').count() > 0) {
@@ -307,6 +338,7 @@ async function openUploadModal(page) {
                 if (await item.isVisible({ timeout: 1500 }).catch(() => false)) {
                     await item.click({ force: true });
                     await page.waitForTimeout(1500);
+                    await assertNoIdentityVerification(page, 'upload_menu_click');
                     if (await page.locator('input[type="file"]').count() > 0) {
                         return;
                     }
@@ -323,7 +355,9 @@ async function openUploadModal(page) {
     console.log(`[*] Doğrudan yükleme penceresi açılıyor: ${directUploadUrl}`);
     await page.goto(directUploadUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForTimeout(4000);
+    await assertNoIdentityVerification(page, 'direct_upload_route');
     await dismissStudioModalsIfPresent(page);
+    await assertNoIdentityVerification(page, 'after_direct_upload_route');
 }
 
 async function fillContentEditable(page, containerSelector, value) {
@@ -835,10 +869,15 @@ async function uploadToYouTubeStudio() {
         // Oturum artefaktlarını hemen diske yaz (cookies.json + storage_state.json)
         await persistAllSessionArtifacts(context);
 
+        await assertNoIdentityVerification(page, 'before_upload_modal_open');
         await openUploadModal(page);
+        await assertNoIdentityVerification(page, 'after_upload_modal_open');
 
         console.log("[*] Video dosyası seçiliyor...");
         const fileInput = page.locator('input[type="file"]').first();
+        if (await fileInput.count().catch(() => 0) === 0) {
+            await assertNoIdentityVerification(page, 'file_input_missing');
+        }
         await fileInput.waitFor({ state: 'attached', timeout: 45000 });
         await fileInput.setInputFiles(VIDEO_PATH);
 
@@ -1196,7 +1235,11 @@ async function uploadToYouTubeStudio() {
 }
 
 uploadToYouTubeStudio().catch(err => {
-    writeAuthStatus('error', { message: String(err && err.message ? err.message : err) });
+    const identityRequired = Boolean(err && err.code === 'GOOGLE_IDENTITY_VERIFICATION_REQUIRED');
+    writeAuthStatus(identityRequired ? 'identity_verification_required' : 'error', {
+        message: String(err && err.message ? err.message : err),
+        ...(identityRequired ? { stage: err.stage || 'upload', manual_action_required: true } : {})
+    });
     console.error("[-] KRİTİK HATA:", err);
     process.exit(1);
 });
