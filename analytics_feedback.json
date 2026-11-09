@@ -1,83 +1,148 @@
 {
-  "scraped_at": "2026-11-08T15:09:15.069790Z",
+  "scraped_at": "2026-11-09T15:03:06.450Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
-  "videos_analyzed": 6,
+  "videos_analyzed": 15,
   "winning_topic": "Tarih",
-  "boost_active": true,
-  "outperformance_ratio": 1.41,
+  "boost_active": false,
+  "outperformance_ratio": 1.17,
   "discarded_topics": [],
-  "optimization_directive": "Canlı kanal kazananı 'Tarih' (ort. 662.0 izlenme; en yüksek: 976 izlenme 'Moğol İmparatorluğu'). Yeni senaryolarda 'Tarih' ve 'Bilim' (ort. 469.0 izlenme) yüksek dopaminli kancalarına öncelik ver.",
+  "optimization_directive": "Tüm konularda dengeli yüksek dopaminli kanca (hook) üretimine devam et.",
   "topic_scores": [
     {
       "niche": "Tarih",
-      "video_count": 2,
-      "avg_views": 662.0,
+      "video_count": 7,
+      "avg_views": 1193.86,
       "avg_view_duration_sec": 0,
-      "avg_score": 662.0
+      "avg_score": 1193.86
     },
     {
       "niche": "Bilim",
-      "video_count": 3,
-      "avg_views": 469.0,
+      "video_count": 8,
+      "avg_views": 1021.13,
       "avg_view_duration_sec": 0,
-      "avg_score": 469.0
-    },
-    {
-      "niche": "Uzay",
-      "video_count": 1,
-      "avg_views": 454.0,
-      "avg_view_duration_sec": 0,
-      "avg_score": 454.0
+      "avg_score": 1021.13
     }
   ],
   "recent_videos": [
     {
+      "videoId": "yiiLdVadjmM",
+      "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
+      "niche": "Tarih",
+      "views": 1348,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1348
+    },
+    {
+      "videoId": "1IAgNqsjgvQ",
+      "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
+      "niche": "Tarih",
+      "views": 1245,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1245
+    },
+    {
+      "videoId": "3SFUI9fSYSU",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "niche": "Tarih",
+      "views": 1240,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1240
+    },
+    {
+      "videoId": "6zwOEVEjOeo",
+      "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
+      "niche": "Tarih",
+      "views": 1213,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1213
+    },
+    {
+      "videoId": "A2F4P7BLB8A",
+      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "niche": "Bilim",
+      "views": 1213,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1213
+    },
+    {
+      "videoId": "WKYwF96hQzg",
+      "title": "Tarihin En Kısa Savaşı Sadece 38 Dakika Sürdü! #Shorts",
+      "niche": "Tarih",
+      "views": 1208,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1208
+    },
+    {
+      "videoId": "IyiItvCRj30",
+      "title": "Avustralya Ordusunun Emularına Karşı Başarısız Operasyonu! #Shorts",
+      "niche": "Tarih",
+      "views": 1135,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1135
+    },
+    {
+      "videoId": "zDYtDQ0gt_Q",
+      "title": "İnsan Vücudunda Bakteri Hücreden Fazladır! #Shorts",
+      "niche": "Bilim",
+      "views": 1097,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1097
+    },
+    {
+      "videoId": "SXZd8a12n-Y",
+      "title": "Tesla'ya Söz Verilen Parayı Edison Vermedi! #Shorts",
+      "niche": "Bilim",
+      "views": 1081,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1081
+    },
+    {
+      "videoId": "JxGi0kasJ4o",
+      "title": "Kuzey Kore ile Finlandiya'nın Arasında Tek Bir Ülke Var! #Shorts",
+      "niche": "Bilim",
+      "views": 1067,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1067
+    },
+    {
+      "videoId": "pg39JuqqA40",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "niche": "Bilim",
+      "views": 1053,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1053
+    },
+    {
+      "videoId": "V6geVxL3hb8",
+      "title": "Ahtapotlar Renk Körü Olmalarına Rağmen Renkleri Görüyor! #Shorts",
+      "niche": "Bilim",
+      "views": 1015,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1015
+    },
+    {
+      "videoId": "hJfgLHaF534",
+      "title": "Yunuslar Uyurken Beyninin Yarısı Uyanık Kalır! #Shorts",
+      "niche": "Bilim",
+      "views": 1009,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1009
+    },
+    {
       "videoId": "4Dvf_l9Q6n8",
       "title": "Moğol İmparatorluğu Tarihin En Büyük Kara İmparatorluğuydu! #Shorts",
       "niche": "Tarih",
-      "views": 976,
+      "views": 968,
       "avgViewDurationSec": 0,
-      "compositeScore": 976.0
+      "compositeScore": 968
     },
     {
-      "videoId": "Cp3HO7YvGVE",
-      "title": "İnsan Beyninin Kapasitesi 2.5 Milyon Gigabayt! #Shorts",
+      "videoId": "1RPILZ4--5Q",
+      "title": "Fransız İhtilali Ekmek Kıtlığıyla Başladı! #Shorts",
       "niche": "Bilim",
-      "views": 586,
+      "views": 634,
       "avgViewDurationSec": 0,
-      "compositeScore": 586.0
-    },
-    {
-      "videoId": "TzCx9McARLo",
-      "title": "İnternet'in Toplam Ağırlığı Bir Çilek Kadar! #Shorts",
-      "niche": "Bilim",
-      "views": 479,
-      "avgViewDurationSec": 0,
-      "compositeScore": 479.0
-    },
-    {
-      "videoId": "Dnrz557kQVc",
-      "title": "Dünya'daki Ağaç Sayısı Samanyolu'ndaki Yıldızlardan Fazladır! #Shorts",
-      "niche": "Uzay",
-      "views": 454,
-      "avgViewDurationSec": 0,
-      "compositeScore": 454.0
-    },
-    {
-      "videoId": "T6liimSvnVg",
-      "title": "İnsan Hakları Bildirisi'ni Kaleme Alan Köle Sahipleriydi! #Shorts",
-      "niche": "Tarih",
-      "views": 348,
-      "avgViewDurationSec": 0,
-      "compositeScore": 348.0
-    },
-    {
-      "videoId": "Si_ZLcEnOmE",
-      "title": "Tamamen Karanlıkta Kalırsanız Beyin Halüsinasyon Üretir! #Shorts",
-      "niche": "Bilim",
-      "views": 342,
-      "avgViewDurationSec": 0,
-      "compositeScore": 342.0
+      "compositeScore": 634
     }
   ]
 }
