@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-11-10T14:15:45.481Z",
+  "scraped_at": "2026-11-11T13:29:57.583Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 15,
   "winning_topic": "Tarih",
@@ -11,16 +11,16 @@
     {
       "niche": "Tarih",
       "video_count": 7,
-      "avg_views": 1193.86,
+      "avg_views": 1194.43,
       "avg_view_duration_sec": 0,
-      "avg_score": 1193.86
+      "avg_score": 1194.43
     },
     {
       "niche": "Bilim",
       "video_count": 8,
-      "avg_views": 1021.38,
+      "avg_views": 1020.88,
       "avg_view_duration_sec": 0,
-      "avg_score": 1021.38
+      "avg_score": 1020.88
     }
   ],
   "recent_videos": [
@@ -100,9 +100,9 @@
       "videoId": "JxGi0kasJ4o",
       "title": "Kuzey Kore ile Finlandiya'nın Arasında Tek Bir Ülke Var! #Shorts",
       "niche": "Bilim",
-      "views": 1069,
+      "views": 1068,
       "avgViewDurationSec": 0,
-      "compositeScore": 1069
+      "compositeScore": 1068
     },
     {
       "videoId": "pg39JuqqA40",
@@ -132,17 +132,17 @@
       "videoId": "4Dvf_l9Q6n8",
       "title": "Moğol İmparatorluğu Tarihin En Büyük Kara İmparatorluğuydu! #Shorts",
       "niche": "Tarih",
-      "views": 968,
+      "views": 972,
       "avgViewDurationSec": 0,
-      "compositeScore": 968
+      "compositeScore": 972
     },
     {
       "videoId": "1RPILZ4--5Q",
       "title": "Fransız İhtilali Ekmek Kıtlığıyla Başladı! #Shorts",
       "niche": "Bilim",
-      "views": 634,
+      "views": 631,
       "avgViewDurationSec": 0,
-      "compositeScore": 634
+      "compositeScore": 631
     }
   ]
 }
