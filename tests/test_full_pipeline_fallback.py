@@ -9,17 +9,12 @@ run_content_pipeline(force_fallback=True) çağrılır ve şu çıktılar doğru
 """
 
 import json
-import os
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock
 
-# Harici bağımlılıkları mock'lama GEREKMEZ artık (edge_tts kurulu), ama
-# requests (Wikipedia/Groq/Gemini) fallback modunda çağrılmaz. Yine de
-# güvenlik için mock'la.
-sys.modules["requests"] = MagicMock()
-
+# Fallback hattı gerçek kurulu bağımlılıklarla sınanır. Modül seviyesinde
+# sys.modules mock'u kullanmak diğer testlerin requests import'unu bozabilir.
 sys.path.insert(0, "/home/user/yts")
 
 from content_engine import (  # noqa: E402
