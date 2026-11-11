@@ -1,6 +1,6 @@
 """Uçtan uca test: content_engine fallback modu (Force Fallback).
 
-edge_tts / requests modülleri mock'lanır; API anahtarı olmadan
+Kurulu edge_tts / requests bağımlılıkları kullanılır; API anahtarı olmadan
 yedek senaryo havuzunun (%30 Jaccard tekrar korumasıyla) doğru çalışıp
 çalışmadığı ve .used_topics.json'ın güncellendiği doğrulanır.
 """
@@ -9,11 +9,6 @@ import json
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock
-
-# Harici bağımlılıkları mock'la (content_engine import ederken çökmesin)
-sys.modules["edge_tts"] = MagicMock()
-sys.modules["requests"] = MagicMock()
 
 sys.path.insert(0, "/home/user/yts")
 
