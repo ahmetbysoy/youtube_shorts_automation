@@ -1,26 +1,33 @@
 {
-  "scraped_at": "2026-11-13T13:52:44.718Z",
+  "scraped_at": "2026-11-14T12:55:36.592Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 15,
   "winning_topic": "Tarih",
   "boost_active": false,
-  "outperformance_ratio": 1.13,
+  "outperformance_ratio": 1.2,
   "discarded_topics": [],
   "optimization_directive": "Tüm konularda dengeli yüksek dopaminli kanca (hook) üretimine devam et.",
   "topic_scores": [
     {
       "niche": "Tarih",
-      "video_count": 7,
-      "avg_views": 1195.29,
+      "video_count": 6,
+      "avg_views": 1187.83,
       "avg_view_duration_sec": 0,
-      "avg_score": 1195.29
+      "avg_score": 1187.83
     },
     {
       "niche": "Bilim",
       "video_count": 8,
-      "avg_views": 1059.13,
+      "avg_views": 986.75,
       "avg_view_duration_sec": 0,
-      "avg_score": 1059.13
+      "avg_score": 986.75
+    },
+    {
+      "niche": "Uzay",
+      "video_count": 1,
+      "avg_views": 901,
+      "avg_view_duration_sec": 0,
+      "avg_score": 901
     }
   ],
   "recent_videos": [
@@ -39,22 +46,6 @@
       "views": 1245,
       "avgViewDurationSec": 0,
       "compositeScore": 1245
-    },
-    {
-      "videoId": "3SFUI9fSYSU",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "niche": "Tarih",
-      "views": 1240,
-      "avgViewDurationSec": 0,
-      "compositeScore": 1240
-    },
-    {
-      "videoId": "A2F4P7BLB8A",
-      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "niche": "Bilim",
-      "views": 1213,
-      "avgViewDurationSec": 0,
-      "compositeScore": 1213
     },
     {
       "videoId": "6zwOEVEjOeo",
@@ -100,9 +91,9 @@
       "videoId": "JxGi0kasJ4o",
       "title": "Kuzey Kore ile Finlandiya'nın Arasında Tek Bir Ülke Var! #Shorts",
       "niche": "Bilim",
-      "views": 1069,
+      "views": 1070,
       "avgViewDurationSec": 0,
-      "compositeScore": 1069
+      "compositeScore": 1070
     },
     {
       "videoId": "pg39JuqqA40",
@@ -140,9 +131,25 @@
       "videoId": "NKBqoA_o34I",
       "title": "Bir Denizaltıyı Tuvalet Arızası Yüzünden Kaybetmek: U-1206! #Shorts",
       "niche": "Bilim",
-      "views": 939,
+      "views": 940,
       "avgViewDurationSec": 0,
-      "compositeScore": 939
+      "compositeScore": 940
+    },
+    {
+      "videoId": "Xy1QzBs_fF0",
+      "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
+      "niche": "Uzay",
+      "views": 901,
+      "avgViewDurationSec": 0,
+      "compositeScore": 901
+    },
+    {
+      "videoId": "1RPILZ4--5Q",
+      "title": "Fransız İhtilali Ekmek Kıtlığıyla Başladı! #Shorts",
+      "niche": "Bilim",
+      "views": 632,
+      "avgViewDurationSec": 0,
+      "compositeScore": 632
     }
   ]
 }
