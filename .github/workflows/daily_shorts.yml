@@ -1,8 +1,6 @@
 name: 15-Minute Blitzkrieg Money Printer
 
 on:
-  push:
-    branches: [main]
   schedule:
     # REBEL (2026-11-08 Kullanıcı Kararı): 2-3 saatte 1 video (günde 8-12 kaliteli Short), asal olmayan dakika (:13)
     - cron: '13 */2 * * *'
