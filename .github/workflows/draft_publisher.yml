@@ -119,18 +119,53 @@ jobs:
           if [ -z "${GH_TOKEN}" ]; then echo "[ATLANDI] REPO_PAT yok."; exit 0; fi
           python3 -m pip install -q --user pynacl >/dev/null 2>&1 || python3 -m pip install -q --user --break-system-packages pynacl >/dev/null 2>&1 || true
           update_secret() {
-            local NAME="$1" FILE="$2"
+            local NAME="$1"
+            local FILE="$2"
             [ -f "$FILE" ] || return 0
-            [ "$(wc -c < "$FILE")" -lt 100 ] && return 0
-            local PK_JSON KEY_ID PUB_KEY ENC
-            PK_JSON=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/secrets/public-key")
-            KEY_ID=$(echo "$PK_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['key_id'])")
-            PUB_KEY=$(echo "$PK_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['key'])")
-            ENC=$(python3 -c "import base64,sys; from nacl.public import PublicKey,SealedBox; pk=PublicKey(base64.b64decode(sys.argv[1])); print(base64.b64encode(SealedBox(pk).encrypt(open(sys.argv[2],'rb').read())).decode())" "$PUB_KEY" "$FILE" 2>/dev/null) || { echo "[UYARI] ${NAME}: şifreleme başarısız"; return 0; }
-            curl -s -X PUT -H "Authorization: Bearer ${GH_TOKEN}" -H "Content-Type: application/json" \
+            local SIZE
+            SIZE=$(wc -c < "$FILE")
+            [ "$SIZE" -lt 100 ] && return 0
+
+            local PK_RESPONSE PK_HTTP PK_JSON API_MESSAGE KEY_DATA KEY_ID PUB_KEY ENC PUT_RESPONSE PUT_HTTP PUT_JSON
+            PK_RESPONSE=$(curl -sS -w '\n%{http_code}' -H "Authorization: Bearer ${GH_TOKEN}" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/secrets/public-key") || {
+              echo "::warning::${NAME}: GitHub public-key isteği başarısız; secret güncellenmedi."
+              return 0
+            }
+            PK_HTTP="${PK_RESPONSE##*$'\n'}"
+            PK_JSON="${PK_RESPONSE%$'\n'*}"
+            if [ "$PK_HTTP" != "200" ]; then
+              API_MESSAGE=$(printf '%s' "$PK_JSON" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("message") or "API error")' 2>/dev/null || printf 'JSON olmayan yanit')
+              echo "::warning::${NAME}: GitHub public-key API HTTP ${PK_HTTP}: ${API_MESSAGE}. REPO_PAT için repository Secrets read/write yetkisi gerekli."
+              return 0
+            fi
+            KEY_DATA=$(printf '%s' "$PK_JSON" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("key_id") and d.get("key"); print(d["key_id"]); print(d["key"])' 2>/dev/null) || {
+              echo "::warning::${NAME}: GitHub public-key yanıtında key_id/key yok; REPO_PAT yetkisini kontrol et."
+              return 0
+            }
+            KEY_ID=$(printf '%s\n' "$KEY_DATA" | sed -n '1p')
+            PUB_KEY=$(printf '%s\n' "$KEY_DATA" | sed -n '2p')
+
+            ENC=$(python3 -c "import base64,sys; from nacl.public import PublicKey,SealedBox; pk=PublicKey(base64.b64decode(sys.argv[1])); print(base64.b64encode(SealedBox(pk).encrypt(open(sys.argv[2],'rb').read())).decode())" "$PUB_KEY" "$FILE" 2>/dev/null) || {
+              echo "::warning::${NAME}: PyNaCl şifrelemesi başarısız; secret güncellenmedi."
+              return 0
+            }
+            PUT_RESPONSE=$(curl -sS -w '\n%{http_code}' -X PUT \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Content-Type: application/json" \
               "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/secrets/${NAME}" \
-              -d "{\"encrypted_value\":\"${ENC}\",\"key_id\":\"${KEY_ID}\"}" > /dev/null
-            echo "[OK] Secret ${NAME} güncellendi"
+              -d "{\"encrypted_value\":\"${ENC}\",\"key_id\":\"${KEY_ID}\"}") || {
+              echo "::warning::${NAME}: GitHub secret PUT isteği başarısız."
+              return 0
+            }
+            PUT_HTTP="${PUT_RESPONSE##*$'\n'}"
+            PUT_JSON="${PUT_RESPONSE%$'\n'*}"
+            if [ "$PUT_HTTP" != "201" ] && [ "$PUT_HTTP" != "204" ]; then
+              API_MESSAGE=$(printf '%s' "$PUT_JSON" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("message") or "API error")' 2>/dev/null || printf 'JSON olmayan yanit')
+              echo "::warning::${NAME}: GitHub secret PUT HTTP ${PUT_HTTP}: ${API_MESSAGE}. REPO_PAT için repository Secrets write yetkisi gerekli."
+              return 0
+            fi
+            echo "[OK] Secret ${NAME} güncellendi (${SIZE} byte, HTTP ${PUT_HTTP})"
           }
           # Yalnızca publisher'a ait oturum yenilenir; uploader'ın secret'larına yazılmaz.
           update_secret "COOKIES_JSON_DRAFT" "cookies.json"
