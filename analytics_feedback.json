@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-11-14T12:55:36.592Z",
+  "scraped_at": "2026-11-15T13:23:57.031Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 15,
   "winning_topic": "Tarih",
@@ -18,16 +18,16 @@
     {
       "niche": "Bilim",
       "video_count": 8,
-      "avg_views": 986.75,
+      "avg_views": 986.63,
       "avg_view_duration_sec": 0,
-      "avg_score": 986.75
+      "avg_score": 986.63
     },
     {
       "niche": "Uzay",
       "video_count": 1,
-      "avg_views": 901,
+      "avg_views": 895,
       "avg_view_duration_sec": 0,
-      "avg_score": 901
+      "avg_score": 895
     }
   ],
   "recent_videos": [
@@ -131,17 +131,17 @@
       "videoId": "NKBqoA_o34I",
       "title": "Bir Denizaltıyı Tuvalet Arızası Yüzünden Kaybetmek: U-1206! #Shorts",
       "niche": "Bilim",
-      "views": 940,
+      "views": 939,
       "avgViewDurationSec": 0,
-      "compositeScore": 940
+      "compositeScore": 939
     },
     {
       "videoId": "Xy1QzBs_fF0",
       "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
       "niche": "Uzay",
-      "views": 901,
+      "views": 895,
       "avgViewDurationSec": 0,
-      "compositeScore": 901
+      "compositeScore": 895
     },
     {
       "videoId": "1RPILZ4--5Q",
