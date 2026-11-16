@@ -10,11 +10,35 @@ const OUT = path.resolve(process.env.BACKFILL_OUT || 'backfill_output');
 const LIMIT = Math.max(1, Number(process.env.MAX_PER_RUN || 5));
 const START_AFTER = process.env.START_AFTER || '';
 const DRY_RUN = process.env.DRY_RUN === '1';
+const DEBUG = process.env.DEBUG === '1' || process.env.DEBUG_SCREENSHOTS === '1';
 const DELAY_MS = Math.max(5000, Number(process.env.DELAY_MS || 12000));
 const BASE = process.cwd();
 fs.mkdirSync(OUT, { recursive: true });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const log = m => console.log('[' + new Date().toISOString() + '] ' + m);
+
+async function dumpPage(page, label) {
+  // Hata ayiklama icin screenshot + HTML dump. DEBUG modunda her zaman,
+  // yoksa sadece cagirildiginda (orn. video listesi bossa).
+  try {
+    const safe = String(label).replace(/[^a-zA-Z0-9._-]+/g, '_');
+    const dbgDir = path.join(OUT, 'debug');
+    fs.mkdirSync(dbgDir, { recursive: true });
+    const url = page.url();
+    const title = await page.title().catch(() => '');
+    log('DUMP [' + label + '] url=' + url + ' title=' + title);
+    fs.writeFileSync(path.join(dbgDir, safe + '.url.txt'), 'URL: ' + url + '\nTitle: ' + title + '\n', 'utf8');
+    await page.screenshot({ path: path.join(dbgDir, safe + '.png'), fullPage: true, timeout: 15000 }).catch(e => {
+      log('Screenshot alinamadi: ' + e.message);
+    });
+    const html = await page.content().catch(() => '');
+    fs.writeFileSync(path.join(dbgDir, safe + '.html'), html, 'utf8');
+    const body = await page.locator('body').innerText({ timeout: 5000 }).catch(() => '');
+    fs.writeFileSync(path.join(dbgDir, safe + '.txt'), body.slice(0, 50000), 'utf8');
+  } catch (e) {
+    log('dumpPage hatasi: ' + e.message);
+  }
+}
 
 function loadState() {
   if (process.env.STORAGE_STATE_JSON) {
@@ -65,35 +89,77 @@ async function makeCover(title, outPath) {
 async function collectVideos(page) {
   const url = 'https://studio.youtube.com/channel/' + CHANNEL_ID +
     '/videos/short?filter=%5B%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D';
+  log('Studio Shorts sayfasina gidiliyor: ' + url);
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await sleep(7000);
-  if (/accounts\.google\.com|ServiceLogin/i.test(page.url())) throw new Error('Studio oturumu gecersiz.');
+  log('Son URL: ' + page.url());
+  if (/accounts\.google\.com|ServiceLogin/i.test(page.url())) {
+    await dumpPage(page, '01_login_redirect');
+    throw new Error('Studio oturumu gecersiz (login sayfasina yonlendirildi).');
+  }
+  // YouTube Studio bazen kanal secim ekrani, "Get started" veya "Verify it's you"
+  // ekraninda kaliyor; bunlari kontrol et.
+  const body = await page.locator('body').innerText().catch(() => '');
+  if (/Kimliğinizi doğrulayın|Verify it.s you|2-Step Verification|2FA/i.test(body)) {
+    await dumpPage(page, '01_2fa_challenge');
+    throw new Error('Google 2FA/kimlik dogrulamasi istiyor.');
+  }
+  if (DEBUG) await dumpPage(page, '01_after_nav');
+
+  // Sayfa boyutu dropdown'i
   const pageSize = page.locator('ytcp-dropdown-trigger#page-size').first();
   if (await pageSize.isVisible().catch(() => false)) {
+    log('Sayfa boyutu 50 olarak ayarlaniyor...');
     await pageSize.click().catch(() => {});
+    await sleep(800);
     await page.locator('tp-yt-paper-item:has-text("50")').first().click({ timeout: 3000 }).catch(() => {});
     await sleep(3500);
+    if (DEBUG) await dumpPage(page, '02_after_pagesize');
+  } else {
+    log('UYARI: page-size dropdown bulunamadi.');
   }
+
   const all = new Map();
   for (let pageNo = 0; pageNo < 100; pageNo++) {
-    const rows = await page.locator('ytcp-video-row').evaluateAll(els => els.map(e => {
-      const a = e.querySelector('a#video-title, a.ytcp-video-row');
+    // Birden fazla olasi row selector'u dene (Studio arayuzu sik degisir).
+    const rows = await page.locator('ytcp-video-row, ytcr-video-row, ytcp-video-list-row').evaluateAll(els => els.map(e => {
+      const a = e.querySelector('a#video-title, a.ytcp-video-row, a[href*="/video/"]');
       const href = a ? a.getAttribute('href') || '' : '';
-      const id = (href.match(/video\/([^/]+)\//) || [])[1] || '';
-      const title = (e.querySelector('#video-title')?.textContent || '').trim();
+      const idMatch = href.match(/video\/([^/?#]+)/);
+      const id = idMatch ? idMatch[1] : '';
+      const title = (e.querySelector('#video-title, #video-title-text, [id*="title"]')?.textContent || '').trim();
       const status = (e.querySelector('.tablecell-visibility, #visibility-cell, ytcp-video-visibility-cell')?.innerText || '').trim();
       const img = e.querySelector('img')?.currentSrc || e.querySelector('img')?.src || '';
       return { id, title, status, oldThumbnail: img };
     }).filter(x => x.id && x.title));
+    log('Sayfa ' + (pageNo+1) + ': ' + rows.length + ' video satiri bulundu.');
     for (const row of rows) all.set(row.id, row);
-    const next = page.locator('ytcp-icon-button#navigate-after, #navigate-after').first();
-    if (!(await next.isVisible().catch(() => false))) break;
+    if (rows.length === 0 && pageNo === 0) {
+      // Ilk sayfa bossa debug dump al ki nedenini gorelim.
+      await dumpPage(page, '03_no_rows_page1');
+      // Hic row yoksa sayfalama da olmayacak; kir.
+      break;
+    }
+    const next = page.locator('ytcp-icon-button#navigate-after, #navigate-after, [aria-label="Next page"], [aria-label="Sonraki sayfa"]').first();
+    if (!(await next.isVisible().catch(() => false))) {
+      log('"Next" butonu gorunmuyor, sayfalama sonu.');
+      break;
+    }
     const disabled = await next.evaluate(el => el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true').catch(() => true);
-    if (disabled) break;
+    if (disabled) { log('"Next" butonu devre disi.'); break; }
     await next.click();
     await sleep(3000);
   }
-  return [...all.values()];
+
+  const result = [...all.values()];
+  if (result.length === 0) {
+    await dumpPage(page, '04_zero_videos_final');
+    log('HIC VIDEO BULUNAMADI. URL=' + page.url() + ' title=' + (await page.title().catch(()=>'')));
+    // Sayfa govde metninden ilk 500 karakteri logla.
+    const bodyText = await page.locator('body').innerText().catch(() => '');
+    log('Govde ozeti: ' + bodyText.replace(/\s+/g,' ').slice(0,500));
+  }
+  return result;
 }
 
 async function backupOldThumb(page, video, index) {

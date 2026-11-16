@@ -18,6 +18,11 @@ on:
         required: false
         default: "0"
         type: string
+      debug:
+        description: "1 = screenshot ve HTML artifact toplar (sadece sorun ayiklarken ac)"
+        required: false
+        default: "0"
+        type: string
 
 permissions:
   contents: read
@@ -89,6 +94,8 @@ jobs:
           MAX_PER_RUN: ${{ inputs.max_per_run || '5' }}
           START_AFTER: ${{ inputs.start_after || '' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}
+          DEBUG: ${{ inputs.debug || '0' }}
+          DEBUG_SCREENSHOTS: ${{ inputs.debug || '0' }}
           # Cookie env'lerini node adimina da gec (script once env'e bakar,
           # yoksa dosyaya duser; boylece iki yol da garanti altinda).
           STORAGE_STATE_JSON_1: ${{ secrets.STORAGE_STATE_JSON_1 }}
