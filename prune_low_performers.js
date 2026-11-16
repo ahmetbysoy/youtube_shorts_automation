@@ -314,10 +314,14 @@ async function readRangeText(page) {
 }
 
 /** Boş taramanın geçici DOM/yükleme hatası mı yoksa açıkça boş liste mi olduğunu belirler. */
+function isExplicitEmptyRange(rangeText) {
+    const normalizedRange = String(rangeText || '').replace(/\s+/g, '');
+    return normalizedRange === '0–0/0' || normalizedRange === '0-0/0';
+}
+
 function shouldRetryEmptyScan(rowCount, rangeText, attempt, maxAttempts = 3) {
-    if (rowCount > 0 || attempt >= maxAttempts) return false;
-    const normalizedRange = String(rangeText || '').replace(/\\s+/g, '');
-    return normalizedRange !== '0–0/0' && normalizedRange !== '0-0/0';
+    if (rowCount > 0 || attempt >= maxAttempts || isExplicitEmptyRange(rangeText)) return false;
+    return true;
 }
 
 /** Listeyi İLK sayfadan son sayfaya kadar tarar (sayfalama). */
@@ -353,7 +357,7 @@ async function collectAllRows(page, listUrl, maxPages = 25, attempt = 1, maxAtte
         await page.waitForTimeout(2500 * attempt);
         return collectAllRows(page, listUrl, maxPages, attempt + 1, maxAttempts);
     }
-    if (all.length === 0 && /^0\\s*[–-]\\s*0\\s*\\/\\s*0$/.test(String(rangeAfterScan || '').trim())) {
+    if (all.length === 0 && isExplicitEmptyRange(rangeAfterScan)) {
         log('[*] Studio listesi açıkça boş (0–0 / 0); ek tarama yapılmadı.');
     } else if (all.length === 0) {
         log(`[!] Studio listesi ${maxAttempts} denemeden sonra da 0 satır verdi.`);
@@ -763,5 +767,6 @@ module.exports = {
     parseAbsoluteDateTr,
     resolveAgeMinutes,
     shouldRetryEmptyScan,
+    isExplicitEmptyRange,
     pruneLowPerformers
 };
