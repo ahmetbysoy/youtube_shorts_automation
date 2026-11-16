@@ -24,7 +24,9 @@ permissions:
 
 concurrency:
   group: shorts-thumbnail-backfill
-  cancel-in-progress: false
+  # Ani cift-tiklama veya ayni hesaba iki Playwright oturumunun
+  # birbirini invalidate etmesini engellemek icin onceki kosu iptal edilsin.
+  cancel-in-progress: true
 
 jobs:
   backfill:
@@ -38,10 +40,18 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "20"
+          # npm bagimliliklarini runner cache'inde tutar; kosu suresini kisaltir.
+          cache: 'npm'
 
       - name: Playwright ve Chromium
         run: |
-          npm install
+          set -euo pipefail
+          # package-lock.json varsa npm ci (deterministik), yoksa npm install.
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
           npx playwright install --with-deps chromium
 
       - name: YouTube oturumunu hazirla
@@ -65,18 +75,26 @@ jobs:
             echo "::error::YouTube oturum secret'i bulunamadi."
             exit 1
           fi
+          # JSON dogrulamasini python yerine node ile yap (ayri bir dil bagimliligi yok).
           if [ -f storage_state.json ]; then
-            python3 -c "import json; d=json.load(open('storage_state.json')); assert d.get('cookies'), 'storage_state cookies bos'; print('storage_state dogrulandi')"
+            node -e "const d=JSON.parse(require('fs').readFileSync('storage_state.json','utf8')); if(!d.cookies||!Array.isArray(d.cookies)||!d.cookies.length) throw new Error('storage_state cookies bos'); console.log('storage_state dogrulandi ('+d.cookies.length+' cookie)')"
           else
-            python3 -c "import json; d=json.load(open('cookies.json')); assert isinstance(d,list) and d; print('cookies dogrulandi')"
+            node -e "const d=JSON.parse(require('fs').readFileSync('cookies.json','utf8')); if(!Array.isArray(d)||!d.length) throw new Error('cookies.json gecersiz'); console.log('cookies dogrulandi ('+d.length+' cookie)')"
           fi
 
       - name: Shorts kapaklarini guncelle
         env:
-          YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ' }}
+          # YT_CHANNEL_ID secret'i yoksa script icindeki default'a duser.
+          YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID || '' }}
           MAX_PER_RUN: ${{ inputs.max_per_run || '5' }}
-          START_AFTER: ${{ inputs.start_after }}
+          START_AFTER: ${{ inputs.start_after || '' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}
+          # Cookie env'lerini node adimina da gec (script once env'e bakar,
+          # yoksa dosyaya duser; boylece iki yol da garanti altinda).
+          STORAGE_STATE_JSON_1: ${{ secrets.STORAGE_STATE_JSON_1 }}
+          STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+          COOKIES_JSON_1: ${{ secrets.COOKIES_JSON_1 }}
+          COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
         run: node scripts/backfill_short_thumbnails.cjs
 
       - name: Rapor ve yedekleri sakla

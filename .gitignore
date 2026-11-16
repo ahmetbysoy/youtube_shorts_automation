@@ -17,6 +17,7 @@ browser_profile/
 .oauth_state.json
 secrets/
 settings.yaml
+jeton/
 
 # Node.js Bağımlılıkları
 node_modules/

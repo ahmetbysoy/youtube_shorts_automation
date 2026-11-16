@@ -99,13 +99,25 @@ async function collectVideos(page) {
 async function backupOldThumb(page, video, index) {
   if (!video.oldThumbnail || !/^https?:/i.test(video.oldThumbnail)) return '';
   try {
-    const res = await page.request.get(video.oldThumbnail, { timeout: 15000 });
+    const res = await page.request.get(video.oldThumbnail, { timeout: 15000, maxRedirects: 2 });
     if (!res.ok()) return '';
-    const dest = path.join(OUT, 'originals', video.id + '.img');
+    const ct = (res.headers()['content-type'] || '').toLowerCase();
+    // Login/redirect donusu HTML sayfasi olursa (orn. cookie gecersizse) yedek alma.
+    if (!ct.startsWith('image/')) {
+      log('Eski kapak image content-type degil, yedeklenmedi (' + ct + ')');
+      return '';
+    }
+    const ext = ct.includes('png') ? '.png' : ct.includes('webp') ? '.webp' : '.jpg';
+    const dest = path.join(OUT, 'originals', video.id + ext);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.writeFileSync(dest, await res.body());
+    const body = await res.body();
+    if (body.length < 1000) return '';
+    fs.writeFileSync(dest, body);
     return dest;
-  } catch (_) { return ''; }
+  } catch (e) {
+    log('Eski kapak yedeklenemedi: ' + e.message);
+    return '';
+  }
 }
 
 async function applyOne(page, video, index) {
@@ -145,11 +157,41 @@ async function applyOne(page, video, index) {
 
   const save = page.locator('#save-button, ytcp-button#save-button, button:has-text("Kaydet"), button:has-text("Save")').first();
   await save.waitFor({ state: 'visible', timeout: 15000 });
-  if (await save.isDisabled().catch(() => false)) throw new Error('Kaydet dugmesi etkin degil.');
+  if (await save.isDisabled().catch(() => false)) {
+    // Dugme neden disabled? Kota/bekleyen hata kontrolu.
+    const disabledBody = await page.locator('body').innerText().catch(() => '');
+    if (/günlük.*küçük resim|günlük.*kapak|daily.*thumbnail.*limit|thumbnail.*limit reached|kota.*dol/i.test(disabledBody)) {
+      throw new Error('YouTube gunluk ozel kucuk resim kotasi doldu; sonraki videolar icin islem durduruldu.');
+    }
+    throw new Error('Kaydet dugmesi etkin degil (muhtemelen yukleme hatasi veya kota).');
+  }
   await save.click({ timeout: 10000 });
-  await sleep(5000);
-  const toast = await page.locator('ytcp-toast, #toast').allInnerTexts().catch(() => []);
-  const result = { id: video.id, title: safeTitle, updated: true, originalBackup, cover, toast: toast.join(' ').slice(0, 200) };
+
+  // Save tıklandiktan sonra dugme once 'kaydediliyor' durumuna gecer, sonra tekrar
+  // enabled olur ve "Degisiklikler kaydedildi" toast'i gorunur. En fazla 45sn bekle.
+  let saveSucceeded = false;
+  let lastToast = '';
+  for (let tick = 0; tick < 45; tick++) {
+    await sleep(1000);
+    const toasts = await page.locator('ytcp-toast, #toast, tp-yt-paper-toast').allInnerTexts().catch(() => []);
+    lastToast = toasts.join(' ').trim();
+    const bodyNow = await page.locator('body').innerText().catch(() => '');
+    if (/günlük.*küçük resim|günlük.*kapak|daily.*thumbnail.*limit|thumbnail.*limit reached|kota.*dol/i.test(bodyNow)) {
+      throw new Error('YouTube gunluk ozel kucuk resim kotasi doldu; sonraki videolar icin islem durduruldu.');
+    }
+    if (/Changes saved|Değişiklikler kaydedildi|Degisiklikler kaydedildi|Saved/i.test(lastToast)) {
+      saveSucceeded = true;
+      break;
+    }
+    const hasErrorToast = toasts.some(t => /error|hata|başarısız|basarisiz|failed/i.test(t));
+    if (hasErrorToast) throw new Error('YouTube Studio hata toast: ' + lastToast);
+  }
+
+  if (!saveSucceeded) {
+    throw new Error('Kaydet dogrulanamadi: "Degisiklikler kaydedildi" toast\'i 45sn icinde gorunmedi. Son toast: ' + lastToast);
+  }
+
+  const result = { id: video.id, title: safeTitle, updated: true, originalBackup, cover, toast: lastToast.slice(0, 300) };
   return result;
 }
 
@@ -170,14 +212,20 @@ async function applyOne(page, video, index) {
       if (pos < 0) throw new Error('START_AFTER video ID listede bulunamadi: ' + START_AFTER);
       candidates = videos.slice(pos + 1);
     }
-    let processed = 0;\n    for (let i = 0; i < candidates.length && processed < LIMIT; i++) {
+    let processed = 0;
+    for (let i = 0; i < candidates.length && processed < LIMIT; i++) {
       const video = candidates[i];
       try {
         log('Kapak hazirlaniyor: ' + video.id + ' | ' + video.title);
         const r = await applyOne(page, video, i);
-        if (r.dryRun) results.skipped.push({ ...r, reason: 'dry_run' });
-        else results.updated.push(r);
-        log((r.updated ? 'KAPAK KAYDEDILDI: ' : 'DRY RUN: ') + video.id);
+        if (r.dryRun) {
+          results.skipped.push({ ...r, reason: 'dry_run' });
+          log('DRY RUN: ' + video.id);
+        } else {
+          results.updated.push(r);
+          processed++;
+          log('KAPAK KAYDEDILDI: ' + video.id);
+        }
       } catch (e) {
         const item = { id: video.id, title: video.title, reason: e.message };
         results.failed.push(item);
