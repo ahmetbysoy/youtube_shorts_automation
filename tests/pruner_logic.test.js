@@ -99,6 +99,15 @@ check('Görüntülenme sıkı ayrıştırma: okunamayan değer null (0 değil)',
     assert.strictEqual(pruner.parseViewsStrict('Yükleniyor'), null);
 });
 
+check('Boş Studio taraması geçici DOM hatasında yeniden denenir, açıkça boş listede denenmez', () => {
+    assert.strictEqual(pruner.shouldRetryEmptyScan(0, null, 1, 3), true);
+    assert.strictEqual(pruner.shouldRetryEmptyScan(0, '1–30 / 30', 1, 3), true);
+    assert.strictEqual(pruner.shouldRetryEmptyScan(0, '0–0 / 0', 1, 3), false);
+    assert.strictEqual(pruner.shouldRetryEmptyScan(0, '0-0 / 0', 1, 3), false);
+    assert.strictEqual(pruner.shouldRetryEmptyScan(0, null, 3, 3), false);
+    assert.strictEqual(pruner.shouldRetryEmptyScan(2, null, 1, 3), false);
+});
+
 check('Yalnızca PUBLIC satırlar hedeflenebilir', () => {
     assert.strictEqual(pruner.isPublicRow({ visibility: 'Herkese açık', isDraft: false }), true);
     assert.strictEqual(pruner.isPublicRow({ visibility: 'Public', isDraft: false }), true);
