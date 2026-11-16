@@ -100,6 +100,10 @@ check('Görüntülenme sıkı ayrıştırma: okunamayan değer null (0 değil)',
 });
 
 check('Boş Studio taraması geçici DOM hatasında yeniden denenir, açıkça boş listede denenmez', () => {
+    assert.strictEqual(pruner.isExplicitEmptyRange('0–0 / 0'), true);
+    assert.strictEqual(pruner.isExplicitEmptyRange('0-0 / 0'), true);
+    assert.strictEqual(pruner.isExplicitEmptyRange('1–30 / 30'), false);
+    assert.strictEqual(pruner.isExplicitEmptyRange(null), false);
     assert.strictEqual(pruner.shouldRetryEmptyScan(0, null, 1, 3), true);
     assert.strictEqual(pruner.shouldRetryEmptyScan(0, '1–30 / 30', 1, 3), true);
     assert.strictEqual(pruner.shouldRetryEmptyScan(0, '0–0 / 0', 1, 3), false);
