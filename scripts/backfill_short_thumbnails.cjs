@@ -106,10 +106,28 @@ function loadState() {
 
 function buildPrompt(title) {
   const clean = String(title || 'YouTube Shorts').replace(/#Shorts/ig, '').trim().slice(0, 180);
-  return 'Video title: "' + clean + '". Create an exceptionally compelling YouTube Shorts thumbnail in vertical 9:16. ' +
-    'The image must accurately represent this exact title, one unmistakable large central subject, an emotionally powerful or surprising moment, ' +
-    'dramatic cinematic lighting, vivid colors, crisp photorealistic detail, strong contrast, mobile-first composition, ' +
-    'and a powerful curiosity gap that makes viewers want to tap. Do not invent facts. No text, letters, numbers, logos, watermark, borders, collage or split screen.';
+  // Turkce prompt: yuksek etkilesimli YouTube Shorts kapagi.
+  // Ingilizce anahtar kelimeler image modelin daha iyi anladigi fotogercekcilik terimleri.
+  return (
+    'YouTube Shorts thumbnail, vertical 9:16 aspect ratio (1080x1920). ' +
+    'Konu: "' + clean + '". ' +
+    'Bu bir kisa video kapak fotografi. Kapagi goren izleyici merak edip tiklamali, ' +
+    'etkilesim ve izlenme rekorlari kirmali, profesyonel YouTube thumbnail tasarimi olsun. ' +
+    'Composition rules: one single dominant central subject filling 60-70% of the frame, ' +
+    'extreme close-up on face/object, subject looks directly at camera. ' +
+    'If the topic is about a person or living being, show a dramatic SHOCKED or wide-eyed reaction face ' +
+    'with mouth open, eyebrows raised — that viral YouTube reaction look. ' +
+    'Lighting: hyper-dramatic cinematic key light, strong rim light, deep shadows, lens flare if appropriate, ' +
+    'high contrast chiaroscuro, warm vs cold color clash. ' +
+    'Color: ultra-saturated, punchy, neon accents, vivid red/yellow highlight colors that pop in the feed. ' +
+    'Background: moody cinematic background with heavy bokeh blur, slightly desaturated so the subject explodes forward. ' +
+    'Emotion: jaw-dropping, mind-blowing, "you won\'t believe this" energy, intense curiosity gap. ' +
+    'Accuracy: the image must accurately represent the title — no invented objects, people, or facts. ' +
+    'Quality: ultra-realistic photorealistic 8K, sharp focus on the main subject, shallow depth of field, ' +
+    'cinematic color grading, shot on Sony A7IV with 85mm f/1.4 lens. ' +
+    'STRICT FORBIDDEN: any text, letters, words, numbers, captions, handwriting, logos, watermarks, ' +
+    'borders, frames, arrows, red circles, emoji, collage, split screen, extra limbs, distorted hands, deformed faces, AI artifacts.'
+  );
 }
 
 // Pollinations model fallback sirasi: once ucretsiz hizli modellerle baslar,

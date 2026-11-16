@@ -30,10 +30,25 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
 
 function buildPrompt(title) {
   const clean = String(title || 'YouTube Shorts').replace(/#Shorts/ig, '').trim().slice(0, 180);
-  return 'Video title: "' + clean + '". Create an exceptionally compelling YouTube Shorts thumbnail in vertical 9:16. ' +
-    'The image must accurately represent this exact title, one unmistakable large central subject, an emotionally powerful or surprising moment, ' +
-    'dramatic cinematic lighting, vivid colors, crisp photorealistic detail, strong contrast, mobile-first composition, ' +
-    'and a powerful curiosity gap that makes viewers want to tap. Do not invent facts. No text, letters, numbers, logos, watermark, borders, collage or split screen.';
+  return (
+    'YouTube Shorts thumbnail, vertical 9:16 aspect ratio (1080x1920). ' +
+    'Konu: "' + clean + '". ' +
+    'Bu bir kisa video kapak fotografi. Kapagi goren izleyici merak edip tiklamali, ' +
+    'etkilesim ve izlenme rekorlari kirmali, profesyonel YouTube thumbnail tasarimi olsun. ' +
+    'Composition: one single dominant central subject filling 60-70% of the frame, extreme close-up, ' +
+    'subject looks directly at camera. If about a person/living being, show a dramatic SHOCKED ' +
+    'reaction face with mouth open, eyebrows raised — viral YouTube reaction look. ' +
+    'Lighting: hyper-dramatic cinematic key light, strong rim light, deep shadows, lens flare, ' +
+    'high contrast chiaroscuro, warm vs cold color clash. ' +
+    'Color: ultra-saturated, punchy, neon accents, vivid red/yellow highlights that pop. ' +
+    'Background: moody cinematic, heavy bokeh blur, slightly desaturated so subject pops. ' +
+    'Emotion: jaw-dropping, mind-blowing, "you won\'t believe this" energy, curiosity gap. ' +
+    'Accuracy: accurately represent the title — no invented objects, people, or facts. ' +
+    'Quality: ultra-realistic photorealistic 8K, sharp focus, shallow depth of field, ' +
+    'cinematic color grading, shot on Sony A7IV 85mm f/1.4. ' +
+    'FORBIDDEN: any text, letters, numbers, captions, logos, watermarks, borders, arrows, ' +
+    'red circles, emoji, collage, split screen, deformed faces/hands, AI artifacts.'
+  );
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
