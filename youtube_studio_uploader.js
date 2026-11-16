@@ -946,9 +946,9 @@ async function uploadToYouTubeStudio() {
         }
 
         // --- KAPAK ---
-        // Varsayilan (THUMBNAIL_MODE=frame): kapak FAZ 3.5'te videonun ilk 0.6 sn'sine gomuldu;
-        // Studio'ya AYRI kapak dosyasi yuklenmez (gunluk ozel kucuk resim kotasi yok).
-        // Studio otomatik kare adaylari sunarsa output/cover.jpg'a en yakin olani secilir.
+        // Varsayilan (THUMBNAIL_MODE=frame): baslik-odakli kapak videonun ilk 1.0 sn'sine tam opak gomuludur.
+        // Studio'nun "Videodan sec" adaylari arasinda output/cover.jpg ile eslesen kare secilir.
+        // Eslesme dogrulanmadan "kapak secildi" basarisi raporlanmaz.
         // THUMBNAIL_MODE=custom: eski yol (pollinations/PIL kapak -> Studio'ya dosya yukleme).
         const thumbnailMode = String(process.env.THUMBNAIL_MODE || 'frame').toLowerCase();
         const skipThumbnail = String(process.env.SKIP_THUMBNAIL || '0') === '1';
