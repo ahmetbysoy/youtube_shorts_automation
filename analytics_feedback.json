@@ -1,33 +1,26 @@
 {
-  "scraped_at": "2026-11-15T13:23:57.031Z",
+  "scraped_at": "2026-11-16T14:39:49.288Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 15,
   "winning_topic": "Tarih",
   "boost_active": false,
-  "outperformance_ratio": 1.2,
+  "outperformance_ratio": 1.13,
   "discarded_topics": [],
   "optimization_directive": "Tüm konularda dengeli yüksek dopaminli kanca (hook) üretimine devam et.",
   "topic_scores": [
     {
       "niche": "Tarih",
-      "video_count": 6,
-      "avg_views": 1187.83,
+      "video_count": 7,
+      "avg_views": 1195.43,
       "avg_view_duration_sec": 0,
-      "avg_score": 1187.83
+      "avg_score": 1195.43
     },
     {
       "niche": "Bilim",
       "video_count": 8,
-      "avg_views": 986.63,
+      "avg_views": 1059.38,
       "avg_view_duration_sec": 0,
-      "avg_score": 986.63
-    },
-    {
-      "niche": "Uzay",
-      "video_count": 1,
-      "avg_views": 895,
-      "avg_view_duration_sec": 0,
-      "avg_score": 895
+      "avg_score": 1059.38
     }
   ],
   "recent_videos": [
@@ -35,9 +28,9 @@
       "videoId": "yiiLdVadjmM",
       "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
       "niche": "Tarih",
-      "views": 1348,
+      "views": 1349,
       "avgViewDurationSec": 0,
-      "compositeScore": 1348
+      "compositeScore": 1349
     },
     {
       "videoId": "1IAgNqsjgvQ",
@@ -46,6 +39,22 @@
       "views": 1245,
       "avgViewDurationSec": 0,
       "compositeScore": 1245
+    },
+    {
+      "videoId": "3SFUI9fSYSU",
+      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
+      "niche": "Tarih",
+      "views": 1240,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1240
+    },
+    {
+      "videoId": "A2F4P7BLB8A",
+      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
+      "niche": "Bilim",
+      "views": 1214,
+      "avgViewDurationSec": 0,
+      "compositeScore": 1214
     },
     {
       "videoId": "6zwOEVEjOeo",
@@ -134,22 +143,6 @@
       "views": 939,
       "avgViewDurationSec": 0,
       "compositeScore": 939
-    },
-    {
-      "videoId": "Xy1QzBs_fF0",
-      "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
-      "niche": "Uzay",
-      "views": 895,
-      "avgViewDurationSec": 0,
-      "compositeScore": 895
-    },
-    {
-      "videoId": "1RPILZ4--5Q",
-      "title": "Fransız İhtilali Ekmek Kıtlığıyla Başladı! #Shorts",
-      "niche": "Bilim",
-      "views": 632,
-      "avgViewDurationSec": 0,
-      "compositeScore": 632
     }
   ]
 }
