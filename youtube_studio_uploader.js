@@ -955,16 +955,29 @@ async function uploadToYouTubeStudio() {
         if (skipThumbnail) {
             console.log('[KAPAK] SKIP_THUMBNAIL=1 -> kapak adimi tamamen atlandi.');
         } else if (thumbnailMode !== 'custom') {
-            console.log('[KAPAK] Mod=frame: kapak video icine gomulu; Studio kare adaylari kontrol ediliyor (ayri dosya yuklenmez).');
+            const coverPath = path.join(BASE_DIR, 'output', 'cover.jpg');
+            console.log('[KAPAK] Mod=frame: ilk 1.0 saniyeye gomulu kapakla eslesen Studio karesi seciliyor.');
             try {
-                const stillResult = await selectMatchingAutoStill(page, path.join(BASE_DIR, 'output', 'cover.jpg'));
+                const stillResult = await selectMatchingAutoStill(page, coverPath);
                 if (stillResult.ok) {
-                    console.log(`[KAPAK] Otomatik kare adayi secildi: #${stillResult.index + 1}/${stillResult.total} (fark=${stillResult.distance}, eslesme=${stillResult.matched ? 'evet' : 'zayif'}, secili-nitelik=${stillResult.selectedAttr}).`);
+                    console.log(`[KAPAK] Gomulu ilk-kare kapagi Studio'da secildi: #${stillResult.index + 1}/${stillResult.total} (fark=${stillResult.distance}, secili-nitelik=${stillResult.selectedAttr}).`);
+                } else if (fs.existsSync(coverPath)) {
+                    // Studio adaylari gomulu ilk kareyi sunmazsa ayni cover.jpg dosyasini
+                    // ozel kucuk resim olarak yukle; boylece farkli bir otomatik kareye dusme.
+                    console.log(`[KAPAK] Ilk-kare adayi secilemedi (${stillResult.reason}); ayni kapak dosyasi dogrudan yukleniyor.`);
+                    const fallbackThumb = await uploadCustomThumbnail(page, coverPath);
+                    if (fallbackThumb.ok) {
+                        console.log('[KAPAK] Ilk-kare kapagi dogrudan ozel kucuk resim olarak yuklendi; Studio onizlemesi degisti.');
+                    } else if (fallbackThumb.dailyThumbnailLimit) {
+                        console.log('[KAPAK] Gunluk ozel kapak limiti dolu; ilk-kare kapagi gomulu kaldi ancak Studio kucuk resmi secimi dogrulanamadi.');
+                    } else {
+                        console.log(`[KAPAK] Ozel kapak yedegi dogrulanamadi: ${fallbackThumb.reason}; Studio kucuk resmi secimi dogrulanamadi.`);
+                    }
                 } else {
-                    console.log(`[KAPAK] Kare adayi secilemedi: ${stillResult.reason}. YouTube kendi karesini kullanacak (ilk kare = gomulu kapak).`);
+                    console.log(`[KAPAK] Kapak dosyasi yok: ${stillResult.reason}; kucuk resim secimi dogrulanamadi.`);
                 }
             } catch (stillErr) {
-                console.log(`[KAPAK] Kare secimi hatasi yutuldu (${String(stillErr.message || stillErr).slice(0, 100)}); devam ediliyor.`);
+                console.log(`[KAPAK] Kare secimi/yedek yukleme hatasi (${String(stillErr.message || stillErr).slice(0, 100)}); devam ediliyor.`);
             }
         } else {
             await legacyCustomThumbnailFlow(page, { title, thumbnailPrompt, scriptData });
