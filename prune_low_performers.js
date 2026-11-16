@@ -313,12 +313,19 @@ async function readRangeText(page) {
     return await page.evaluate(() => (document.body.innerText.match(/\d+\s*[–-]\s*\d+\s*\/\s*\d+/) || [])[0] || null).catch(() => null);
 }
 
+/** Boş taramanın geçici DOM/yükleme hatası mı yoksa açıkça boş liste mi olduğunu belirler. */
+function shouldRetryEmptyScan(rowCount, rangeText, attempt, maxAttempts = 3) {
+    if (rowCount > 0 || attempt >= maxAttempts) return false;
+    const normalizedRange = String(rangeText || '').replace(/\\s+/g, '');
+    return normalizedRange !== '0–0/0' && normalizedRange !== '0-0/0';
+}
+
 /** Listeyi İLK sayfadan son sayfaya kadar tarar (sayfalama). */
-async function collectAllRows(page, listUrl, maxPages = 25) {
+async function collectAllRows(page, listUrl, maxPages = 25, attempt = 1, maxAttempts = 3) {
     await page.goto(listUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForTimeout(6000);
     await dismissModals(page);
-    await page.locator('ytcp-video-row').first().waitFor({ timeout: 30000 }).catch(() => {});
+    await page.locator('ytcp-video-row').first().waitFor({ timeout: 15000 }).catch(() => {});
     const all = [];
     const seen = new Set();
     let pagesVisited = 0;
@@ -339,6 +346,17 @@ async function collectAllRows(page, listUrl, maxPages = 25) {
             return m && m !== prev;
         }, range, { timeout: 20000 }).catch(() => {});
         await page.waitForTimeout(1500);
+    }
+    const rangeAfterScan = await readRangeText(page);
+    if (shouldRetryEmptyScan(all.length, rangeAfterScan, attempt, maxAttempts)) {
+        log(`[!] ${listUrl.includes('/short') ? 'Shorts' : 'Video'} listesi ${attempt}/${maxAttempts} denemede 0 satır verdi; Studio DOM'u yeniden yükleniyor.`);
+        await page.waitForTimeout(2500 * attempt);
+        return collectAllRows(page, listUrl, maxPages, attempt + 1, maxAttempts);
+    }
+    if (all.length === 0 && /^0\\s*[–-]\\s*0\\s*\\/\\s*0$/.test(String(rangeAfterScan || '').trim())) {
+        log('[*] Studio listesi açıkça boş (0–0 / 0); ek tarama yapılmadı.');
+    } else if (all.length === 0) {
+        log(`[!] Studio listesi ${maxAttempts} denemeden sonra da 0 satır verdi.`);
     }
     return { rows: all, pagesVisited };
 }
@@ -744,5 +762,6 @@ module.exports = {
     parseRelativeMinutes,
     parseAbsoluteDateTr,
     resolveAgeMinutes,
+    shouldRetryEmptyScan,
     pruneLowPerformers
 };
