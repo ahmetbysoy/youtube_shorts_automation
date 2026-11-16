@@ -1,0 +1,89 @@
+name: Shorts Kapaklarini Geriye Donuk Guncelle
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_per_run:
+        description: "Bu kosuda guncellenecek en fazla video (YouTube gunluk ozel kapak kotasi icin dusuk tut)"
+        required: false
+        default: "5"
+        type: string
+      start_after:
+        description: "Devam noktasi: son islenen video ID (bos = en yeniden basla)"
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: "1 = sadece listele ve kapak olusturma akisini dene; YouTube'a kaydetme"
+        required: false
+        default: "0"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shorts-thumbnail-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Depoyu cek
+        uses: actions/checkout@v7
+
+      - name: Node kurulumu
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      - name: Playwright ve Chromium
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: YouTube oturumunu hazirla
+        env:
+          COOKIES_JSON_1: ${{ secrets.COOKIES_JSON_1 }}
+          STORAGE_STATE_JSON_1: ${{ secrets.STORAGE_STATE_JSON_1 }}
+          COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+          STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if [ -n "${STORAGE_STATE_JSON_1}" ]; then
+            printf '%s' "$STORAGE_STATE_JSON_1" > storage_state.json
+          elif [ -n "${STORAGE_STATE_JSON}" ]; then
+            printf '%s' "$STORAGE_STATE_JSON" > storage_state.json
+          elif [ -n "${COOKIES_JSON_1}" ]; then
+            printf '%s' "$COOKIES_JSON_1" > cookies.json
+          elif [ -n "${COOKIES_JSON}" ]; then
+            printf '%s' "$COOKIES_JSON" > cookies.json
+          else
+            echo "::error::YouTube oturum secret'i bulunamadi."
+            exit 1
+          fi
+          if [ -f storage_state.json ]; then
+            python3 -c "import json; d=json.load(open('storage_state.json')); assert d.get('cookies'), 'storage_state cookies bos'; print('storage_state dogrulandi')"
+          else
+            python3 -c "import json; d=json.load(open('cookies.json')); assert isinstance(d,list) and d; print('cookies dogrulandi')"
+          fi
+
+      - name: Shorts kapaklarini guncelle
+        env:
+          YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ' }}
+          MAX_PER_RUN: ${{ inputs.max_per_run || '5' }}
+          START_AFTER: ${{ inputs.start_after }}
+          DRY_RUN: ${{ inputs.dry_run || '0' }}
+        run: node scripts/backfill_short_thumbnails.cjs
+
+      - name: Rapor ve yedekleri sakla
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: shorts-thumbnail-backfill-${{ github.run_number }}
+          path: backfill_output/
+          if-no-files-found: warn
+          retention-days: 30
