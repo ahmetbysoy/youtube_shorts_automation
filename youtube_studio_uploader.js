@@ -946,7 +946,7 @@ async function uploadToYouTubeStudio() {
         }
 
         // --- KAPAK ---
-        // Varsayilan (THUMBNAIL_MODE=frame): baslik-odakli kapak videonun ilk 1.0 sn'sine tam opak gomuludur.
+        // Varsayilan (THUMBNAIL_MODE=frame) — exact cover fallback is enabled: baslik-odakli kapak videonun ilk 1.0 sn'sine tam opak gomuludur.
         // Studio'nun "Videodan sec" adaylari arasinda output/cover.jpg ile eslesen kare secilir.
         // Eslesme dogrulanmadan "kapak secildi" basarisi raporlanmaz.
         // THUMBNAIL_MODE=custom: eski yol (pollinations/PIL kapak -> Studio'ya dosya yukleme).
