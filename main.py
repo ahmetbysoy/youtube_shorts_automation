@@ -166,7 +166,7 @@ def main():
     # 2.5 Adım: Kapak karesini videoya göm (kalıcı kapak çözümü; ayrı kapak yüklemesi yok).
     # Başarısız olsa bile yayın durmaz: script video'yu dokunmadan bırakır ve 0 döner.
     run_step(
-        "FAZ 3.5: Kapak Karesi Gömme (ilk 0.6 sn)",
+        "FAZ 3.5: Baslik-Odakli Kapak Karesi Gomme (ilk 1.0 sn)",
         [sys.executable, str(BASE_DIR / "scripts" / "embed_cover_frame.py")],
         env_overrides=step_env,
         timeout_seconds=600,
