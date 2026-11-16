@@ -7,6 +7,12 @@ name: Ubuntu 26.04 Gecis Testi (Gecis Oncesi Deneme)
 # sabitlendi; bu workflow 26.04'te ayni adimlari deneyerek gecis riskini
 # OLCER (kanal/yayin YAPMAZ - sadece ortam dogrulamasi).
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'youtube_studio_uploader.js'
+      - 'scripts/embed_cover_frame.py'
+      - 'tests/test_cover_frame.py'
   workflow_dispatch:
   schedule:
     # Gunde bir (saat 03:17 - asal olmayan dakika)
@@ -50,6 +56,9 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '20'
+
+      - name: "Uploader JavaScript Syntax Check"
+        run: node --check youtube_studio_uploader.js
 
       - name: "Python Bagimliliklari"
         run: pip install -r requirements.txt -r requirements-test.txt
