@@ -17,6 +17,52 @@ fs.mkdirSync(OUT, { recursive: true });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const log = m => console.log('[' + new Date().toISOString() + '] ' + m);
 
+// Headless Chromium UA'sinda "HeadlessChrome" ibaresi gecer. YouTube Studio bunu
+// gorup "desteklenmeyen tarayici" ekrani cikariyor. Gercek Chrome UA'si gibi davran.
+function realChromeUserAgent(defaultUA) {
+  if (!defaultUA) return defaultUA;
+  return defaultUA.replace(/\s*HeadlessChrome\//g, ' Chrome/');
+}
+
+// "Deneyiminizi iyilestirin" / "YOUTUBE STUDIO'YA GEC" engel ekrani gorunurse
+// baglantiya tiklayip normal Studio arayuzune gec.
+async function bypassBrowserCompat(page, label) {
+  try {
+    // Hem Turkce hem Ingilizce metinleri dene
+    const btn = page.locator(
+      'a:has-text("YOUTUBE STUDIO\'YA GEÇ"),' +
+      'a:has-text("YOUTUBE STUDIOYA GEC"),' +
+      'a:has-text("GO TO YOUTUBE STUDIO"),' +
+      'button:has-text("YOUTUBE STUDIO\'YA GEÇ"),' +
+      'button:has-text("GO TO YOUTUBE STUDIO")'
+    ).first();
+    if (await btn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      log('Uyumluluk ekrani goruldu, Studio girisi tiklaniyor (' + (label||'') + ')...');
+      await btn.click({ timeout: 5000 });
+      await sleep(5000);
+      // Tiklamadan sonra URL halen ayni ise (JS handler ile gecis),
+      // beklemeye devam; degisti ise yeni sayfanin yuklenmesini bekle.
+      await page.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(()=>{});
+      await sleep(2000);
+      return true;
+    }
+    // Bazi durumlarda "Continue to Studio" gibi CTA da olabilir.
+    const cta = page.locator('a[href*="studio.youtube.com"], button:has-text("Continue"), button:has-text("Devam")').first();
+    if (await cta.isVisible({ timeout: 1500 }).catch(() => false)) {
+      const body = await page.locator('body').innerText().catch(()=>'');
+      if (/Deneyiminizi|desteklenmeyen|unsupported browser|update your browser/i.test(body)) {
+        log('Uyumluluk CTA bulundu, tiklaniyor...');
+        await cta.click({ timeout: 5000 });
+        await sleep(5000);
+        return true;
+      }
+    }
+  } catch (e) {
+    log('bypassBrowserCompat hatasi: ' + e.message);
+  }
+  return false;
+}
+
 async function dumpPage(page, label) {
   // Hata ayiklama icin screenshot + HTML dump. DEBUG modunda her zaman,
   // yoksa sadece cagirildiginda (orn. video listesi bossa).
@@ -91,11 +137,23 @@ async function collectVideos(page) {
     '/videos/short?filter=%5B%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D';
   log('Studio Shorts sayfasina gidiliyor: ' + url);
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await sleep(7000);
-  log('Son URL: ' + page.url());
+  await sleep(4000);
+  log('Son URL (nav sonrasi): ' + page.url());
   if (/accounts\.google\.com|ServiceLogin/i.test(page.url())) {
     await dumpPage(page, '01_login_redirect');
     throw new Error('Studio oturumu gecersiz (login sayfasina yonlendirildi).');
+  }
+  // Uyumluluk/gecis ekrani varsa as.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const bypassed = await bypassBrowserCompat(page, 'collectVideos#' + attempt);
+    if (!bypassed) break;
+    await sleep(3000);
+  }
+  await sleep(3000);
+  log('Son URL (bypass sonrasi): ' + page.url());
+  if (/accounts\.google\.com|ServiceLogin/i.test(page.url())) {
+    await dumpPage(page, '01_login_after_bypass');
+    throw new Error('Studio oturumu gecersiz.');
   }
   // YouTube Studio bazen kanal secim ekrani, "Get started" veya "Verify it's you"
   // ekraninda kaliyor; bunlari kontrol et.
@@ -194,7 +252,13 @@ async function applyOne(page, video, index) {
   await makeCover(safeTitle, cover);
 
   await page.goto('https://studio.youtube.com/video/' + video.id + '/edit', { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await sleep(6500);
+  await sleep(3000);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const bypassed = await bypassBrowserCompat(page, 'applyOne#' + video.id + '#' + attempt);
+    if (!bypassed) break;
+    await sleep(3000);
+  }
+  await sleep(3500);
   if (/accounts\.google\.com|ServiceLogin/i.test(page.url())) throw new Error('Studio oturumu gecersiz.');
   const body = await page.locator('body').innerText().catch(() => '');
   if (/Kimliğinizi doğrulayın|Verify it.s you/i.test(body)) throw new Error('Google ek kimlik dogrulamasi istiyor; guvenlik adimi atlanmadi.');
@@ -263,8 +327,52 @@ async function applyOne(page, video, index) {
 
 (async () => {
   const state = loadState();
-  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-blink-features=AutomationControlled'] });
-  const context = await browser.newContext({ storageState: state, viewport: { width: 1440, height: 1000 }, locale: 'tr-TR', timezoneId: 'Europe/Istanbul' });
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-blink-features=AutomationControlled',
+      '--disable-blink-features=IdleDetection',
+      '--start-maximized',
+    ],
+  });
+  // Gercek Chrome'mus gibi bir User-Agent kullan; headless ibaresini tamamen kaldir.
+  // YouTube Studio "HeadlessChrome" gorurse "desteklenmeyen tarayici" ekrani veriyor.
+  // Chromium major surumunu Playwright'in kurulu surumunden elde et (eger alamazsak 131'e fallback et).
+  let chromiumMajor = 131;
+  try {
+    const browserVer = browser.version();
+    const m = browserVer.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)/);
+    if (m) chromiumMajor = parseInt(m[1], 10);
+    log('Chromium surumu: ' + browserVer + ' (major=' + chromiumMajor + ')');
+  } catch (_) {}
+  const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/' + chromiumMajor + '.0.0.0 Safari/537.36';
+  const context = await browser.newContext({
+    storageState: state,
+    viewport: { width: 1440, height: 1000 },
+    locale: 'tr-TR',
+    timezoneId: 'Europe/Istanbul',
+    userAgent: ua,
+    // webdriver flag'ini maskele, navigator.webdriver=false
+    extraHTTPHeaders: {
+      'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+    },
+  });
+  // navigator.webdriver'i maskele
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    // Chrome runtime var gibi goster
+    if (!window.chrome) window.chrome = { runtime: {} };
+    // Permissions API otomatik cikmasin
+    const originalQuery = window.navigator.permissions.query;
+    window.navigator.permissions.query = (parameters) =>
+      parameters.name === 'notifications'
+        ? Promise.resolve({ state: Notification.permission })
+        : originalQuery(parameters);
+    // plugins / languages taklit
+    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+    Object.defineProperty(navigator, 'languages', { get: () => ['tr-TR', 'tr', 'en-US', 'en'] });
+  });
   const page = await context.newPage();
   const results = { channelId: CHANNEL_ID, startedAt: new Date().toISOString(), dryRun: DRY_RUN, discovered: 0, updated: [], skipped: [], failed: [], stoppedReason: '' };
   try {
