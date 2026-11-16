@@ -63,6 +63,8 @@ def build_title_driven_prompt(title: str, topic: str) -> str:
     clean_topic = (topic or "").strip()
     return (
         f'Video title: "{clean_title}". '
+        f'Kullanici talimati: "{clean_title}" + "Bu Short videonun izlenme ve etkilesim performansini artiracak; '
+        'kapagi goren birinin tiklamamak icin kendini zor tutacagi kadar etkileyici, dikey formatta bir kapak fotografi yap." '
         "Create an exceptionally compelling YouTube Shorts cover image in a vertical 9:16 composition. "
         "The visual must accurately and immediately communicate the exact subject of this title; "
         "use one unmistakable main subject, a surprising or emotionally powerful moment, "
