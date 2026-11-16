@@ -249,6 +249,14 @@ async function applyOne(page, video, index) {
   const cover = path.join(OUT, 'generated', video.id + '.jpg');
   fs.mkdirSync(path.dirname(cover), { recursive: true });
   const originalBackup = await backupOldThumb(page, video, index);
+
+  // DRY_RUN'da yapay zeka ile kapak uretmeyi ve Studio sayfasina gitmeyi atla.
+  // Amac sadece cookie / liste / akis sagligini test etmektir; bunu hizli yap.
+  if (DRY_RUN) {
+    log('[DRY-RUN] Kapak uretimi ve Studio edit sayfasi atlandi: ' + video.id);
+    return { id: video.id, title: safeTitle, dryRun: true, originalBackup, cover: '' };
+  }
+
   await makeCover(safeTitle, cover);
 
   await page.goto('https://studio.youtube.com/video/' + video.id + '/edit', { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -267,7 +275,6 @@ async function applyOne(page, video, index) {
     'ytcp-video-custom-still-editor input[type="file"], input#file-loader'
   ).first();
   if (!(await input.count())) throw new Error('Bu videonun Studio sayfasinda ozel kucuk resim yukleme alani yok.');
-  if (DRY_RUN) return { id: video.id, title: safeTitle, dryRun: true, originalBackup, cover };
 
   const before = await page.evaluate(() => {
     const ed = document.querySelector('ytcp-video-thumbnail-editor, ytcp-thumbnail-uploader, ytcp-video-custom-still-editor');
@@ -394,6 +401,7 @@ async function applyOne(page, video, index) {
         const r = await applyOne(page, video, i);
         if (r.dryRun) {
           results.skipped.push({ ...r, reason: 'dry_run' });
+          processed++;
           log('DRY RUN: ' + video.id);
         } else {
           results.updated.push(r);
