@@ -1,4 +1,4 @@
-"""FAZ 3.5: kapak karesi gomme (offline, AI servisi kapali)."""
+"""FAZ 3.5: baslik odakli kapak ilk 1 saniye gomulu kalir (offline test)."""
 import json
 import shutil
 import subprocess
