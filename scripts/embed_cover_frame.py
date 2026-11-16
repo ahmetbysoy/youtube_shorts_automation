@@ -15,7 +15,7 @@ AKIS:
      Ikisi de scripts/generate_fallback_thumbnail.py ile baslik + rozet alir
      -> output/cover.jpg (1080x1920).
   2) FFmpeg: kapak, videonun ilk COVER_SECONDS saniyesine bindirilir (overlay).
-     Ses ve altyazi akisi degismez; sure uzamaz; sonunda kisa alpha-fade.
+     Ses ve altyazi akisi degismez; sure uzamaz; ilk 1.0 saniye tam opak kapak gosterilir.
   3) Her hata guvenli: video dokunulmadan kalir, cikis kodu 0 (yayin durmaz),
      log satirlari [KAPAK] ile baslar.
 
