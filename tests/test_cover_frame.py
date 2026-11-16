@@ -41,16 +41,26 @@ def test_cover_is_embedded_in_first_frames_without_changing_duration(tmp_path: P
     cover = tmp_path / "cover.jpg"
 
     res = subprocess.run([sys.executable, str(SCRIPT), "--video", str(video), "--script", str(script),
-                          "--cover-out", str(cover), "--no-ai", "--seconds", "0.6"],
+                          "--cover-out", str(cover), "--no-ai", "--seconds", "1.0"],
                          capture_output=True, text=True, timeout=300)
     assert res.returncode == 0, res.stdout + res.stderr
     assert "gomuldu" in res.stdout
     assert cover.exists() and cover.stat().st_size > 5000
     assert abs(_duration(video) - before) < 0.2
 
-    f0, f2 = tmp_path / "f0.jpg", tmp_path / "f2.jpg"
+    f0, f09, f12, f2 = (tmp_path / name for name in ("f0.jpg", "f09.jpg", "f12.jpg", "f2.jpg"))
     _frame(video, 0.1, f0)
+    _frame(video, 0.9, f09)
+    _frame(video, 1.2, f12)
     _frame(video, 2.0, f2)
+
+    # Kapak ilk saniye boyunca sabit kalmali; 1.0 saniyeden sonra asil video gorunmeli.
+    from PIL import Image, ImageChops, ImageStat
+    with Image.open(f0) as a, Image.open(f09) as b, Image.open(f12) as c:
+        same_first_second = ImageStat.Stat(ImageChops.difference(a.convert("RGB"), b.convert("RGB"))).mean[0]
+        changed_after_one_second = ImageStat.Stat(ImageChops.difference(b.convert("RGB"), c.convert("RGB"))).mean[0]
+    assert same_first_second < 8, f"Kapak ilk saniye icinde degisti: mean diff={same_first_second}"
+    assert changed_after_one_second > 3, f"Kapak 1 saniyeden sonra da gorunuyor olabilir: mean diff={changed_after_one_second}"
     pick = BASE / "scripts" / "pick_matching_still.py"
     out = subprocess.run([sys.executable, str(pick), str(cover), str(f2), str(f0)], capture_output=True, text=True)
     data = json.loads(out.stdout.strip().splitlines()[-1])
