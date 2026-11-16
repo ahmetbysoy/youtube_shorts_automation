@@ -11,7 +11,9 @@ const LIMIT = Math.max(1, Number(process.env.MAX_PER_RUN || 5));
 const START_AFTER = process.env.START_AFTER || '';
 const DRY_RUN = process.env.DRY_RUN === '1';
 const DEBUG = process.env.DEBUG === '1' || process.env.DEBUG_SCREENSHOTS === '1';
-const DELAY_MS = Math.max(5000, Number(process.env.DELAY_MS || 12000));
+// Videolar arasi bekleme. Pollinations ucretsiz katmani IP bazli rate-limit
+// uyguladigi icin 25sn altinda riskli. GitHub Actions'da da bunu kullan.
+const DELAY_MS = Math.max(8000, Number(process.env.DELAY_MS || 25000));
 const BASE = process.cwd();
 fs.mkdirSync(OUT, { recursive: true });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -110,26 +112,90 @@ function buildPrompt(title) {
     'and a powerful curiosity gap that makes viewers want to tap. Do not invent facts. No text, letters, numbers, logos, watermark, borders, collage or split screen.';
 }
 
+// Pollinations model fallback sirasi: once ucretsiz hizli modellerle baslar,
+// flux paralidaysa 402 donunce diger modele gecer. Hicbirini belirtmezsen
+// 'sana' modeli kullanilir (ucretsiz, hizli, kaliteli).
+const IMAGE_MODELS = (process.env.IMAGE_MODELS || 'sana,flux,turbo').split(',').map(s => s.trim()).filter(Boolean);
+// Rate-limit/402 halinde modeller arasi bekleme (ms)
+const MODEL_SWITCH_DELAY_MS = Math.max(3000, Number(process.env.MODEL_SWITCH_DELAY_MS || 8000));
+// Ayni modelde denemeler arasi bekleme
+const ATTEMPT_DELAY_MS = Math.max(3000, Number(process.env.ATTEMPT_DELAY_MS || 8000));
+// Rate limit sonrasi global cooldown (ms) — ard arda 402 gelirse uzun bekle
+const GLOBAL_COOLDOWN_MS = Math.max(5000, Number(process.env.GLOBAL_COOLDOWN_MS || 30000));
+
+async function fetchPollinations(model, prompt, seed, outPath) {
+  const modelParam = model ? '&model=' + encodeURIComponent(model) : '';
+  const url = 'https://image.pollinations.ai/prompt/' + prompt +
+    '?width=1080&height=1920&nologo=true&seed=' + seed + modelParam;
+  log('  → model=' + (model || '(default)') + ' seed=' + seed);
+  const t0 = Date.now();
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+      'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+      'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Referer': 'https://studio.youtube.com/',
+    },
+    signal: AbortSignal.timeout(120000),
+  });
+  const dt = Date.now() - t0;
+  log('    HTTP ' + response.status + ' (' + dt + 'ms) x-model-used=' + (response.headers.get('x-model-used') || '-'));
+  if (response.status === 402 || response.status === 429) {
+    const retry = response.headers.get('retry-after') || '';
+    const err = new Error('RATE_LIMITED');
+    err.status = response.status;
+    err.retryAfter = retry ? Number(retry) : 0;
+    throw err;
+  }
+  if (!response.ok) throw new Error('HTTP ' + response.status);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  const type = response.headers.get('content-type') || '';
+  if (!type.includes('image') || bytes.length < 20000) {
+    throw new Error('gecersiz gorsel (type=' + type + ', ' + bytes.length + ' byte)');
+  }
+  fs.writeFileSync(outPath, bytes);
+  return { model: response.headers.get('x-model-used') || model, size: bytes.length, ms: dt };
+}
+
 async function makeCover(title, outPath) {
   const prompt = encodeURIComponent(buildPrompt(title));
-  const seed = Math.floor(Math.random() * 1e9);
-  const url = 'https://image.pollinations.ai/prompt/' + prompt +
-    '?width=1080&height=1920&nologo=true&model=flux&seed=' + seed;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(90000) });
-      if (!response.ok) throw new Error('image endpoint HTTP ' + response.status);
-      const bytes = Buffer.from(await response.arrayBuffer());
-      const type = response.headers.get('content-type') || '';
-      if (!type.includes('image') || bytes.length < 20000) throw new Error('invalid image response (' + type + ', ' + bytes.length + ' bytes)');
-      fs.writeFileSync(outPath, bytes);
-      return;
-    } catch (e) {
-      log('AI kapak denemesi ' + attempt + '/3 basarisiz: ' + e.message);
-      if (attempt < 3) await sleep(attempt * 7000);
+  const lastErrors = [];
+  let rateLimitHits = 0;
+  for (let mIdx = 0; mIdx < IMAGE_MODELS.length; mIdx++) {
+    const model = IMAGE_MODELS[mIdx];
+    const seed = Math.floor(Math.random() * 1e9);
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const res = await fetchPollinations(model, prompt, seed, outPath);
+        log('✅ Kapak hazir: model=' + res.model + ' ' + res.size + ' byte (' + res.ms + 'ms) -> ' + path.basename(outPath));
+        return res;
+      } catch (e) {
+        if (e.message === 'RATE_LIMITED') {
+          rateLimitHits++;
+          const wait = (e.retryAfter ? e.retryAfter * 1000 : 0) || GLOBAL_COOLDOWN_MS;
+          log('  ⏳ Rate limit hit (HTTP ' + e.status + '), ' + (wait/1000) + 'sn bekleniyor...');
+          await sleep(wait);
+          // Bu modeli daha da deneme — sonraki modele gec
+          break;
+        }
+        lastErrors.push(model + '/' + attempt + ': ' + e.message);
+        log('  ✗ ' + e.message);
+        if (attempt < 2) await sleep(ATTEMPT_DELAY_MS);
+      }
     }
+    if (mIdx < IMAGE_MODELS.length - 1) await sleep(MODEL_SWITCH_DELAY_MS);
   }
-  throw new Error('AI kapak olusturulamadi; bu video atlandi.');
+  // Butun modeller tukendiyse son bir sans: model parametresi olmadan (varsayilan) dene.
+  try {
+    log('  → son sans: modelsiz (varsayilan) deneniyor...');
+    const res = await fetchPollinations('', prompt, Math.floor(Math.random()*1e9), outPath);
+    log('✅ Kapak hazir (fallback default model): ' + res.size + ' byte (' + res.ms + 'ms)');
+    return res;
+  } catch (e) {
+    lastErrors.push('default: ' + e.message);
+  }
+  throw new Error('AI kapak olusturulamadi (tum modeller ve fallback denendi). Son hatalar: ' +
+    lastErrors.slice(-6).join(' | ') + ' (rateLimitHits=' + rateLimitHits + ')');
 }
 
 async function collectVideos(page) {
