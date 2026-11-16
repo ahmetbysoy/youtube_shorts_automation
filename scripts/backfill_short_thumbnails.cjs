@@ -170,7 +170,7 @@ async function applyOne(page, video, index) {
       if (pos < 0) throw new Error('START_AFTER video ID listede bulunamadi: ' + START_AFTER);
       candidates = videos.slice(pos + 1);
     }
-    for (let i = 0; i < candidates.length && results.updated.length < LIMIT; i++) {
+    let processed = 0;\n    for (let i = 0; i < candidates.length && processed < LIMIT; i++) {
       const video = candidates[i];
       try {
         log('Kapak hazirlaniyor: ' + video.id + ' | ' + video.title);
