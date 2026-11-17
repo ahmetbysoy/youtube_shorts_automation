@@ -164,4 +164,4 @@
 | Tarih | Faz | Commit / CI kanıtı | Sonuç | Açık konu |
 |---|---|---|---|---|
 | 2026-11-17 | Dokümantasyon | dd0a8f1 / 956a03b / f8ec3aa | Plan, TODO ve README bağlantıları eklendi | Faz 0 |
-| 2026-11-17 | Faz 0 baseline | 0e2ecc9; test run 44076814790; production run 44119590041 | GitHub HEAD/workflow/ana akış incelendi; CI'da 108 test geçti; gerçek PUBLIC üretim logu kaydedildi | Secrets kontrolü, pruner/draft workflow incelemesi, doküman uyumu ve güncel HEAD ek testleri |
+| 2026-11-17 | Faz 0 baseline | 0e2ecc9 / b4a9b29; test run 44076814790; production run 44119590041 | GitHub HEAD, daily/pruner/draft workflow'ları, AI_HANDOFF ve ana akış incelendi; CI'da 108 test geçti; gerçek PUBLIC üretim logu kaydedildi | Secrets kontrolü, doküman uyumu ve güncel HEAD ek testleri |
