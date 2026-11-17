@@ -5,12 +5,23 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from scripts.validate_script_json import validate_payload
+
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = json.loads((ROOT / "schemas" / "script.schema.json").read_text(encoding="utf-8"))
 VALIDATOR = Draft202012Validator(SCHEMA, format_checker=FormatChecker())
 
 
 class TestScriptJsonSchema(unittest.TestCase):
+    def test_runtime_validator_accepts_legacy_sample(self):
+        sample = json.loads((ROOT / "samples" / "script.json").read_text(encoding="utf-8"))
+        self.assertEqual(validate_payload(sample), [])
+
+    def test_runtime_validator_rejects_invalid_payload(self):
+        sample = json.loads((ROOT / "samples" / "script.json").read_text(encoding="utf-8"))
+        del sample["title"]
+        self.assertTrue(validate_payload(sample))
+
     def test_schema_definition_is_valid(self):
         Draft202012Validator.check_schema(SCHEMA)
 
