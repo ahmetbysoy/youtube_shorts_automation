@@ -151,6 +151,19 @@ def main():
         write_status("error", args.channel_id, stage="content")
         sys.exit(1)
 
+    # 1.5 Adım: script.json sözleşmesini medya işleminden önce fail-closed doğrula.
+    schema_ok = run_step(
+        "FAZ 2.5: script.json JSON Schema Doğrulaması",
+        [sys.executable, str(BASE_DIR / "scripts" / "validate_script_json.py"),
+         "--input", str(BASE_DIR / "script.json")],
+        env_overrides=step_env,
+        timeout_seconds=60,
+    )
+    if not schema_ok:
+        logging.error("script.json şema doğrulamasından geçemedi. Medya/yayın adımları durduruldu.")
+        write_status("error", args.channel_id, stage="script_schema")
+        sys.exit(1)
+
     # 2. Adım: Mobil-Optimize Medya İşleme ve Montaj (unsharp + eq + MarginV=250)
     step2_ok = run_step(
         "FAZ 3: FFmpeg Montaj ve Altyazı",
