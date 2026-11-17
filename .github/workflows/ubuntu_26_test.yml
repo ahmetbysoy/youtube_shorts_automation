@@ -7,6 +7,15 @@ name: Ubuntu 26.04 Gecis Testi (Gecis Oncesi Deneme)
 # sabitlendi; bu workflow 26.04'te ayni adimlari deneyerek gecis riskini
 # OLCER (kanal/yayin YAPMAZ - sadece ortam dogrulamasi).
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/daily_shorts.yml'
+      - 'youtube_studio_uploader.js'
+      - 'scripts/embed_cover_frame.py'
+      - 'content_engine.py'
+      - 'tests/**'
+      - 'requirements-test.txt'
   workflow_dispatch:
   schedule:
     # Gunde bir (saat 03:17 - asal olmayan dakika)
