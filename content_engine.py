@@ -39,6 +39,7 @@ import re
 import subprocess
 import sys
 import unicodedata
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -3318,6 +3319,8 @@ def run_content_pipeline(
 
     # 5. Zengin Faz-3/Faz-4 Paketi (script.json) Kaydı
     payload = {
+        "schema_version": "2.0",
+        "generation_id": str(uuid.uuid4()),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "llm_provider": scenario["provider"],
         "tts_engine": tts_engine,
