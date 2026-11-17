@@ -169,7 +169,7 @@ Bu inceleme sırasında `main.py`, `content_engine.py`, medya motoru, uploader v
 - Kapsam: fallback kapak üretiminin JPEG/1080×1920 çıktısı, crop boyutu, kontrast kare seçimi ve bozuk dosya toleransı, Studio kare eşleşme aracı, Gemini kare seçicinin kapalı/çok fazla kare durumunda ağ çağrısı yapmadan güvenli fallback vermesi.
 - Testler Gemini, Pollinations veya YouTube Studio'ya istek göndermez; fake API key ile ağ çağrısı yapılmaz.
 - Test dosyası commit'i: `25b7ac86bd7bb0efeb7a0c31ee112c6ebe345865`.
-- Güncel test workflow'u otomatik tetiklendi: [run 44160916391](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44160916391). Bu rapor güncellenirken koşu henüz tamamlanmamıştı; sonuç ve test sayısı tamamlanınca eklenmelidir.
+- Güncel test workflow'u otomatik tetiklendi ve tamamlandı: [run 44160916391](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44160916391), commit `25b7ac86bd7bb0efeb7a0c31ee112c6ebe345865`, sonuç `success`. Logda `python -m pytest -q tests`: **114 passed, 8 subtests passed** (9.42 saniye). Aynı koşuda Python bağımlılık kurulumu, Playwright/Chromium kurulumu, FFmpeg altyazı probe'u da başarılı.
 
 ### Secret metadata kontrolü
 
@@ -180,4 +180,4 @@ Bu inceleme sırasında `main.py`, `content_engine.py`, medya motoru, uploader v
 ### Güncel doküman durumu
 
 - TODO güncelleme commit'i: `a348b1fdd5caded8063b0f4da17e1c0ca9787959`.
-- Faz 0 henüz kapatılmadı. CI kanıtı ve secret metadata kısıtı çözülmeden Faz 1'e geçiş yapılmamalıdır.
+- Faz 0 henüz kapatılmadı. Thumbnail test CI kanıtı tamamlandı. Secret metadata kısıtı hâlâ çözülmediğinden Faz 0 kabul kapısı açık kalmalı ve Faz 1'e geçilmemelidir.
