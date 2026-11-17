@@ -32,11 +32,12 @@
 - [x] İlk script.json üretici/tüketici envanterini çıkar ve gerçek örnekle karşılaştır: [PHASE1_SCRIPT_JSON_INVENTORY.md](PHASE1_SCRIPT_JSON_INVENTORY.md). (content_engine.py üretici; media_processor.py ve embed_cover_frame.py doğrulanmış tüketiciler.)
 - [x] Mevcut JSON örneğini ve geriye uyumluluk gereksinimlerini kaydet. (samples/script.json eski örnek; üretici payload'ıyla alan farkları belgelendi.)
 - [ ] Repo genelindeki ek script.json okuyucu/yazıcı yollarını taramayı tamamla.
-- [ ] Versiyonlu JSON Schema tanımla.
-- [ ] schema_version, generation_id, fact_check ve storyboard alanlarının tiplerini belirle.
-- [ ] Geçerli/eski JSON, eksik alan, yanlış tip, bozuk JSON ve sınır durum testleri ekle.
-- [ ] Eski medya tüketicisinin geçiş süresince çalışmasını sağla.
-- [ ] Schema testlerini CI'a ekle.
+- [x] Versiyonlu JSON Schema tanımla: `schemas/script.schema.json` (legacy v1 + current v2).
+- [x] `schema_version`, `generation_id`, `fact_check`, `sources` ve `storyboard` alanlarının tiplerini belirle.
+- [x] Legacy örnek, v2 örneği, eksik alan, yanlış tip, bozuk UUID ve timestamp sınır testlerini ekle: `tests/test_script_json_schema.py`.
+- [x] Yeni üretim payload'ına `schema_version=2.0` ve UUID `generation_id` ekle; eski medya alanları aynen korundu.
+- [x] Uçtan uca fallback testine gerçek üretilen JSON'un schema doğrulamasını ekle.
+- [x] `jsonschema` test bağımlılığını `requirements-test.txt` içine ekle; CI sonucu bekleniyor.
 
 **Kabul kapısı:** Eski üretim yolu bozulmadan yeni şema doğrulanıyor; hatalı JSON sonraki aşamaya geçemiyor.
 
