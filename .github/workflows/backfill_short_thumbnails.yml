@@ -87,6 +87,14 @@ jobs:
             node -e "const d=JSON.parse(require('fs').readFileSync('cookies.json','utf8')); if(!Array.isArray(d)||!d.length) throw new Error('cookies.json gecersiz'); console.log('cookies dogrulandi ('+d.length+' cookie)')"
           fi
 
+      - name: HF baglantisini kontrol et (debug)
+        run: |
+          echo "=== DNS: api-inference.huggingface.co ==="
+          getent hosts api-inference.huggingface.co || echo "cozumlenemedi"
+          echo ""
+          echo "=== Curl head ==="
+          curl -sS -I -m 15 https://api-inference.huggingface.co/ 2>&1 | head -10 || echo "curl fail"
+
       - name: Shorts kapaklarini guncelle
         env:
           # YT_CHANNEL_ID secret'i yoksa script icindeki default'a duser.

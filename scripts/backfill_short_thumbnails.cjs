@@ -328,7 +328,7 @@ async function makeCover(title, outPath) {
           continue;
         }
         lastErrors.push('hf/' + attempt + ': ' + e.message);
-        log('  ✗ HF ' + e.message);
+        log('  ✗ HF ' + e.message + (e.cause ? ' (' + (e.cause.code || e.cause.message) + ')' : ''));
         if (attempt < 3) await sleep(ATTEMPT_DELAY_MS);
       }
     }
