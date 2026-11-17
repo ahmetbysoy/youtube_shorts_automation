@@ -123,3 +123,32 @@ Test run'ın HEAD'i `aaa89b1bf4777c61077ac18e44406d3d0bcede69`; güncel HEAD'e g
 ## 8. Değişiklik ve yayın güvenliği
 
 Bu inceleme sırasında `main.py`, `content_engine.py`, medya motoru, uploader veya workflow değiştirilmedi. Üretim workflow'u tetiklenmedi. Hiçbir YouTube videosu bu Faz 0 çalışması nedeniyle yüklenmedi. Bu dosya yalnızca GitHub'dan okunan kod ve Actions kayıtlarının kanıt özetidir.
+
+
+## 9. Bağlantılı otomasyonlar ve devir teslim belgesi
+
+### `.github/workflows/hourly_pruner.yml`
+
+- Schedule: `7 * * * *` ve `37 * * * *`.
+- Kanal/Studio oturumu için ayrı bir workflow concurrency grubu var; içeride `youtube-studio-browser-session` kilidi kullanılıyor.
+- `prune_low_performers.js` çalıştırılıyor.
+- Varsayılan eşikler: en az 60 dakika yaş, 100'den az görüntülenme; çalışma başına en fazla 25 silme ve en az 1 videoyu koruma.
+- `PRUNE_DRY_RUN` varsayılanı `false`; yani ayar ayrıca değiştirilmediyse bu akış gerçek silme yapabilecek şekilde tasarlanmış.
+- Bu workflow ayrıca günlük Shorts akışı gecikirse `daily_shorts.yml`'i yeniden tetikleyebilir.
+
+### `.github/workflows/draft_publisher.yml`
+
+- Schedule: her 20 dakikada bir.
+- Varsayılan `max_per_run=2`, `dry_run=0`.
+- Studio'da taslakları seçip küçük resim/metadata ayarladıktan sonra PUBLIC yayınlamayı hedefliyor.
+- Kendi concurrency grubu `draft-publisher-lock`; günlük yükleyicinin `studio-upload-lock` grubu ile aynı değil. Aynı Studio oturumuna eşzamanlı erişim ihtimali operasyonel risk olarak not edildi.
+- Oturum secret'ı güncellemesi `REPO_PAT` ile yapılır ve `continue-on-error` kullanır; 401 gibi hatalar workflow genelini yeşil bırakabilir.
+
+**Sonuç:** Pruner ve taslak yayınlayıcı yalnızca yardımcı test işleri değildir; gerçek videoları silebilir veya taslakları PUBLIC yapabilir. Faz 0/sonraki testlerde bu workflow'lar elle tetiklenmemelidir.
+
+### `AI_HANDOFF.md`
+
+- Dosya mevcuttur; 359 satır.
+- Üst kısımda 2026-11-03 tarihli eski bir güncelleme satırı ve 2026-11-05 tarihli operasyon notları birlikte bulunuyor.
+- İçerikte eski test sayısı (22/22), eski cron/matrix ve secret envanteri iddiaları bulunuyor. Bunlar güncel GitHub API/Actions kanıtı olarak kabul edilmemeli.
+- Yeni Gemini planı ve Faz 0 baseline raporu, güncel geliştirme başlangıç noktası olarak kullanılmalı. AI_HANDOFF içindeki tarihsel operasyon notları silinmeden, sonraki dokümantasyon fazında güncel durumla uzlaştırılmalı.
