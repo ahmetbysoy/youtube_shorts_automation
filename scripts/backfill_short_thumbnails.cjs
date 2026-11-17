@@ -117,36 +117,40 @@ const GEMINI_RETRIES = Math.max(1, Number(process.env.GEMINI_RETRIES || 2));
 const GEMINI_RETRY_DELAY_MS = Math.max(8000, Number(process.env.GEMINI_RETRY_DELAY_MS || 15000));
 
 async function postProcessImage(bytes, outPath, source) {
-  // 1) Gerekirse 9:16 (1080x1920) olacak sekilde resize+extend: hedef oran 9:16.
-  // 2) JPEG kalitesi 92.
+  // 1) Ust guvenli alan: YouTube Shorts thumbnail listesinde ust kenar ~80-100px
+  //    kesebilir. AI yaziyi tepeye yapistiriyor; bunu onlemek icin 1080x1920
+  //    yaparken resmi "top" hizalayip USTTE 100px SIYAH KUSAK ekle (yaziyi asagi iter).
+  // 2) Alt kisimda da 60px alt guvenlik bandi birak.
+  // 3) Sonuc 1080x1920, JPEG kalitesi 92.
   const TARGET_W = 1080;
   const TARGET_H = 1920;
-  const LOGO_CROP = source === 'pollinations' ? 50 : 0;
+  const TOP_PAD = 180;  // ust guvenlik bandi (YouTube thumbnail ustten keser)
+  const BOT_PAD = 80;   // alt guvenlik bandi
+  const INNER_H = TARGET_H - TOP_PAD - BOT_PAD;  // 1740
   try {
     let pipeline = sharp(bytes);
     let meta = await pipeline.metadata();
     if (!meta.width || !meta.height) throw new Error('metadata okunamadi');
 
-    // Pollinations logosu icin alt seridi kirp
-    if (LOGO_CROP > 0 && meta.height > 200) {
-      pipeline = pipeline.extract({ left: 0, top: 0, width: meta.width, height: meta.height - LOGO_CROP });
-      meta = await pipeline.metadata();
-    }
+    // Once resmi ic alan icine (cover) yerlestir, ust-altsiz olarak
+    const inner = await pipeline
+      .resize({ width: TARGET_W, height: INNER_H, fit: 'cover', position: 'centre' })
+      .toBuffer();
 
-    // Hedef 9:16 olacak sekilde cover (kapsayici) resize + ortala
-    pipeline = pipeline.resize({
-      width: TARGET_W,
-      height: TARGET_H,
-      fit: 'cover',
-      position: 'centre',
-    }).jpeg({ quality: 92, mozjpeg: true });
+    // Sonra ust + alt siyah (yarisaydam degil, saf koyu) bantlarla 1920'e tamamla.
+    // Ust bandi koyu siyah yerine ustteki ilk satirin ustune hafif bir
+    // vignette gibi davransin diye extend ile 'background:#0a0a0a' kullan.
+    const finalBuf = await sharp({
+      create: { width: TARGET_W, height: TARGET_H, channels: 3, background: { r: 5, g: 5, b: 8 } },
+    })
+      .composite([{ input: inner, top: TOP_PAD, left: 0 }])
+      .jpeg({ quality: 92, mozjpeg: true })
+      .toBuffer();
 
-    const buf = await pipeline.toBuffer();
-    fs.writeFileSync(outPath, buf);
-    const finalMeta = await sharp(buf).metadata();
-    return { width: finalMeta.width, height: finalMeta.height, size: buf.length };
+    fs.writeFileSync(outPath, finalBuf);
+    const fm = await sharp(finalBuf).metadata();
+    return { width: fm.width, height: fm.height, size: finalBuf.length };
   } catch (e) {
-    // Hata olursa ham hali yaz
     log('    postProcess hatasi (' + source + '), ham yaziliyor: ' + e.message);
     fs.writeFileSync(outPath, bytes);
     return null;
