@@ -22,6 +22,12 @@ class TestScriptJsonSchema(unittest.TestCase):
         del sample["title"]
         self.assertTrue(validate_payload(sample))
 
+    def test_media_processor_credit_metadata_keeps_payload_valid(self):
+        sample = json.loads((ROOT / "samples" / "script.json").read_text(encoding="utf-8"))
+        sample["description"] = (sample.get("description") or "") + "\n\nWikimedia Commons: Author, CC BY-SA 4.0"
+        sample["media_credits"] = ["Wikimedia Commons: Author, CC BY-SA 4.0"]
+        self.assertEqual(validate_payload(sample), [])
+
     def test_schema_definition_is_valid(self):
         Draft202012Validator.check_schema(SCHEMA)
 
