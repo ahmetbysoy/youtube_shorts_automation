@@ -1,6 +1,6 @@
 # Gemini Tabanlı Otonom Shorts Üretimi — Mimari ve Uygulama Planı
 
-> Durum: **Planlama / henüz uygulanmadı**  
+> Durum: **Plan + Faz 2 Gemini Web metin dry-run altyapısı eklendi; gerçek cookie oturumu testi henüz çalıştırılmadı. Üretim entegrasyonu kapalı.**  
 > Kapsam: Mevcut YouTube Shorts otomasyonunu Gemini destekli, sahne bazlı ve kalite kapılı içerik üretimine geçirmek.  
 > Kural: Bu belge planı tanımlar. Bir iş ancak kod, test ve gerekli doğrulama kanıtı varsa tamamlandı sayılır.
 
@@ -45,6 +45,7 @@ Başarı yalnızca MP4 üretmek değildir. İçerik yeni ve doğrulanabilir olma
 - Kullanıcının tercih ettiği birincil yol Gemini Web oturumudur; mevcut `GEMINI_COOK` cookie secret'ı korunur ve değeri hiçbir zaman loglanmaz/çıktılanmaz.
 - Depoda doğrulanan mevcut cookie kullanımı `scripts/gemini_cover.py` üzerinden `gemini_webapi` ile kapak görseli üretimidir; `backfill_short_thumbnails.yml` bu secret'ı `jeton/gemini_cookies.json` dosyasına aktarır. Bu, metin/storyboard üretiminin cookie ile çalıştığını henüz kanıtlamaz.
 - Faz 2, önce aynı cookie oturumuyla metin/JSON üretiminin mümkün olup olmadığını yayın yapmayan testte doğrular. Çalışmazsa ücretli API'ye otomatik geçiş yapılmaz; kullanıcıya seçenek sunulur.
+- 17 Kasım 2026: `scripts/gemini_web_text_probe.py` ve `free_gemini_text_probe.yml` cookie tabanlı, yalnızca taslak JSON üreten manuel teste çevrildi. `GEMINI_API_KEY` bu testte kullanılmaz. Çıktı şema/kelime/görsel arama alanı kontrollerinden geçer; yayın ve TTS adımı yoktur. Gerçek test, workflow manuel çalıştırıldığında tamamlanacak.
 - `GEMINI_API_KEY` mevcut secret olarak kullanıcı kararıyla olduğu gibi bırakılır; yeni metin/storyboard tasarımı bu anahtara bağımlı olmayacaktır.
 - **Mevcut legacy istisna:** `daily_shorts.yml` `GEMINI_API_KEY` ve `GEMINI_FREE_VISION_ENABLED` değerlerini `generate_fallback_thumbnail.py` / `gemini_frame_selector.py` yoluna aktarır. Bu, yalnız mevcut kareleri analiz eden ayrı bir API yoludur; repository variable'ın anlık değeri bu bağlantıyla doğrulanamadı. Kullanıcı onayı olmadan mevcut üretim davranışı değiştirilmez.
 - Ücretli API, ücretli görsel/video üretimi veya billing açılması yeni mimarinin parçası değildir. Cookie oturumu bozulursa sistem ücretli API'ye sessizce düşmez; güvenli yedek veya durdurma uygulanır.
