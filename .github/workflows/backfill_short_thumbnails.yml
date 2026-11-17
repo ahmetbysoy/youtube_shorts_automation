@@ -100,7 +100,6 @@ jobs:
           # GEMINI_COOK tek bir JSON objesi olmali (tum cookie'leri iceren).
           printf '%s' "$GEMINI_COOK" > jeton/gemini_cookies.json
           python3 -c "import json; d=json.load(open('jeton/gemini_cookies.json')); print('GEMINI cookie dogrulandi, keys:', sorted(d.keys()))"
-          echo "GEMINI_COOKIES_JSON=$GEMINI_COOK" >> "$GITHUB_ENV"
 
       - name: Shorts kapaklarini guncelle
         env:
@@ -115,7 +114,6 @@ jobs:
           STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
           COOKIES_JSON_1: ${{ secrets.COOKIES_JSON_1 }}
           COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
-          GEMINI_COOKIES_JSON: ${{ secrets.GEMINI_COOK }}
         run: node scripts/backfill_short_thumbnails.cjs
 
       - name: Rapor ve yedekleri sakla
