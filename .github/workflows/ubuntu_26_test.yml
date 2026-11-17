@@ -15,6 +15,10 @@ on:
       - 'youtube_studio_uploader.js'
       - 'scripts/embed_cover_frame.py'
       - 'content_engine.py'
+      - 'main.py'
+      - 'scripts/validate_script_json.py'
+      - 'schemas/**'
+      - 'requirements.txt'
       - 'tests/**'
       - 'requirements-test.txt'
   workflow_dispatch:
