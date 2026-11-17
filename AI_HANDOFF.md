@@ -1,3 +1,11 @@
+> **GÜNCEL DEVİR NOTU — 2026-11-17 (öncelikli):** Bu belgenin aşağıdaki faz notları ve tabloları tarihsel operasyon kayıtlarıdır; bazıları eski 22/22 test ve 3'lü paralel matris durumunu anlatır. Güncel geliştirme başlangıç noktası [Gemini otonom Shorts planı](docs/GEMINI_AUTONOMOUS_SHORTS_PLAN.md), [canlı TODO](docs/GEMINI_AUTONOMOUS_SHORTS_TODO.md), [Faz 0 baseline kanıtı](docs/evidence/FAZ0_BASELINE_2026-11-17.md) ve [güncel mimari özeti](docs/ARCHITECTURE.md) dosyalarıdır.
+>
+> Doğrulanmış güncel durum: `daily_shorts.yml` kanal işlerini `max-parallel: 1` ile sıralar; `main.py` içerik motorunu `--force-fallback` ile çağırır; dolayısıyla normal Gemini/LLM üretimi ana üretim akışında etkin değildir. Son incelenen üretim koşusu 44119590041'de video PUBLIC doğrulandı; aynı logda `REPO_PAT` secret güncelleme isteği HTTP 401 aldı. `hourly_pruner.yml` videoları silebilir, `draft_publisher.yml` taslakları PUBLIC yapabilir; bunlar test için elle tetiklenmemelidir. Önceki 108 testlik CI baseline run 44076814790 güncel HEAD'den 17 commit geridedir. Güncel thumbnail helper testleri run 44160916391 ile tetiklenmiştir; sonucu ayrıca kontrol edilmelidir.
+>
+> Secret güvenliği: Secret değerlerini asla görüntüleme, loglama veya artifact'e yazma. Bu oturumdaki GitHub connector Secrets API uçlarını desteklemediğinden secret isimlerinin varlığı doğrulanamadı. Bu konuda tahmin yürütme.
+
+---
+
 # 🤖 AI_HANDOFF.md — Yapay Zeka Devir Teslim ve Operasyon Kılavuzu
 
 > **Faz 15:** [Canlı plan ve TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md). 08:39 UTC HAR Studio envanterinde 58 PUBLIC + 3 taslak; PUBLIC kapaklar ve örnek kareler, taslak önizlemeleri incelendi. Baştan sona video/ses ve iddia doğrulaması yapılmadı. Gerçek #123 yükleme işi PUBLIC başarılı, workflow geneli cron-kick iptal; günlük özel kapak kotası dolu ve hiçbir mevcut kapak değiştirilmedi. Gemini kare eşleşmesi canlı örnekte yanlış pozitif olduğundan otomatik kabul varsayılan kapalı, test amaçlı istisna dışında yerel temsili karta düşülür. Kullanıcı kota doluyken YouTube otomatik kapağıyla yayını seçti; ücretli API açma. 58 PUBLIC ID için yüklenmemiş temsili adaylar var; iki final short konusu yalnız otomatik altyazıdan alındı, ses doğrulaması gerekir. `41996283537` tek olumsuz gerçek örnekte ret success; otomatik kare kabulünü tek teste bakarak açma.
