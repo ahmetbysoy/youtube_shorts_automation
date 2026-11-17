@@ -11,10 +11,18 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from content_engine import (
-    build_llm_prompts,
-    extract_json_object,
-    validate_and_normalize_scenario,
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from content_engine import extract_json_object, validate_and_normalize_scenario
+from scripts.gemini_web_story import (
+    build_grounded_prompt,
+    draft_to_script_metadata,
+    finish_topic_reservation,
+    recent_used_topics,
+    select_researched_topic,
+    validate_grounded_response,
 )
 
 COOKIE_ENV_NAMES = ("GEMINI_COOK", "GEMINI_COOKIES_JSON", "GEMINI_COOKIE")
@@ -79,46 +87,66 @@ def validate_model_text(raw_text: str) -> dict[str, Any]:
     return scenario
 
 
-async def generate_text_scenario(concept: str) -> tuple[dict[str, Any], list[str]]:
+async def generate_text_scenario(
+    concept: str = "", recent_titles: list[str] | None = None
+) -> tuple[dict[str, Any], list[str]]:
     cookies = load_cookie_payload()
+    topic_slug, reservation_id, research = select_researched_topic(recent_titles=recent_titles)
+    completed = False
+    try:
+        # Bu testte yalnızca mevcut Gemini Web oturumu kullanılır.
+        # GEMINI_API_KEY / GOOGLE_API_KEY okunmaz ve API endpoint'i çağrılmaz.
+        from gemini_webapi import GeminiClient
 
-    # Bu testte yalnızca mevcut Gemini Web oturumu kullanılır.
-    # GEMINI_API_KEY / GOOGLE_API_KEY okunmaz ve API endpoint'i çağrılmaz.
-    from gemini_webapi import GeminiClient
+        system_prompt, user_prompt = build_grounded_prompt(
+            research,
+            recent_topics=recent_used_topics(),
+            recent_titles=recent_titles,
+        )
+        if concept.strip():
+            user_prompt += "\nEk editoryal tercih (olguları değiştirmeden): " + concept.strip()
+        client = GeminiClient(cookies["__Secure-1PSID"], cookies["__Secure-1PSIDTS"])
+        await client.init(timeout=30, auto_refresh=True)
+        response = await asyncio.wait_for(
+            client.generate_content(system_prompt + "\n\n" + user_prompt), timeout=90
+        )
+        response_text = getattr(response, "text", None)
+        if not isinstance(response_text, str) or not response_text.strip():
+            raise ValueError("Gemini Web metin yanıtı boş veya okunamadı.")
 
-    fact = {
-        "title": "NASA Science: Venus Facts",
-        "extract": (
-            "Venus completes one rotation in about 243 Earth days and one orbit "
-            "in about 225 Earth days. A solar day, from one sunrise to the next, "
-            "is about 117 Earth days."
-        ),
-    }
-    system_prompt, user_prompt = build_llm_prompts(concept, [], wiki_fact=fact)
-    client = GeminiClient(cookies["__Secure-1PSID"], cookies["__Secure-1PSIDTS"])
-    await client.init(timeout=30, auto_refresh=True)
-    response = await asyncio.wait_for(client.generate_content(system_prompt + "\n\n" + user_prompt), timeout=90)
-
-    response_text = getattr(response, "text", None)
-    if not isinstance(response_text, str) or not response_text.strip():
-        raise ValueError("Gemini Web metin yanıtı boş veya okunamadı.")
-
-    scenario = validate_model_text(response_text)
-    return scenario, list(cookies.values())
+        draft = validate_grounded_response(
+            response_text, topic_slug=topic_slug, research=research
+        )
+        scenario = draft_to_script_metadata(draft)
+        scenario.update({
+            "word_count": draft["word_count"],
+            "provider": draft["provider"],
+            "draft_only": True,
+            "publish": False,
+            "topic_source_id": draft["topic_source_id"],
+            "claims": draft["claims"],
+            "prompt_version": draft["prompt_version"],
+        })
+        finish_topic_reservation(topic_slug, reservation_id, commit=True)
+        completed = True
+        return scenario, list(cookies.values())
+    finally:
+        if not completed:
+            finish_topic_reservation(topic_slug, reservation_id, commit=False)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Gemini Web cookie oturumuyla yayın yapmayan metin/JSON testi."
     )
-    parser.add_argument("--concept", default="Venüs'ün dönüş ve yörünge süreleri")
+    parser.add_argument("--concept", default="", help="İsteğe bağlı editoryal tercih; konu kaynaklardan seçilir.")
     parser.add_argument("--output", type=Path, default=Path("text_probe_result.json"))
     args = parser.parse_args()
 
     try:
         scenario, cookie_values = asyncio.run(generate_text_scenario(args.concept))
         serialized = json.dumps(scenario, ensure_ascii=False, indent=2)
-        if any(value in serialized for value in cookie_values):
+        if any(value and value in serialized for value in cookie_values):
             raise ValueError("Güvenlik kontrolü: çıktı içinde cookie değeri tespit edildi.")
 
         args.output.parent.mkdir(parents=True, exist_ok=True)

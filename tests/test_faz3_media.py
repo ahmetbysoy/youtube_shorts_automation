@@ -1,9 +1,12 @@
 """Faz 3 birim ve entegrasyon testleri (media_processor.py)."""
 from __future__ import annotations
 
+import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from src.media_processing.media_processor import (
     FINAL_OUTPUT,
@@ -12,11 +15,29 @@ from src.media_processing.media_processor import (
     _is_real_api_key,
     _srt_time_to_ass,
     convert_srt_to_ass,
+    get_visual_search_queries,
     validate_output,
 )
 
 
 class TestFaz3MediaProcessor(unittest.TestCase):
+    def test_storyboard_queries_prefer_scene_searches_over_legacy_keywords(self) -> None:
+        data = {
+            "storyboard": [
+                {"scene_id": 1, "visual_query": "Venus cloud surface"},
+                {"scene_id": 2, "visual_query": "planet orbital diagram"},
+            ],
+            "visual_keywords": ["generic space", "generic planet"],
+        }
+        self.assertEqual(
+            get_visual_search_queries(data),
+            ["Venus cloud surface", "planet orbital diagram"],
+        )
+
+    def test_media_search_keeps_legacy_and_safe_default_fallbacks(self) -> None:
+        self.assertEqual(get_visual_search_queries({"visual_keywords": ["old query"]}), ["old query"])
+        self.assertEqual(get_visual_search_queries({}), ["history", "nature", "cinematic"])
+
     def test_api_key_guard_rejects_placeholders(self) -> None:
         self.assertFalse(_is_real_api_key(None))
         self.assertFalse(_is_real_api_key(""))
@@ -80,6 +101,61 @@ class TestFaz3MediaProcessor(unittest.TestCase):
         escaped = _escape_ffmpeg_filter_path(Path("/tmp/a:b'c.ass"))
         self.assertIn(r"\:", escaped)
         self.assertIn(r"\'", escaped)
+
+    @staticmethod
+    def _valid_probe_payload() -> dict:
+        return {
+            "format": {"duration": "12.0", "size": "500000", "bit_rate": "300000"},
+            "streams": [
+                {
+                    "codec_type": "video", "codec_name": "h264", "width": 1080,
+                    "height": 1920, "r_frame_rate": "30/1", "avg_frame_rate": "30/1",
+                    "pix_fmt": "yuv420p", "duration": "12.0", "nb_frames": "360",
+                },
+                {
+                    "codec_type": "audio", "codec_name": "aac", "duration": "12.0",
+                    "sample_rate": "48000", "channels": 2,
+                },
+            ],
+        }
+
+    def _run_mocked_probe(self, payload: dict) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            video = Path(tmp) / "final_short.mp4"
+            video.write_bytes(b"x" * 1024)
+            completed = subprocess.CompletedProcess(
+                args=["ffprobe"], returncode=0, stdout=json.dumps(payload), stderr=""
+            )
+            with patch("src.media_processing.media_processor.subprocess.run", return_value=completed):
+                return validate_output(video)
+
+    def test_quality_gate_accepts_valid_vertical_h264_aac_video(self) -> None:
+        result = self._run_mocked_probe(self._valid_probe_payload())
+        self.assertEqual(len(result["streams"]), 2)
+
+    def test_quality_gate_rejects_wrong_orientation_codec_pixel_format_and_fps(self) -> None:
+        cases = (
+            ("landscape", {"width": 1920, "height": 1080}),
+            ("wrong_video_codec", {"codec_name": "vp9"}),
+            ("wrong_pixel_format", {"pix_fmt": "yuv444p"}),
+            ("wrong_fps", {"avg_frame_rate": "25/1"}),
+        )
+        for label, changes in cases:
+            with self.subTest(case=label):
+                payload = self._valid_probe_payload()
+                payload["streams"][0].update(changes)
+                with self.assertRaises(RuntimeError):
+                    self._run_mocked_probe(payload)
+
+    def test_quality_gate_rejects_missing_or_duplicate_audio_stream(self) -> None:
+        for streams in (
+            [self._valid_probe_payload()["streams"][0]],
+            self._valid_probe_payload()["streams"] + [self._valid_probe_payload()["streams"][1]],
+        ):
+            payload = self._valid_probe_payload()
+            payload["streams"] = streams
+            with self.assertRaises(RuntimeError):
+                self._run_mocked_probe(payload)
 
     def test_final_short_output_passes_ffprobe_validation(self) -> None:
         if FINAL_OUTPUT.exists():

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+from fractions import Fraction
 import random
 import re
 import subprocess
@@ -507,26 +508,66 @@ def assemble_video_ffmpeg(
 
 
 def validate_output(output_path: Path) -> Dict[str, Any]:
-    """Render edilen videonun ffprobe ile tam teknik ve akış bütünlüğü doğrulaması."""
+    """Render edilmiş videoyu yüklemeden önce fail-closed teknik QC'den geçir."""
+    if not output_path.is_file() or output_path.stat().st_size <= 0:
+        raise RuntimeError(f"Video çıktısı yok veya boş: {output_path}")
+
     cmd = [
         "ffprobe", "-v", "error",
         "-show_entries",
-        "format=duration,size,bit_rate:stream=codec_type,codec_name,width,height,r_frame_rate,duration,nb_frames",
+        (
+            "format=duration,size,bit_rate:"
+            "stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,"
+            "pix_fmt,duration,nb_frames,sample_rate,channels"
+        ),
         "-of", "json",
         str(output_path.resolve()),
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=30)
-    data = json.loads(result.stdout)
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("ffprobe geçerli JSON döndürmedi; video yayınlanamaz.") from exc
+
     streams = data.get("streams", [])
-    v_stream = next(s for s in streams if s.get("codec_type") == "video")
-    a_stream = next(s for s in streams if s.get("codec_type") == "audio")
+    video_streams = [s for s in streams if s.get("codec_type") == "video"]
+    audio_streams = [s for s in streams if s.get("codec_type") == "audio"]
+    if len(video_streams) != 1 or len(audio_streams) != 1:
+        raise RuntimeError(
+            f"Tam olarak 1 video ve 1 ses akışı bekleniyordu; video={len(video_streams)}, audio={len(audio_streams)}"
+        )
+    v_stream, a_stream = video_streams[0], audio_streams[0]
     fmt = data.get("format", {})
 
     size_mb = output_path.stat().st_size / (1024 * 1024)
-    duration_sec = float(fmt.get("duration", 0.0))
-    v_dur = float(v_stream.get("duration", duration_sec))
-    a_dur = float(a_stream.get("duration", duration_sec))
-    nb_frames = int(v_stream.get("nb_frames", 0))
+    try:
+        duration_sec = float(fmt.get("duration", 0.0))
+        v_dur = float(v_stream.get("duration", duration_sec))
+        a_dur = float(a_stream.get("duration", duration_sec))
+        nb_frames = int(v_stream.get("nb_frames", 0))
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("ffprobe video/ses süre veya kare bilgisi eksik/geçersiz.") from exc
+
+    if duration_sec <= 0 or v_dur <= 0 or a_dur <= 0 or nb_frames <= 0:
+        raise RuntimeError("Video süresi, akış süresi ve kare sayısı pozitif olmalı.")
+    if int(v_stream.get("width", 0)) != 1080 or int(v_stream.get("height", 0)) != 1920:
+        raise RuntimeError(
+            f"Video dikey 1080x1920 olmalı; bulunan {v_stream.get('width')}x{v_stream.get('height')}"
+        )
+    if v_stream.get("codec_name") != "h264" or a_stream.get("codec_name") != "aac":
+        raise RuntimeError(
+            f"Codec uyumsuz: video={v_stream.get('codec_name')}, audio={a_stream.get('codec_name')} (h264/aac bekleniyor)"
+        )
+    if v_stream.get("pix_fmt") != "yuv420p":
+        raise RuntimeError(f"Piksel biçimi yuv420p olmalı; bulunan {v_stream.get('pix_fmt')}")
+
+    # r_frame_rate kesirini güvenli biçimde oku; 29.97 gibi yakın değerleri küçük toleransla kabul et.
+    try:
+        frame_rate = float(Fraction(str(v_stream.get("avg_frame_rate") or v_stream.get("r_frame_rate"))))
+    except (ValueError, ZeroDivisionError):
+        frame_rate = 0.0
+    if abs(frame_rate - 30.0) > 0.25:
+        raise RuntimeError(f"Kare hızı 30 FPS olmalı; bulunan {frame_rate:g} FPS")
 
     if abs(v_dur - a_dur) > 0.6:
         raise RuntimeError(
@@ -547,6 +588,25 @@ def validate_output(output_path: Path) -> Dict[str, Any]:
     return data
 
 
+def get_visual_search_queries(script_data: Dict[str, Any]) -> List[str]:
+    """Prefer validated per-scene storyboard queries; preserve the legacy fallback."""
+    storyboard = script_data.get("storyboard")
+    if isinstance(storyboard, list) and storyboard:
+        queries = [
+            str(scene.get("visual_query", "")).strip()
+            for scene in storyboard
+            if isinstance(scene, dict) and str(scene.get("visual_query", "")).strip()
+        ]
+        if queries:
+            return queries
+    legacy = script_data.get("visual_keywords")
+    if isinstance(legacy, list):
+        queries = [str(item).strip() for item in legacy if str(item).strip()]
+        if queries:
+            return queries
+    return ["history", "nature", "cinematic"]
+
+
 def run_media_pipeline() -> Path:
     load_env()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -560,7 +620,7 @@ def run_media_pipeline() -> Path:
         raise FileNotFoundError(f"Faz 2 çıktısı (script.json) bulunamadı: {script_json}")
 
     script_data = json.loads(script_json.read_text(encoding="utf-8"))
-    keywords: List[str] = script_data.get("visual_keywords") or ["history", "nature", "cinematic"]
+    keywords = get_visual_search_queries(script_data)
     audio_duration = float(script_data.get("audio_duration_sec", 30.0))
     per_scene_sec = max(8.0, round((audio_duration + 2.0) / max(1, len(keywords)), 2))
 

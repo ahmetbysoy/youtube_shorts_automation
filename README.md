@@ -1,4 +1,6 @@
-# YouTube Shorts Automation — Tam Otonom İçerik Fabrikası (Faz 1–7)
+# YouTube Shorts Automation — Tam Otonom İçerik Fabrikası
+
+> **Güncel durum — 2026-11-18:** `main.py` artık `content_engine.py --gemini-web-only` yolunu çağırır. Daily workflow `GEMINI_COOK` secret'ını yalnızca süreç ortamına verir; Gemini Web yanıtı schema/source-quote kontrollerinden geçerse Gemini taslağı kullanılır, oturum/üretim başarısızsa mevcut yerel fallback devam eder. Bu kip ücretli metin API'sine düşmez. `fact_check.status=partial` taslağın otomatik PUBLIC hattında devam etmesine kullanıcı onay verdi; bu durum birebir alıntı eşleşmesidir, bağımsız semantik doğrulama değildir. Gerçek cookie/CI/üretim koşusu bu kod değişikliğiyle tetiklenmedi. Ayrıntılar: [Gemini TODO](docs/GEMINI_AUTONOMOUS_SHORTS_TODO.md), [plan](docs/GEMINI_AUTONOMOUS_SHORTS_PLAN.md), [mimari](docs/ARCHITECTURE.md).
 
 > Faz 15: 08:39 UTC envanterinde 58 PUBLIC + 3 taslak; PUBLIC videoların kapakları ve örnek kareleri, taslakların önizlemeleri incelendi. Baştan sona ses/olgu doğrulaması yapılmadı. Özel kapaklar günlük kota nedeniyle değiştirilmedi; #123 otomatik YouTube kapağıyla PUBLIC, iş başarılı fakat workflow iptal. Gemini kare kabulü yanlış eşleşme nedeniyle varsayılan kapalıdır. 58 yüklenmemiş temsili kapak adayı hazırlandı; ikisinin konusu otomatik altyazıya dayanır ve doğrulama bekler. [Canlı plan/TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md).
 
@@ -22,7 +24,7 @@ Python, FFmpeg ve Node.js Playwright tabanlı, GitHub Actions üzerinde Türkçe
 | Faz | Modül | Açıklama | Durum |
 | :---: | :--- | :--- | :---: |
 | **Faz 1** | `youtube_auth.py`, `src/youtube_upload/` | Headless/bulut uyumlu OAuth2 PKCE akışı ve YouTube Data API v3 yedek yükleme modülü | ✅ |
-| **Faz 2** | `content_engine.py` | Groq / Gemini / Çakışmasız Matris Havuzu + Türkçe Wikipedia doğrulaması + `edge-tts` (`tr-TR-AhmetNeural`) seslendirme + milisaniye senkronlu `.srt` üretimi | ✅ |
+| **Faz 2** | `content_engine.py`, `scripts/gemini_web_story.py` | Ana üretim kipinde Gemini Web cookie-only; kaynak HTTP araştırması, strict JSON/quote sözleşmesi, storyboard ve TTS/SRT. Cookie/yanıt başarısızsa mevcut yerel fallback; paid text API yok. Gerçek cookie çalışması bekliyor. | 🟡 |
 | **Faz 3** | `src/media_processing/media_processor.py` | Dikey stok video indirme (Pexels / Pixabay / Wikimedia), pop-animasyonlu `.ass` altyazı, arka plan müziği miksajı ve tek geçişli `1080x1920` (30 FPS, H.264/AAC) FFmpeg montajı | ✅ |
 | **Faz 4** | `src/youtube_upload/youtube_uploader.py` | Resumable API yükleme ve onay kuyruğu altyapısı (`22/22` birim testi) | ✅ |
 | **Faz 5** | `youtube_studio_uploader.js` | API kotasını (`10.000 birim`) tamamen aşan Playwright Chromium YouTube Studio yükleyicisi + kalıcı oturum (`cookies.json`, `storage_state.json`) | ✅ |
@@ -57,6 +59,8 @@ npx playwright install --with-deps chromium
 chmod 600 .env cookies.json storage_state.json
 ```
 
+Üretim içerik hattı `GEMINI_COOK` JSON cookie değerini ortam değişkeninden kullanır. Bu değer Git'e, loglara veya artifact'lere yazılmamalıdır. Cookie eksik/geçersiz ya da Gemini yanıtı uygunsuzsa metin sağlayıcısı olarak ücretli API çağrılmaz; içerik motoru mevcut fallback havuzuna döner.
+
 ### 3. Uçtan Uca Üretim ve `PUBLIC` Yayın
 
 ```bash
@@ -74,11 +78,12 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ## GitHub Actions 7/24 Paralel Matris Otomasyonu
 
-`.github/workflows/daily_shorts.yml` iş akışı her gün **TSİ 18:00'de (`cron: '0 15 * * *'`)** veya GitHub arayüzünden **`Run workflow` (`workflow_dispatch`)** butonuyla tetiklendiğinde:
+`.github/workflows/daily_shorts.yml` güncel yapılandırmada iki saatlik cron (`13 */2 * * *`) ve `workflow_dispatch` ile çalışır. Kanal işlerini `max-parallel: 1` ile sıralar.
 
-1. `build-and-upload (1)`, `build-and-upload (2)` ve `build-and-upload (3)` olmak üzere **3 bağımsız bulut sunucusu** paralel ayağa kalkar (`fail-fast: false`).
-2. Her hat kendi GitHub Secret setini (`ENV_FILE_<id>`, `COOKIES_JSON_<id>`, `STORAGE_STATE_JSON_<id>`) yükler ve birbirinden farklı bir senaryo seçer.
-3. Videolar `1080x1920` dikey formatta montajlanıp doğrudan **Herkese Açık (`PUBLIC`)** olarak YouTube'da yayınlanır ve çıktılar `shorts-output-channel-<id>-<run_number>` artifact paketlerine yedeklenir.
+1. Üretim adımı `GEMINI_COOK` Repository Secret'ını doğrudan process env'e verir; cookie değeri dosyaya/loga/artifact'e yazılmaz.
+2. `main.py` → `content_engine.py --gemini-web-only` yolunda cookie tabanlı Gemini Web taslağı dener. Kaynak HTTP'si, yanıt şeması, birebir kanıt alıntıları ve storyboard doğrulanır. Üretim hatası/oturum hatası mevcut fallback'i çalıştırır; Groq/Gemini metin API'lerine düşmez.
+3. TTS → script v2 schema → medya → mevcut kapak/yükleyici sırası korunur. Mevcut otomatik PUBLIC davranışı değişmemiştir. Kullanıcı `partial` (birebir alıntı eşleşmiş, semantik olarak bağımsız doğrulanmamış) Gemini taslaklarının da bu hatta geçmesine izin vermiştir; bu riski göz önünde bulundurun.
+4. Başarılı üretimden sonra mevcut workflow başlık geçmişini `.used_topics.json` üzerinden repoya kaydeder; `script.json`, video ve loglar mevcut artifact politikasında kalır. Gerçek Gemini oturumu ve yeni günlük üretim yolu henüz canlı çalışmayla doğrulanmamıştır.
 
 ---
 
@@ -442,7 +447,7 @@ channel_id: ${{ fromJSON(format('["{0}"]', join(needs.channel-map.outputs.distin
 
 Run #90 gerçek Studio görüntüsünde zorunlu çocuklara özel seçimi boştu; İleri pasif kaldı. Uploader artık bu seçimin ve PUBLIC seçiminin gerçekten işaretlendiğini kontrol eder. Yayın sonrası ilgili video ID'si için Studio satırında PUBLIC ikonu + etiketi görülmezse `publish_unverified` ile hata verir; yeniden yüklemeden önce Studio kontrol edilmelidir. Gerçek bir taslakta çocuk radyo seçimi, mevcut bir PUBLIC videoda Studio görünürlük seçicisi doğrulandı; **yeni kodla uçtan uca yayın doğrulaması henüz yapılmadı**.
 
-LLM için 2–3 kelimeli konuya özgü görsel arama yönergesi ve `docs/AI_VIDEO_HERO_PROMPT.md` eklendi. CI `--force-fallback` kullandığından bu yönerge mevcut fallback üretimini tek başına düzeltmez; konu uyumu ve izlenme artışı garanti edilmez. Ayrıntılı TODO: `docs/FAZ13_AUDIT_PLAN.md`.
+Tarihsel 5 Kasım notu: o tarihte CI `--force-fallback` kullanıyordu. **18 Kasım'dan itibaren** `main.py` Gemini Web cookie-only route'a bağlandı; prompt/storyboard üretimi aktiftir, ancak gerçek cookie/CI oturumu henüz doğrulanmadı. Konu uyumu/izlenme artışı garanti edilmez. Ayrıntılı TODO: `docs/FAZ13_AUDIT_PLAN.md`.
 
 **Canlı test:** #97 (`41948576364`) yayın işi başarılı; [7DULxjp6PsQ](https://youtube.com/shorts/7DULxjp6PsQ) Studio'da PUBLIC ve girişsiz oynatılabilir. Koşunun geneli cron-kick iptali yüzünden `cancelled`. Örnek karelerde uçak, yana dönmüş kıyı ve alakasız yazılı grafik görüldüğü için görsel kalite **başarısız**; aynı başlık `WKYwF96hQzg` üzerinde de mevcut. Taslak silme Studio kimlik doğrulaması istedi; silme yapılmadı. Otomatik workflow yeniden aktifleştirildi.
 

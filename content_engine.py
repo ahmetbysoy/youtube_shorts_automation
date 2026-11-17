@@ -3026,10 +3026,37 @@ def _coprime_step(size: int) -> int:
     return step
 
 
+def generate_gemini_web_scenario(concept: str, recent_titles: list[str]) -> dict[str, Any]:
+    """Generate, validate, and normalize a cookie-only Gemini Web draft."""
+    from scripts.gemini_web_text_probe import generate_text_scenario
+
+    draft, cookie_values = asyncio.run(generate_text_scenario(concept, recent_titles))
+    serialized = json.dumps(draft, ensure_ascii=False)
+    if any(value and value in serialized for value in cookie_values):
+        raise ValueError("Güvenlik kontrolü: Gemini taslak çıktısında oturum verisi tespit edildi.")
+
+    normalized = validate_and_normalize_scenario(draft, "gemini-web-session")
+    # TTS normalizasyonu metni değiştirdiyse kaynak alıntısı/storyboard eşleşmesini koru.
+    normalized_script = normalized["script_text"]
+    for index, claim in enumerate(draft.get("claims", []), start=1):
+        if claim.get("script_span", "") not in normalized_script:
+            raise ValueError(f"Gemini claim {index}, TTS normalizasyonundan sonra eşleşmiyor.")
+    for index, scene in enumerate(draft.get("storyboard", []), start=1):
+        if scene.get("narration", "") not in normalized_script:
+            raise ValueError(f"Gemini storyboard sahne {index}, TTS normalizasyonundan sonra eşleşmiyor.")
+
+    for key in ("sources", "fact_check", "storyboard", "claims", "topic_source_id", "prompt_version"):
+        if key in draft:
+            normalized[key] = draft[key]
+    normalized["draft_only"] = True
+    return normalized
+
+
 def generate_scenario(
     concept: str = "İlginç Bilgiler ve Tarih",
     force_fallback: bool = False,
     channel_id: str = "1",
+    gemini_web_only: bool = False,
 ) -> dict[str, Any]:
     """Çok katmanlı hata toleranslı, 15dk tohumlamalı ve Faz 9 analitik beslemeli senaryo üretim yöneticisi."""
     effective_channel_id = str(channel_id or os.environ.get("MATRIX_CHANNEL_ID") or "1").strip() or "1"
@@ -3051,6 +3078,24 @@ def generate_scenario(
         )
         save_recent_title(scenario["title"])
         return scenario
+
+    if gemini_web_only:
+        try:
+            print("[LLM] Ücretsiz Gemini Web cookie oturumu deneniyor; ücretli/API anahtarı sağlayıcısı kullanılmayacak.")
+            scenario = generate_gemini_web_scenario(concept, recent_titles)
+            save_recent_title(scenario["title"])
+            return scenario
+        except Exception as exc:
+            # İstemci istisnaları oturum verisi taşıyabileceğinden yalnız türünü yaz.
+            print(
+                f"[TOLERANS] Gemini Web başarısız ({type(exc).__name__}); mevcut fallback kullanılacak.",
+                file=sys.stderr,
+            )
+            scenario = pick_fallback_scenario(
+                recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
+            )
+            save_recent_title(scenario["title"])
+            return scenario
 
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
     gemini_key = (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or "").strip()
@@ -3285,6 +3330,7 @@ def run_content_pipeline(
     rate: str = "+4%",
     force_fallback: bool = False,
     channel_id: str = "1",
+    gemini_web_only: bool = False,
     audio_out: Path = DEFAULT_AUDIO_OUT,
     txt_out: Path = DEFAULT_TXT_OUT,
     json_out: Path = DEFAULT_JSON_OUT,
@@ -3299,7 +3345,12 @@ def run_content_pipeline(
     resolved_voice = SUPPORTED_VOICES.get(voice_choice, "tr-TR-AhmetNeural")
 
     # 1. Senaryo Üretimi
-    scenario = generate_scenario(concept=concept, force_fallback=force_fallback, channel_id=channel_id)
+    scenario = generate_scenario(
+        concept=concept,
+        force_fallback=force_fallback,
+        channel_id=channel_id,
+        gemini_web_only=gemini_web_only,
+    )
     script_text = scenario["script_text"]
 
     # 2. Seslendirme & Kelime Bazlı Zaman Damgaları
@@ -3341,6 +3392,10 @@ def run_content_pipeline(
         "visual_keywords": scenario["visual_keywords"],
         "word_timestamps": word_timestamps,
     }
+    # Gemini Web kaynak/iddia/storyboard kanıtlarını v2 script.json'a taşı.
+    for key in ("sources", "fact_check", "storyboard", "claims", "topic_source_id", "prompt_version"):
+        if key in scenario:
+            payload[key] = scenario[key]
     json_out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     return payload
@@ -3378,6 +3433,11 @@ def main() -> None:
         default=os.environ.get("MATRIX_CHANNEL_ID", "1"),
         help="Matrix kanal ID'si (varsayılan: 1)",
     )
+    parser.add_argument(
+        "--gemini-web-only",
+        action="store_true",
+        help="Yalnız Gemini Web cookie oturumunu dene; başarısızsa mevcut fallback'e dön, API anahtarı kullanma.",
+    )
     args = parser.parse_args()
 
     result = run_content_pipeline(
@@ -3386,6 +3446,7 @@ def main() -> None:
         rate=args.rate,
         force_fallback=args.force_fallback,
         channel_id=args.channel_id,
+        gemini_web_only=args.gemini_web_only,
     )
 
     print("\n" + "=" * 74)

@@ -184,6 +184,9 @@ jobs:
           # Projeye ödeme bağlanırsa vars.GEMINI_FREE_VISION_ENABLED değerini hemen 0 yapın.
           GEMINI_FREE_VISION_ENABLED: ${{ vars.GEMINI_FREE_VISION_ENABLED || '0' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Gemini Web cookie yalnız main.py → content_engine → Gemini Web metin adaptöründe kullanılır.
+          # Değer loglanmaz, dosyaya/artifact'e yazılmaz; web oturumu başarısızsa ücretli API'ye geçilmez.
+          GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
         run: |
           # Tek video: icerik -> ses -> video -> kapak -> baslik/hashtag -> YAYIN (PUBLIC)
           # Tamami bitmeden sonraki kanal/kullanici devreye girmez (max-parallel: 1).

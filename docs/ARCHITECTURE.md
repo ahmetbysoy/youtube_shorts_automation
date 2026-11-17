@@ -1,19 +1,21 @@
 # Sistem Mimarisi ve Teknik Veri Sözleşmeleri (`ARCHITECTURE.md`)
 
-> **Sürüm:** Faz 7 (Tam Otonom `PUBLIC` Yayın & GitHub Actions 3'lü Matris Mimarisi)  
-> **Son Güncelleme:** `2026-11-03`
+> **Sürüm:** Güncel çalışma durumu (Gemini Web route + mevcut `PUBLIC` üretim hattı)
+>
+> **Son Güncelleme:** `2026-11-18`
 
 Bu doküman, `youtube_shorts_automation` boru hattındaki modüllerin iç yapısını, dosya sözleşmelerini (data contracts), FFmpeg filtre grafiğini ve Playwright DOM seçicilerini açıklar. Devir teslim ve operasyonel kurallar için kök dizindeki [`AI_HANDOFF.md`](../AI_HANDOFF.md) dosyasına bakın.
 
 ---
 
-> **Güncel doğrulanmış durum — 2026-11-17:** Bu bölüm, eski faz anlatılarından önce geçerli olan operasyonel özettir. Ayrıntılı kanıt: [Faz 0 baseline](evidence/FAZ0_BASELINE_2026-11-17.md) ve [canlı TODO](GEMINI_AUTONOMOUS_SHORTS_TODO.md).
+> **Güncel durum — 2026-11-18:** Bu bölüm, eski faz anlatılarından önce geçerli olan operasyonel özettir. Ayrıntılı kanıt: [Faz 0 baseline](evidence/FAZ0_BASELINE_2026-11-17.md) ve [canlı TODO](GEMINI_AUTONOMOUS_SHORTS_TODO.md).
 >
 > - Aktif yayın workflow'u `.github/workflows/daily_shorts.yml`; kanal job'ları `max-parallel: 1` ile sıralıdır. Eski 3'lü paralel matris diyagramı güncel değildir.
-> - `main.py` sırası: `content_engine.py --force-fallback` → `src/media_processing/media_processor.py` → `scripts/embed_cover_frame.py` → `youtube_studio_uploader.js`. Ana workflow'da normal LLM/Gemini senaryo üretimi bu bayrak nedeniyle etkin değildir.
+> - Güncel sıra: `main.py` → `content_engine.py --gemini-web-only` → cookie-only Gemini Web ve strict draft/source-quote/storyboard kontrolleri → hata/oturum sorunu varsa mevcut yerel fallback → TTS ve `script.json` v2 → `media_processor.py` → best-effort cover → mevcut Studio uploader. Daily workflow `GEMINI_COOK` secret'ını yalnız process env'e verir.
+> - İçerik metin üretimi bu kipte Groq/Gemini API key endpoint'lerine düşmez. `fact_check.status=partial` birebir alıntı eşleşmesi olduğunu, bağımsız semantik entailment kontrolü olmadığını ifade eder; kullanıcı bu statüyle mevcut PUBLIC hattında devam edilmesine onay verdi.
 > - Kapak gömme adımı mevcut davranışta best-effort'tur; hata yayını tek başına durdurmaz. Bu davranış Faz 0'da değiştirilmemiştir.
 > - Uploader, Publish tıklamasını tek başına başarı saymaz; video ID'sini Studio Shorts listesindeki PUBLIC durumuyla doğrular.
-> - `ubuntu_26_test.yml` test/ortam doğrulamasıdır; YouTube yayın adımı içermez. 108 testlik önceki baseline, eski HEAD'de alınmıştır; yeni thumbnail yardımcı testleri için güncel push koşusu ayrıca izlenmektedir.
+> - Yerel 18 Kasım doğrulaması: `pytest` seçili suite 140 passed / 3 skipped / 12 subtests; ilgili Gemini/media suite ayrıca çalıştırıldı. Gerçek cookie, canlı Wikipedia HTTP, GitHub Actions veya video yayın testi bu değişiklikte çalıştırılmadı.
 > - `hourly_pruner.yml` gerçek video silebilir; `draft_publisher.yml` taslakları PUBLIC yapabilir. Test amacıyla bu workflow'lar tetiklenmemelidir.
 > - GitHub connector bu oturumda GitHub Secrets API uçlarını desteklemiyor. Secret isimleri/değerleri bu bağlantıdan doğrulanmış değildir; hiçbir secret değeri okunmamalıdır.
 
@@ -21,8 +23,9 @@ Bu doküman, `youtube_shorts_automation` boru hattındaki modüllerin iç yapıs
  daily_shorts.yml
    └─ production_gate.sh
        └─ max-parallel: 1 → python main.py --channel_id N
-           ├─ content_engine.py --force-fallback
-           ├─ media_processor.py
+           ├─ content_engine.py --gemini-web-only → fallback on error
+           ├─ script.json v2: sources/fact_check/storyboard
+           ├─ media_processor.py (storyboard visual_query preferred)
            ├─ embed_cover_frame.py (best-effort)
            └─ youtube_studio_uploader.js → Studio'da aynı video ID + PUBLIC doğrulaması
 ```
@@ -282,7 +285,7 @@ video tags → çocuk güvenliği → görünürlük(PUBLIC) → YAYIN` tamamlan
 - Legacy uyumluluk: `schema_version` içermeyen mevcut payload'lar v1 olarak doğrulanır.
 - Güncel üretim: `content_engine.py` yeni payload'lara `schema_version: "2.0"` ve UUID `generation_id` ekler.
 - Eski alanlar (`visual_keywords`, `word_timestamps`, medya ve TTS metadata alanları) korunur.
-- İleriye dönük alanlar: `sources`, `fact_check`, `storyboard`; bu alanlar v2'de isteğe bağlıdır, böylece eski üretim akışı henüz sahne storyboard'u üretmeden de geçerli kalır.
+- `sources`, `fact_check` ve `storyboard` alanları schema v2'de opsiyoneldir. Fallback payload'larında legacy uyumluluk sürer; Gemini Web payload'ında bu alanlar üretilip script.json'a taşınır.
 - Testler: `tests/test_script_json_schema.py` legacy/v2 ve hatalı veri örneklerini; `tests/test_full_pipeline_fallback.py` ise gerçek üretilen JSON'u doğrular.
 - Schema doğrulayıcı `jsonschema` hem test hem runtime bağımlılığıdır (`requirements-test.txt` ve `requirements.txt`). `main.py`, medya işlemeden önce `scripts/validate_script_json.py` ile JSON'u fail-closed doğrular; hata varsa süreç 1 koduyla durur.
-- Bu değişiklik Gemini API/cookie istemci seçimini, secret'ları, uploader'ı veya PUBLIC yayın adımını değiştirmez.
+- 2026-11-18 Gemini Web entegrasyonu: `main.py` cookie-only modunu çağırır; daily workflow `GEMINI_COOK` secret'ını env'e verir. Kullanıcı `fact_check.status=partial` ile mevcut PUBLIC uploader'a devam edilmesine onay verdi. Bu değişiklik uploader görünürlük/limit mantığını değiştirmez; gerçek cookie ve yayın kanıtı henüz yok.

@@ -50,6 +50,17 @@ def write_status(status: str, channel_id: str, **extra) -> None:
         logging.warning(f"[!] run_status.json yazilamadi: {exc}")
 
 
+def content_generation_command(channel_id: str) -> list[str]:
+    """Use Gemini Web cookie-only mode while preserving content-engine fallback."""
+    return [
+        sys.executable,
+        str(BASE_DIR / "content_engine.py"),
+        "--gemini-web-only",
+        "--channel_id",
+        str(channel_id),
+    ]
+
+
 def _published_video_info() -> dict:
     """Yayinlanan video bilgisini topla (id + URL + baslik)."""
     info: dict = {}
@@ -141,8 +152,8 @@ def main():
 
     # 1. Adım: İçerik Üretimi (15dk Benzersizlik Tohumu ile)
     step1_ok = run_step(
-        "FAZ 2: İçerik ve Ses Üretimi",
-        [sys.executable, str(BASE_DIR / "content_engine.py"), "--force-fallback", "--channel_id", args.channel_id],
+        "FAZ 2: Gemini Web Cookie İçerik + Fallback ve Ses Üretimi",
+        content_generation_command(args.channel_id),
         env_overrides=step_env,
         timeout_seconds=600,
     )

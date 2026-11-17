@@ -1,6 +1,6 @@
-> **GÜNCEL DEVİR NOTU — 2026-11-17 (öncelikli):** Bu belgenin aşağıdaki faz notları ve tabloları tarihsel operasyon kayıtlarıdır; bazıları eski 22/22 test ve 3'lü paralel matris durumunu anlatır. Güncel geliştirme başlangıç noktası [Gemini otonom Shorts planı](docs/GEMINI_AUTONOMOUS_SHORTS_PLAN.md), [canlı TODO](docs/GEMINI_AUTONOMOUS_SHORTS_TODO.md), [Faz 0 baseline kanıtı](docs/evidence/FAZ0_BASELINE_2026-11-17.md) ve [güncel mimari özeti](docs/ARCHITECTURE.md) dosyalarıdır.
+> **GÜNCEL DEVİR NOTU — 2026-11-18 (öncelikli):** Bu belgenin aşağıdaki faz notları ve tabloları tarihsel operasyon kayıtlarıdır; bazıları eski 22/22 test ve 3'lü paralel matris durumunu anlatır. Güncel geliştirme başlangıç noktası [Gemini otonom Shorts planı](docs/GEMINI_AUTONOMOUS_SHORTS_PLAN.md), [canlı TODO](docs/GEMINI_AUTONOMOUS_SHORTS_TODO.md), [Faz 0 baseline kanıtı](docs/evidence/FAZ0_BASELINE_2026-11-17.md) ve [güncel mimari özeti](docs/ARCHITECTURE.md) dosyalarıdır.
 >
-> Doğrulanmış güncel durum: `daily_shorts.yml` kanal işlerini `max-parallel: 1` ile sıralar; `main.py` içerik motorunu `--force-fallback` ile çağırır; dolayısıyla normal Gemini/LLM üretimi ana üretim akışında etkin değildir. Son incelenen üretim koşusu 44119590041'de video PUBLIC doğrulandı; aynı logda `REPO_PAT` secret güncelleme isteği HTTP 401 aldı. `hourly_pruner.yml` videoları silebilir, `draft_publisher.yml` taslakları PUBLIC yapabilir; bunlar test için elle tetiklenmemelidir. Önceki 108 testlik CI baseline run 44076814790 güncel HEAD'den 17 commit geridedir. Güncel thumbnail helper testleri run 44160916391 ile tetiklenmiştir; sonucu ayrıca kontrol edilmelidir.
+> Güncel kod durumu (2026-11-18): `main.py` artık `content_engine.py --gemini-web-only` çağırır; `daily_shorts.yml` `GEMINI_COOK` secret'ını yalnız Orchestrator process env'ine aktarır. Cookie/session/yanıt hatasında içerik motoru mevcut fallback'e döner; Gemini Web metin kipinde Groq/Gemini API endpoint'lerine geçmez. Kaynak alıntısı tam eşleşmiş olsa bile semantik doğrulama bağımsız yapılmadığından script'te `fact_check.status=partial` kalır; kullanıcı bu taslakların mevcut PUBLIC hattında devam etmesine onay verdi. Yerel seçili suite 140 passed, 3 skipped, 12 subtests; gerçek cookie/CI/HTTP/publication testi yapılmadı. Aşağıdaki eski Faz 1–7 ve run notları tarihsel kayıt olarak kalır. `hourly_pruner.yml` videoları silebilir ve `draft_publisher.yml` taslakları PUBLIC yapabilir; geliştirme için bu workflow'lar tetiklenmemelidir.
 >
 > Secret güvenliği: Secret değerlerini asla görüntüleme, loglama veya artifact'e yazma. Bu oturumdaki GitHub connector Secrets API uçlarını desteklemediğinden secret isimlerinin varlığı doğrulanamadı. Bu konuda tahmin yürütme.
 
@@ -16,7 +16,7 @@
 
 > **Faz 14:** Kullanıcı ücretli AI görsel API kullanımını reddetti; [plan](docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md). Google API key GitHub Secrets içinde; değerini asla gösterme. Şu an ücretsiz proje olduğu Studio UI üzerinden gözlendi; API görüntü üretimi ücretsiz değildir.
 
-> **Son Güncelleme:** `2026-11-03` (Faz 1–7 Tamamlandı, Bulutta %100 Canlı Üretimde)  
+> **Son Güncelleme:** `2026-11-18` (Gemini Web content route main.py'ye bağlandı; canlı oturum/CI doğrulaması bekliyor)
 > **Hedef Kitle:** Bu projeyi devralacak bir sonraki Yapay Zeka Ajanı (Arena Agent, Claude Code, Cursor, Codex vb.) veya Geliştirici.
 
 Bu belge, projeyi devralan bir yapay zekanın **sıfır tahmin, sıfır deneme-yanılma ve sıfır güvenlik ihlali** ile 30 saniye içinde sistemi anlayıp geliştirmeye devam edebilmesi için hazırlanmıştır.
@@ -157,8 +157,8 @@ Bir sonraki yapay zeka ajanının doğrudan başlayabileceği geliştirmeler:
 1. **Faz 8 — Kendi Kendini Eğiten Analitik Geri Besleme Döngüsü (`analytics_scraper.js`):**
    - Playwright ile `https://studio.youtube.com/channel/UCBZVbwc7s7TeUCcOaN58oHQ/analytics` sayfasından son 10 Shorts videosunun **İzlenme Sayısı**, **Ortalama Görüntüleme Yüzdesi (Retention %)** ve **Geçme/İzleme Oranı (Viewed vs Swiped Away)** metriklerini çekip `analytics_report.json` dosyasına kaydetmek.
    - `content_engine.py` içindeki LLM sistem istemine (prompt) en yüksek tutma oranına sahip kanca (`hook`) kalıplarını besleyerek kanalın kendi kendini optimize etmesini sağlamak.
-2. **Canlı Ücretsiz API Anahtarlarıyla Dinamik Senaryo & Stok Video Çeşitlendirme:**
-   - `.env` ve `ENV_FILE_1..3` içine ücretsiz `GROQ_API_KEY` (`llama-3.3-70b-versatile`) ve `PEXELS_API_KEY` / `PIXABAY_API_KEY` eklendiğinde `main.py` içindeki `--force-fallback` bayrağı kaldırılarak sınırsız dinamik Wikipedia destekli konu üretimine geçilebilir (`content_engine.py` ve `media_processor.py` bu entegrasyona şimdiden %100 hazırdır).
+2. **Gemini Web cookie dry-run ve kaynak/semantik kalite tamamlaması:**
+   - `main.py` Gemini Web route'a bağlandı. Sonraki güvenli adım, yayın yapmayan `free_gemini_text_probe.yml` dry-run'ını kullanıcı onayıyla çalıştırıp gerçek cookie ve JSON artifact'i doğrulamaktır; ardından claim entailment doğrulaması, topic history kalıcılığı, scene timing/media QC tamamlanmalıdır. Cookie başarısız olduğunda paid API yoluna geçilmez.
 3. **2. ve 3. Bağımsız YouTube Kanallarının Bağlanması:**
    - Farklı nişlerde (ör. Kanal 1: *Tarih*, Kanal 2: *Uzay & Bilim*, Kanal 3: *Psikoloji & İlginç Bilgiler*) yeni Gmail/YouTube kanalları açıldığında `COOKIES_JSON_2` / `STORAGE_STATE_JSON_2` ve `_3` secret'ları güncellenerek 3 ayrı kanala eşzamanlı yayın yapılabilir.
 
@@ -360,7 +360,7 @@ Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olama
 - Run #90 (`41939518221`) `studio_error.png`: zorunlu çocuklara özel seçimi yanıtlanmamış, İleri pasif; PUBLIC seçicisi timeout. Sadece bu koşunun nedeni kanıtlıdır.
 - `youtube_studio_uploader.js`: hedef radyo görünür olana kadar bekler, seçimi `aria-checked` ile doğrular; PUBLIC için de aynı kontrol. Yayın sonrası yeni video ID'sinin Studio satırında PUBLIC ikon ve etiketi aranır; yoksa `publish_unverified`, yeniden yükleme öncesi insan kontrolü. Yerel eski video ID temizlenir.
 - Studio'da gerçek taslakta çocuk seçimi `true`; eski PUBLIC video `1IAgNqsjgvQ` üzerinde görünürlük seçicisi doğrulandı. Yeni versiyonla uçtan uca yayın henüz kanıtlanmadı.
-- LLM görsel arama promptu 2–3 kelimeye yönlendirilir; CI `--force-fallback`, dolayısıyla fallback sahneler otomatik düzelmez. `docs/AI_VIDEO_HERO_PROMPT.md` üretime bağlı değildir.
+- Tarihsel 5 Kasım notu: o tarihte CI `--force-fallback` kullanıyordu. 18 Kasım'dan itibaren main Gemini Web cookie-only üretim yoluna geçti; gerçek cookie/CI kanıtı bekleniyor. `docs/AI_VIDEO_HERO_PROMPT.md` ayrı medya arama yönergesidir; sahne-medya semantik uygunluğu hâlâ açık.
 - Cleanup sırasında `daily_shorts.yml` geçici durduruldu; run #96 iptal edildi ve workflow tekrar etkinleştirildi. Studio 25 taslak/0 başka kayıt seçimine rağmen kimlik doğrulaması istedi; hiçbiri silinmedi.
 - Run #97 (`41948576364`): build-and-upload başarılı, `7DULxjp6PsQ` Studio PUBLIC doğrulandı ve girişsiz player OK. Cron-kick yeni 01:45 UTC zincirini tetiklerken run geneli cancelled.
 - Canlı videoda örneklenen sahneler (uçak, yan dönmüş kıyı, alakasız yazılı grafik) Zanzibar savaşına uymuyor; kalite başarısız. `WKYwF96hQzg` aynı başlığın başka PUBLIC videosu. 13.4 tekrar koruması henüz yok.

@@ -1,6 +1,6 @@
 # Gemini Tabanlı Otonom Shorts Üretimi — Mimari ve Uygulama Planı
 
-> Durum: **Plan + Faz 2 Gemini Web metin dry-run altyapısı eklendi; gerçek cookie oturumu testi henüz çalıştırılmadı. Üretim entegrasyonu kapalı.**  
+> Durum (2026-11-18): **Gemini Web cookie-only route `main.py` → `content_engine.py` içine bağlandı; storyboard ve kaynak/fact-check metadata `script.json` v2'ye taşınıyor. Gerçek cookie/CI/üretim koşusu yapılmadı; semantik doğrulama, Actions koşuları arası konu-ledger ve tam sahne medya QC açık.**
 > Kapsam: Mevcut YouTube Shorts otomasyonunu Gemini destekli, sahne bazlı ve kalite kapılı içerik üretimine geçirmek.  
 > Kural: Bu belge planı tanımlar. Bir iş ancak kod, test ve gerekli doğrulama kanıtı varsa tamamlandı sayılır.
 
@@ -14,9 +14,9 @@ Başarı yalnızca MP4 üretmek değildir. İçerik yeni ve doğrulanabilir olma
 
 | Dosya | Şu anki rol | Doğrulanan bulgu |
 |---|---|---|
-| main.py | Ana orkestrasyon | content_engine.py şu anda --force-fallback argümanıyla çağrılıyor; ana akışta LLM üretimi bu nedenle atlanıyor. |
+| main.py | Ana orkestrasyon | `content_engine.py --gemini-web-only` çağrılıyor; Gemini Web taslağı cookie/source/schema kontrollerinden geçerse kullanılıyor, hata durumunda mevcut fallback devrede. Canlı cookie koşusu doğrulanmadı. |
 | content_engine.py | Konu/senaryo, seslendirme ve script.json | Hazır senaryo havuzu, LLM prompt/sağlayıcı yolları ve visual_keywords alanı var. |
-| src/media_processing/media_processor.py | Medya bulma, altyazı ve FFmpeg montajı | script.json içindeki genel visual_keywords listesini okuyor; storyboard henüz ana medya sözleşmesi değil. |
+| src/media_processing/media_processor.py | Medya bulma, altyazı ve FFmpeg montajı | `storyboard[].visual_query` varsa bunları aramada tercih ediyor; scene duration alignment, alternatives/retries ve media licensing QC henüz tamam değil. |
 | video_fetcher.js | Tarayıcı tabanlı stok medya araması | Pixabay/Pexels arama akışında kullanılıyor. |
 | youtube_studio_uploader.js | YouTube Studio yükleme | Mevcut yükleyici korunmalı; yayın sonucu bağımsız doğrulanmalı. |
 | tests/ | Birim/entegrasyon testleri | Medya ve fallback testleri var; Gemini JSON sözleşmesi ve sahne eşleştirme testleri eklenmeli. |
@@ -47,6 +47,8 @@ Başarı yalnızca MP4 üretmek değildir. İçerik yeni ve doğrulanabilir olma
 - Faz 2, önce aynı cookie oturumuyla metin/JSON üretiminin mümkün olup olmadığını yayın yapmayan testte doğrular. Çalışmazsa ücretli API'ye otomatik geçiş yapılmaz; kullanıcıya seçenek sunulur.
 - 17 Kasım 2026: `scripts/gemini_web_text_probe.py` ve `free_gemini_text_probe.yml` cookie tabanlı, yalnızca taslak JSON üreten manuel teste çevrildi. `GEMINI_API_KEY` bu testte kullanılmaz. Çıktı şema/kelime/görsel arama alanı kontrollerinden geçer; yayın ve TTS adımı yoktur. `gemini_webapi==2.1.1` sürümü sabitlendi. Cookie parser uyumluluk düzeltmesi CI run `44171572008` üzerinde 131 test + 8 alt test ile başarılı; gerçek cookie metin üretim testi henüz çalıştırılmadı.
 - `GEMINI_API_KEY` mevcut secret olarak kullanıcı kararıyla olduğu gibi bırakılır; yeni metin/storyboard tasarımı bu anahtara bağımlı olmayacaktır.
+- 18 Kasım 2026: `main.py` artık `--gemini-web-only` ile ana içerik motorunu çağırır; `daily_shorts.yml` `GEMINI_COOK` değerini process env'e verir. Hatalı/eksik cookie veya draft sorunu halinde mevcut fallback kullanılır; Groq/Gemini text API'ye geçiş yoktur. JSON v2'ye `sources`, `fact_check`, `storyboard` ve `prompt_version` aktarılır; media processor sahne `visual_query` alanını tercih eder.
+- Kullanıcı, kaynak alıntısı birebir eşleşmiş fakat bağımsız semantik doğrulaması olmayan `fact_check.status=partial` taslakların mevcut PUBLIC hattında devam etmesine açıkça izin verdi. Bu, iddianın anlamca doğrulandığı iddiası değildir. Canlı cookie, HTTP araştırma, CI ve PUBLIC sonucu bu kod değişikliğiyle doğrulanmadı.
 - **Mevcut legacy istisna:** `daily_shorts.yml` `GEMINI_API_KEY` ve `GEMINI_FREE_VISION_ENABLED` değerlerini `generate_fallback_thumbnail.py` / `gemini_frame_selector.py` yoluna aktarır. Bu, yalnız mevcut kareleri analiz eden ayrı bir API yoludur; repository variable'ın anlık değeri bu bağlantıyla doğrulanamadı. Kullanıcı onayı olmadan mevcut üretim davranışı değiştirilmez.
 - Ücretli API, ücretli görsel/video üretimi veya billing açılması yeni mimarinin parçası değildir. Cookie oturumu bozulursa sistem ücretli API'ye sessizce düşmez; güvenli yedek veya durdurma uygulanır.
 

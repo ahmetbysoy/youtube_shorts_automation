@@ -53,6 +53,9 @@ output/*
 analytics_feedback.json
 prune_state.json
 prune_report.json
+.gemini_topic_ledger.json
+.gemini_topic_ledger.json.lock
+text_probe_result.json
 
 # Etkileşimli giriş oturum yakalama çıktıları (çerez/HAR içerir, asla commit etme)
 session_capture/
