@@ -26,9 +26,16 @@ class TestGeminiWebTextProbe(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "geçerli JSON"):
             parse_cookie_payload("{not-json")
 
-    def test_cookie_payload_rejects_missing_required_cookie(self):
+    def test_cookie_payload_rejects_missing_session_cookie(self):
+        with self.assertRaisesRegex(ValueError, "__Secure-1PSID"):
+            parse_cookie_payload(json.dumps({"__Secure-1PSIDTS": "refresh-only"}))
+
+    def test_cookie_payload_rejects_non_string_refresh_cookie(self):
         with self.assertRaisesRegex(ValueError, "__Secure-1PSIDTS"):
-            parse_cookie_payload(json.dumps({"__Secure-1PSID": "only-one"}))
+            parse_cookie_payload(json.dumps({
+                "__Secure-1PSID": "session-cookie",
+                "__Secure-1PSIDTS": 123,
+            }))
 
     def test_model_text_requires_four_specific_visual_queries(self):
         raw = {
