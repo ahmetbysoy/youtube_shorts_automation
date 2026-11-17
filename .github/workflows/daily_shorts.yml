@@ -26,6 +26,14 @@ on:
         required: false
         default: '0'
         type: string
+      skip_thumbnail:
+        description: "1 = YouTube Studio kapak secimini atla; varsayilan 0 ile gomulu ilk kare kapak olarak secilir."
+        required: false
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '1'
 
 # FAZ 12: Tıkanan/eski job'ı iptal et, en günceli çalıştır (kuyruk tıkanmasın).
 # NOT: zincir (cron-kick) tetiklemesi POST'u tamamladıktan SONRA iptal olur,
@@ -167,7 +175,7 @@ jobs:
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
           FORCE_LOCAL_THUMBNAIL: ${{ inputs.force_local_thumbnail || '0' }}
-          SKIP_THUMBNAIL: ${{ vars.SKIP_THUMBNAIL || '0' }}
+          SKIP_THUMBNAIL: ${{ inputs.skip_thumbnail || '0' }}
           # frame (varsayilan): baslik-odakli kapak ilk 1.0 sn boyunca videonun ilk karesinde gomuludur.
           # Studio'da videodan sec akisi, gomulu kapakla eslesen kareyi secer; ayri dosya yuklenmez.
           THUMBNAIL_MODE: ${{ vars.THUMBNAIL_MODE || 'frame' }}
