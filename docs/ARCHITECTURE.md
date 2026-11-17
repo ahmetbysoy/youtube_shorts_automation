@@ -15,7 +15,7 @@ Bu doküman, `youtube_shorts_automation` boru hattındaki modüllerin iç yapıs
 > - İçerik metin üretimi bu kipte Groq/Gemini API key endpoint'lerine düşmez. `fact_check.status=partial` birebir alıntı eşleşmesi olduğunu, bağımsız semantik entailment kontrolü olmadığını ifade eder; kullanıcı bu statüyle mevcut PUBLIC hattında devam edilmesine onay verdi.
 > - Kapak gömme adımı mevcut davranışta best-effort'tur; hata yayını tek başına durdurmaz. Bu davranış Faz 0'da değiştirilmemiştir.
 > - Uploader, Publish tıklamasını tek başına başarı saymaz; video ID'sini Studio Shorts listesindeki PUBLIC durumuyla doğrular.
-> - Yerel 18 Kasım doğrulaması: `pytest` seçili suite 140 passed / 3 skipped / 12 subtests; ilgili Gemini/media suite ayrıca çalıştırıldı. Gerçek cookie, canlı Wikipedia HTTP, GitHub Actions veya video yayın testi bu değişiklikte çalıştırılmadı.
+> - Yerel 18 Kasım doğrulaması: `pytest` seçili suite 140 passed / 3 skipped / 12 subtests; npm 7 passed. Push sonrası yayın yapmayan Ubuntu 26 CI run [44200069203](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44200069203) **in_progress**. Gerçek cookie, Wikipedia HTTP veya video yayın testi yapılmadı.
 > - `hourly_pruner.yml` gerçek video silebilir; `draft_publisher.yml` taslakları PUBLIC yapabilir. Test amacıyla bu workflow'lar tetiklenmemelidir.
 > - GitHub connector bu oturumda GitHub Secrets API uçlarını desteklemiyor. Secret isimleri/değerleri bu bağlantıdan doğrulanmış değildir; hiçbir secret değeri okunmamalıdır.
 

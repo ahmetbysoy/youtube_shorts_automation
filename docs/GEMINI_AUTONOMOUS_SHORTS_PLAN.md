@@ -1,6 +1,6 @@
 # Gemini Tabanlı Otonom Shorts Üretimi — Mimari ve Uygulama Planı
 
-> Durum (2026-11-18): **Gemini Web cookie-only route `main.py` → `content_engine.py` içine bağlandı; storyboard ve kaynak/fact-check metadata `script.json` v2'ye taşınıyor. Gerçek cookie/CI/üretim koşusu yapılmadı; semantik doğrulama, Actions koşuları arası konu-ledger ve tam sahne medya QC açık.**
+> Durum (2026-11-18): **Gemini Web cookie-only route `main.py` → `content_engine.py` içine bağlandı; storyboard ve kaynak/fact-check metadata `script.json` v2'ye taşınıyor. Push sonrası yayın yapmayan Ubuntu 26 doğrulama run'ı 44200069203 in progress; gerçek cookie/üretim koşusu yapılmadı. Semantik doğrulama, Actions koşuları arası konu-ledger ve tam sahne medya QC açık.**
 > Kapsam: Mevcut YouTube Shorts otomasyonunu Gemini destekli, sahne bazlı ve kalite kapılı içerik üretimine geçirmek.  
 > Kural: Bu belge planı tanımlar. Bir iş ancak kod, test ve gerekli doğrulama kanıtı varsa tamamlandı sayılır.
 
