@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-11-16T14:39:49.288Z",
+  "scraped_at": "2026-11-17T15:28:01.413Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 15,
   "winning_topic": "Tarih",
@@ -18,9 +18,9 @@
     {
       "niche": "Bilim",
       "video_count": 8,
-      "avg_views": 1059.38,
+      "avg_views": 1059.75,
       "avg_view_duration_sec": 0,
-      "avg_score": 1059.38
+      "avg_score": 1059.75
     }
   ],
   "recent_videos": [
@@ -84,9 +84,9 @@
       "videoId": "zDYtDQ0gt_Q",
       "title": "İnsan Vücudunda Bakteri Hücreden Fazladır! #Shorts",
       "niche": "Bilim",
-      "views": 1095,
+      "views": 1098,
       "avgViewDurationSec": 0,
-      "compositeScore": 1095
+      "compositeScore": 1098
     },
     {
       "videoId": "SXZd8a12n-Y",
