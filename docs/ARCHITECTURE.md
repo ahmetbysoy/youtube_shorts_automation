@@ -7,7 +7,27 @@ Bu doküman, `youtube_shorts_automation` boru hattındaki modüllerin iç yapıs
 
 ---
 
-## 1. Uçtan Uca Boru Hattı (Pipeline) Akışı
+> **Güncel doğrulanmış durum — 2026-11-17:** Bu bölüm, eski faz anlatılarından önce geçerli olan operasyonel özettir. Ayrıntılı kanıt: [Faz 0 baseline](evidence/FAZ0_BASELINE_2026-11-17.md) ve [canlı TODO](GEMINI_AUTONOMOUS_SHORTS_TODO.md).
+>
+> - Aktif yayın workflow'u `.github/workflows/daily_shorts.yml`; kanal job'ları `max-parallel: 1` ile sıralıdır. Eski 3'lü paralel matris diyagramı güncel değildir.
+> - `main.py` sırası: `content_engine.py --force-fallback` → `src/media_processing/media_processor.py` → `scripts/embed_cover_frame.py` → `youtube_studio_uploader.js`. Ana workflow'da normal LLM/Gemini senaryo üretimi bu bayrak nedeniyle etkin değildir.
+> - Kapak gömme adımı mevcut davranışta best-effort'tur; hata yayını tek başına durdurmaz. Bu davranış Faz 0'da değiştirilmemiştir.
+> - Uploader, Publish tıklamasını tek başına başarı saymaz; video ID'sini Studio Shorts listesindeki PUBLIC durumuyla doğrular.
+> - `ubuntu_26_test.yml` test/ortam doğrulamasıdır; YouTube yayın adımı içermez. 108 testlik önceki baseline, eski HEAD'de alınmıştır; yeni thumbnail yardımcı testleri için güncel push koşusu ayrıca izlenmektedir.
+> - `hourly_pruner.yml` gerçek video silebilir; `draft_publisher.yml` taslakları PUBLIC yapabilir. Test amacıyla bu workflow'lar tetiklenmemelidir.
+> - GitHub connector bu oturumda GitHub Secrets API uçlarını desteklemiyor. Secret isimleri/değerleri bu bağlantıdan doğrulanmış değildir; hiçbir secret değeri okunmamalıdır.
+
+```text
+ daily_shorts.yml
+   └─ production_gate.sh
+       └─ max-parallel: 1 → python main.py --channel_id N
+           ├─ content_engine.py --force-fallback
+           ├─ media_processor.py
+           ├─ embed_cover_frame.py (best-effort)
+           └─ youtube_studio_uploader.js → Studio'da aynı video ID + PUBLIC doğrulaması
+```
+
+## 1. Tarihsel Uçtan Uca Boru Hattı (Pipeline) Akışı
 
 ```text
 [GitHub Actions Cron (15:00 UTC) / workflow_dispatch]
