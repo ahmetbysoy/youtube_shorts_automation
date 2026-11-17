@@ -96,6 +96,9 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run || '0' }}
           DEBUG: ${{ inputs.debug || '0' }}
           DEBUG_SCREENSHOTS: ${{ inputs.debug || '0' }}
+          # HuggingFace Inference token (FLUX.1-schnell ile kaliteli, logosuz,
+          # fotogercek kapak uretimi icin). Token yoksa Pollinations fallback'e dus.
+          HF_TOKEN: ${{ secrets.HF_TOKEN || '' }}
           # Cookie env'lerini node adimina da gec (script once env'e bakar,
           # yoksa dosyaya duser; boylece iki yol da garanti altinda).
           STORAGE_STATE_JSON_1: ${{ secrets.STORAGE_STATE_JSON_1 }}

@@ -3,6 +3,7 @@
 // Backfill custom Shorts thumbnails. Only edits thumbnail; title/description/visibility stay untouched.
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const { chromium } = require('playwright');
 
 const CHANNEL_ID = process.env.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ';
@@ -106,40 +107,149 @@ function loadState() {
 
 function buildPrompt(title) {
   const clean = String(title || 'YouTube Shorts').replace(/#Shorts/ig, '').trim().slice(0, 180);
-  // Turkce prompt: yuksek etkilesimli YouTube Shorts kapagi.
-  // Ingilizce anahtar kelimeler image modelin daha iyi anladigi fotogercekcilik terimleri.
+  // PROMPT STRATEJISI:
+  // - Tamamen INGILIZCE (karisik dil modeli bozuyor).
+  // - KONUYU EN BASINDA VE NET BELIRT: promptun ilk cumlesi konu olsun.
+  // - Negative prompt'u cok netlestir (anime/cartoon/waifu/illustration/cizgi).
+  // - "Person" anahtar kelimesi YOK: konu insan disinda bir seyse hic insan uretmesin.
+  // - nologo=true yeterli olmuyorsa, image sonrasi son 30px'i crop'layacagiz.
   return (
-    'YouTube Shorts thumbnail, vertical 9:16 aspect ratio (1080x1920). ' +
-    'Konu: "' + clean + '". ' +
-    'Bu bir kisa video kapak fotografi. Kapagi goren izleyici merak edip tiklamali, ' +
-    'etkilesim ve izlenme rekorlari kirmali, profesyonel YouTube thumbnail tasarimi olsun. ' +
-    'Composition rules: one single dominant central subject filling 60-70% of the frame, ' +
-    'extreme close-up on face/object, subject looks directly at camera. ' +
-    'If the topic is about a person or living being, show a dramatic SHOCKED or wide-eyed reaction face ' +
-    'with mouth open, eyebrows raised — that viral YouTube reaction look. ' +
-    'Lighting: hyper-dramatic cinematic key light, strong rim light, deep shadows, lens flare if appropriate, ' +
-    'high contrast chiaroscuro, warm vs cold color clash. ' +
-    'Color: ultra-saturated, punchy, neon accents, vivid red/yellow highlight colors that pop in the feed. ' +
-    'Background: moody cinematic background with heavy bokeh blur, slightly desaturated so the subject explodes forward. ' +
-    'Emotion: jaw-dropping, mind-blowing, "you won\'t believe this" energy, intense curiosity gap. ' +
-    'Accuracy: the image must accurately represent the title — no invented objects, people, or facts. ' +
-    'Quality: ultra-realistic photorealistic 8K, sharp focus on the main subject, shallow depth of field, ' +
-    'cinematic color grading, shot on Sony A7IV with 85mm f/1.4 lens. ' +
-    'STRICT FORBIDDEN: any text, letters, words, numbers, captions, handwriting, logos, watermarks, ' +
-    'borders, frames, arrows, red circles, emoji, collage, split screen, extra limbs, distorted hands, deformed faces, AI artifacts.'
+    'PHOTOREALISTIC YouTube Short thumbnail, 1080x1920 vertical 9:16, cinematic. ' +
+    'THE SUBJECT OF THIS THUMBNAIL IS: ' + clean + '. ' +
+    'Show this subject dramatically, as the single dominant central element in the frame. ' +
+    'The image is for a YouTube science/education Short — it must look like a real photograph, ' +
+    'NOT an illustration or drawing. ' +
+    'If the topic is about a non-human subject (space, sun, black hole, ocean, ant colony, physics, ' +
+    'nature, technology), show ONLY that subject — DO NOT ADD ANY PEOPLE, PERSON, FACE, GIRL, HUMAN, ' +
+    'or anime character. No women, no portraits, no faces unless the title is specifically about a person. ' +
+    'Composition: extreme dramatic close-up of the subject itself, subject fills 70% of the frame, ' +
+    'centered, looking powerful and mind-blowing. ' +
+    'Lighting: dramatic cinematic lighting, strong rim light, deep shadows, high contrast, ' +
+    'volumetric light, light rays if appropriate. ' +
+    'Colors: ultra-vivid, saturated, punchy — red/orange/gold highlights pop against dark background. ' +
+    'Background: dark cinematic deep-space or atmospheric bokeh, moody, desaturated, shallow depth of field. ' +
+    'Mood: epic, awe-inspiring, jaw-dropping, "you won\'t believe this exists", high curiosity. ' +
+    'Photo quality: hyperrealistic, photorealistic, ultra-detailed, 8K photo, National Geographic photography, ' +
+    'shot on Sony A7IV 85mm f/1.4, tack sharp focus on the subject, cinematic color grading. ' +
+    'STYLE LOCK: photorealism only, no illustration, no painting, no drawing, no cartoon, no anime, ' +
+    'no manga, no 3D render, no CGI look, no digital art, no waifu, no girls, no k-pop, no dolls, no AI art style. ' +
+    'NEGATIVE: no text, no letters, no numbers, no words, no captions, no writing, no logo, no watermark, ' +
+    'no pollinations, no borders, no frames, no arrows, no red circles, no emoji, no collage, no split screen, ' +
+    'no extra limbs, no deformed anatomy, no ai artifacts, no fake watermark text.'
   );
 }
 
-// Pollinations model fallback sirasi: once ucretsiz hizli modellerle baslar,
-// flux paralidaysa 402 donunce diger modele gecer. Hicbirini belirtmezsen
-// 'sana' modeli kullanilir (ucretsiz, hizli, kaliteli).
-const IMAGE_MODELS = (process.env.IMAGE_MODELS || 'sana,flux,turbo').split(',').map(s => s.trim()).filter(Boolean);
-// Rate-limit/402 halinde modeller arasi bekleme (ms)
-const MODEL_SWITCH_DELAY_MS = Math.max(3000, Number(process.env.MODEL_SWITCH_DELAY_MS || 8000));
+// KAPAK URETIM STRATEJISI
+// 1) HF_TOKEN varsa once HuggingFace Inference uzerinden FLUX.1-schnell
+//    (gercek fotogercek, 1024px, hizli, logo yok).
+// 2) HF yoksa/kalirsa Pollinations fallback (sana modeli).
+//
+// HF provider:
+const HF_TOKEN = process.env.HF_TOKEN || '';
+const HF_MODEL = process.env.HF_IMAGE_MODEL || 'black-forest-labs/FLUX.1-schnell';
+// HF goruntusu dogasi geregi 1024x1024 veya 1024x576/576x1024 — 9:16 icin
+// 576x1024 alip 1080x1920'e upscale + crop yap.
+const HF_WIDTH = 576;
+const HF_HEIGHT = 1024;
+
+// Pollinations model fallback — son care olarak sana.
+const IMAGE_MODELS = (process.env.IMAGE_MODELS || 'sana,sana').split(',').map(s => s.trim()).filter(Boolean);
+// Rate-limit/402 halinde model denemeleri arasi bekleme (ms)
+const MODEL_SWITCH_DELAY_MS = Math.max(3000, Number(process.env.MODEL_SWITCH_DELAY_MS || 12000));
 // Ayni modelde denemeler arasi bekleme
-const ATTEMPT_DELAY_MS = Math.max(3000, Number(process.env.ATTEMPT_DELAY_MS || 8000));
-// Rate limit sonrasi global cooldown (ms) — ard arda 402 gelirse uzun bekle
-const GLOBAL_COOLDOWN_MS = Math.max(5000, Number(process.env.GLOBAL_COOLDOWN_MS || 30000));
+const ATTEMPT_DELAY_MS = Math.max(3000, Number(process.env.ATTEMPT_DELAY_MS || 12000));
+// Rate limit sonrasi global cooldown (ms)
+const GLOBAL_COOLDOWN_MS = Math.max(5000, Number(process.env.GLOBAL_COOLDOWN_MS || 20000));
+
+async function postProcessImage(bytes, outPath, source) {
+  // 1) Gerekirse 9:16 (1080x1920) olacak sekilde resize+extend: hedef oran 9:16.
+  // 2) JPEG kalitesi 92.
+  const TARGET_W = 1080;
+  const TARGET_H = 1920;
+  const LOGO_CROP = source === 'pollinations' ? 50 : 0;
+  try {
+    let pipeline = sharp(bytes);
+    let meta = await pipeline.metadata();
+    if (!meta.width || !meta.height) throw new Error('metadata okunamadi');
+
+    // Pollinations logosu icin alt seridi kirp
+    if (LOGO_CROP > 0 && meta.height > 200) {
+      pipeline = pipeline.extract({ left: 0, top: 0, width: meta.width, height: meta.height - LOGO_CROP });
+      meta = await pipeline.metadata();
+    }
+
+    // Hedef 9:16 olacak sekilde cover (kapsayici) resize + ortala
+    pipeline = pipeline.resize({
+      width: TARGET_W,
+      height: TARGET_H,
+      fit: 'cover',
+      position: 'centre',
+    }).jpeg({ quality: 92, mozjpeg: true });
+
+    const buf = await pipeline.toBuffer();
+    fs.writeFileSync(outPath, buf);
+    const finalMeta = await sharp(buf).metadata();
+    return { width: finalMeta.width, height: finalMeta.height, size: buf.length };
+  } catch (e) {
+    // Hata olursa ham hali yaz
+    log('    postProcess hatasi (' + source + '), ham yaziliyor: ' + e.message);
+    fs.writeFileSync(outPath, bytes);
+    return null;
+  }
+}
+
+async function fetchHuggingFace(prompt, outPath) {
+  if (!HF_TOKEN) throw new Error('HF_TOKEN yok');
+  const url = 'https://api-inference.huggingface.co/models/' + HF_MODEL;
+  const seed = Math.floor(Math.random() * 1e9);
+  log('  → HF ' + HF_MODEL + ' seed=' + seed + ' (' + HF_WIDTH + 'x' + HF_HEIGHT + ')');
+  const t0 = Date.now();
+  const body = {
+    inputs: prompt,
+    parameters: {
+      width: HF_WIDTH,
+      height: HF_HEIGHT,
+      num_inference_steps: 4,
+      guidance_scale: 3.5,
+      seed,
+    },
+  };
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + HF_TOKEN,
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0',
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(120000),
+  });
+  const dt = Date.now() - t0;
+  log('    HF HTTP ' + response.status + ' (' + dt + 'ms)');
+  if (response.status === 503 || response.status === 429) {
+    // HF bazen model yukluyor; wait icin Retry-After veya x-estimated-time header'i verebilir.
+    const retry = Number(response.headers.get('retry-after') || 20);
+    const err = new Error('RATE_LIMITED');
+    err.status = response.status;
+    err.retryAfter = retry;
+    // Model loading ise yaniti JSON olup "estimated_time" icerebilir.
+    try { const j = await response.clone().json(); if (j.estimated_time) err.retryAfter = Math.min(60, Math.ceil(Number(j.estimated_time))); } catch (_) {}
+    throw err;
+  }
+  if (response.status === 400 || response.status === 500) {
+    const errText = (await response.text()).slice(0, 300);
+    throw new Error('HF HTTP ' + response.status + ': ' + errText);
+  }
+  if (!response.ok) throw new Error('HF HTTP ' + response.status);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  const type = response.headers.get('content-type') || '';
+  if (!type.includes('image') || bytes.length < 20000) {
+    throw new Error('HF gecersiz gorsel (type=' + type + ', ' + bytes.length + ' byte)');
+  }
+  const info = await postProcessImage(bytes, outPath, 'huggingface');
+  log('    ✅ HF gorsel hazir (' + (info ? info.width + 'x' + info.height + ' ' + info.size + 'B' : 'ham yazildi') + ')');
+  return { provider: 'huggingface', model: HF_MODEL, ms: dt, size: info ? info.size : bytes.length };
+}
 
 async function fetchPollinations(model, prompt, seed, outPath) {
   const modelParam = model ? '&model=' + encodeURIComponent(model) : '';
@@ -171,43 +281,90 @@ async function fetchPollinations(model, prompt, seed, outPath) {
   if (!type.includes('image') || bytes.length < 20000) {
     throw new Error('gecersiz gorsel (type=' + type + ', ' + bytes.length + ' byte)');
   }
+  // Pollinations nologo=true parametresine ragmen sag alta kendi logosu koyuyor.
+  // Kesin cozum: alt kisimdaki ~40px'lik logo seridini crop'la ve JPEG olarak yeniden kodla.
+  const LOGO_STRIP_PX = 45;
+  try {
+    const meta = await sharp(bytes).metadata();
+    if (meta.width && meta.height && meta.height >= 1800) {
+      const cropH = meta.height - LOGO_STRIP_PX;
+      const cropped = await sharp(bytes)
+        .extract({ left: 0, top: 0, width: meta.width, height: cropH })
+        .jpeg({ quality: 92, mozjpeg: true })
+        .toBuffer();
+      fs.writeFileSync(outPath, cropped);
+      log('    logo crop: ' + meta.width + 'x' + meta.height + ' -> ' + meta.width + 'x' + cropH + ' (' + cropped.length + ' byte)');
+      return { model: response.headers.get('x-model-used') || model, size: cropped.length, ms: dt, cropped: true };
+    }
+  } catch (cropErr) {
+    log('    crop hatasi, ham yaziliyor: ' + cropErr.message);
+  }
   fs.writeFileSync(outPath, bytes);
-  return { model: response.headers.get('x-model-used') || model, size: bytes.length, ms: dt };
+  return { model: response.headers.get('x-model-used') || model, size: bytes.length, ms: dt, cropped: false };
 }
 
 async function makeCover(title, outPath) {
-  const prompt = encodeURIComponent(buildPrompt(title));
+  // NOT: buildPrompt sonucu saf ingilizce string; encodeURIComponent gerekiyor ama
+  // HF tarafinda body JSON'da gonderirken encode yapmiyoruz. Bu sebeple iki farkli
+  // form tutuyoruz: promptRaw (HF icin), promptEnc (Pollinations URL icin).
+  const promptRaw = buildPrompt(title);
+  const promptEnc = encodeURIComponent(promptRaw);
   const lastErrors = [];
   let rateLimitHits = 0;
-  for (let mIdx = 0; mIdx < IMAGE_MODELS.length; mIdx++) {
-    const model = IMAGE_MODELS[mIdx];
-    const seed = Math.floor(Math.random() * 1e9);
-    for (let attempt = 1; attempt <= 2; attempt++) {
+
+  // 1) HuggingFace ile dene (token varsa)
+  if (HF_TOKEN) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const res = await fetchPollinations(model, prompt, seed, outPath);
-        log('✅ Kapak hazir: model=' + res.model + ' ' + res.size + ' byte (' + res.ms + 'ms) -> ' + path.basename(outPath));
+        const res = await fetchHuggingFace(promptRaw, outPath);
+        log('✅ Kapak hazir (HF/' + res.model + '): ' + res.size + ' byte (' + res.ms + 'ms) -> ' + path.basename(outPath));
         return res;
       } catch (e) {
         if (e.message === 'RATE_LIMITED') {
           rateLimitHits++;
           const wait = (e.retryAfter ? e.retryAfter * 1000 : 0) || GLOBAL_COOLDOWN_MS;
-          log('  ⏳ Rate limit hit (HTTP ' + e.status + '), ' + (wait/1000) + 'sn bekleniyor...');
+          log('  ⏳ HF rate/loading (HTTP ' + e.status + '), ' + (wait/1000) + 'sn bekleniyor... (deneme ' + attempt + '/3)');
           await sleep(wait);
-          // Bu modeli daha da deneme — sonraki modele gec
+          continue;
+        }
+        lastErrors.push('hf/' + attempt + ': ' + e.message);
+        log('  ✗ HF ' + e.message);
+        if (attempt < 3) await sleep(ATTEMPT_DELAY_MS);
+      }
+    }
+    log('  ⚠ HF tum denemeler basarisiz, Pollinations\'a geciliyor...');
+    await sleep(MODEL_SWITCH_DELAY_MS);
+  }
+
+  // 2) Pollinations fallback
+  for (let mIdx = 0; mIdx < IMAGE_MODELS.length; mIdx++) {
+    const model = IMAGE_MODELS[mIdx];
+    const seed = Math.floor(Math.random() * 1e9);
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const res = await fetchPollinations(model, promptEnc, seed, outPath);
+        log('✅ Kapak hazir (pol/' + res.model + '): ' + res.size + ' byte (' + res.ms + 'ms) -> ' + path.basename(outPath));
+        return { ...res, provider: 'pollinations' };
+      } catch (e) {
+        if (e.message === 'RATE_LIMITED') {
+          rateLimitHits++;
+          const wait = (e.retryAfter ? e.retryAfter * 1000 : 0) || GLOBAL_COOLDOWN_MS;
+          log('  ⏳ Pollinations rate (HTTP ' + e.status + '), ' + (wait/1000) + 'sn bekleniyor...');
+          await sleep(wait);
           break;
         }
-        lastErrors.push(model + '/' + attempt + ': ' + e.message);
+        lastErrors.push('pol/' + model + '/' + attempt + ': ' + e.message);
         log('  ✗ ' + e.message);
         if (attempt < 2) await sleep(ATTEMPT_DELAY_MS);
       }
     }
     if (mIdx < IMAGE_MODELS.length - 1) await sleep(MODEL_SWITCH_DELAY_MS);
   }
-  // Butun modeller tukendiyse son bir sans: model parametresi olmadan (varsayilan) dene.
+  // Son sans: Pollinations modelsiz
   try {
-    log('  → son sans: modelsiz (varsayilan) deneniyor...');
-    const res = await fetchPollinations('', prompt, Math.floor(Math.random()*1e9), outPath);
-    log('✅ Kapak hazir (fallback default model): ' + res.size + ' byte (' + res.ms + 'ms)');
+    log('  → son sans: Pollinations default');
+    const res = await fetchPollinations('', promptEnc, Math.floor(Math.random()*1e9), outPath);
+    log('✅ Kapak hazir (pol/default): ' + res.size + ' byte (' + res.ms + 'ms)');
     return res;
   } catch (e) {
     lastErrors.push('default: ' + e.message);
