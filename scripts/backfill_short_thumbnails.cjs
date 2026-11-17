@@ -117,55 +117,9 @@ const GEMINI_RETRIES = Math.max(1, Number(process.env.GEMINI_RETRIES || 2));
 const GEMINI_RETRY_DELAY_MS = Math.max(8000, Number(process.env.GEMINI_RETRY_DELAY_MS || 15000));
 
 async function postProcessImage(bytes, outPath, source) {
-  // YouTube Shorts thumbnail SAFE ZONE (2026 dogrulanmis olculer):
-  //   Canvas 1080x1920 9:16
-  //   UST 380px, ALT 380px, SAG 120px, SOL 60px bos birak (YouTube UI buralari kapar)
-  //   Guvenli alan: 900x1160 (sol 60, sag 1080-120=960; ust 380, alt 1540)
-  //
-  // Strateji: Resmi genislige gore scale et (w=900), sonra 1080x1920 kanvasa
-  // tam guvenli alana (top=380, left=60) yerlestir. Disarisi siyah.
-  // Hic crop/cover YAPMA; resim 1160px'ten uzunsa alttan kirp (ust kisim korunur).
-  const CANVAS_W = 1080;
-  const CANVAS_H = 1920;
-  const SAFE_TOP = 380;
-  const SAFE_BOTTOM = 380;
-  const SAFE_LEFT = 60;
-  const SAFE_RIGHT = 120;
-  const SAFE_W = CANVAS_W - SAFE_LEFT - SAFE_RIGHT;   // 900
-  const SAFE_H = CANVAS_H - SAFE_TOP - SAFE_BOTTOM;   // 1160
-  const BG = { r: 8, g: 8, b: 12 };
-
-  try {
-    const img = sharp(bytes);
-    const meta = await img.metadata();
-    if (!meta.width || !meta.height) throw new Error('metadata okunamadi');
-
-    // Resmi SAFE_W (900px) genislige scale et, yukseklik oranla otomatik.
-    const scaled = await img.resize({ width: SAFE_W, height: null, fit: 'inside' }).toBuffer();
-    const sm = await sharp(scaled).metadata();
-    let inner = scaled;
-    if (sm.height > SAFE_H) {
-      // Resim uzun: cover ile "north" (ust) tarafli kirp ki yazi/alintilar korunup
-      // alttan fazla kısım atilsın.
-      inner = await sharp(scaled)
-        .resize({ width: SAFE_W, height: SAFE_H, fit: 'cover', position: 'north' })
-        .toBuffer();
-    }
-    const finalBuf = await sharp({
-      create: { width: CANVAS_W, height: CANVAS_H, channels: 3, background: BG },
-    })
-      .composite([{ input: inner, top: SAFE_TOP, left: SAFE_LEFT }])
-      .jpeg({ quality: 92, mozjpeg: true })
-      .toBuffer();
-
-    fs.writeFileSync(outPath, finalBuf);
-    const fm = await sharp(finalBuf).metadata();
-    return { width: fm.width, height: fm.height, size: finalBuf.length };
-  } catch (e) {
-    log('    postProcess hatasi (' + source + '), ham yaziliyor: ' + e.message);
-    fs.writeFileSync(outPath, bytes);
-    return null;
-  }
+  // Kullanici talimati: kapaga HIC mudahale etme, Gemini'nin verdigi gibi yaz.
+  fs.writeFileSync(outPath, bytes);
+  return null;
 }
 
 async function fetchHuggingFace(prompt, outPath) {
