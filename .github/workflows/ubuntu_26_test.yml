@@ -11,6 +11,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/daily_shorts.yml'
+      - '.github/workflows/ubuntu_26_test.yml'
       - 'youtube_studio_uploader.js'
       - 'scripts/embed_cover_frame.py'
       - 'content_engine.py'
