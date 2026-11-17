@@ -454,6 +454,7 @@ Bu çalışma mevcut üretim hattını Gemini tabanlı, sahne bazlı ve kalite k
 
 - **[Mimari ve ayrıntılı uygulama planı](docs/GEMINI_AUTONOMOUS_SHORTS_PLAN.md)** — mevcut kod akışı, hedef mimari, veri sözleşmesi, kalite kapıları, hata politikası, güvenlik ve fazların kabul kriterleri.
 - **[Canlı TODO / ilerleme listesi](docs/GEMINI_AUTONOMOUS_SHORTS_TODO.md)** — her fazın yapılacak işleri, tamamlanma koşulları ve kanıt kaydı.
+- **[Faz 0 başlangıç ve test baseline raporu](docs/evidence/FAZ0_BASELINE_2026-11-17.md)** — branch/commit, workflow güvenliği, gerçek üretim logu ve 108 testlik CI kanıtı.
 
 İlerleme kuralı: Her iş yalnız gerçek kod değişikliği, başarılı test ve gereken CI/Studio doğrulaması görüldüğünde tamamlandı işaretlenir. Ücretli API/görsel/video üretimi veya billing açılmaz; ücretsiz erişimi doğrulanmayan özellik etkinleştirilmez. Mevcut cron, kanal, pruner, PUBLIC yayın ve güvenlik davranışları başlangıç denetimi yapılmadan değiştirilmez.
 
