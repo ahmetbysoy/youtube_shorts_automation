@@ -181,3 +181,15 @@ Bu inceleme sırasında `main.py`, `content_engine.py`, medya motoru, uploader v
 
 - TODO güncelleme commit'i: `a348b1fdd5caded8063b0f4da17e1c0ca9787959`.
 - Faz 0 henüz kapatılmadı. Thumbnail test CI kanıtı tamamlandı. Secret metadata kısıtı hâlâ çözülmediğinden Faz 0 kabul kapısı açık kalmalı ve Faz 1'e geçilmemelidir.
+
+
+## 11. Kullanıcı tercihi ve Gemini cookie/API yollarının ayrılması
+
+- Kullanıcı mevcut Gemini cookie secret'ının sorunsuz çalıştığını, Gemini API kullanmak istemediğini belirtti; ardından mevcut secret'ların silinmeden olduğu gibi kalmasını seçti. Bu nedenle hiçbir secret değiştirilmedi, okunmadı veya silinmedi.
+- `backfill_short_thumbnails.yml` `secrets.GEMINI_COOK` değerini `jeton/gemini_cookies.json` dosyasına yazar. `scripts/gemini_cover.py` `GEMINI_COOKIES_JSON` veya `GEMINI_COOK` ortam değişkenini okur ve `gemini_webapi.GeminiClient` ile Gemini Web oturumu üzerinden kapak görseli üretir. Bu mevcut kullanım doğrulanmıştır.
+- Bu cookie yolunun metin/storyboard üretimini de desteklediği henüz doğrulanmamıştır; Faz 2'de yayın yapmayan dry-run ile test edilmelidir.
+- Ayrı olarak `daily_shorts.yml`, `GEMINI_API_KEY` ve `vars.GEMINI_FREE_VISION_ENABLED || '0'` değerlerini ana workflow ortamına aktarır. `scripts/generate_fallback_thumbnail.py`, etkinleştirme bayrağı 1 ise `scripts/gemini_frame_selector.py` çağırabilir; bu mod mevcut kareyi analiz etmek için Google Gemini API'ye istek gönderir, görsel üretmez.
+- Repository variable değerini bu bağlantı üzerinden doğrulamak mümkün olmadı. Bu nedenle günlük üretimde API kare analizinin fiilen açık olup olmadığı kesinleştirilmedi. Kullanıcı onayı olmadan bu mevcut üretim yoluna müdahale edilmeyecek.
+- Mimari plan ve TODO, yeni metin/storyboard üretimini Gemini Web cookie yoluna göre revize edildi; API key yeni üretim adaptörünün gereksinimi değildir. Legacy kare analiz yolu ayrı ve açık bir karar olarak tutulur.
+- Envanter dokümanı: [PHASE1_SCRIPT_JSON_INVENTORY.md](../PHASE1_SCRIPT_JSON_INVENTORY.md), commit `9f34ceae7cf7e0d9ebd02d084c8341ba80e1599a`.
+- Plan commit: `28815d94a3172c9b7ab495b28435587e122c1b41`; TODO commit: `8b9ef22bab9d0a2986b19ae6f9ec8aa76b72c57`.
