@@ -13,6 +13,8 @@ import sys
 import unittest
 from pathlib import Path
 
+from jsonschema import Draft202012Validator, FormatChecker
+
 # Fallback hattı gerçek kurulu bağımlılıklarla sınanır. Modül seviyesinde
 # sys.modules mock'u kullanmak diğer testlerin requests import'unu bozabilir.
 sys.path.insert(0, "/home/user/yts")
@@ -76,6 +78,11 @@ class TestFullPipelineFallback(unittest.TestCase):
 
         # 6. script.json içeriği (geçerli JSON, gerekli anahtarlar)
         script_json = json.loads(Path("script.json").read_text(encoding="utf-8"))
+        schema_path = Path("schemas/script.schema.json")
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
+        self.assertEqual(script_json["schema_version"], "2.0")
+        self.assertEqual(list(validator.iter_errors(script_json)), [])
         for key in [
             "title", "script_text", "topic", "description",
             "visual_keywords", "viral_hashtags", "thumbnail_prompt",
