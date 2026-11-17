@@ -95,7 +95,7 @@ async def generate_text_scenario(concept: str) -> tuple[dict[str, Any], list[str
     system_prompt, user_prompt = build_llm_prompts(concept, [], wiki_fact=fact)
     client = GeminiClient(cookies["__Secure-1PSID"], cookies["__Secure-1PSIDTS"])
     await client.init(timeout=30, auto_refresh=True)
-    response = await asyncio.wait_for(client.generate_content(system_prompt + "\\n\\n" + user_prompt), timeout=90)
+    response = await asyncio.wait_for(client.generate_content(system_prompt + "\n\n" + user_prompt), timeout=90)
 
     response_text = getattr(response, "text", None)
     if not isinstance(response_text, str) or not response_text.strip():
@@ -120,7 +120,7 @@ def main() -> int:
             raise ValueError("Güvenlik kontrolü: çıktı içinde cookie değeri tespit edildi.")
 
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(serialized + "\\n", encoding="utf-8")
+        args.output.write_text(serialized + "\n", encoding="utf-8")
     except Exception as exc:
         # İstisna metni bazı istemci sürümlerinde oturum verisi taşıyabilir.
         print(f"[HATA] Gemini Web metin testi başarısız: {type(exc).__name__}", file=sys.stderr)
