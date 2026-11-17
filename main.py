@@ -176,6 +176,19 @@ def main():
         write_status("error", args.channel_id, stage="media")
         sys.exit(1)
 
+    # 2.1 Adım: Medya/lisans güncellemelerinden sonra uploader'a gidecek son JSON'u tekrar doğrula.
+    post_media_schema_ok = run_step(
+        "FAZ 3.1: Medya Sonrası script.json JSON Schema Doğrulaması",
+        [sys.executable, str(BASE_DIR / "scripts" / "validate_script_json.py"),
+         "--input", str(BASE_DIR / "script.json")],
+        env_overrides=step_env,
+        timeout_seconds=60,
+    )
+    if not post_media_schema_ok:
+        logging.error("Medya sonrası script.json şema doğrulamasından geçemedi. Kapak/yayın adımları durduruldu.")
+        write_status("error", args.channel_id, stage="post_media_script_schema")
+        sys.exit(1)
+
     # 2.5 Adım: Kapak karesini videoya göm (kalıcı kapak çözümü; ayrı kapak yüklemesi yok).
     # Başarısız olsa bile yayın durmaz: script video'yu dokunmadan bırakır ve 0 döner.
     run_step(
