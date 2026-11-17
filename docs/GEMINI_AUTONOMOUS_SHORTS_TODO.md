@@ -21,8 +21,8 @@
 - [x] media_processor.py ve video_fetcher.js arama sırası, API/Playwright fallback'leri, lisans ve klip seçimini incele; son gerçek run'daki Wikimedia fallback örneğini kaydet.
 - [x] youtube_studio_uploader.js yayın sonucu doğrulamasını ve belirsiz upload davranışını incele; Studio PUBLIC doğrulaması ve publish_unverified hata yolunu doğrula.
 - [x] Mevcut test paketinin son güvenli CI baseline'ını kaydet: 108 passed, 8 subtests passed (run 44076814790). Güncel HEAD'de yerel tekrar yapılamadı; sınırlar kanıt belgesinde.
-- [ ] Secret isimlerinin varlığını değerleri göstermeden kontrol et; secret değerlerini asla çekme/yazma. (Bu oturumda Secrets API erişimi yapılmadı; son üretim logunda REPO_PAT HTTP 401 görüldü.)
-- [ ] Pruner, cron/watchdog, kanal ve PUBLIC kurallarını koruma listesine al. (daily_shorts içindeki tetikleyiciler incelendi; ayrı workflow'lar henüz tam incelenmedi.)
+- [ ] Secret isimlerinin varlığını değerleri göstermeden kontrol et; secret değerlerini asla çekme/yazma. (GitHub connector, Secrets API uçlarını açıkça desteklemiyor; bu nedenle isimlerin varlığı bu bağlantıyla doğrulanamıyor. Son üretim logunda REPO_PAT HTTP 401 görüldü.)
+- [x] Pruner, cron/watchdog, kanal ve PUBLIC kurallarını koruma listesine al. (hourly_pruner.yml ve draft_publisher.yml incelendi; gerçek silme/PUBLIC yayın riskleri, concurrency farkı ve tetikleme ilişkileri kanıt raporunda.)
 - [x] Başlangıç envanteri ve baseline kanıtını [Faz 0 kanıt raporuna](evidence/FAZ0_BASELINE_2026-11-17.md) ekle.
 
 **Kabul kapısı:** Mevcut davranış ve test baseline'ı biliniyor; yayın davranışı değiştirilmedi.
@@ -164,4 +164,5 @@
 | Tarih | Faz | Commit / CI kanıtı | Sonuç | Açık konu |
 |---|---|---|---|---|
 | 2026-11-17 | Dokümantasyon | dd0a8f1 / 956a03b / f8ec3aa | Plan, TODO ve README bağlantıları eklendi | Faz 0 |
-| 2026-11-17 | Faz 0 baseline | 0e2ecc9 / b4a9b29; test run 44076814790; production run 44119590041 | GitHub HEAD, daily/pruner/draft workflow'ları, AI_HANDOFF ve ana akış incelendi; CI'da 108 test geçti; gerçek PUBLIC üretim logu kaydedildi | Secrets kontrolü, doküman uyumu ve güncel HEAD ek testleri |
+| 2026-11-17 | Faz 0 baseline | 0e2ecc9 / b4a9b29; test run 44076814790; production run 44119590041 | GitHub HEAD, daily/pruner/draft workflow'ları, AI_HANDOFF ve ana akış incelendi; CI'da 108 test geçti; gerçek PUBLIC üretim logu kaydedildi | Secret isimleri connector üzerinden doğrulanamıyor; yeni thumbnail CI sonucu bekleniyor |
+| 2026-11-17 | Faz 0 doküman ve test takviyesi | fc7ea77 / 8ca1fb9 / b693e80 / 25b7ac8 | Mimari/kurulum/devir belgelerine güncel durum notları eklendi; thumbnail yardımcıları için offline regresyon testleri eklendi; CI run 44160916391 tetiklendi | CI sonucu, güncel HEAD doğrulaması ve secret metadata yöntemi |
