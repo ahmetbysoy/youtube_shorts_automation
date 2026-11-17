@@ -17,6 +17,7 @@ on:
       - 'content_engine.py'
       - 'main.py'
       - 'scripts/validate_script_json.py'
+      - 'scripts/gemini_web_text_probe.py'
       - 'schemas/**'
       - 'requirements.txt'
       - 'tests/**'
