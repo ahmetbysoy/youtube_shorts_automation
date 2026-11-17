@@ -272,3 +272,17 @@ Benzersizlik katmanı bunu otomatik olarak engeller: **1 ayrı hesap = 1 kanal �
 `max-parallel: 1` sayesinde matris job'ları tek tek çalışır. Bir video için:
 `içerik → ses → video → başlık → açıklama (affiliate CTA + CTA + 3 hashtag) → AI kapak →
 video tags → çocuk güvenliği → görünürlük(PUBLIC) → YAYIN` tamamlanmadan diğer kanal başlamaz.
+
+
+---
+
+## 9. Faz 1 — script.json sözleşmesi (2026-11-17)
+
+- Şema: `schemas/script.schema.json` — JSON Schema Draft 2020-12.
+- Legacy uyumluluk: `schema_version` içermeyen mevcut payload'lar v1 olarak doğrulanır.
+- Güncel üretim: `content_engine.py` yeni payload'lara `schema_version: "2.0"` ve UUID `generation_id` ekler.
+- Eski alanlar (`visual_keywords`, `word_timestamps`, medya ve TTS metadata alanları) korunur.
+- İleriye dönük alanlar: `sources`, `fact_check`, `storyboard`; bu alanlar v2'de isteğe bağlıdır, böylece eski üretim akışı henüz sahne storyboard'u üretmeden de geçerli kalır.
+- Testler: `tests/test_script_json_schema.py` legacy/v2 ve hatalı veri örneklerini; `tests/test_full_pipeline_fallback.py` ise gerçek üretilen JSON'u doğrular.
+- Schema doğrulayıcı bağımlılığı yalnız test ortamına `requirements-test.txt` üzerinden eklenmiştir. Ana yayın workflow'una yeni bir bağımlılık eklenmemiştir.
+- Bu değişiklik Gemini API/cookie istemci seçimini, secret'ları, uploader'ı veya PUBLIC yayın adımını değiştirmez.
