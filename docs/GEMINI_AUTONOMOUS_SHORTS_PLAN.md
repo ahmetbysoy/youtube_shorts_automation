@@ -42,10 +42,12 @@ Başarı yalnızca MP4 üretmek değildir. İçerik yeni ve doğrulanabilir olma
 ## 4. Tasarım kararları
 
 ### 4.1 Sağlayıcı ve maliyet
-- Gemini hedef birincil içerik sağlayıcısıdır; model, endpoint, erişim ve kota gerçek API çağrısıyla doğrulanmadan etkinleştirilmez.
-- Ücretli API, ücretli görsel/video üretimi veya billing açılması bu planın parçası değildir. Ücretsizliği doğrulanmamış özellik etkinleştirilmez.
-- API başarısızlığında sessizce rastgele fallback senaryosu yayınlanmaz. Sınırlı retry sonrasında üretim güvenli şekilde durur veya ayrıca onaylanmış doğrulanmış yedek yolu kullanılır.
-- API anahtarları yalnız GitHub Secrets/ortam değişkenlerinde kalır; URL, log, artifact veya commit'e yazılmaz.
+- Kullanıcının tercih ettiği birincil yol Gemini Web oturumudur; mevcut `GEMINI_COOK` cookie secret'ı korunur ve değeri hiçbir zaman loglanmaz/çıktılanmaz.
+- Depoda doğrulanan mevcut cookie kullanımı `scripts/gemini_cover.py` üzerinden `gemini_webapi` ile kapak görseli üretimidir; `backfill_short_thumbnails.yml` bu secret'ı `jeton/gemini_cookies.json` dosyasına aktarır. Bu, metin/storyboard üretiminin cookie ile çalıştığını henüz kanıtlamaz.
+- Faz 2, önce aynı cookie oturumuyla metin/JSON üretiminin mümkün olup olmadığını yayın yapmayan testte doğrular. Çalışmazsa ücretli API'ye otomatik geçiş yapılmaz; kullanıcıya seçenek sunulur.
+- `GEMINI_API_KEY` mevcut secret olarak kullanıcı kararıyla olduğu gibi bırakılır; yeni metin/storyboard tasarımı bu anahtara bağımlı olmayacaktır.
+- **Mevcut legacy istisna:** `daily_shorts.yml` `GEMINI_API_KEY` ve `GEMINI_FREE_VISION_ENABLED` değerlerini `generate_fallback_thumbnail.py` / `gemini_frame_selector.py` yoluna aktarır. Bu, yalnız mevcut kareleri analiz eden ayrı bir API yoludur; repository variable'ın anlık değeri bu bağlantıyla doğrulanamadı. Kullanıcı onayı olmadan mevcut üretim davranışı değiştirilmez.
+- Ücretli API, ücretli görsel/video üretimi veya billing açılması yeni mimarinin parçası değildir. Cookie oturumu bozulursa sistem ücretli API'ye sessizce düşmez; güvenli yedek veya durdurma uygulanır.
 
 ### 4.2 Araştırma ve doğruluk
 - Gemini'nin ürettiği kaynak adı/URL'si tek başına kanıt değildir.
@@ -131,14 +133,15 @@ Bu tablo hedef sözleşmedir; mevcut script.json şeması değildir. Nihai şema
 
 **Kabul:** Eski örnekler geriye uyum testinden geçer; hatalı veri yayın aşamasından önce reddedilir.
 
-### Faz 2 — Gemini üretim adaptörü
-- Model/endpoint ve kota resmi dokümandan doğrulanır.
-- Anahtar header ile gönderilir; URL/logda görünmez.
-- Timeout, 429, 5xx, bozuk JSON ve içerik reddi için sınırlı retry/backoff uygulanır.
-- Yapılandırılmış JSON doğrulanır.
-- Önce yayın yapmayan dry-run workflow ile gerçek API yanıtı test edilir.
+### Faz 2 — Gemini Web cookie adaptörü ve prompt
+- `GEMINI_COOK` secret'ının yalnız adı/varlığı kullanıcı tarafından doğrulanır; değer hiçbir loga veya artifact'e yazılmaz.
+- Mevcut `gemini_webapi` istemcisi ve cookie yenileme/sona erme davranışı incelenir.
+- Yayın yapmayan dry-run ile cookie oturumunun metin ve JSON yanıtı üretebildiği doğrulanır; şu an doğrulanmış kullanım yalnız kapak görselidir.
+- Yanıt JSON Schema ile doğrulanır; bozuk yanıt, oturum düşmesi, rate limit ve timeout için sınırlı retry/backoff uygulanır.
+- Cookie geçersizse ücretli API'ye geçiş yapılmaz; iş güvenli biçimde durur veya onaylı fallback kullanılır.
+- Mevcut `GEMINI_API_KEY` kare analiz yoluna kullanıcı onayı olmadan müdahale edilmez; yeni içerik üretim adaptörü API key istemez.
 
-**Kabul:** Gerçek Gemini çağrısı, geçerli JSON ve doğru hata davranışı CI kanıtıyla gösterilir; otomatik yayın açılmaz.
+**Kabul:** Cookie oturumuyla gerçek metin/storyboard yanıtı geçerli şemada doğrulanır; API key kullanılmaz; PUBLIC yayın yapılmaz.
 
 ### Faz 3 — Araştırma ve tekrar koruması
 - Kaynak fetch/parse/iddia eşleştirme katmanı.
