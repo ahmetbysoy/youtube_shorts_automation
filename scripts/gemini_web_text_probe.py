@@ -31,14 +31,17 @@ def parse_cookie_payload(raw: str) -> dict[str, str]:
     if not isinstance(payload, dict):
         raise ValueError("Gemini cookie secret bir JSON nesnesi olmalı.")
 
-    missing = [
-        name for name in REQUIRED_COOKIE_NAMES
-        if not isinstance(payload.get(name), str) or not payload[name].strip()
-    ]
-    if missing:
-        raise ValueError("Gemini cookie secret içinde gerekli alanlar eksik: " + ", ".join(missing))
+    session_cookie = payload.get("__Secure-1PSID")
+    refresh_cookie = payload.get("__Secure-1PSIDTS", "")
+    if not isinstance(session_cookie, str) or not session_cookie.strip():
+        raise ValueError("Gemini cookie secret içinde __Secure-1PSID alanı eksik.")
+    if not isinstance(refresh_cookie, str):
+        raise ValueError("__Secure-1PSIDTS alanı metin olmalı.")
 
-    return {name: payload[name].strip() for name in REQUIRED_COOKIE_NAMES}
+    return {
+        "__Secure-1PSID": session_cookie.strip(),
+        "__Secure-1PSIDTS": refresh_cookie.strip(),
+    }
 
 
 def load_cookie_payload() -> dict[str, str]:
