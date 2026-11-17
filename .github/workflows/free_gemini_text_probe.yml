@@ -1,4 +1,4 @@
-name: "Free Gemini text dry run (no publication)"
+name: "Gemini Web text dry run (cookie session, no publication)"
 on:
   workflow_dispatch:
 permissions:
@@ -6,40 +6,31 @@ permissions:
 jobs:
   text-probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
-      - name: Install minimum dependencies
-        run: pip install 'requests==2.34.2' 'edge-tts==7.3.1'
-      - name: One Gemini text call (no publication)
+      - name: Install isolated probe dependencies
+        run: python -m pip install --no-cache-dir 'requests==2.34.2' 'gemini_webapi' 'httpx'
+      - name: One Gemini Web text call (no publication)
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+          PYTHONUNBUFFERED: '1'
         run: |
-          python - <<'PY'
-          import json, os
-          from content_engine import build_llm_prompts, call_gemini_llm
-          key=os.environ.get('GEMINI_API_KEY', '')
-          if not key: raise SystemExit('Secret yok')
-          # Actual published source, not an invented data sample:
-          # https://science.nasa.gov/earth/climate-change/nasa-climate-modeling-suggests-venus-may-have-been-habitable/
-          fact={'title':'NASA Science: Venus Facts','extract':'Venus completes one rotation in about 243 Earth days and one orbit in about 225 Earth days. A solar day, from one sunrise to the next, is about 117 Earth days.'}
-          system,user=build_llm_prompts('Venüs dönme ve yörünge süreleri',[],wiki_fact=fact)
-          scenario=call_gemini_llm(system,user,key)
-          assert scenario.get('provider')=='gemini:gemini-3.1-flash-lite'
-          assert 55 <= scenario['word_count'] <= 95
-          with open('text_probe_result.json','w',encoding='utf8') as f:
-              json.dump(scenario,f,ensure_ascii=False,indent=2)
-          print('REAL_GEMINI_TEXT_OK word_count=',scenario['word_count'])
-          print('DRAFT_ONLY: model output is unverified, no publication')
-          PY
-      - name: Save dry run result
+          set -euo pipefail
+          if [ -z "${GEMINI_COOK:-}" ]; then
+            echo "::error::GEMINI_COOK secret is missing."
+            exit 1
+          fi
+          umask 077
+          python scripts/gemini_web_text_probe.py --output text_probe_result.json
+      - name: Save dry-run result
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: free-gemini-text-dry-run
+          name: gemini-web-text-dry-run
           path: text_probe_result.json
           if-no-files-found: warn
           retention-days: 7
