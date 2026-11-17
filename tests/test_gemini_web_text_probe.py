@@ -17,6 +17,11 @@ class TestGeminiWebTextProbe(unittest.TestCase):
         self.assertEqual(set(parsed), {"__Secure-1PSID", "__Secure-1PSIDTS"})
         self.assertEqual(parsed["__Secure-1PSID"], "session-cookie")
 
+    def test_cookie_payload_allows_optional_refresh_cookie(self):
+        parsed = parse_cookie_payload(json.dumps({"__Secure-1PSID": "session-cookie"}))
+        self.assertEqual(parsed["__Secure-1PSID"], "session-cookie")
+        self.assertEqual(parsed["__Secure-1PSIDTS"], "")
+
     def test_cookie_payload_rejects_invalid_json(self):
         with self.assertRaisesRegex(ValueError, "geçerli JSON"):
             parse_cookie_payload("{not-json")
