@@ -1,3 +1,7 @@
+> **Durum notu — 2026-11-17:** Bu dosya, belirli bir Debian 13 / Python 3.13.16 / x86_64 çalışma alanında alınmış tarihsel kurulum raporudur; güncel GitHub Actions ortamı veya güncel HEAD için kabul testi değildir. Buradaki **7/7** sonucu yalnız o eski yerel kurulum doğrulamasını ifade eder. Güncel CI kanıtı [Faz 0 raporunda](../evidence/FAZ0_BASELINE_2026-11-17.md) kayıtlıdır: run [44076814790](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44076814790) üzerinde 108 pytest testi ve 8 subtest geçti; koşu güncel HEAD'den 17 commit gerideydi. Yeni thumbnail helper regresyon testleri 2026-11-17'de eklendi ve ayrı bir CI koşusunda doğrulanıyor. Bu rapordaki paket sürümleri tarihsel kanıttır; yeni kurulumda `requirements.txt` ve `requirements-test.txt` esas alınmalıdır.
+
+---
+
 # PROMPT 1 — Kurulum ve doğrulama raporu
 
 Ortam: Debian GNU/Linux 13 (trixie, 13.7), x86_64; Python 3.13.16; proje sanal ortamı `.venv`; IDE: yok, workspace araçları ve bash kullanıldı.
