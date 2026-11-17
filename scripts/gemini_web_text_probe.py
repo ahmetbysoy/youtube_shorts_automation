@@ -18,7 +18,6 @@ from content_engine import (
 )
 
 COOKIE_ENV_NAMES = ("GEMINI_COOK", "GEMINI_COOKIES_JSON", "GEMINI_COOKIE")
-REQUIRED_COOKIE_NAMES = ("__Secure-1PSID", "__Secure-1PSIDTS")
 
 
 def parse_cookie_payload(raw: str) -> dict[str, str]:
