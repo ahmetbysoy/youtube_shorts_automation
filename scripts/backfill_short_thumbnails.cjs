@@ -117,33 +117,30 @@ const GEMINI_RETRIES = Math.max(1, Number(process.env.GEMINI_RETRIES || 2));
 const GEMINI_RETRY_DELAY_MS = Math.max(8000, Number(process.env.GEMINI_RETRY_DELAY_MS || 15000));
 
 async function postProcessImage(bytes, outPath, source) {
-  // 1) Ust guvenli alan: YouTube Shorts thumbnail listesinde ust kenar ~80-100px
-  //    kesebilir. AI yaziyi tepeye yapistiriyor; bunu onlemek icin 1080x1920
-  //    yaparken resmi "top" hizalayip USTTE 100px SIYAH KUSAK ekle (yaziyi asagi iter).
-  // 2) Alt kisimda da 60px alt guvenlik bandi birak.
-  // 3) Sonuc 1080x1920, JPEG kalitesi 92.
+  // YONTEM: Hic crop/cover YAPMA. Resmi dogrudan USTTEN 260px EXTEND et (siyah
+  // bant ekle), sonra alttan 1920'ye kadar olan kismi al. Bu sayede AI'nin
+  // en tepeye koydugu yazi 260px asagi kayar, TUM Icerik korunur, hicbir piksel
+  // atilmaz. Orijinal 1080x1920 -> ust 260px siyah bant + eski icerik ->
+  // 1080x2180 -> son 1920px al -> alttan 260px kirparak 1080x1920.
   const TARGET_W = 1080;
   const TARGET_H = 1920;
-  const TOP_PAD = 180;  // ust guvenlik bandi (YouTube thumbnail ustten keser)
-  const BOT_PAD = 80;   // alt guvenlik bandi
-  const INNER_H = TARGET_H - TOP_PAD - BOT_PAD;  // 1740
+  const TOP_PAD = 260;
+  const BG = { r: 5, g: 5, b: 8 };
   try {
-    let pipeline = sharp(bytes);
-    let meta = await pipeline.metadata();
+    const img = sharp(bytes);
+    const meta = await img.metadata();
     if (!meta.width || !meta.height) throw new Error('metadata okunamadi');
 
-    // Once resmi ic alan icine (cover) yerlestir, ust-altsiz olarak
-    const inner = await pipeline
-      .resize({ width: TARGET_W, height: INNER_H, fit: 'cover', position: 'centre' })
+    // Usten TOP_PAD kadar siyah extend et (alttan da 0, soldan 0, sagdan 0)
+    const extended = await img
+      .extend({ top: TOP_PAD, bottom: 0, left: 0, right: 0, background: BG })
       .toBuffer();
-
-    // Sonra ust + alt siyah (yarisaydam degil, saf koyu) bantlarla 1920'e tamamla.
-    // Ust bandi koyu siyah yerine ustteki ilk satirin ustune hafif bir
-    // vignette gibi davransin diye extend ile 'background:#0a0a0a' kullan.
-    const finalBuf = await sharp({
-      create: { width: TARGET_W, height: TARGET_H, channels: 3, background: { r: 5, g: 5, b: 8 } },
-    })
-      .composite([{ input: inner, top: TOP_PAD, left: 0 }])
+    const em = await sharp(extended).metadata();
+    // Simdi TARGET_W x TARGET_H olacak sekilde alttan son 1920px'yi al
+    // (yani ustten (em.height - TARGET_H) px atla)
+    const topOffset = Math.max(0, em.height - TARGET_H);
+    const finalBuf = await sharp(extended)
+      .extract({ left: 0, top: topOffset, width: TARGET_W, height: TARGET_H })
       .jpeg({ quality: 92, mozjpeg: true })
       .toBuffer();
 
