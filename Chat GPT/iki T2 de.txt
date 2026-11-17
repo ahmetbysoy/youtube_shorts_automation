@@ -1,0 +1,3 @@
+GitHub yazma testi başarılı.
+
+Bu dosya Chat GPT klasöründe oluşturuldu. Amaç: GitHub bağlantısının depoya dosya yazıp commit gönderebildiğini doğrulamak.
