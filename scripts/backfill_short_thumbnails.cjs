@@ -491,14 +491,13 @@ async function applyOne(page, video, index) {
   fs.mkdirSync(path.dirname(cover), { recursive: true });
   const originalBackup = await backupOldThumb(page, video, index);
 
-  // DRY_RUN'da yapay zeka ile kapak uretmeyi ve Studio sayfasina gitmeyi atla.
-  // Amac sadece cookie / liste / akis sagligini test etmektir; bunu hizli yap.
-  if (DRY_RUN) {
-    log('[DRY-RUN] Kapak uretimi ve Studio edit sayfasi atlandi: ' + video.id);
-    return { id: video.id, title: safeTitle, dryRun: true, originalBackup, cover: '' };
-  }
-
+  // DRY_RUN'da Studio'ya gidip kaydetmeyi atla AMA kapak uretimini yap —
+  // boylece AI gorselini artifact icinde inceleyebiliriz.
   await makeCover(safeTitle, cover);
+  if (DRY_RUN) {
+    log('[DRY-RUN] Kapak uretildi, Studio kaydi atlandi: ' + video.id + ' -> ' + cover);
+    return { id: video.id, title: safeTitle, dryRun: true, originalBackup, cover };
+  }
 
   await page.goto('https://studio.youtube.com/video/' + video.id + '/edit', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await sleep(3000);
