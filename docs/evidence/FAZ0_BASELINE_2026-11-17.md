@@ -152,3 +152,32 @@ Bu inceleme sırasında `main.py`, `content_engine.py`, medya motoru, uploader v
 - Üst kısımda 2026-11-03 tarihli eski bir güncelleme satırı ve 2026-11-05 tarihli operasyon notları birlikte bulunuyor.
 - İçerikte eski test sayısı (22/22), eski cron/matrix ve secret envanteri iddiaları bulunuyor. Bunlar güncel GitHub API/Actions kanıtı olarak kabul edilmemeli.
 - Yeni Gemini planı ve Faz 0 baseline raporu, güncel geliştirme başlangıç noktası olarak kullanılmalı. AI_HANDOFF içindeki tarihsel operasyon notları silinmeden, sonraki dokümantasyon fazında güncel durumla uzlaştırılmalı.
+
+
+## 10. 2026-11-17 devam çalışması — doküman ve thumbnail testleri
+
+### Dokümantasyon uzlaştırması
+
+- `docs/ARCHITECTURE.md` başına güncel doğrulanmış akış eklendi: `daily_shorts.yml` → production gate → sıralı kanal job'u → `main.py --force-fallback` → medya → best-effort kapak gömme → Studio PUBLIC doğrulaması. Eski 3'lü paralel matris diyagramı tarihsel olarak etiketlendi.
+- `docs/setup/INSTALLATION_REPORT.md` içindeki 7/7 yerel test sonucu tarihsel ortam raporu olarak etiketlendi; güncel CI baseline bağlantısı eklendi.
+- `AI_HANDOFF.md` başına 2026-11-17 doğrulanmış durum notu eklendi. Eski 22/22 ve 3'lü matris iddialarının güncel durum olmadığı açıklandı; tarihsel notlar silinmedi.
+- İlgili doküman commitleri: `fc7ea77698eeced6c7159205d71fba755ac707ac`, `8ca1fb9d24accaf9aa864f851d2e0d46aae17e4b`, `b693e809de70cf48ce8bc0e43ab0ef0a3465c710`.
+
+### Thumbnail yardımcı testleri
+
+- Yeni offline test dosyası: `tests/test_thumbnail_helpers.py`.
+- Kapsam: fallback kapak üretiminin JPEG/1080×1920 çıktısı, crop boyutu, kontrast kare seçimi ve bozuk dosya toleransı, Studio kare eşleşme aracı, Gemini kare seçicinin kapalı/çok fazla kare durumunda ağ çağrısı yapmadan güvenli fallback vermesi.
+- Testler Gemini, Pollinations veya YouTube Studio'ya istek göndermez; fake API key ile ağ çağrısı yapılmaz.
+- Test dosyası commit'i: `25b7ac86bd7bb0efeb7a0c31ee112c6ebe345865`.
+- Güncel test workflow'u otomatik tetiklendi: [run 44160916391](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44160916391). Bu rapor güncellenirken koşu henüz tamamlanmamıştı; sonuç ve test sayısı tamamlanınca eklenmelidir.
+
+### Secret metadata kontrolü
+
+- GitHub connector açıklaması, Secrets API uçlarının hassas endpoint ailesi olarak desteklenmediğini açıkça belirtiyor. Bu nedenle secret adlarının varlığı bu oturumdaki bağlantıyla doğrulanamadı.
+- Secret değerlerini alma veya loglama girişimi yapılmadı. Secret kontrolü Faz 0 kabul kapısında açık kalıyor.
+- Alternatif olarak kullanıcının GitHub arayüzünde Settings → Secrets and variables → Actions bölümünden yalnız adları kontrol etmesi veya uygun salt-metadata izinli bağlantı sağlaması gerekir; değerler açılmamalıdır.
+
+### Güncel doküman durumu
+
+- TODO güncelleme commit'i: `a348b1fdd5caded8063b0f4da17e1c0ca9787959`.
+- Faz 0 henüz kapatılmadı. CI kanıtı ve secret metadata kısıtı çözülmeden Faz 1'e geçiş yapılmamalıdır.
