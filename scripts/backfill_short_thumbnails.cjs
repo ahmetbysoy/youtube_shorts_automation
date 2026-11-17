@@ -3,8 +3,11 @@
 // Backfill custom Shorts thumbnails. Only edits thumbnail; title/description/visibility stay untouched.
 const fs = require('fs');
 const path = require('path');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
 const sharp = require('sharp');
 const { chromium } = require('playwright');
+const execFileAsync = promisify(execFile);
 
 const CHANNEL_ID = process.env.YT_CHANNEL_ID || 'UCBZVbwc7s7TeUCcOaN58oHQ';
 const OUT = path.resolve(process.env.BACKFILL_OUT || 'backfill_output');
@@ -105,61 +108,13 @@ function loadState() {
   throw new Error('YouTube oturumu bulunamadi: STORAGE_STATE_JSON veya COOKIES_JSON gerekli.');
 }
 
-function buildPrompt(title) {
-  const clean = String(title || 'YouTube Shorts').replace(/#Shorts/ig, '').trim().slice(0, 180);
-  // PROMPT STRATEJISI:
-  // - Tamamen INGILIZCE (karisik dil modeli bozuyor).
-  // - KONUYU EN BASINDA VE NET BELIRT: promptun ilk cumlesi konu olsun.
-  // - Negative prompt'u cok netlestir (anime/cartoon/waifu/illustration/cizgi).
-  // - "Person" anahtar kelimesi YOK: konu insan disinda bir seyse hic insan uretmesin.
-  // - nologo=true yeterli olmuyorsa, image sonrasi son 30px'i crop'layacagiz.
-  return (
-    'PHOTOREALISTIC YouTube Short thumbnail, 1080x1920 vertical 9:16, cinematic. ' +
-    'THE SUBJECT OF THIS THUMBNAIL IS: ' + clean + '. ' +
-    'Show this subject dramatically, as the single dominant central element in the frame. ' +
-    'The image is for a YouTube science/education Short — it must look like a real photograph, ' +
-    'NOT an illustration or drawing. ' +
-    'If the topic is about a non-human subject (space, sun, black hole, ocean, ant colony, physics, ' +
-    'nature, technology), show ONLY that subject — DO NOT ADD ANY PEOPLE, PERSON, FACE, GIRL, HUMAN, ' +
-    'or anime character. No women, no portraits, no faces unless the title is specifically about a person. ' +
-    'Composition: extreme dramatic close-up of the subject itself, subject fills 70% of the frame, ' +
-    'centered, looking powerful and mind-blowing. ' +
-    'Lighting: dramatic cinematic lighting, strong rim light, deep shadows, high contrast, ' +
-    'volumetric light, light rays if appropriate. ' +
-    'Colors: ultra-vivid, saturated, punchy — red/orange/gold highlights pop against dark background. ' +
-    'Background: dark cinematic deep-space or atmospheric bokeh, moody, desaturated, shallow depth of field. ' +
-    'Mood: epic, awe-inspiring, jaw-dropping, "you won\'t believe this exists", high curiosity. ' +
-    'Photo quality: hyperrealistic, photorealistic, ultra-detailed, 8K photo, National Geographic photography, ' +
-    'shot on Sony A7IV 85mm f/1.4, tack sharp focus on the subject, cinematic color grading. ' +
-    'STYLE LOCK: photorealism only, no illustration, no painting, no drawing, no cartoon, no anime, ' +
-    'no manga, no 3D render, no CGI look, no digital art, no waifu, no girls, no k-pop, no dolls, no AI art style. ' +
-    'NEGATIVE: no text, no letters, no numbers, no words, no captions, no writing, no logo, no watermark, ' +
-    'no pollinations, no borders, no frames, no arrows, no red circles, no emoji, no collage, no split screen, ' +
-    'no extra limbs, no deformed anatomy, no ai artifacts, no fake watermark text.'
-  );
-}
-
-// KAPAK URETIM STRATEJISI
-// 1) HF_TOKEN varsa once HuggingFace Inference uzerinden FLUX.1-schnell
-//    (gercek fotogercek, 1024px, hizli, logo yok).
-// 2) HF yoksa/kalirsa Pollinations fallback (sana modeli).
-//
-// HF provider:
-const HF_TOKEN = process.env.HF_TOKEN || '';
-const HF_MODEL = process.env.HF_IMAGE_MODEL || 'black-forest-labs/FLUX.1-schnell';
-// HF goruntusu dogasi geregi 1024x1024 veya 1024x576/576x1024 — 9:16 icin
-// 576x1024 alip 1080x1920'e upscale + crop yap.
-const HF_WIDTH = 576;
-const HF_HEIGHT = 1024;
-
-// Pollinations model fallback — son care olarak sana.
-const IMAGE_MODELS = (process.env.IMAGE_MODELS || 'sana,sana').split(',').map(s => s.trim()).filter(Boolean);
-// Rate-limit/402 halinde model denemeleri arasi bekleme (ms)
-const MODEL_SWITCH_DELAY_MS = Math.max(3000, Number(process.env.MODEL_SWITCH_DELAY_MS || 12000));
-// Ayni modelde denemeler arasi bekleme
-const ATTEMPT_DELAY_MS = Math.max(3000, Number(process.env.ATTEMPT_DELAY_MS || 12000));
-// Rate limit sonrasi global cooldown (ms)
-const GLOBAL_COOLDOWN_MS = Math.max(5000, Number(process.env.GLOBAL_COOLDOWN_MS || 20000));
+// KAPAK URETIM STRATEJISI (2026-11):
+// Tek saglayici: Gemini Web UI (cookie ile giris, ucretsiz, fotogercek + Turkce
+// metin basarili). python scripts/gemini_cover.py cagrilir. HF/Pollinations artik
+// kullanilmiyor (HF ucretsiz resim uretmiyor, Pollinations yazida bozuk).
+const GEMINI_PY = path.join(BASE, 'scripts', 'gemini_cover.py');
+const GEMINI_RETRIES = Math.max(1, Number(process.env.GEMINI_RETRIES || 2));
+const GEMINI_RETRY_DELAY_MS = Math.max(8000, Number(process.env.GEMINI_RETRY_DELAY_MS || 15000));
 
 async function postProcessImage(bytes, outPath, source) {
   // 1) Gerekirse 9:16 (1080x1920) olacak sekilde resize+extend: hedef oran 9:16.
@@ -200,7 +155,10 @@ async function postProcessImage(bytes, outPath, source) {
 
 async function fetchHuggingFace(prompt, outPath) {
   if (!HF_TOKEN) throw new Error('HF_TOKEN yok');
-  const url = 'https://api-inference.huggingface.co/models/' + HF_MODEL;
+  // HF yeni Inference Router endpoint'i (eski api-inference.huggingface.co 2025 sonunda kapatildi).
+  // https://github.com/FlowiseAI/Flowise/issues/5535
+  const HF_ENDPOINT = process.env.HF_ENDPOINT || 'https://router.huggingface.co';
+  const url = HF_ENDPOINT + '/models/' + HF_MODEL;
   const seed = Math.floor(Math.random() * 1e9);
   log('  → HF ' + HF_MODEL + ' seed=' + seed + ' (' + HF_WIDTH + 'x' + HF_HEIGHT + ')');
   const t0 = Date.now();
@@ -304,73 +262,40 @@ async function fetchPollinations(model, prompt, seed, outPath) {
 }
 
 async function makeCover(title, outPath) {
-  // NOT: buildPrompt sonucu saf ingilizce string; encodeURIComponent gerekiyor ama
-  // HF tarafinda body JSON'da gonderirken encode yapmiyoruz. Bu sebeple iki farkli
-  // form tutuyoruz: promptRaw (HF icin), promptEnc (Pollinations URL icin).
-  const promptRaw = buildPrompt(title);
-  const promptEnc = encodeURIComponent(promptRaw);
+  const cleanTitle = String(title || 'YouTube Shorts').replace(/#Shorts/ig, '').trim().slice(0, 200);
   const lastErrors = [];
-  let rateLimitHits = 0;
-
-  // 1) HuggingFace ile dene (token varsa)
-  if (HF_TOKEN) {
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        const res = await fetchHuggingFace(promptRaw, outPath);
-        log('✅ Kapak hazir (HF/' + res.model + '): ' + res.size + ' byte (' + res.ms + 'ms) -> ' + path.basename(outPath));
-        return res;
-      } catch (e) {
-        if (e.message === 'RATE_LIMITED') {
-          rateLimitHits++;
-          const wait = (e.retryAfter ? e.retryAfter * 1000 : 0) || GLOBAL_COOLDOWN_MS;
-          log('  ⏳ HF rate/loading (HTTP ' + e.status + '), ' + (wait/1000) + 'sn bekleniyor... (deneme ' + attempt + '/3)');
-          await sleep(wait);
-          continue;
-        }
-        lastErrors.push('hf/' + attempt + ': ' + e.message);
-        log('  ✗ HF ' + e.message + (e.cause ? ' (' + (e.cause.code || e.cause.message) + ')' : ''));
-        if (attempt < 3) await sleep(ATTEMPT_DELAY_MS);
+  for (let attempt = 1; attempt <= GEMINI_RETRIES; attempt++) {
+    const t0 = Date.now();
+    try {
+      // python3 scripts/gemini_cover.py <out> "<title>"
+      const { stderr } = await execFileAsync('python3', [GEMINI_PY, outPath, cleanTitle], {
+        cwd: BASE,
+        timeout: 180_000,
+        maxBuffer: 1024*1024*10,
+        env: { ...process.env },
+      });
+      // stderr'de ilerleme loglari vardir, son "KAPAK_OK" satiri basariyi teyit eder.
+      if (!fs.existsSync(outPath) || fs.statSync(outPath).size < 10000) {
+        throw new Error('Kapak dosyasi olusmadi veya cok kucuk');
+      }
+      const size = fs.statSync(outPath).size;
+      const ms = Date.now() - t0;
+      // postProcessImage ile 9:16 + JPEG kalitesini garanti et
+      await postProcessImage(fs.readFileSync(outPath), outPath, 'gemini');
+      const finalSize = fs.statSync(outPath).size;
+      log('✅ Kapak hazir (gemini deneme ' + attempt + '): ' + finalSize + ' byte (' + ms + 'ms) -> ' + path.basename(outPath));
+      return { provider: 'gemini', size: finalSize, ms, path: outPath };
+    } catch(e) {
+      const errMsg = (e.stderr || e.message || '').toString().split('\n').slice(-3).join(' | ').slice(0, 300);
+      lastErrors.push('gemini/' + attempt + ': ' + errMsg);
+      log('  ✗ Gemini deneme ' + attempt + ' hatasi: ' + errMsg);
+      if (attempt < GEMINI_RETRIES) {
+        log('  ' + (GEMINI_RETRY_DELAY_MS/1000) + 'sn bekleniyor...');
+        await sleep(GEMINI_RETRY_DELAY_MS);
       }
     }
-    log('  ⚠ HF tum denemeler basarisiz, Pollinations\'a geciliyor...');
-    await sleep(MODEL_SWITCH_DELAY_MS);
   }
-
-  // 2) Pollinations fallback
-  for (let mIdx = 0; mIdx < IMAGE_MODELS.length; mIdx++) {
-    const model = IMAGE_MODELS[mIdx];
-    const seed = Math.floor(Math.random() * 1e9);
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const res = await fetchPollinations(model, promptEnc, seed, outPath);
-        log('✅ Kapak hazir (pol/' + res.model + '): ' + res.size + ' byte (' + res.ms + 'ms) -> ' + path.basename(outPath));
-        return { ...res, provider: 'pollinations' };
-      } catch (e) {
-        if (e.message === 'RATE_LIMITED') {
-          rateLimitHits++;
-          const wait = (e.retryAfter ? e.retryAfter * 1000 : 0) || GLOBAL_COOLDOWN_MS;
-          log('  ⏳ Pollinations rate (HTTP ' + e.status + '), ' + (wait/1000) + 'sn bekleniyor...');
-          await sleep(wait);
-          break;
-        }
-        lastErrors.push('pol/' + model + '/' + attempt + ': ' + e.message);
-        log('  ✗ ' + e.message);
-        if (attempt < 2) await sleep(ATTEMPT_DELAY_MS);
-      }
-    }
-    if (mIdx < IMAGE_MODELS.length - 1) await sleep(MODEL_SWITCH_DELAY_MS);
-  }
-  // Son sans: Pollinations modelsiz
-  try {
-    log('  → son sans: Pollinations default');
-    const res = await fetchPollinations('', promptEnc, Math.floor(Math.random()*1e9), outPath);
-    log('✅ Kapak hazir (pol/default): ' + res.size + ' byte (' + res.ms + 'ms)');
-    return res;
-  } catch (e) {
-    lastErrors.push('default: ' + e.message);
-  }
-  throw new Error('AI kapak olusturulamadi (tum modeller ve fallback denendi). Son hatalar: ' +
-    lastErrors.slice(-6).join(' | ') + ' (rateLimitHits=' + rateLimitHits + ')');
+  throw new Error('AI kapak olusturulamadi (tum denemeler basarisiz). Son hatalar: ' + lastErrors.join(' || '));
 }
 
 async function collectVideos(page) {

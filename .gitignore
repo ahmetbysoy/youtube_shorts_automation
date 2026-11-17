@@ -63,3 +63,5 @@ ffmpeg-*.tar.xz
 
 session_capture_login1/
 session_capture*/
+backfill_output/
+jeton/
