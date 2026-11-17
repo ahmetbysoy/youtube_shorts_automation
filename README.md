@@ -445,3 +445,16 @@ Run #90 gerçek Studio görüntüsünde zorunlu çocuklara özel seçimi boştu;
 LLM için 2–3 kelimeli konuya özgü görsel arama yönergesi ve `docs/AI_VIDEO_HERO_PROMPT.md` eklendi. CI `--force-fallback` kullandığından bu yönerge mevcut fallback üretimini tek başına düzeltmez; konu uyumu ve izlenme artışı garanti edilmez. Ayrıntılı TODO: `docs/FAZ13_AUDIT_PLAN.md`.
 
 **Canlı test:** #97 (`41948576364`) yayın işi başarılı; [7DULxjp6PsQ](https://youtube.com/shorts/7DULxjp6PsQ) Studio'da PUBLIC ve girişsiz oynatılabilir. Koşunun geneli cron-kick iptali yüzünden `cancelled`. Örnek karelerde uçak, yana dönmüş kıyı ve alakasız yazılı grafik görüldüğü için görsel kalite **başarısız**; aynı başlık `WKYwF96hQzg` üzerinde de mevcut. Taslak silme Studio kimlik doğrulaması istedi; silme yapılmadı. Otomatik workflow yeniden aktifleştirildi.
+
+---
+
+## Gemini Tabanlı Otonom Shorts — Yeni Geliştirme Yol Haritası
+
+Bu çalışma mevcut üretim hattını Gemini tabanlı, sahne bazlı ve kalite kontrolü zorunlu bir sisteme dönüştürmek için ayrı bir uygulama planı olarak tutulur. **Plan eklendi; kod entegrasyonu henüz başlamadı.**
+
+- **[Mimari ve ayrıntılı uygulama planı](docs/GEMINI_AUTONOMOUS_SHORTS_PLAN.md)** — mevcut kod akışı, hedef mimari, veri sözleşmesi, kalite kapıları, hata politikası, güvenlik ve fazların kabul kriterleri.
+- **[Canlı TODO / ilerleme listesi](docs/GEMINI_AUTONOMOUS_SHORTS_TODO.md)** — her fazın yapılacak işleri, tamamlanma koşulları ve kanıt kaydı.
+
+İlerleme kuralı: Her iş yalnız gerçek kod değişikliği, başarılı test ve gereken CI/Studio doğrulaması görüldüğünde tamamlandı işaretlenir. Ücretli API/görsel/video üretimi veya billing açılmaz; ücretsiz erişimi doğrulanmayan özellik etkinleştirilmez. Mevcut cron, kanal, pruner, PUBLIC yayın ve güvenlik davranışları başlangıç denetimi yapılmadan değiştirilmez.
+
+**Sıradaki adım: Faz 0 — mevcut branch/workflow/test envanteri ve değişiklik öncesi baseline.**
