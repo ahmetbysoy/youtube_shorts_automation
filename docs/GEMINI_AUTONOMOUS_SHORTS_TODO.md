@@ -37,7 +37,7 @@
 - [x] Legacy örnek, v2 örneği, eksik alan, yanlış tip, bozuk UUID ve timestamp sınır testlerini ekle: `tests/test_script_json_schema.py`.
 - [x] Yeni üretim payload'ına `schema_version=2.0` ve UUID `generation_id` ekle; eski medya alanları aynen korundu.
 - [x] Uçtan uca fallback testine gerçek üretilen JSON'un schema doğrulamasını ekle.
-- [x] `jsonschema` test bağımlılığını `requirements-test.txt` içine ekle; CI sonucu bekleniyor.
+- [x] `jsonschema` test bağımlılığını `requirements-test.txt` içine ekle; CI başarılı: 121 passed + 8 subtests (run 44163982147).
 
 **Kabul kapısı:** Eski üretim yolu bozulmadan yeni şema doğrulanıyor; hatalı JSON sonraki aşamaya geçemiyor.
 
@@ -169,3 +169,4 @@
 | 2026-11-17 | Faz 0 baseline | 0e2ecc9 / b4a9b29; test run 44076814790 + 44160916391 (114 passed, 8 subtests); production run 44119590041 | GitHub HEAD, daily/pruner/draft workflow'ları, AI_HANDOFF ve ana akış incelendi; CI'da 108 test geçti; gerçek PUBLIC üretim logu kaydedildi | Secret isimleri connector üzerinden doğrulanamıyor; yeni thumbnail CI sonucu bekleniyor |
 | 2026-11-17 | Faz 0 doküman ve test takviyesi | fc7ea77 / 8ca1fb9 / b693e80 / 25b7ac8 / 3794cac | Mimari/kurulum/devir belgeleri uzlaştırıldı; thumbnail yardımcı testleri CI'da 114 passed + 8 subtests; kullanıcı mevcut secret'ları korumayı seçti, hiçbir secret değiştirilmedi | Faz 1 JSON envanteri ve şema; cookie/API legacy ayrımı ayrıca doğrulanacak |
 | 2026-11-17 | Faz 1 sözleşme envanteri | 9f34cea | script.json üretici, doğrulanmış tüketiciler, örnek farkları ve geriye uyumluluk alanları belgelendi | Ek tüketici taraması, JSON Schema ve CI testleri |
+| 2026-11-17 | Faz 1 JSON Schema v2 | 4de73ba / 306fab3 / 408d561 / 4ae59a6; CI 44163982147 | Legacy v1 + current v2 schema, generation_id, testler; 121 passed + 8 subtests | Runtime fail-closed kapı, tüm tüketiciler için entegrasyon testi, Gemini cookie metin/JSON dry-run |
