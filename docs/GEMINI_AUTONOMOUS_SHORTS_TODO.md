@@ -6,7 +6,7 @@
 
 - [x] Mimari plan ve TODO GitHub'a dokümantasyon olarak eklendi.
 - [ ] Kod entegrasyonu başlamadı.
-- [x] Faz 0 başlangıç incelemesi ve test baseline kanıtı kısmen kaydedildi; Faz 0 kabul kapısı henüz tamamlanmadı.
+- [x] Faz 0 başlangıç incelemesi, doküman uzlaştırması ve güncel test baseline tamamlandı; secret metadata kontrolü kullanıcı kararıyla atlandı ve mevcut secret'lar aynen bırakıldı.
 - [ ] Gemini üretimi ana otomasyon akışına bağlanmadı.
 - [ ] Sahne bazlı storyboard medya motoruna bağlanmadı.
 - [ ] Yeni kalite kapısı yayın akışına bağlanmadı.
@@ -21,16 +21,17 @@
 - [x] media_processor.py ve video_fetcher.js arama sırası, API/Playwright fallback'leri, lisans ve klip seçimini incele; son gerçek run'daki Wikimedia fallback örneğini kaydet.
 - [x] youtube_studio_uploader.js yayın sonucu doğrulamasını ve belirsiz upload davranışını incele; Studio PUBLIC doğrulaması ve publish_unverified hata yolunu doğrula.
 - [x] Mevcut test paketinin son güvenli CI baseline'ını kaydet: 108 passed, 8 subtests passed (run 44076814790). Güncel HEAD'de yerel tekrar yapılamadı; sınırlar kanıt belgesinde.
-- [ ] Secret isimlerinin varlığını değerleri göstermeden kontrol et; secret değerlerini asla çekme/yazma. (GitHub connector, Secrets API uçlarını açıkça desteklemiyor; bu nedenle isimlerin varlığı bu bağlantıyla doğrulanamıyor. Son üretim logunda REPO_PAT HTTP 401 görüldü.)
+- [~] Secret metadata envanteri: GitHub connector Secrets API'yi desteklemiyor; kullanıcı mevcut Gemini cookie ve API secret'larının aynen kalmasını istedi. Hiçbir secret değeri okunmadı, yazılmadı veya silinmedi. İsim envanteri yapılmadı; mevcut secret'lar korunuyor.
 - [x] Pruner, cron/watchdog, kanal ve PUBLIC kurallarını koruma listesine al. (hourly_pruner.yml ve draft_publisher.yml incelendi; gerçek silme/PUBLIC yayın riskleri, concurrency farkı ve tetikleme ilişkileri kanıt raporunda.)
 - [x] Başlangıç envanteri ve baseline kanıtını [Faz 0 kanıt raporuna](evidence/FAZ0_BASELINE_2026-11-17.md) ekle.
 
-**Kabul kapısı:** Mevcut davranış ve test baseline'ı biliniyor; yayın davranışı değiştirilmedi.
+**Kabul kapısı:** Mevcut davranış ve test baseline'ı biliniyor; yayın davranışı değiştirilmedi. Secret metadata envanteri erişim kısıtı ve kullanıcının 'mevcut secret'ları koru' kararı nedeniyle kapsam dışı bırakıldı; bu istisna kanıt raporunda kayıtlı.
 
 ## Faz 1 — JSON sözleşmesi ve test altyapısı
 
-- [ ] script.json üreten/tüketen tüm kod yollarını bul.
-- [ ] Mevcut JSON örneklerini ve geriye uyumluluk gereksinimlerini kaydet.
+- [x] İlk script.json üretici/tüketici envanterini çıkar ve gerçek örnekle karşılaştır: [PHASE1_SCRIPT_JSON_INVENTORY.md](PHASE1_SCRIPT_JSON_INVENTORY.md). (content_engine.py üretici; media_processor.py ve embed_cover_frame.py doğrulanmış tüketiciler.)
+- [x] Mevcut JSON örneğini ve geriye uyumluluk gereksinimlerini kaydet. (samples/script.json eski örnek; üretici payload'ıyla alan farkları belgelendi.)
+- [ ] Repo genelindeki ek script.json okuyucu/yazıcı yollarını taramayı tamamla.
 - [ ] Versiyonlu JSON Schema tanımla.
 - [ ] schema_version, generation_id, fact_check ve storyboard alanlarının tiplerini belirle.
 - [ ] Geçerli/eski JSON, eksik alan, yanlış tip, bozuk JSON ve sınır durum testleri ekle.
@@ -39,19 +40,19 @@
 
 **Kabul kapısı:** Eski üretim yolu bozulmadan yeni şema doğrulanıyor; hatalı JSON sonraki aşamaya geçemiyor.
 
-## Faz 2 — Gemini API adaptörü ve prompt
+## Faz 2 — Gemini Web cookie adaptörü ve prompt
 
-- [ ] Güncel Gemini model/endpoint ve yapılandırılmış çıktı desteğini resmi dokümandan doğrula.
-- [ ] Ücretsiz kota/erişimi gerçek API çağrısıyla kontrol et; ücretli plan veya billing açma.
-- [ ] API anahtarını header ile gönder; URL/log/artifact sızıntısını test et.
-- [ ] Ana promptu versiyonlu dosyada tut; konu, araştırma, senaryo, storyboard, arama ve kapak alanlarını tanımla.
+- [ ] Mevcut GEMINI_COOK cookie kullanımını ve gemini_webapi oturum akışını incele; cookie değerini hiçbir zaman loglama.
+- [ ] Önce yayın yapmayan dry-run ile cookie oturumunun metin/JSON üretebildiğini doğrula; mevcut kanıt yalnız kapak görseli üretimini kapsıyor.
+- [ ] Cookie oturumunun geçerlilik, timeout, rate limit ve oturum yenileme davranışlarını test et.
+- [ ] Promptu versiyonlu dosyada tut; konu, araştırma, senaryo, storyboard, arama ve kapak alanlarını tanımla.
 - [ ] Son kullanılan konu/başlık özetini prompta ekle.
-- [ ] Timeout, 429, 5xx, bozuk JSON ve boş yanıt için sınırlı retry/backoff yaz.
-- [ ] JSON Schema doğrulamasını gerçek Gemini yanıtına uygula.
-- [ ] Yayın yapmayan dry-run workflow ekle.
-- [ ] Gerçek çağrı ve doğrulama sonucunu gizli bilgi içermeyen kanıtla kaydet.
+- [ ] JSON Schema doğrulamasını gerçek cookie yanıtına uygula.
+- [ ] Cookie geçersizse ücretli API'ye geçmeden güvenli durdurma/fallback uygula.
+- [ ] Yeni metin üretim adaptörünün GEMINI_API_KEY istemediğini test et.
+- [ ] Yayın yapmayan dry-run kanıtını gizli bilgi içermeden kaydet.
 
-**Kabul kapısı:** Gerçek Gemini yanıtı geçerli şemada; ücretli çağrı yok; PUBLIC yayın yok.
+**Kabul kapısı:** Cookie ile gerçek ve geçerli JSON yanıtı; API key kullanılmıyor; PUBLIC yayın yok. Mevcut legacy kare analiz API yolu kullanıcı onayı olmadan değiştirilmez.
 
 ## Faz 3 — Kaynak doğrulama ve tekrar koruması
 
@@ -165,4 +166,5 @@
 |---|---|---|---|---|
 | 2026-11-17 | Dokümantasyon | dd0a8f1 / 956a03b / f8ec3aa | Plan, TODO ve README bağlantıları eklendi | Faz 0 |
 | 2026-11-17 | Faz 0 baseline | 0e2ecc9 / b4a9b29; test run 44076814790 + 44160916391 (114 passed, 8 subtests); production run 44119590041 | GitHub HEAD, daily/pruner/draft workflow'ları, AI_HANDOFF ve ana akış incelendi; CI'da 108 test geçti; gerçek PUBLIC üretim logu kaydedildi | Secret isimleri connector üzerinden doğrulanamıyor; yeni thumbnail CI sonucu bekleniyor |
-| 2026-11-17 | Faz 0 doküman ve test takviyesi | fc7ea77 / 8ca1fb9 / b693e80 / 25b7ac8 | Mimari/kurulum/devir belgelerine güncel durum notları eklendi; thumbnail yardımcıları için offline regresyon testleri eklendi; CI run 44160916391 tetiklendi | Secret isimleri connector üzerinden doğrulanamıyor; Faz 0 kullanıcı tarafında secret adları kontrol edilene kadar açık |
+| 2026-11-17 | Faz 0 doküman ve test takviyesi | fc7ea77 / 8ca1fb9 / b693e80 / 25b7ac8 / 3794cac | Mimari/kurulum/devir belgeleri uzlaştırıldı; thumbnail yardımcı testleri CI'da 114 passed + 8 subtests; kullanıcı mevcut secret'ları korumayı seçti, hiçbir secret değiştirilmedi | Faz 1 JSON envanteri ve şema; cookie/API legacy ayrımı ayrıca doğrulanacak |
+| 2026-11-17 | Faz 1 sözleşme envanteri | 9f34cea | script.json üretici, doğrulanmış tüketiciler, örnek farkları ve geriye uyumluluk alanları belgelendi | Ek tüketici taraması, JSON Schema ve CI testleri |
