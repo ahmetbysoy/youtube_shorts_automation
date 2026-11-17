@@ -117,30 +117,44 @@ const GEMINI_RETRIES = Math.max(1, Number(process.env.GEMINI_RETRIES || 2));
 const GEMINI_RETRY_DELAY_MS = Math.max(8000, Number(process.env.GEMINI_RETRY_DELAY_MS || 15000));
 
 async function postProcessImage(bytes, outPath, source) {
-  // YONTEM: Hic crop/cover YAPMA. Resmi dogrudan USTTEN 260px EXTEND et (siyah
-  // bant ekle), sonra alttan 1920'ye kadar olan kismi al. Bu sayede AI'nin
-  // en tepeye koydugu yazi 260px asagi kayar, TUM Icerik korunur, hicbir piksel
-  // atilmaz. Orijinal 1080x1920 -> ust 260px siyah bant + eski icerik ->
-  // 1080x2180 -> son 1920px al -> alttan 260px kirparak 1080x1920.
-  const TARGET_W = 1080;
-  const TARGET_H = 1920;
-  const TOP_PAD = 260;
-  const BG = { r: 5, g: 5, b: 8 };
+  // YouTube Shorts thumbnail SAFE ZONE (2026 dogrulanmis olculer):
+  //   Canvas 1080x1920 9:16
+  //   UST 380px, ALT 380px, SAG 120px, SOL 60px bos birak (YouTube UI buralari kapar)
+  //   Guvenli alan: 900x1160 (sol 60, sag 1080-120=960; ust 380, alt 1540)
+  //
+  // Strateji: Resmi genislige gore scale et (w=900), sonra 1080x1920 kanvasa
+  // tam guvenli alana (top=380, left=60) yerlestir. Disarisi siyah.
+  // Hic crop/cover YAPMA; resim 1160px'ten uzunsa alttan kirp (ust kisim korunur).
+  const CANVAS_W = 1080;
+  const CANVAS_H = 1920;
+  const SAFE_TOP = 380;
+  const SAFE_BOTTOM = 380;
+  const SAFE_LEFT = 60;
+  const SAFE_RIGHT = 120;
+  const SAFE_W = CANVAS_W - SAFE_LEFT - SAFE_RIGHT;   // 900
+  const SAFE_H = CANVAS_H - SAFE_TOP - SAFE_BOTTOM;   // 1160
+  const BG = { r: 8, g: 8, b: 12 };
+
   try {
     const img = sharp(bytes);
     const meta = await img.metadata();
     if (!meta.width || !meta.height) throw new Error('metadata okunamadi');
 
-    // Usten TOP_PAD kadar siyah extend et (alttan da 0, soldan 0, sagdan 0)
-    const extended = await img
-      .extend({ top: TOP_PAD, bottom: 0, left: 0, right: 0, background: BG })
-      .toBuffer();
-    const em = await sharp(extended).metadata();
-    // Simdi TARGET_W x TARGET_H olacak sekilde alttan son 1920px'yi al
-    // (yani ustten (em.height - TARGET_H) px atla)
-    const topOffset = Math.max(0, em.height - TARGET_H);
-    const finalBuf = await sharp(extended)
-      .extract({ left: 0, top: topOffset, width: TARGET_W, height: TARGET_H })
+    // Resmi SAFE_W (900px) genislige scale et, yukseklik oranla otomatik.
+    const scaled = await img.resize({ width: SAFE_W, height: null, fit: 'inside' }).toBuffer();
+    const sm = await sharp(scaled).metadata();
+    let inner = scaled;
+    if (sm.height > SAFE_H) {
+      // Resim uzun: cover ile "north" (ust) tarafli kirp ki yazi/alintilar korunup
+      // alttan fazla kısım atilsın.
+      inner = await sharp(scaled)
+        .resize({ width: SAFE_W, height: SAFE_H, fit: 'cover', position: 'north' })
+        .toBuffer();
+    }
+    const finalBuf = await sharp({
+      create: { width: CANVAS_W, height: CANVAS_H, channels: 3, background: BG },
+    })
+      .composite([{ input: inner, top: SAFE_TOP, left: SAFE_LEFT }])
       .jpeg({ quality: 92, mozjpeg: true })
       .toBuffer();
 
