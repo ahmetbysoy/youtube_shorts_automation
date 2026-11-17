@@ -6,23 +6,24 @@
 
 - [x] Mimari plan ve TODO GitHub'a dokümantasyon olarak eklendi.
 - [ ] Kod entegrasyonu başlamadı.
+- [x] Faz 0 başlangıç incelemesi ve test baseline kanıtı kısmen kaydedildi; Faz 0 kabul kapısı henüz tamamlanmadı.
 - [ ] Gemini üretimi ana otomasyon akışına bağlanmadı.
 - [ ] Sahne bazlı storyboard medya motoruna bağlanmadı.
 - [ ] Yeni kalite kapısı yayın akışına bağlanmadı.
 
 ## Faz 0 — Başlangıç envanteri ve emniyet
 
-- [ ] Aktif branch, HEAD commit ve çalışma ağacı durumunu kaydet.
-- [ ] daily_shorts.yml tetikleyicileri, concurrency/lock, matrix ve ana job komutlarını incele.
-- [ ] Son başarılı/başarısız workflow koşularını karşılaştır; gerçek run kanıtını kaydet.
-- [ ] main.py orkestrasyon adımlarını ve exit-code politikasını baseline test et.
-- [ ] content_engine.py sağlayıcı seçimini, promptu, fallback koşullarını ve script.json üretimini doğrula.
-- [ ] media_processor.py ve video_fetcher.js arama sırası, API/Playwright fallback'leri, lisans ve klip seçimini doğrula.
-- [ ] youtube_studio_uploader.js yayın sonucu doğrulamasını ve belirsiz upload davranışını incele.
-- [ ] Mevcut test paketini çalıştır; test sayısı ve sonucu commit/run ile kaydet.
-- [ ] Secret isimlerinin varlığını değerleri göstermeden kontrol et; secret değerlerini asla çekme/yazma.
-- [ ] Pruner, cron/watchdog, kanal ve PUBLIC kurallarını koruma listesine al.
-- [ ] Başlangıç envanteri ve baseline kanıtını bu TODO'ya ekle.
+- [x] GitHub varsayılan branch ve HEAD commit'i kaydet (yerel çalışma ağacı DNS nedeniyle doğrulanamadı; kanıt belgesinde açıklandı).
+- [x] daily_shorts.yml tetikleyicileri, concurrency/lock, matrix ve ana job komutlarını incele.
+- [x] Son başarılı workflow koşularını ve test koşusunu karşılaştır; gerçek run kanıtını kaydet. (Güncel production run ve önceki iptal koşuları da not edildi.)
+- [x] main.py orkestrasyon adımlarını ve exit-code politikasını kod üzerinden incele; gerçek üretim loguyla karşılaştır. (Yerel çalıştırma yapılmadı.)
+- [x] content_engine.py sağlayıcı seçimini, promptu, fallback koşullarını ve script.json üretimini incele; main.py'nin --force-fallback kullandığını doğrula.
+- [x] media_processor.py ve video_fetcher.js arama sırası, API/Playwright fallback'leri, lisans ve klip seçimini incele; son gerçek run'daki Wikimedia fallback örneğini kaydet.
+- [x] youtube_studio_uploader.js yayın sonucu doğrulamasını ve belirsiz upload davranışını incele; Studio PUBLIC doğrulaması ve publish_unverified hata yolunu doğrula.
+- [x] Mevcut test paketinin son güvenli CI baseline'ını kaydet: 108 passed, 8 subtests passed (run 44076814790). Güncel HEAD'de yerel tekrar yapılamadı; sınırlar kanıt belgesinde.
+- [ ] Secret isimlerinin varlığını değerleri göstermeden kontrol et; secret değerlerini asla çekme/yazma. (Bu oturumda Secrets API erişimi yapılmadı; son üretim logunda REPO_PAT HTTP 401 görüldü.)
+- [ ] Pruner, cron/watchdog, kanal ve PUBLIC kurallarını koruma listesine al. (daily_shorts içindeki tetikleyiciler incelendi; ayrı workflow'lar henüz tam incelenmedi.)
+- [x] Başlangıç envanteri ve baseline kanıtını [Faz 0 kanıt raporuna](evidence/FAZ0_BASELINE_2026-11-17.md) ekle.
 
 **Kabul kapısı:** Mevcut davranış ve test baseline'ı biliniyor; yayın davranışı değiştirilmedi.
 
@@ -162,4 +163,5 @@
 
 | Tarih | Faz | Commit / CI kanıtı | Sonuç | Açık konu |
 |---|---|---|---|---|
-| 2026-11-17 | Dokümantasyon | Bu dokümantasyon commit'i | Plan/TODO eklendi; kod değişmedi | Faz 0 başlayacak |
+| 2026-11-17 | Dokümantasyon | dd0a8f1 / 956a03b / f8ec3aa | Plan, TODO ve README bağlantıları eklendi | Faz 0 |
+| 2026-11-17 | Faz 0 baseline | 0e2ecc9; test run 44076814790; production run 44119590041 | GitHub HEAD/workflow/ana akış incelendi; CI'da 108 test geçti; gerçek PUBLIC üretim logu kaydedildi | Secrets kontrolü, pruner/draft workflow incelemesi, doküman uyumu ve güncel HEAD ek testleri |
