@@ -284,5 +284,5 @@ video tags → çocuk güvenliği → görünürlük(PUBLIC) → YAYIN` tamamlan
 - Eski alanlar (`visual_keywords`, `word_timestamps`, medya ve TTS metadata alanları) korunur.
 - İleriye dönük alanlar: `sources`, `fact_check`, `storyboard`; bu alanlar v2'de isteğe bağlıdır, böylece eski üretim akışı henüz sahne storyboard'u üretmeden de geçerli kalır.
 - Testler: `tests/test_script_json_schema.py` legacy/v2 ve hatalı veri örneklerini; `tests/test_full_pipeline_fallback.py` ise gerçek üretilen JSON'u doğrular.
-- Schema doğrulayıcı bağımlılığı yalnız test ortamına `requirements-test.txt` üzerinden eklenmiştir. Ana yayın workflow'una yeni bir bağımlılık eklenmemiştir.
+- Schema doğrulayıcı `jsonschema` hem test hem runtime bağımlılığıdır (`requirements-test.txt` ve `requirements.txt`). `main.py`, medya işlemeden önce `scripts/validate_script_json.py` ile JSON'u fail-closed doğrular; hata varsa süreç 1 koduyla durur.
 - Bu değişiklik Gemini API/cookie istemci seçimini, secret'ları, uploader'ı veya PUBLIC yayın adımını değiştirmez.
