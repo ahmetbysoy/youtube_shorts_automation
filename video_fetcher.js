@@ -204,10 +204,23 @@ async function launchContext(cookies, provider) {
   const ctx = await browser.newContext({
     viewport: { width: 1280, height: 800 },
     userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    locale: 'en-US',
+    timezoneId: 'America/Los_Angeles',
     // Youtube/Google storage_state KESİNLİKLE yuklenmez.
   });
   await ctx.addInitScript(() => {
+    // webdriver bayragini sil
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    // chrome nesnesi taklidi
+    // @ts-ignore
+    window.chrome = { runtime: {}, loadTimes: function(){}, csi: function(){} };
+    // permissions
+    const origQuery = window.navigator.permissions.query;
+    window.navigator.permissions.query = (parameters) =>
+      parameters.name === 'notifications' ? Promise.resolve({state: Notification.permission, onchange:null}) : origQuery(parameters);
+    // plugins/languages
+    Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3,4,5] });
+    Object.defineProperty(navigator, 'languages', { get: () => ['en-US','en'] });
   });
   if (cookies.length > 0) {
     try { await ctx.addCookies(cookies); }
@@ -529,51 +542,71 @@ async function runProvider(provider, opts) {
     }
     // Ilk uygun adayi sec + quality/cozunurluk/sure filtreleri (ffprobe sonrası)
     let chosen = null, probe = null;
-    for (const c of candidates.slice(0, 6)) {
+    const attempts = [];
+    console.error(`[${provider}] ${candidates.length} aday bulundu, ilk ${Math.min(10,candidates.length)} denenecek...`);
+    console.error(`[${provider}] Aday ornekleri:`, candidates.slice(0,3).map(c => ({u:safeUrl(c.download_url),p:c.priority})));
+    for (const c of candidates.slice(0, 10)) {
       // Indirme
       fs.mkdirSync(path.dirname(opts.outPath), { recursive: true });
       const tmpPath = opts.outPath + '.part';
       if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+      const attempt = { url: safeUrl(c.download_url), priority: c.priority };
       const dl = await downloadWithChecks(page, c.download_url, tmpPath,
                                           ALLOWED_DOWNLOAD_HOSTS[provider], opts.maxBytes);
-      diag.download = dl.ok ? 'ok' : (dl.trace && dl.trace.error);
-      diag.download_url_host = dl.trace && dl.trace.finalHost;
-      diag.http_status = dl.trace && dl.trace.httpStatus;
-      diag.content_type = dl.trace && dl.trace.contentType;
-      diag.bytes = dl.trace && dl.trace.bytes;
-      diag.sha256 = dl.trace && dl.trace.sha256hex;
+      attempt.download_ok = dl.ok;
+      attempt.download_error = dl.ok ? null : (dl.trace && dl.trace.error);
+      attempt.final_host = dl.trace && dl.trace.finalHost;
+      attempt.http_status = dl.trace && dl.trace.httpStatus;
+      attempt.content_type = dl.trace && dl.trace.contentType;
+      attempt.bytes = dl.trace && dl.trace.bytes;
+      diag.download_url_host = attempt.final_host;
+      diag.http_status = attempt.http_status;
+      diag.content_type = attempt.content_type;
+      diag.bytes = attempt.bytes;
       if (!dl.ok) {
+        console.error(`[${provider}]   indirme BASARISIZ: ${attempt.download_error} (status=${attempt.http_status}, ct=${attempt.content_type}, host=${attempt.final_host})`);
         if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+        attempts.push(attempt);
         continue;
       }
       // ffprobe
       const fp = ffprobe(tmpPath);
+      attempt.ffprobe_ok = fp.ok;
+      attempt.ffprobe_err = fp.error;
+      attempt.width = fp.width; attempt.height = fp.height; attempt.duration = fp.duration; attempt.codec = fp.codec;
+      diag.download = 'ok';
       diag.ffprobe = fp.ok ? 'ok' : fp.error;
       diag.full_decode = fp.ok ? 'ok' : (fp.error === 'full_decode_failed' ? 'failed' : 'n/a');
       diag.width = fp.width; diag.height = fp.height; diag.duration = fp.duration; diag.codec = fp.codec;
       if (!fp.ok) {
+        console.error(`[${provider}]   ffprobe/fulldecode BASARISIZ: ${fp.error}`);
         if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+        attempts.push(attempt);
         if (fp.error === 'full_decode_failed') continue; // sonraki adayi dene
         continue;
       }
       // Kalite esikleri
-      if (fp.width < opts.minWidth || fp.height < opts.minHeight) {
+      let reject = null;
+      if (fp.width < opts.minWidth || fp.height < opts.minHeight) reject = `cozunurluk ${fp.width}x${fp.height}`;
+      else if (opts.portrait && fp.height <= fp.width) reject = 'landscape';
+      else if (fp.duration && (fp.duration < opts.minDuration || fp.duration > opts.maxDuration)) reject = `sure ${fp.duration}s`;
+      if (reject) {
+        console.error(`[${provider}]   filtre reddi: ${reject}`);
         if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
-        continue;
-      }
-      if (opts.portrait) {
-        // dikey video: height > width
-        if (fp.height <= fp.width) { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); continue; }
-      }
-      if (fp.duration && (fp.duration < opts.minDuration || fp.duration > opts.maxDuration)) {
-        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+        attempt.filter_reject = reject;
+        attempts.push(attempt);
         continue;
       }
       // Basarili
       fs.renameSync(tmpPath, opts.outPath);
+      attempt.ok = true;
+      attempts.push(attempt);
       chosen = { path: opts.outPath, info: fp, download_url: c.download_url };
+      console.error(`[${provider}]   ✅ Secildi: ${fp.width}x${fp.height} ${fp.duration?.toFixed(1)}s ${(attempt.bytes/1048576).toFixed(1)}MB`);
       break;
     }
+    diag.attempts = attempts;
+    if (!chosen) diag.search = 'no_valid_video';
     await browser.close();
     return { chosen, diagnostics: diag, provider };
   } catch (e) {
