@@ -115,6 +115,10 @@ class TestGroundedGeminiStory(unittest.TestCase):
         self.assertEqual(script["visual_keywords"], [scene["visual_query"] for scene in self.raw["storyboard"]])
         self.assertEqual(len(script["sources"]), 1)
 
+    def test_rejects_malformed_model_json_before_schema_or_network_side_effects(self):
+        with self.assertRaises(json.JSONDecodeError):
+            validate_grounded_response("{not-valid-json}", topic_slug=self.slug, research=self.research)
+
     def test_rejects_claim_quote_not_present_in_fetched_source(self):
         raw = json.loads(json.dumps(self.raw, ensure_ascii=False))
         raw["claims"][0]["evidence_quote"] = "A plausible but unsupported fact from nowhere."

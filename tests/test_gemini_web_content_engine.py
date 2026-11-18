@@ -93,20 +93,28 @@ class TestGeminiWebContentEngine(unittest.TestCase):
         self.assertEqual(scenario["prompt_version"], "gemini-web-story-v1")
         self.assertEqual(scenario["visual_keywords"], [scene["visual_query"] for scene in self.scenes])
 
-    def test_gemini_web_only_uses_existing_fallback_without_paid_api_calls(self):
+    def test_timeout_expired_session_429_and_malformed_json_fall_back_without_api_calls(self):
+        failures = (
+            ("timeout", TimeoutError("synthetic timeout detail")),
+            ("expired_session", RuntimeError("synthetic expired session detail")),
+            ("http_429", RuntimeError("synthetic HTTP 429 detail")),
+            ("malformed_json", json.JSONDecodeError("synthetic malformed JSON detail", "{", 1)),
+        )
         fallback = {"title": "fallback title", "provider": "local-fallback-matrix-1"}
-        with patch.object(content_engine, "load_recent_titles", return_value=[]), \
-             patch.object(content_engine, "load_analytics_feedback", return_value={}), \
-             patch.object(content_engine, "generate_gemini_web_scenario", side_effect=ValueError("cookie unavailable")), \
-             patch.object(content_engine, "pick_fallback_scenario", return_value=fallback), \
-             patch.object(content_engine, "save_recent_title"), \
-             patch.object(content_engine, "call_groq_llm") as groq, \
-             patch.object(content_engine, "call_gemini_llm") as gemini, \
-             patch.dict("os.environ", {"GROQ_API_KEY": "not-used", "GEMINI_API_KEY": "not-used"}):
-            result = content_engine.generate_scenario(gemini_web_only=True)
-        self.assertIs(result, fallback)
-        groq.assert_not_called()
-        gemini.assert_not_called()
+        for label, failure in failures:
+            with self.subTest(mode=label), \
+                 patch.object(content_engine, "load_recent_titles", return_value=[]), \
+                 patch.object(content_engine, "load_analytics_feedback", return_value={}), \
+                 patch.object(content_engine, "generate_gemini_web_scenario", side_effect=failure), \
+                 patch.object(content_engine, "pick_fallback_scenario", return_value=fallback), \
+                 patch.object(content_engine, "save_recent_title"), \
+                 patch.object(content_engine, "call_groq_llm") as groq, \
+                 patch.object(content_engine, "call_gemini_llm") as gemini, \
+                 patch.dict("os.environ", {"GROQ_API_KEY": "not-used", "GEMINI_API_KEY": "not-used"}):
+                result = content_engine.generate_scenario(gemini_web_only=True)
+            self.assertIs(result, fallback)
+            groq.assert_not_called()
+            gemini.assert_not_called()
 
     def test_pipeline_serializes_grounding_storyboard_and_passes_v2_schema(self):
         scenario = content_engine.validate_and_normalize_scenario(self.draft, "gemini-web-session")
