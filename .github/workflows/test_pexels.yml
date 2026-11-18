@@ -7,82 +7,97 @@ jobs:
     env:
       PEXELS_COOK: ${{ secrets.PEXELS_COOK }}
     steps:
-      - name: check env
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: install playwright
         run: |
-          echo "PEXELS_COOK length: ${#PEXELS_COOK}"
+          npm init -y >/dev/null 2>&1
+          npm i playwright 2>&1 | tail -3
+          npx playwright install chromium --with-deps 2>&1 | tail -5
+      - name: fetch via playwright and download cat video
+        run: |
           mkdir -p out
-        shell: bash
-      - name: fetch pexels search (with cookie)
-        run: |
-          python3 - <<'PY'
-          import os, http.cookiejar
-          raw=os.environ['PEXELS_COOK']
-          print('raw length:', len(raw))
-          cj=http.cookiejar.MozillaCookieJar()
-          # JSON array (Playwright storage_state cookies)
-          try:
-              import json
-              data=json.loads(raw)
-              if isinstance(data,list):
-                  for c in data:
-                      cj.set_cookie(http.cookiejar.Cookie(
-                          version=0,name=c.get('name'),value=c.get('value',''),
-                          port=None,port_specified=False,
-                          domain=c.get('domain','.pexels.com'),domain_specified=bool(c.get('domain')),
-                          domain_initial_dot=c.get('domain','.pexels.com').startswith('.'),
-                          path=c.get('path','/'),path_specified=True,
-                          secure=c.get('secure',False),expires=c.get('expires'),
-                          discard=False,comment=None,comment_url=None,rest={'HttpOnly':c.get('httpOnly',False)},rfc2109=False))
-              elif isinstance(data,dict):
-                  # {name:value,...} dict
-                  for k,v in data.items():
-                      cj.set_cookie(http.cookiejar.Cookie(
-                          version=0,name=k,value=str(v),port=None,port_specified=False,
-                          domain='.pexels.com',domain_specified=True,domain_initial_dot=True,
-                          path='/',path_specified=True,secure=False,expires=None,
-                          discard=False,comment=None,comment_url=None,rest={},rfc2109=False))
-              else:
-                  raise ValueError
-              print('parsed JSON, cookies:', len(list(cj)))
-          except Exception as e:
-              print('json parse failed, treating as "k=v; k=v" string:', e)
-              for part in raw.split(';'):
-                  if '=' in part:
-                      k,v=part.strip().split('=',1)
-                      if k:
-                          cj.set_cookie(http.cookiejar.Cookie(
-                              version=0,name=k.strip(),value=v.strip(),port=None,port_specified=False,
-                              domain='.pexels.com',domain_specified=True,domain_initial_dot=True,
-                              path='/',path_specified=True,secure=False,expires=None,
-                              discard=False,comment=None,comment_url=None,rest={},rfc2109=False))
-          cj.save('/tmp/cj.txt',ignore_discard=True,ignore_expires=True)
-          with open('/tmp/cj.txt') as f:
-              print('cj.txt lines:', sum(1 for _ in f))
-          PY
-          echo "Pexels arama sayfasi cekiliyor..."
-          curl -sSL -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" \
-            -b /tmp/cj.txt \
-            -H "Referer: https://www.pexels.com/" \
-            "https://www.pexels.com/search/videos/cat/" -o /tmp/pexels_search.html
-          echo "Sayfa boyutu: $(wc -c < /tmp/pexels_search.html) bytes"
-          head -c 200 /tmp/pexels_search.html
-          echo
-          URLS=$(grep -oE 'https://[^"\\]*vids\.pexels\.com[^"\\]*\.mp4[^"\\]*' /tmp/pexels_search.html | sort -u)
-          CNT=$(echo "$URLS" | grep -c 'pexels' || true)
-          echo "Bulunan mp4 sayisi: $CNT"
-          echo "$URLS" | head -5
-          DL=$(echo "$URLS" | grep -i 'hd' | head -1)
-          if [ -z "$DL" ]; then DL=$(echo "$URLS" | head -1); fi
-          echo "Secilen URL: $DL"
-          if [ -z "$DL" ]; then echo "VIDEO YOK"; exit 1; fi
-          curl -sSL -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36" \
-            -b /tmp/cj.txt \
-            -H "Referer: https://www.pexels.com/" \
-            -o out/cat.mp4 "$DL"
+          node - <<'EOF'
+          const { chromium } = require('playwright');
+          const fs = require('fs'), https = require('https'), path = require('path');
+          const OUT='out/cat.mp4';
+          const cookiesRaw = process.env.PEXELS_COOK;
+          let cookies = [];
+          try {
+            const data = JSON.parse(cookiesRaw);
+            if (Array.isArray(data)) {
+              cookies = data;
+            } else if (typeof data === 'object') {
+              for (const [name,value] of Object.entries(data)) {
+                cookies.push({name,value:String(value),domain:'.pexels.com',path:'/'});
+              }
+            }
+          } catch(e) {
+            cookiesRaw.split(';').forEach(p=>{
+              const i=p.indexOf('='); if(i>0){
+                cookies.push({name:p.slice(0,i).trim(),value:p.slice(i+1).trim(),domain:'.pexels.com',path:'/'});
+              }
+            });
+          }
+          // Cookie domain duzelt (pexels.com ve .pexels.com ikisi de olsun)
+          cookies = cookies.filter(c=>c.name && c.value).map(c=>({
+            ...c,
+            domain: c.domain || '.pexels.com',
+            path: c.path || '/',
+          }));
+          console.log('Cookie sayisi:', cookies.length);
+          (async()=>{
+            const browser = await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const ctx = await browser.newContext({
+              viewport:{width:1280,height:900},
+              userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+            });
+            await ctx.addInitScript(()=>Object.defineProperty(navigator,'webdriver',{get:()=>undefined}));
+            await ctx.addCookies(cookies);
+            const page = await ctx.newPage();
+            console.log('Sayfa aciliyor...');
+            await page.goto('https://www.pexels.com/search/videos/cat/',{waitUntil:'networkidle',timeout:60000});
+            await page.waitForTimeout(3000);
+            console.log('URL:', page.url());
+            console.log('Title:', await page.title());
+            const urls = await page.evaluate(()=>{
+              const out = new Set();
+              if (window.__NEXT_DATA__) {
+                const s = JSON.stringify(window.__NEXT_DATA__);
+                const m = s.match(/https:\/\/[^"\\]+vids\.pexels\.com[^"\\]+\.mp4[^"\\]*/g);
+                if (m) m.forEach(u=>out.add(u));
+              }
+              document.querySelectorAll('video source,video').forEach(s=>{
+                const src = s.src || s.currentSrc;
+                if(src && src.includes('.mp4')) out.add(src);
+              });
+              // __APOLLO_STATE__ / script
+              document.querySelectorAll('script').forEach(sc=>{
+                const t = sc.textContent || '';
+                const m = t.match(/https:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
+                if (m) m.forEach(u=>out.add(u));
+              });
+              return [...out];
+            });
+            console.log('Bulunan mp4 sayisi:', urls.length);
+            urls.slice(0,8).forEach((u,i)=>console.log(i,u.slice(0,130)));
+            const hd = urls.find(u=>/hd/i.test(u)) || urls[0];
+            if(!hd){console.error('VIDEO YOK');process.exit(1);}
+            console.log('Indiriliyor:', hd.slice(0,130));
+            const resp = await page.request.get(hd,{headers:{'Referer':'https://www.pexels.com/'}});
+            if (!resp.ok()) { console.error('HTTP', resp.status()); process.exit(1); }
+            const buf = await resp.body();
+            fs.writeFileSync(OUT, buf);
+            console.log('Kaydedildi:', OUT, buf.length,'bytes =',(buf.length/1024/1024).toFixed(2),'MB');
+            await browser.close();
+          })().catch(e=>{console.error('HATA',e);process.exit(1);});
+          EOF
           ls -la out/
           echo "--- ffprobe ---"
-          ffprobe -v error -show_entries stream=codec_type,codec_name,width,height,duration -of default=noprint_wrappers=1 out/cat.mp4 2>&1 | head -20 || echo "ffprobe yok"
-        shell: bash
+          sudo apt-get install -y -qq ffmpeg >/dev/null 2>&1 || true
+          ffprobe -v error -show_entries stream=codec_type,codec_name,width,height,duration -of default=noprint_wrappers=1 out/cat.mp4 2>&1 | head -20
       - uses: actions/upload-artifact@v4
         with:
           name: cat-video
