@@ -1,3 +1,5 @@
+> **Güncel — 2026-11-18 (akşam): Stock video cookie kanalı çalışıyor.** Kullanıcı GitHub Repository Secrets içine `PEXELS_COOK` ve `PIXABAY_COOK` ekledi. `video_fetcher.js` yeniden yazıldı: env cookie → dosya cookie önceliği, 3 format (Playwright storage_state cookies JSON dizisi / Netscape cookie dizisi / "k=v; k=v" string) otomatik normalize, `sameSite` alanı düzeltildi, Pexels araması `networkidle` ile Cloudflare "Just a moment..." doğrulamasını otomatik geçiyor, video seçiminde gerçek `video-files/hd_1920_1080` ve `video-files/uhd_2560_1440` linkleri öncelikli, Pexels AI UGC (`aigc-bundle`) son çare. Canlı Actions kanıtı [44357865752](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44357865752): Pixabay `cute cat` araması 9.8sn **3840×2160 (4K) H.264** 25.6 MB video indirdi, ffprobe decode probe geçti. Pexels tarafı da [44354704040](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44354704040) koşusunda mp4 URL buldu (AI UGC 960×960). `.env.example`, `README.md` ve `daily_shorts.yml` orkestratör env bloğu güncellendi. Kapak tarafında kullanıcı isteğiyle tüm post-process/siyah bant/crop mantığı kaldırıldı; `postProcessImage` no-op, `kapak_gemini.json` kullanıcının orijinal prompt'una döndürüldü; tüm Shorts'lar için gerçek kapak koşusu [44143330207](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44143330207) tetiklendi.
+>
 > **Güncel Faz 4C — 2026-11-18: Faz4B NOT_ACCEPTED, Faz5 başlamadı.** Kaynak [`14f7896`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/14f78962f2444e9d03fe0d0caf9b22efff06d927); yeni CI [44313713933](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44313713933) **361 Python + 16 alt test**, hedefli tekrar **35/182/8**, **16 Node** geçti. Kullanıcının yeni cookies’i **API kullanılmadan** [44313751238](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44313751238) Actions koşusunda test edildi: preflight **8 Pexels + 7 Pixabay eşleşen cookie kaydı**, iki ayrı browser araması **HTTP403 / blocked_unverified**. Commons iki CC BY videoda source/deed/download **200**, tam byte/SHA256 ve container probe geçti; **full_decode_failed**, render/final QC not_reached. API/ENV_FILE bu run’da okunmadı; API key eksikliği cookie testi için blocker değildir. Yeşil CI/offline fixture veya eski yerel Commons, yeni canlı kabul yerine geçmez. Önceki iki-run history/gerçek409 proof’unun üç blob’u aynı; cleanup dört404 ile salt-okur tekrar doğrulandı, yeniden dispatch edilmedi. **22 protected blob, 26 topic/0pending** korundu; üretim/yayın/silme yok. [12 başlıklı yeni rapor](docs/evidence/PHASE4C_ACCEPTANCE_2026-11-18.md) · [JSON](docs/evidence/PHASE4C_ACTIONS_EVIDENCE_2026-11-18.json).
 
 > **Tarihsel Faz4B snapshot’ı:** Kaynak `59e2c79`, CI44301070745 **301+16/35/122/8/11Node**; eski yerel canlı Commons tam zinciri geçti, eski Actions44301095341 stock403 ve generic Commons download/decode failure verdi. Bu eski kayıtlar yeni koşu değildir; [Faz4B raporu](docs/evidence/PHASE4B_ACCEPTANCE_2026-11-18.md) ve [JSON](docs/evidence/PHASE4B_ACTIONS_EVIDENCE_2026-11-18.json) değiştirilmeden korunur.
@@ -22,7 +24,7 @@
 
 > **Faz 14:** Kullanıcı ücretli AI görsel API kullanımını reddetti; [plan](docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md). Google API key GitHub Secrets içinde; değerini asla gösterme. Şu an ücretsiz proje olduğu Studio UI üzerinden gözlendi; API görüntü üretimi ücretsiz değildir.
 
-> **Son Güncelleme:** `2026-11-18` (Faz4C cookie-only yeni canlı test: preflight8/7, stock403, Commons full_decode_failed; CI361+16. Faz4B kabul geçmedi/Faz5 başlamadı; önceki Faz3 ve history kanıtı korunur)
+> **Son Güncelleme:** `2026-11-18` (akşam) (Stock video cookie kanalı açıldı — PEXELS_COOK+PIXABAY_COOK secrets; video_fetcher.js env cookie önceliği+Cloudflare Playwright geçişi+HD tercihi; kapak postProcess kaldırıldı, kullanıcının orijinal prompt'una dönüldü; Faz4C tarihsel kanıtı korunur)
 > **Hedef Kitle:** Bu projeyi devralacak bir sonraki Yapay Zeka Ajanı (Arena Agent, Claude Code, Cursor, Codex vb.) veya Geliştirici.
 
 Bu belge, projeyi devralan bir yapay zekanın **sıfır tahmin, sıfır deneme-yanılma ve sıfır güvenlik ihlali** ile 30 saniye içinde sistemi anlayıp geliştirmeye devam edebilmesi için hazırlanmıştır.
@@ -78,6 +80,14 @@ Aşağıdaki **33 secret** listesi tarihsel başlangıç envanteridir; bugünkü
   - `STORAGE_STATE_JSON_1` .. `STORAGE_STATE_JSON_10`
 - **Tekil / Yedek Geriye Dönük Uyumluluk:**
   - `ENV_FILE`, `COOKIES_JSON`, `STORAGE_STATE_JSON`
+- **Stok Video Cookie'leri (18 Kasım 2026 akşamı eklendi, canlı çalışıyor):**
+  - `PEXELS_COOK` — Pexels oturum cookie'leri (JSON dizi veya "k=v; k=v" string). `video_fetcher.js` Playwright ile Cloudflare'i geçer.
+  - `PIXABAY_COOK` — Pixabay oturum cookie'leri (aynı format).
+  - Format ayrıntıları ve nasıl çıkarılacağı `.env.example` ve `README.md`'de yazılı.
+- **API / AI / Hizmet Anahtarları:**
+  - `GEMINI_COOK`, `GEMINI_API_KEY`, `GROQ_API_KEY` (LLM/Gemini Web)
+  - `PEXELS_API_KEY`, `PIXABAY_API_KEY` (opsiyonel; cookie varsa kullanılmaz)
+  - `REPO_PAT` (artifact/secrets yönetimi)
 
 > **14 Günlük Cookie Rotasyonu (`scripts/rotate_cookies.py`):** Google'ın bulut IP'lerinde oturumu düşürmemesi için her 14 günde bir yerelde `node youtube_studio_uploader.js` çalıştırılıp taze `cookies.json` ve `storage_state.json` alındıktan sonra tek komutla tüm kanallara (veya belirli bir kanala) basılır:
 > ```bash

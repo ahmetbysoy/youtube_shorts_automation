@@ -172,3 +172,13 @@ Tarih: 5 Kasım 2026. Bu plan canlı TODO'dur; her tamamlanan adım somut kanıt
   Seçenekler: sandbox'tan yayın (çalışıyor), ev IP'sinde self-hosted runner, veya kullanıcının telefondan onayı.
 - Önbellek doğrulandı: #6'da node_modules + Chromium "Cache restored", araç kurulumu 12 sn, install-deps apt'si çalışmadı.
 - *_DRAFT secret'ları publisher'a özel; ana COOKIES_JSON/STORAGE_STATE_JSON'a dokunulmadı.
+
+---
+
+## 18 Kasım 2026 akşamı — kullanıcı kararı: AI kapağa hiç müdahale etme
+
+- Kullanıcı kapaklar için "hiç post-process yapma, prompt + video başlığını Gemini'ye gönder, gelen kapağı direkt yükle" kararını verdi. Sebep: 3 deneme (120px / 180px / 260px / 380px bant + cover resize) sonrası da AI her seferinde farklı yere yazı koyuyor ve kodla "güvenli bölge" ayarlamak karmaşıklaşıyor.
+- `scripts/backfill_short_thumbnails.cjs` içindeki `postProcessImage` no-op hale getirildi (gelen byte'ı doğrudan dosyaya yazıyor; hiç sharp/resize/crop/bant yok).
+- `kapak_gemini.json` kullanıcının orijinal prompt'una döndürüldü: `"short video için kapak fotoğrafı istiyorum etkileşim ve izlenme rekorları kırması için profesyonel şekilde tasarla kapak fotoğrafını gören merak edip tıklasın.dikey (9:16) Shorts kapağı"` — `videolar: []` boş.
+- Tüm Shorts'lar (envanterdeki 26 bekleyen + varsa yeni eklenenler) için gerçek kapak koşusu `max_per_run=100, dry_run=0` ile tetiklendi (run [44143330207](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44143330207)).
+- Ayrı not: `video_fetcher.js` Pexels ve Pixabay için cookie tabanlı (API key'siz) arama+indirme desteği kazandı; `PEXELS_COOK` ve `PIXABAY_COOK` GitHub Secrets'ları canlı testte 4K video indirmeyi başardı (run [44357865752](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44357865752)).
