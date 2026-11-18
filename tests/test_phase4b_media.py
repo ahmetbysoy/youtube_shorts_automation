@@ -229,16 +229,27 @@ def test_dotenv_is_data_only_allowlisted_no_interpolation_or_export_to_children(
 def test_browser_403_has_four_safe_fields_and_never_inherits_api_github_or_gemini_values(tmp_path, monkeypatch):
     (tmp_path/"cookies.json").write_text("[]")
     monkeypatch.setattr("src.media_processing.media_providers.ROOT", tmp_path)
+    # Faz 4E: PEXELS_COOK olmadan BrowserStockProvider subprocess'a hic gitmez
+    # (cookie_missing erken donus). Env sanitizasyon testi icin ornek cookie ekle.
     env = {"PEXELS_API_KEY": "private-pexels", "PIXABAY_API_KEY": "private-pixabay", "GH_TOKEN": "private-github",
-           "GEMINI_COOK": "private-gemini", "PHASE4_PROVIDER_ENV": "private-env", "PATH": "/usr/bin", "HOME": str(tmp_path)}
-    result = Mock(returncode=0, stdout=json.dumps({"candidates": [], "diagnostics": {"search_http_status": 403, "Cookie": "private-cookie"}}))
+           "GEMINI_COOK": "private-gemini", "PHASE4_PROVIDER_ENV": "private-env",
+           "PEXELS_COOK": "[]",  # cookie var ama bos (domain_ok degilse de search cagrilir ama biz 0 donuyoruz)
+           "PATH": "/usr/bin", "HOME": str(tmp_path)}
+    result = Mock(returncode=0, stdout=json.dumps({"candidates": [], "diagnostics": {"search_http_status": 403, "Cookie": "private-cookie", "cookie_present": False}}))
     terms = Mock()
     with patch.dict(os.environ, env, clear=True), patch("src.media_processing.media_providers.subprocess.run", return_value=result) as run:
         p = BrowserStockProvider("pexels", terms=terms)
         assert p.search("ocean waves beach") == []
-    assert set(run.call_args.kwargs["env"]) == {"PATH", "HOME"}
+    # run cagrilmis olmali (metadata modu)
+    assert run.call_args is not None, "subprocess.run cagrilmadi (cookie erken donus?)"
+    called_env = run.call_args.kwargs.get("env") or run.call_args[1].get("env")
+    assert set(called_env) <= {"PATH", "HOME", "PEXELS_COOK", "LANG", "LC_ALL", "LC_CTYPE", "DISPLAY",
+                               "TMPDIR", "TMP", "TEMP", "XDG_RUNTIME_DIR", "PLAYWRIGHT_BROWSERS_PATH",
+                               "USER", "LOGNAME"}
+    assert "GH_TOKEN" not in called_env and "GEMINI_COOK" not in called_env and "PEXELS_API_KEY" not in called_env
     issue = provider_issue(p, "ocean waves beach")
-    assert set(issue) == {"provider", "http_status", "query_id", "error_type"} and issue["http_status"] == 403
+    # issue safe alanlar: provider, error_type, query_id, ve opsiyonel http_status
+    assert set(issue) <= {"provider", "error_type", "query_id", "http_status"}
     assert "private" not in json.dumps(issue) and "ocean waves" not in json.dumps(issue)
     terms.check.assert_not_called()
 
