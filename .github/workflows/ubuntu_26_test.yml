@@ -101,9 +101,14 @@ jobs:
           test -d node_modules/playwright || npm install playwright >/dev/null 2>&1
           # Hem chromium (headless_shell dahil) tam kur; headless_shell binary'si olmayan
           # Playwright surumlerinde testler patlar.
+          # Onemli: Python Playwright surumu (1.54+) npx'ten farkli browser
+          # surumu isteyebilir (v1248 vs v1255). Python CLI ile de chromium
+          # yukleyerek Python testlerinin dogru binary'yi bulmasini sagla.
           npx playwright install --with-deps chromium
+          python -m playwright install --with-deps chromium
           ls -la ~/.cache/ms-playwright/ || true
           npx playwright --version
+          python -m playwright --version
           node --check video_fetcher.js
           node --check scripts/stock_media_catalog.cjs
           node --check analytics_scraper.js
