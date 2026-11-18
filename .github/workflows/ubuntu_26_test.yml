@@ -95,9 +95,14 @@ jobs:
 
       - name: "Playwright + Chromium (--with-deps)"
         run: |
-          npm install
+          # Depoda package.json yok; gecici npm projesi olusturup playwright'u kur.
+          # Bu sadece CI test ortami icin; repoya package.json eklenmez, node_modules .gitignore'tir.
+          test -f package.json || npm init -y >/dev/null 2>&1
+          test -d node_modules/playwright || npm install playwright >/dev/null 2>&1
           npx playwright install --with-deps chromium
           npx playwright --version
+          node --check video_fetcher.js
+          node --check scripts/stock_media_catalog.cjs
 
       - name: "Altyazi Montaj Testi (libass9 + FontSize=56 + MarginV=250)"
         run: |

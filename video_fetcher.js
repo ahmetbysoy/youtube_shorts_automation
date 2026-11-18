@@ -201,46 +201,22 @@ function loadCookies(source, defaultDomain) {
 async function launchContext(cookies, provider) {
   const browser = await chromium.launch({
     headless: true,
-    args: [
-      '--no-sandbox','--disable-dev-shm-usage',
-      '--disable-blink-features=AutomationControlled',
-      '--disable-features=IsolateOrigins,site-per-process',
-      '--disable-web-security',
-    ]
+    args: ['--no-sandbox','--disable-dev-shm-usage','--disable-blink-features=AutomationControlled']
   });
   const ctx = await browser.newContext({
     viewport: { width: 1366, height: 768 },
-    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     locale: 'en-US',
-    timezoneId: 'America/New_York',
-    extraHTTPHeaders: {
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      'sec-ch-ua': '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
-      'sec-ch-ua-mobile': '?0',
-      'sec-ch-ua-platform': '"macOS"',
-      'Upgrade-Insecure-Requests': '1',
-    },
     // Youtube/Google storage_state KESİNLİKLE yuklenmez.
+    // Ekstra parmak izi taklidi (sec-ch-ua, WebGL, platform, plugins taklidi) YAPILMAZ:
+    // Site bot tespitini zorlastirmak yerine yalnizca asagidaki webdriver bayragi silme
+    // islemi uygulanir. CAPTCHA/Cloudflare asilmaya calisilmaz; engellenirse
+    // blocked_unverified olarak raporlanir.
   });
   await ctx.addInitScript(() => {
-    // webdriver bayragini sil
+    // Headless Chrome'un varsayilan olarak navigator.webdriver=true ayarlamasini
+    // duzelt (kabul edilebilir minimum davranis; parmakizi taklidi degil).
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    // @ts-ignore
-    window.chrome = { runtime: {}, loadTimes: function(){}, csi: function(){}, app: { isInstalled: false } };
-    const origQuery = window.navigator.permissions.query;
-    window.navigator.permissions.query = (parameters) =>
-      parameters.name === 'notifications' ? Promise.resolve({state: Notification.permission, onchange:null}) : origQuery(parameters);
-    Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3,4,5] });
-    Object.defineProperty(navigator, 'languages', { get: () => ['en-US','en'] });
-    Object.defineProperty(navigator, 'platform', { get: () => 'MacIntel' });
-    // WebGL/Canvas parmak izini taklit et
-    const getParameter = WebGLRenderingContext.prototype.getParameter;
-    WebGLRenderingContext.prototype.getParameter = function(p) {
-      if (p === 37445) return 'Intel Inc.';
-      if (p === 37446) return 'Intel Iris OpenGL Engine';
-      return getParameter.call(this, p);
-    };
   });
   if (cookies.length > 0) {
     try { await ctx.addCookies(cookies); }
@@ -357,7 +333,8 @@ async function downloadWithChecks(page, url, destPath, allowedHosts, maxBytes) {
 // ── Pixabay scraper ──────────────────────────────────────────
 async function fetchFromPixabay(page, kw, opts) {
   const searchUrl = `https://pixabay.com/videos/search/${encodeURIComponent(kw)}/?order=popular`;
-  const diag = { cookie_present: false, browser_access: null, search: null,
+  // cookie_present / cookie_count / cookie_domain_ok runProvider tarafinda atanir
+  const diag = { browser_access: null, search: null,
                  candidates_found: 0, source_url: null, selected_url: null };
   // Once anasayfaya gidip Cloudflare cookie'lerinin oturmasini bekle
   try {
@@ -446,7 +423,8 @@ async function fetchFromPixabay(page, kw, opts) {
 // ── Pexels scraper ───────────────────────────────────────────
 async function fetchFromPexels(page, kw, opts) {
   const searchUrl = `https://www.pexels.com/search/videos/${encodeURIComponent(kw)}/`;
-  const diag = { cookie_present: false, browser_access: null, search: null,
+  // cookie_present / cookie_count / cookie_domain_ok runProvider tarafinda atanir
+  const diag = { browser_access: null, search: null,
                  candidates_found: 0, source_url: null, selected_url: null };
   try {
     const resp = await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });

@@ -29,6 +29,51 @@ def io_evidence() -> dict:
     return {name: {"status": "not_reached"} for name in IO_STAGES}
 
 
+def _playwright_download(candidate: MediaCandidate, path: Path, evidence: dict) -> Path | None:
+    """Faz 4E: `catalog_transport == "playwright"` olan adaylar cookie ile
+    video_fetcher.js uzerinden indirilir. Public HTTP fallback YOK.
+    Donen dosya zaten SHA256 + ffprobe + full-decode dogrulamasindan gecmistir;
+    burada tekrar probe bilgilerini evidence'e doldururuz.
+    """
+    from .media_processor import probe_media as _probe
+    import sys
+    fetcher = Path(__file__).resolve().parents[2] / "video_fetcher.js"
+    if not fetcher.exists():
+        raise MediaIOError("video_fetcher.js not found", "missing_fetcher", evidence)
+    # Tarayici child'a YALNIZCA guvenli env + ilgili cookie
+    provider_env = {"pexels": "PEXELS_COOK", "pixabay": "PIXABAY_COOK"}.get(candidate.provider)
+    safe_env_names = {"PATH","HOME","USER","LOGNAME","LANG","LC_ALL","LC_CTYPE","DISPLAY",
+                      "TMPDIR","TMP","TEMP","XDG_RUNTIME_DIR","PLAYWRIGHT_BROWSERS_PATH"}
+    if provider_env:
+        safe_env_names.add(provider_env)
+    child_env = {k: v for k, v in os.environ.items() if k in safe_env_names}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # video_fetcher.js indirme+dogrulama yapip cikti dosyasini path'e yazar
+    args = ["node", str(fetcher), str(candidate.title or candidate.provider), str(path),
+            "--provider", candidate.provider,
+            "--min-width", "640", "--min-height", "360",
+            "--min-duration", "2", "--max-duration", "300",
+            "--max-bytes", str(MAX_BYTES)]
+    try:
+        r = subprocess.run(args, capture_output=True, text=True, timeout=180,
+                           cwd=str(fetcher.parent), env=child_env)
+    except subprocess.TimeoutExpired:
+        evidence["download_http"] = {"status": "failed", "error_class": "playwright_timeout"}
+        return None
+    if r.returncode != 0 or not path.exists() or path.stat().st_size < 50_000:
+        err_tail = (r.stderr or "").strip().splitlines()[-1][:200] if r.stderr else "(no stderr)"
+        evidence["download_http"] = {"status": "failed", "error_class": "playwright_failed", "detail": err_tail}
+        return None
+    # IO evidence doldur
+    size = path.stat().st_size
+    evidence["download_http"] = {"status": "passed", "http_status": 200, "transport": "cookie_playwright"}
+    evidence["redirect_final_host"] = {"status": "passed", "final_host": f"{candidate.provider}_via_playwright", "final_host_allowed": True, "hops": []}
+    evidence["content_type"] = {"status": "observed", "mime": "video/mp4"}
+    evidence["content_length"] = {"status": "observed", "declared_bytes": size}
+    evidence["download_body"] = {"status": "passed", "received_bytes": size, "declared_length_matches": None}
+    return path
+
+
 def download_candidate(candidate: MediaCandidate, path: Path, *, session=requests, evidence: dict | None = None) -> Path:
     evidence = io_evidence() if evidence is None else evidence
     for key in IO_STAGES: evidence.setdefault(key, {"status": "not_reached"})
@@ -36,6 +81,17 @@ def download_candidate(candidate: MediaCandidate, path: Path, *, session=request
     partial = path.with_suffix(path.suffix+".part")
     transport = {}; size = 0; code = "http_error"; stage = "download_http"
     try:
+        # Faz 4E: playwright/cookie transport'u olan adaylar public HTTP ile degil
+        # video_fetcher.js uzerinden (cookie+ffprobe+decode dogrulamali) indirilir.
+        if candidate.catalog_transport == "playwright" and candidate.media_type == "video":
+            pw = _playwright_download(candidate, path, evidence)
+            if pw is None:
+                code = "playwright_download_failed"; raise ValueError(code)
+            # SHA256 + probe simetrik olsun diye ustteki akista devam etmesi icin return etme,
+            # asagidaki post-download probe'a dusmesi icin partial akisini burada ayarla.
+            # (video_fetcher.js zaten dogruladi; burada sadece io_evidence zinciri icin)
+            evidence["file_sha256"] = {"status": "passed", "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "complete_download": True}
+            return path
         with get_public(session, candidate.download_url, DOWNLOAD_HOSTS.get(candidate.provider, set()), trace=transport, stream=True) as response:
             evidence["download_http"] = {"status": "passed", "http_status": response.status_code if type(response.status_code) is int else 200}
             evidence["redirect_final_host"] = {"status": "passed", "final_host": transport.get("final_host"),

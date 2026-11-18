@@ -261,7 +261,42 @@ async function scrapeStudioAnalytics() {
             avg_score: Number((s.totalScore / s.count).toFixed(2)),
         })).sort((a, b) => b.avg_score - a.avg_score);
 
-        let winningTopic = topicScores.length > 0 ? topicScores[0].niche : 'Uzay';
+        // ── FAZ 4E: Sifir video / yetersiz veri / login hatasi durumunda eski gecerli
+        // raporu KORU; "winning_topic=Uzay" sahte varsayilanini yazma.
+        const onLoginPage = page.url().includes('accounts.google.com');
+        const notEnoughData = enrichedVideos.length === 0 || topicScores.length === 0;
+        if (onLoginPage || notEnoughData) {
+            const reason = onLoginPage ? 'login_required' : 'insufficient_data';
+            // Eski raporu koru
+            if (fs.existsSync(FEEDBACK_OUT_PATH)) {
+                try {
+                    const prev = JSON.parse(fs.readFileSync(FEEDBACK_OUT_PATH, 'utf8'));
+                    if (prev && prev.videos_analyzed && prev.videos_analyzed >= 3) {
+                        console.warn(`[!] ${reason}: yeni rapor yazilmiyor, onceki gecerli rapor korundu (videos_analyzed=${prev.videos_analyzed})`);
+                        return;
+                    }
+                } catch (_) { /* onceki rapor bozuksa asagi yeni tane yaz */ }
+            }
+            const report = {
+                scraped_at: new Date().toISOString(),
+                channel_id: channelId,
+                videos_analyzed: 0,
+                status: reason,
+                winning_topic: null,
+                boost_active: false,
+                outperformance_ratio: 1.0,
+                discarded_topics: [],
+                optimization_directive: 'Yetersiz analitik verisi (sifir video veya oturum acik degil); eski skorlar korunuyor.',
+                topic_scores: [],
+                recent_videos: [],
+            };
+            fs.writeFileSync(FEEDBACK_OUT_PATH, JSON.stringify(report, null, 2), 'utf8');
+            console.error(`[!] Analitik verisi yetersiz: ${reason}. Rapor '${reason}' olarak isaretlendi.`);
+            return;
+        }
+
+        // Gecerli veri varsa hesapla ve kazanan nişi belirle
+        const winningTopic = topicScores[0].niche;
         let boostActive = false;
         let outperformanceRatio = 1.0;
         const discardedTopics = [];
@@ -274,7 +309,7 @@ async function scrapeStudioAnalytics() {
             outperformanceRatio = Number(((top.avg_score || 0) / denom).toFixed(2));
             if (top.avg_score > 0 && outperformanceRatio >= 1.5) {
                 boostActive = true;
-                optimizationDirective = `Önceki gün en yüksek performansı '${top.niche}' gösterdi, yeni senaryoların %80'i ${top.niche}/Fizik odaklı olsun.`;
+                optimizationDirective = `Önceki gün en yüksek performansı '${top.niche}' gösterdi, yeni senaryoların %80'i ${top.niche} odaklı olsun.`;
                 const worst = topicScores[topicScores.length - 1];
                 if (worst.niche !== top.niche && worst.avg_score * 1.5 <= top.avg_score) {
                     discardedTopics.push(worst.niche);
@@ -286,6 +321,7 @@ async function scrapeStudioAnalytics() {
             scraped_at: new Date().toISOString(),
             channel_id: channelId,
             videos_analyzed: enrichedVideos.length,
+            status: 'ok',
             winning_topic: winningTopic,
             boost_active: boostActive,
             outperformance_ratio: outperformanceRatio,
@@ -296,8 +332,8 @@ async function scrapeStudioAnalytics() {
         };
 
         fs.writeFileSync(FEEDBACK_OUT_PATH, JSON.stringify(report, null, 2), 'utf8');
-        console.log(`[+] Faz 9 analitik raporu yazıldı: ${FEEDBACK_OUT_PATH}`);
-        console.log(`[*] Direktif: ${optimizationDirective}`);
+        console.log(`[+] Faz 9 analitik raporu yazildi: ${FEEDBACK_OUT_PATH}`);
+        console.log(`[*] Kazanan niş: ${winningTopic} | Direktif: ${optimizationDirective}`);
     } finally {
         await context.close();
         if (browser) await browser.close();

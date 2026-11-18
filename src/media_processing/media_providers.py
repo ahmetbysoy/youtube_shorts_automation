@@ -431,16 +431,30 @@ class BrowserStockProvider:
             self.last_diagnostics = {"status": "metadata_json_parse_failed"}
             return []
         diag = (raw.get("diagnostics") or {}).get(self.provider) or {}
+        # Faz 4E: cookie_present degeri runProvider tarafinda cookie parse+domain
+        # filtresi SONRASI atanir; fetchFromPexels/fetchFromPixabay basta false
+        # ile baslatip hic dokunmaz, bu yuzden bool() ile cast ederken cookie_count>0
+        # olmasi da cookie_present=True anlamina gelir.
+        cookie_count = int(diag.get("cookie_count") or 0)
+        cookie_domain_ok = bool(diag.get("cookie_domain_ok"))
+        cookie_present = bool(diag.get("cookie_present")) or (cookie_count > 0 and cookie_domain_ok)
         self.last_diagnostics = {
-            "status": diag.get("search") or "unknown",
-            "cookie_present": diag.get("cookie_present"),
-            "cookie_count": diag.get("cookie_count"),
-            "cookie_domain_ok": diag.get("cookie_domain_ok"),
+            "status": diag.get("search") or diag.get("error") or "unknown",
+            "cookie_present": cookie_present,
+            "cookie_count": cookie_count,
+            "cookie_domain_ok": cookie_domain_ok,
             "browser_access": diag.get("browser_access"),
-            "candidates_found": diag.get("candidates_found"),
+            "candidates_found": int(diag.get("candidates_found") or 0),
+            "page_title": diag.get("page_title"),
             "error": diag.get("error"),
         }
-        if diag.get("error") or not diag.get("candidates_found"):
+        # Cookie yoksa/domain yanlissa acik hata, API fallback YOK
+        if not cookie_present:
+            self.last_diagnostics["status"] = "cookie_missing_or_wrong_domain"
+            return []
+        if diag.get("error"):
+            return []
+        if not diag.get("candidates_found"):
             return []
         lic = self.terms.check(self.provider)
         out = []
@@ -460,6 +474,16 @@ class BrowserStockProvider:
 
 
 def default_providers() -> list[MediaProvider]:
+    """Faz 4E — cookie-only sağlayıcılar önce; Wikimedia son çare.
+
+    PexelsProvider / PixabayProvider (API key) sınıfları korunur ama varsayılan
+    üretim zincirinde ÇAĞRILMAZ. Cookie yoksa hiçbir şekilde API fallback YAPILMAZ;
+    bunun yerine açık diagnostics (cookie_missing) döner ve zincir Wikimedia'ya
+    kadar devam eder.
+    """
     terms = StockTerms()
-    return [PexelsProvider(terms=terms), PixabayProvider(terms=terms),
-            BrowserStockProvider("pixabay", terms=terms), BrowserStockProvider("pexels", terms=terms), WikimediaProvider()]
+    return [
+        BrowserStockProvider("pexels", terms=terms),
+        BrowserStockProvider("pixabay", terms=terms),
+        WikimediaProvider(),
+    ]
