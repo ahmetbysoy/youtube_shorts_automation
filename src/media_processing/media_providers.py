@@ -291,6 +291,7 @@ class StockTerms:
                 lic = cand
                 used_method = method
         # 2) CF/fail durumunda cookie'li tarayici ile fallback
+        browser_text: str | None = None
         if lic is None:
             browser_text = self._fetch_via_browser(provider)
             if browser_text:
@@ -301,9 +302,9 @@ class StockTerms:
                     used_method = "official_provider_terms_browser"
         if lic is None:
             import sys
+            bl = len(browser_text) if browser_text else 0
             print(f"[stock_terms_diag] provider={provider} http_ok={text is not None} "
-                  f"browser_text_len={len(browser_text) if 'browser_text' in dir() else 0} "
-                  f"missing_markers={last_missing}", file=sys.stderr)
+                  f"browser_text_len={bl} missing_markers={last_missing}", file=sys.stderr)
             lic = MediaLicense(url=url, evidence_url=url, checked_at=now(),
                                rejection_reason="provider_terms_unavailable_or_changed")
         else:

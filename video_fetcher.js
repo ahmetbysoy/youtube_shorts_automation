@@ -600,16 +600,23 @@ async function fetchProviderTerms(provider) {
   const { browser, ctx } = await launchContext(cookies, provider);
   try {
     const page = await ctx.newPage();
-    const resp = await page.goto(TERMS_URL[provider], { waitUntil: 'domcontentloaded', timeout: 30000 });
-    diag.http_status = resp ? resp.status() : null;
-    await page.waitForTimeout(2000);
-    const text = await page.evaluate(() => {
-      const s = document.querySelector('script,style');
-      document.querySelectorAll('script,style,noscript').forEach(n => n.remove());
-      return (document.body && document.body.innerText) ? document.body.innerText : document.documentElement.innerText;
-    });
+    // Once sayfaya git + CF challenge gecmesi icin bekle
+    await page.goto(TERMS_URL[provider], { waitUntil: 'domcontentloaded', timeout: 45000 });
+    diag.http_status = null;
+    // CF challenge/redirect icin en fazla 20s bekle, sonra body oku
+    let text = '';
+    for (let w = 0; w < 20; w++) {
+      await page.waitForTimeout(1000);
+      text = await page.evaluate(() => {
+        document.querySelectorAll('script,style,noscript').forEach(n => n.remove());
+        return (document.body && document.body.innerText) ? document.body.innerText : (document.documentElement && document.documentElement.innerText) || '';
+      });
+      // "Just a moment..." CF ekraninda mi kontrol et
+      const title = await page.title();
+      if (!/just a moment|attention required|checking your browser/i.test(title) && text.length > 500) break;
+    }
     await browser.close();
-    return { ok: true, text: text || '', diag };
+    return { ok: text.length > 200, text: text || '', diag };
   } catch (e) {
     diag.error = String(e && e.message || e).slice(0,200);
     try { await browser.close(); } catch {}
