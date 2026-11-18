@@ -26,7 +26,8 @@
     "Galaksimiz Saniyede 600 Kilometre Hareket Ediyor! #Shorts",
     "600 Yıldır Kimsenin Okuyamadığı Gizemli Kitap: Voynich! #Shorts",
     "Bambu Bitkisi Tek Bir Günde 90 Santimetre Uzayabilir! #Shorts",
-    "Dünya'nın En Derin Sondajı 12 Kilometrede Neden Durduruldu? #Shorts"
+    "Dünya'nın En Derin Sondajı 12 Kilometrede Neden Durduruldu? #Shorts",
+    "Deniz Atlarında Yavruyu Erkek Taşır! #Shorts"
   ],
   "used_records": [
     {
@@ -728,9 +729,7 @@
         "yerin"
       ],
       "created_at": "2026-11-18T13:00:58.586790+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Deniz Atlarında Yavruyu Erkek Taşır! #Shorts",
       "topic": "Bilim",
@@ -789,9 +788,8 @@
         "yavru",
         "yumurta"
       ],
-      "created_at": "2026-11-18T17:26:06.445014+00:00",
-      "reservation_id": "3b4de822-a23e-4a70-bc2e-59cd28560fa6",
-      "run_id": "44355858158:1"
+      "created_at": "2026-11-18T17:26:06.445014+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
