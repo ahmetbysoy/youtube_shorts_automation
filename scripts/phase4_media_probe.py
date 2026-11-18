@@ -94,7 +94,9 @@ def main() -> int:
             cookie_present = any(Path(p).exists() for p in ("cookies.json", "storage_state.json"))
             configured = key_present or cookie_present
             providers = [PexelsProvider(terms=terms) if name == "pexels" else PixabayProvider(terms=terms), BrowserStockProvider(name, terms=terms)]
-        item = {"configured": configured, "live_selection": "not_run", "selected_scenes": 0, "catalog_transports": []}
+        item = {"configured": configured, "api_key_present": None if name == "wikimedia" else key_present,
+                "media_cookie_file_present": None if name == "wikimedia" else cookie_present,
+                "live_selection": "not_run", "selected_scenes": 0, "catalog_transports": []}
         evidence["providers"][name] = item
         if not configured:
             item["live_selection"] = "not_configured_unverified"
@@ -108,26 +110,35 @@ def main() -> int:
             atomic_json(folder/"script.json", data)
             item.update(live_selection="passed", selected_scenes=len(scenes), catalog_transports=sorted({r["media"]["catalog_transport"] for r in report["scenes"]}),
                         manifest=f"{name}/manifest.json", license_evidence=[{"name": r["license"]["name"], "url": r["license"]["url"], "evidence_url": r["license"]["evidence_url"], "method": r["license"]["evidence_method"]} for r in report["scenes"]])
-            if args.render and name == "wikimedia": item["render_smoke"] = render_smoke(scenes, data, folder)
+            if args.render and name == "wikimedia":
+                try:
+                    item["render_smoke"] = render_smoke(scenes, data, folder)
+                except Exception as exc:
+                    # Source selection can pass while the consumer smoke fails.
+                    # Preserve both outcomes rather than collapsing the diagnosis.
+                    item["render_smoke"] = {"status": "failed", "error_type": type(exc).__name__}
+                    raise RuntimeError("media_consumer_smoke_failed") from None
             print(f"PROVIDER={name} status=passed scenes={len(scenes)} relevance=metadata_supported visual_verification=not_performed", flush=True)
         except SceneMediaError as exc:
             item["live_selection"] = "blocked_unverified"
             item["failure"] = exc.report["failure"]
             print(f"PROVIDER={name} status=blocked_unverified", flush=True)
         except Exception as exc:
-            item["live_selection"] = "failed"
+            if not item["selected_scenes"]: item["live_selection"] = "failed"
             item["error_type"] = type(exc).__name__
             print(f"PROVIDER={name} status=failed type={type(exc).__name__}", flush=True)
         atomic_json(args.output/"evidence.json", evidence)
     passed = [k for k, v in evidence["providers"].items() if v["live_selection"] == "passed"]
     evidence["all_requested_providers_verified"] = len(passed) == len(names)
     evidence["overall"] = "all_requested_providers_passed" if len(passed) == len(names) else "partial_provider_evidence" if passed else "no_live_provider_success"
+    if any(item.get("render_smoke", {}).get("status") == "failed" for item in evidence["providers"].values()):
+        evidence["overall"] = "media_consumer_smoke_failed"
     evidence["completed_at"] = now()
     atomic_json(args.output/"evidence.json", evidence)
     print(f"PHASE4_LIVE_RESULT={evidence['overall']}", flush=True)
     # Unavailable provider coverage stays explicit in the evidence; do not turn
     # missing API keys into a false green provider-integration claim.
-    return 0 if passed else 1
+    return 0 if passed and evidence["overall"] != "media_consumer_smoke_failed" else 1
 
 
 if __name__ == "__main__":

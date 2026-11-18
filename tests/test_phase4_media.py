@@ -416,3 +416,48 @@ def test_successful_pipeline_persists_scene_manifest_without_touching_uploader(t
     assert len(out['scene_media'])==1 and out['scene_media'][0]['scene_id']==1
     assert out['media_selection']['status']=='selected_metadata_and_technical_checks_passed'
     render.assert_called_once()
+
+
+def test_real_ffmpeg_jpeg_consumer_normalizes_limited_range_without_weakening_qc(tmp_path,monkeypatch):
+    # Synthetic media/tone fixture: this is real FFmpeg IO, not provider proof.
+    import shutil
+    if not shutil.which('ffmpeg') or not shutil.which('ffprobe'): pytest.skip('ffmpeg/ffprobe required')
+    monkeypatch.setattr(mp,'ASSETS_DIR',tmp_path)
+    images=[]
+    for index,color in enumerate([(80,30,10),(10,80,30)]):
+        image=tmp_path/f'{index}.jpg';Image.new('RGB',(1080,1440),color).save(image)
+        images.append({'path':image,'duration':0.6,'media_kind':'image','fit_mode':'contain','loop_allowed':False})
+    audio=tmp_path/'tone.mp3'
+    subprocess.run(['ffmpeg','-v','error','-y','-f','lavfi','-i','sine=frequency=440:duration=1.2','-c:a','libmp3lame',str(audio)],capture_output=True,check=True,timeout=30)
+    srt=tmp_path/'s.srt';srt.write_text('1\n00:00:00,000 --> 00:00:01,200\nSynthetic test\n')
+    ass=tmp_path/'s.ass';mp.convert_srt_to_ass(srt,ass)
+    output=tmp_path/'out.mp4';mp.assemble_video_ffmpeg(images,audio,1.2,ass,output)
+    result=mp.validate_output(output)
+    video=next(s for s in result['streams'] if s['codec_type']=='video')
+    assert video['pix_fmt']=='yuv420p'
+
+
+def test_real_video_probe_detects_decode_validity_before_selection(tmp_path):
+    import shutil
+    if not shutil.which('ffmpeg') or not shutil.which('ffprobe'):pytest.skip('ffmpeg/ffprobe required')
+    video=tmp_path/'test.mp4'
+    subprocess.run(['ffmpeg','-v','error','-y','-f','lavfi','-i','testsrc2=size=128x128:rate=10:duration=1','-c:v','libx264',str(video)],capture_output=True,check=True,timeout=30)
+    assert probe_media(video,'video')['decode_status']=='passed'
+    video.write_bytes(video.read_bytes()[:1500])
+    with pytest.raises(RuntimeError):probe_media(video,'video')
+
+
+def test_safe_provider_diagnostics_do_not_include_secret_values(tmp_path):
+    p=PexelsProvider('your_placeholder_secret')
+    with pytest.raises(SceneMediaError) as e:select(script(),tmp_path,[p])
+    data=json.dumps(e.value.report)
+    assert 'api_key_not_configured_or_placeholder' in data
+    assert 'your_placeholder_secret' not in data
+
+
+def test_safe_api_error_code_is_retained_but_not_request_url(tmp_path):
+    session=Mock(get=Mock(return_value=Mock(status_code=403)))
+    p=PixabayProvider('private-fixture-key',session=session)
+    with pytest.raises(SceneMediaError) as e:select(script(),tmp_path,[p])
+    data=json.dumps(e.value.report)
+    assert 'pixabay_catalog_http_403' in data and 'private-fixture-key' not in data

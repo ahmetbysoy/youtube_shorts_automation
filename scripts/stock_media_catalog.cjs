@@ -50,9 +50,11 @@ async function main(args) {
     const page = await context.newPage();
     const base = provider === 'pexels' ? 'https://www.pexels.com' : 'https://pixabay.com';
     const search = provider === 'pexels' ? `${base}/search/videos/${encodeURIComponent(query)}/` : `${base}/videos/search/${encodeURIComponent(query)}/`;
-    await page.goto(search, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    const response = await page.goto(search, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    const diagnostics = { search_http_status: response?.status() || null, source_links: 0, source_pages_parsed: 0, license_links_observed: 0 };
     const links = await page.locator('a[href]').evaluateAll((elements, data) => [...new Set(elements.map(a => a.href)
       .filter(href => { try { const u = new URL(href); return u.origin === data.base && (data.provider === 'pexels' ? /^\/video\/.+-\d+\/$/.test(u.pathname) : /^\/videos\/.+-\d+\/$/.test(u.pathname)); } catch { return false; } }))].slice(0, 3), { base, provider });
+    diagnostics.source_links = links.length;
     const candidates = [];
     for (const source of links) {
       await page.goto(source, { waitUntil: 'domcontentloaded', timeout: 15000 });
@@ -61,9 +63,11 @@ async function main(args) {
         links: [...document.querySelectorAll('a[href]')].map(a => a.href)
       }));
       const observed = raw.links.some(href => href.startsWith(provider === 'pexels' ? 'https://www.pexels.com/license' : 'https://pixabay.com/service/'));
+      diagnostics.source_pages_parsed += 1;
+      diagnostics.license_links_observed += Number(observed);
       candidates.push(...parseCatalog(raw.json, page.url(), provider, observed));
     }
-    console.log(JSON.stringify({ provider, candidates }));
+    console.log(JSON.stringify({ provider, candidates, diagnostics }));
   } finally { await browser.close(); }
 }
 module.exports = { parseCatalog, durationSeconds, main };

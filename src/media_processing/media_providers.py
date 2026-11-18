@@ -222,8 +222,10 @@ class PexelsProvider:
         self.session, self.terms = session, terms or StockTerms(session)
 
     def search(self, query: str) -> list[MediaCandidate]:
-        if not self._key or "your_" in self._key.lower():
+        if not self._key or any(marker in self._key.lower() for marker in ("your_", "senin_gercek")):
+            self.last_diagnostics = {"status": "api_key_not_configured_or_placeholder"}
             return []
+        self.last_diagnostics = {"status": "api_catalog_requested"}
         # No redirects for authenticated requests. Never raise/print response URLs.
         r = self.session.get("https://api.pexels.com/videos/search", params={"query": query, "per_page": 8},
                              headers={"Authorization": self._key, "User-Agent": USER_AGENT}, timeout=(5, 20), allow_redirects=False)
@@ -253,8 +255,10 @@ class PixabayProvider:
         self.session, self.terms = session, terms or StockTerms(session)
 
     def search(self, query: str) -> list[MediaCandidate]:
-        if not self._key or "your_" in self._key.lower():
+        if not self._key or any(marker in self._key.lower() for marker in ("your_", "senin_gercek")):
+            self.last_diagnostics = {"status": "api_key_not_configured_or_placeholder"}
             return []
+        self.last_diagnostics = {"status": "api_catalog_requested"}
         r = self.session.get("https://pixabay.com/api/videos/", params={"key": self._key, "q": query, "per_page": 8},
                              headers={"User-Agent": USER_AGENT}, timeout=(5, 20), allow_redirects=False)
         if r.status_code != 200:
@@ -320,12 +324,14 @@ class BrowserStockProvider:
 
     def search(self, query: str) -> list[MediaCandidate]:
         if not any((ROOT/p).exists() for p in ("cookies.json", "storage_state.json")):
+            self.last_diagnostics = {"status": "media_cookie_configuration_absent"}
             return []
         result = subprocess.run(["node", str(ROOT/"video_fetcher.js"), query, "--metadata", "--provider", self.provider],
                                 cwd=ROOT, capture_output=True, text=True, timeout=85)
         if result.returncode != 0:
             raise RuntimeError("browser_catalog_failed")
         raw = json.loads(result.stdout)
+        self.last_diagnostics = raw.get("diagnostics", {})
         lic = self.terms.check(self.provider)
         out = []
         for row in raw.get("candidates", [])[:6]:

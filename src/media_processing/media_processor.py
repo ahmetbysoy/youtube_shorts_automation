@@ -442,8 +442,8 @@ def assemble_video_ffmpeg(
             # Preserve the whole subject rather than cropping unknown off-centre
             # objects. Real voice/timestamp alignment remains Phase 5 work.
             v_filter_parts.append(
-                f"[{idx}:v]fps=30,scale=1080:1920:force_original_aspect_ratio=decrease,"
-                f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,"
+                f"[{idx}:v]fps=30,scale=1080:1920:force_original_aspect_ratio=decrease:out_range=tv,"
+                f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,setparams=range=limited,"
                 f"trim=duration={seg_dur:.3f},setpts=PTS-STARTPTS[v{idx}]"
             )
             concat_inputs.append(f"[v{idx}]")
@@ -488,6 +488,10 @@ def assemble_video_ffmpeg(
     )
     filter_complex = ";".join(v_filter_parts + [concat_chain, sub_chain, audio_filter])
 
+    # Full-range JPEG inputs propagate range flags on FFmpeg 8. Explicitly
+    # normalize only the new strict path; don't weaken final yuv420p QC.
+    if any(scene.get("fit_mode") == "contain" for scene in scenes):
+        cmd.extend(["-color_range", "tv", "-r", "30", "-fps_mode", "cfr"])
     cmd.extend([
         "-filter_complex", filter_complex,
         "-map", "[v_sub]",

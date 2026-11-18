@@ -178,14 +178,19 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                 ranked = []
                 for pi, provider in enumerate(providers):
                     try:
-                        for candidate in provider.search(query)[:8]:
+                        candidates = provider.search(query)[:8]
+                        if not candidates:
+                            record["provider_errors"].append({"provider": provider.name, "query": query,
+                                                            "error_type": "NoCatalogCandidates", "diagnostics": getattr(provider, "last_diagnostics", {})})
+                        for candidate in candidates:
                             verdict = evaluate(candidate, scene, query, used=used, recent=recent)
                             if verdict["eligible"]:
                                 ranked.append((candidate, verdict, pi))
                             else:
                                 record["rejections"].append({"key": candidate.key, "query": query, "source_url": public_url(candidate.source_url), "reasons": verdict["rejection_reasons"]})
                     except Exception as exc:
-                        record["provider_errors"].append({"provider": provider.name, "query": query, "error_type": type(exc).__name__})
+                        code = str(exc) if re.fullmatch(r"(?:pexels_catalog_http_[0-9]{3}|pixabay_catalog_http_[0-9]{3}|commons_catalog_http_[0-9]{3}|browser_catalog_failed)", str(exc)) else type(exc).__name__
+                        record["provider_errors"].append({"provider": provider.name, "query": query, "error_type": type(exc).__name__, "error_code": code})
                 ranked.sort(key=lambda x: (-x[1]["score"], x[2], x[0].key))
                 for candidate, _pre, pi in ranked:
                     if downloads >= 4:
