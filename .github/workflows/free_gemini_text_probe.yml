@@ -17,9 +17,12 @@ jobs:
       - name: One Gemini Web text call (no publication)
         env:
           GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+          GEMINI_COOK_CONTEXT_PRESENT: ${{ secrets.GEMINI_COOK != '' }}
           PYTHONUNBUFFERED: '1'
         run: |
           set -euo pipefail
+          # Presence-only diagnostic: never print or measure the cookie value.
+          echo "GEMINI_COOK_CONTEXT_PRESENT=${GEMINI_COOK_CONTEXT_PRESENT}"
           if [ -z "${GEMINI_COOK:-}" ]; then
             echo "::error::GEMINI_COOK secret is missing."
             exit 1
