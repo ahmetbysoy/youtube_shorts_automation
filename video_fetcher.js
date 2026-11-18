@@ -74,6 +74,7 @@ function parseArgs(argv) {
     minHeight: 480,
     maxBytes: MAX_FILE_BYTES_DEFAULT,
     cookiesFile: null,
+    diagFile: null,
   };
   const positional = [];
   for (let i = 0; i < argv.length; i++) {
@@ -83,6 +84,7 @@ function parseArgs(argv) {
       case '--portrait':   opts.portrait = true; break;
       case '--metadata':   opts.metadata = true; break;
       case '--cookies-file': opts.cookiesFile = argv[++i]; break;
+      case '--diag-file': opts.diagFile = argv[++i]; break;
       case '--min-duration': opts.minDuration = parseFloat(argv[++i]); break;
       case '--max-duration': opts.maxDuration = parseFloat(argv[++i]); break;
       case '--min-width':  opts.minWidth = parseInt(argv[++i], 10); break;
@@ -710,11 +712,36 @@ async function runProvider(provider, opts) {
   }
 }
 
+// ── Diag dosyasi yaz (cookie/URL query sizmaz) ──────────────
+function redactUrl(u) {
+  try { const url = new URL(u); return url.protocol + '//' + url.host + url.pathname; } catch { return '(invalid)'; }
+}
+function writeDiagFile(path_, diagLog) {
+  if (!path_) return;
+  try {
+    const safe = {};
+    for (const [p, d] of Object.entries(diagLog)) {
+      if (!d) { safe[p] = d; continue; }
+      safe[p] = { ...d };
+      // candidate URL'lerini sansurle
+      if (Array.isArray(d.attempts)) {
+        safe[p].attempts = d.attempts.map(a => ({ ...a, url: a.url ? redactUrl(a.url) : undefined }));
+      }
+      if (d.selected_url) safe[p].selected_url = d.selected_url; // zaten safeUrl ile host+path
+      if (d.final_url) safe[p].final_url = d.final_url;
+      // html_snippet zaten filtrelenmis
+      // cookie degerleri hicbir zaman diag'a yazilmaz
+    }
+    fs.mkdirSync(path.dirname(path_), { recursive: true });
+    fs.writeFileSync(path_, JSON.stringify(safe, null, 2));
+  } catch (e) { /* sessizce gec */ }
+}
+
 // ── Ana ──────────────────────────────────────────────────────
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   if (!opts.keyword) {
-    console.error('Kullanim: node video_fetcher.js <keyword> <output_path> [--provider pexels|pixabay|all] [--metadata] [--portrait] ...');
+    console.error('Kullanim: node video_fetcher.js <keyword> <output_path> [--provider pexels|pixabay|all] [--metadata] [--portrait] [--diag-file PATH] ...');
     process.exit(2);
   }
   const providers = opts.provider === 'all' ? ['pixabay','pexels'] : [opts.provider];
@@ -732,7 +759,9 @@ async function main() {
       allCandidates.push(...(r.candidates || []));
       allDiag[p] = r.diagnostics;
     }
-    const out = { candidates: allCandidates, diagnostics: allDiag };
+    // URL query'lerini sansurle (auth token icerebilir)
+    const safeCandidates = allCandidates.map(c => ({...c, download_url: redactUrl(c.download_url)}));
+    const out = { candidates: safeCandidates, diagnostics: allDiag };
     process.stdout.write(JSON.stringify(out));
     // Hic aday yoksa exit 1
     const allFailed = Object.values(allDiag).every(d => d.error || (d.candidates_found === 0));
@@ -752,12 +781,14 @@ async function main() {
         `(${r.chosen.info.width}x${r.chosen.info.height}, ${r.chosen.info.duration?.toFixed(1)}s, ` +
         `${(r.diagnostics.bytes/1024/1024).toFixed(1)}MB, codec=${r.chosen.info.codec})`);
       console.log(r.chosen.path);
+      writeDiagFile(opts.diagFile, diagLog);
       process.exit(0);
     }
     const err = r.diagnostics.error || r.diagnostics.search || 'download_failed';
     console.error(`[${p}] ✗ Basarisiz: ${err}`);
   }
   console.error('[HATA] hicbir saglayicidan gecerli video bulunamadi');
+  writeDiagFile(opts.diagFile, diagLog);
   process.exit(1);
 }
 
