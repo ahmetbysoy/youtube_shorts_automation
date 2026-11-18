@@ -1,0 +1,3471 @@
+{
+  "version": 1,
+  "phase": "4B",
+  "recorded_at": "2026-11-18T12:14:27.933076+00:00",
+  "starting_sha": "316ae2e3e1aff89483d367a5d7ea2e82f0f68665",
+  "verified_source_sha": "59e2c79ae10ff38c297130d5b775a10427e64106",
+  "source_provenance": {
+    "initial_core_source_sha": "5c883f4ded05df896309274ed6e5a368eb178472",
+    "final_tested_source_sha": "59e2c79ae10ff38c297130d5b775a10427e64106",
+    "core_to_final_changes": [
+      ".github/workflows/phase4_media_probe.yml"
+    ],
+    "history_runs_source_sha": "5c883f4ded05df896309274ed6e5a368eb178472",
+    "history_components_identical_at_final_source": {
+      "src/media_processing/media_history.py": "111511ee01ff172d130c4f3ba377deec3a2bb078",
+      "scripts/phase4b_history_probe.py": "bfd96bb167846b3c68f5bc92c8b2697ca1b62a94",
+      ".github/workflows/phase4b_history_probe.yml": "200f09a2a70f130dfcc92eca4a6f9466905fac91"
+    },
+    "local_live_chain_source_sha": "59e2c79ae10ff38c297130d5b775a10427e64106",
+    "local_chain_is_actions_evidence": false
+  },
+  "acceptance": {
+    "verdict": "NOT_ACCEPTED",
+    "full_acceptance": false,
+    "stock_live_access_passed": false,
+    "commons_video_cc_by_chain_passed_locally": true,
+    "commons_video_cc_by_chain_passed_in_actions": false,
+    "actual_fixture_consumer_chain_passed": true,
+    "actual_fixture_consumer_chain_scope": "local_live_commons_and_ci_offline_fixture_not_actions_live_commons",
+    "two_actions_history_and_real_http_cas_passed": true,
+    "history_cleanup_passed": true,
+    "ci_passed": true,
+    "phase5_started": false,
+    "automatic_publication_readiness_claimed": false,
+    "open_issues": [
+      "Pexels/Pixabay live source/license/download/consumer coverage is unverified in Actions: no nonempty exact-name allowlisted API key observed, cookie file present, browser403. No account-wide absence or cookie-expiry inference.",
+      "Actions Commons catalog returned candidates, but eligible videos174336538/83680173 were rejected with download_or_decode_failed/RuntimeError. The evidence cannot separate HTTP/download/full-decode causes. The same-source LOCAL chain passed; it does not convert failed Actions into a pass.",
+      "General visual action/era/relationship verification is not implemented; pixel motion and lexical metadata are not semantic approval. Scene2 is downstream canyon/river flow, not an established falling-water face; narration was not rewritten.",
+      "Explicit scenario fixture and synthetic tone are NOT live Gemini/TTS evidence; Phase5 timing/audio and publication readiness remain open.",
+      "CAS preserves observed concurrent writes but is not distributed reservation; parallel runs may select the same fresh clip. Perceptual/transcoded dedup is not implemented.",
+      "Independent legacy producer, dynamic external callers and backup API/actual Studio consumers are not a complete runtime-inventory acceptance."
+    ]
+  },
+  "historical_baseline": {
+    "documentation_sha": "316ae2e3e1aff89483d367a5d7ea2e82f0f68665",
+    "media_code_sha": "e4d1144116887b31c459bb6a7e171589d214c687",
+    "ci_run_id": 44288761602,
+    "live_run_id": 44288761461,
+    "acceptance": "not_accepted",
+    "evidence_json": "docs/evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.json",
+    "evidence_json_sha256": "0965dd044b3ed6e081e29983c8b1ffed13eb7c8808daedd8c3429db975034dba",
+    "historical_log_audits": [
+      {
+        "run_id": 44284971550,
+        "jobs": 1,
+        "log_characters_scanned": 143846,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44285033824,
+        "jobs": 1,
+        "log_characters_scanned": 109937,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44285743243,
+        "jobs": 1,
+        "log_characters_scanned": 143706,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44285746809,
+        "jobs": 1,
+        "log_characters_scanned": 110965,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44286729473,
+        "jobs": 1,
+        "log_characters_scanned": 143590,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44286729732,
+        "jobs": 1,
+        "log_characters_scanned": 110960,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44288761602,
+        "jobs": 1,
+        "log_characters_scanned": 143817,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44288761461,
+        "jobs": 1,
+        "log_characters_scanned": 110961,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      }
+    ]
+  },
+  "changed_code_files": [
+    ".github/workflows/phase4_media_probe.yml",
+    ".github/workflows/phase4b_history_probe.yml",
+    ".github/workflows/ubuntu_26_test.yml",
+    "scripts/media_probe_security.py",
+    "scripts/phase4_media_probe.py",
+    "scripts/phase4b_consumer_chain.py",
+    "scripts/phase4b_history_probe.py",
+    "scripts/phase4b_live_evidence.py",
+    "scripts/phase4b_media_probe.py",
+    "scripts/stock_media_catalog.cjs",
+    "scripts/uploader_metadata_probe.cjs",
+    "src/media_processing/media_history.py",
+    "src/media_processing/media_providers.py",
+    "src/media_processing/scene_media.py",
+    "tests/test_phase4b_consumers.py",
+    "tests/test_phase4b_media.py",
+    "tests/uploader_metadata_probe.test.cjs"
+  ],
+  "local_tests": {
+    "full_python": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ],
+      "exit_code": 0,
+      "summary": [
+        "301 passed, 1 warning, 16 subtests passed in 32.30s"
+      ]
+    },
+    "phase3": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase3_fact_checks.py",
+        "tests/test_topic_history.py",
+        "tests/test_gemini_web_story.py",
+        "tests/test_script_json_schema.py"
+      ],
+      "exit_code": 0,
+      "summary": [
+        "35 passed in 1.89s"
+      ]
+    },
+    "phase4_and_4b": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase4_media.py",
+        "tests/test_phase4b_media.py"
+      ],
+      "exit_code": 0,
+      "summary": [
+        "122 passed in 3.75s"
+      ]
+    },
+    "actual_consumer": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase4b_consumers.py"
+      ],
+      "exit_code": 0,
+      "summary": [
+        "8 passed in 11.42s"
+      ]
+    },
+    "node_catalog_and_metadata": {
+      "command": [
+        "node",
+        "--test",
+        "tests/stock_media_catalog.test.cjs",
+        "tests/uploader_metadata_probe.test.cjs"
+      ],
+      "exit_code": 0,
+      "summary": [
+        "# tests 11",
+        "# pass 11",
+        "# fail 0"
+      ]
+    }
+  },
+  "post_workflow_fix_local_tests": {
+    "full_python": "301 passed +16 subtests;1 existing warning;28.42s",
+    "topic_history_restored_exact_bytes": true,
+    "dedicated_workflow_yaml_bash_embedded_python_syntax": "passed"
+  },
+  "actions": {
+    "ci": {
+      "id": 44301070745,
+      "name": "Ubuntu 26.04 Gecis Testi (Gecis Oncesi Deneme)",
+      "event": "push",
+      "path": ".github/workflows/ubuntu_26_test.yml",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "59e2c79ae10ff38c297130d5b775a10427e64106",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44301070745",
+      "created_at": "2026-11-18T12:08:23Z",
+      "updated_at": "2026-11-18T12:10:18Z",
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 134790621953,
+          "name": "ubuntu-26-probe",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-18T12:08:27Z",
+              "completed_at": "2026-11-18T12:08:27Z"
+            },
+            {
+              "name": "Depoyu Çek (Checkout)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-18T12:08:27Z",
+              "completed_at": "2026-11-18T12:08:28Z"
+            },
+            {
+              "name": "Sistem Bilgisi",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-18T12:08:28Z",
+              "completed_at": "2026-11-18T12:08:28Z"
+            },
+            {
+              "name": "FFmpeg + Font + Xvfb Kurulumu (26.04)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-18T12:08:28Z",
+              "completed_at": "2026-11-18T12:09:15Z"
+            },
+            {
+              "name": "Python + Node Kurulumu (Node 24 major'lar)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-18T12:09:15Z",
+              "completed_at": "2026-11-18T12:09:20Z"
+            },
+            {
+              "name": "Node Kurulumu",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-18T12:09:20Z",
+              "completed_at": "2026-11-18T12:09:23Z"
+            },
+            {
+              "name": "Uploader JavaScript Syntax Check",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-18T12:09:23Z",
+              "completed_at": "2026-11-18T12:09:23Z"
+            },
+            {
+              "name": "Python Bagimliliklari",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-18T12:09:23Z",
+              "completed_at": "2026-11-18T12:09:37Z"
+            },
+            {
+              "name": "Faz 3 CLI Import Smoke Test (yayın yok)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-18T12:09:37Z",
+              "completed_at": "2026-11-18T12:09:37Z"
+            },
+            {
+              "name": "Playwright + Chromium (--with-deps)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-11-18T12:09:37Z",
+              "completed_at": "2026-11-18T12:09:52Z"
+            },
+            {
+              "name": "Altyazi Montaj Testi (libass9 + FontSize=56 + MarginV=250)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-18T12:09:52Z",
+              "completed_at": "2026-11-18T12:09:53Z"
+            },
+            {
+              "name": "Faz 3: Semantik + Atomik Geçmiş Testleri (mock HTTP/API; yayın yok)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-18T12:09:53Z",
+              "completed_at": "2026-11-18T12:09:55Z"
+            },
+            {
+              "name": "Birim Testleri",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-11-18T12:09:55Z",
+              "completed_at": "2026-11-18T12:10:09Z"
+            },
+            {
+              "name": "Faz 4: provider/scene regressions and CLI smoke (mock catalogs; no publishing)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14,
+              "started_at": "2026-11-18T12:10:09Z",
+              "completed_at": "2026-11-18T12:10:11Z"
+            },
+            {
+              "name": "Faz 4B actual fixture producer-consumer, pre/post schema, cover and UTF-16 credit contract",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15,
+              "started_at": "2026-11-18T12:10:11Z",
+              "completed_at": "2026-11-18T12:10:14Z"
+            },
+            {
+              "name": "Faz 3 Probe Özeti",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16,
+              "started_at": "2026-11-18T12:10:14Z",
+              "completed_at": "2026-11-18T12:10:14Z"
+            },
+            {
+              "name": "Probe Ozeti",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-11-18T12:10:14Z",
+              "completed_at": "2026-11-18T12:10:14Z"
+            },
+            {
+              "name": "Post Node Kurulumu",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 32,
+              "started_at": "2026-11-18T12:10:14Z",
+              "completed_at": "2026-11-18T12:10:14Z"
+            },
+            {
+              "name": "Post Python + Node Kurulumu (Node 24 major'lar)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 33,
+              "started_at": "2026-11-18T12:10:14Z",
+              "completed_at": "2026-11-18T12:10:15Z"
+            },
+            {
+              "name": "Post Depoyu Çek (Checkout)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 34,
+              "started_at": "2026-11-18T12:10:15Z",
+              "completed_at": "2026-11-18T12:10:15Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 35,
+              "started_at": "2026-11-18T12:10:15Z",
+              "completed_at": "2026-11-18T12:10:15Z"
+            }
+          ],
+          "labels": [
+            "ubuntu-26.04"
+          ],
+          "started_at": "2026-11-18T12:08:26Z",
+          "completed_at": "2026-11-18T12:10:17Z"
+        }
+      ],
+      "log_audits": [
+        {
+          "job_id": 134790621953,
+          "bytes": 152851,
+          "known_credential_matches": 0,
+          "credential_pattern_matches": 0
+        }
+      ],
+      "safe_summary_lines": [
+        "2026-11-18T12:09:55.2828282Z 35 passed in 0.96s",
+        "2026-11-18T12:10:09.5179884Z 301 passed, 16 subtests passed in 14.01s",
+        "2026-11-18T12:10:11.1194547Z 122 passed in 1.18s",
+        "2026-11-18T12:10:14.7979843Z 8 passed in 3.11s"
+      ],
+      "artifacts": []
+    },
+    "media": {
+      "id": 44301095341,
+      "name": "Phase 4B Media and Consumer Probe (no publishing)",
+      "event": "workflow_dispatch",
+      "path": ".github/workflows/phase4_media_probe.yml",
+      "status": "completed",
+      "conclusion": "failure",
+      "head_sha": "59e2c79ae10ff38c297130d5b775a10427e64106",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44301095341",
+      "created_at": "2026-11-18T12:08:33Z",
+      "updated_at": "2026-11-18T12:09:48Z",
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 134790714289,
+          "name": "media-consumer-proof",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-18T12:08:38Z",
+              "completed_at": "2026-11-18T12:08:40Z"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-18T12:08:40Z",
+              "completed_at": "2026-11-18T12:08:42Z"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-18T12:08:42Z",
+              "completed_at": "2026-11-18T12:08:42Z"
+            },
+            {
+              "name": "Run actions/setup-node@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-18T12:08:42Z",
+              "completed_at": "2026-11-18T12:08:46Z"
+            },
+            {
+              "name": "Python probe dependencies (before optional system downloads)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-18T12:08:46Z",
+              "completed_at": "2026-11-18T12:08:51Z"
+            },
+            {
+              "name": "Media system dependencies (bounded official Ubuntu mirror)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-18T12:08:51Z",
+              "completed_at": "2026-11-18T12:09:19Z"
+            },
+            {
+              "name": "Node probe dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-18T12:09:19Z",
+              "completed_at": "2026-11-18T12:09:20Z"
+            },
+            {
+              "name": "Chromium probe dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-18T12:09:20Z",
+              "completed_at": "2026-11-18T12:09:35Z"
+            },
+            {
+              "name": "Existing stock cookies only (no Google or YouTube sessions)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-18T12:09:35Z",
+              "completed_at": "2026-11-18T12:09:35Z"
+            },
+            {
+              "name": "Live providers through actual isolated producer and consumer chain",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 10,
+              "started_at": "2026-11-18T12:09:35Z",
+              "completed_at": "2026-11-18T12:09:42Z"
+            },
+            {
+              "name": "Safe status summary (partial is NOT acceptance)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-18T12:09:42Z",
+              "completed_at": "2026-11-18T12:09:42Z"
+            },
+            {
+              "name": "Audit ONLY staged evidence before upload",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-18T12:09:42Z",
+              "completed_at": "2026-11-18T12:09:43Z"
+            },
+            {
+              "name": "Safe JSON plus necessary Commons composite and inspection frames",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-11-18T12:09:43Z",
+              "completed_at": "2026-11-18T12:09:44Z"
+            },
+            {
+              "name": "Remove ephemeral stock cookies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14,
+              "started_at": "2026-11-18T12:09:44Z",
+              "completed_at": "2026-11-18T12:09:44Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v7",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 26,
+              "started_at": "2026-11-18T12:09:44Z",
+              "completed_at": "2026-11-18T12:09:44Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 27,
+              "started_at": "2026-11-18T12:09:44Z",
+              "completed_at": "2026-11-18T12:09:44Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 28,
+              "started_at": "2026-11-18T12:09:44Z",
+              "completed_at": "2026-11-18T12:09:44Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 29,
+              "started_at": "2026-11-18T12:09:44Z",
+              "completed_at": "2026-11-18T12:09:44Z"
+            }
+          ],
+          "labels": [
+            "ubuntu-26.04"
+          ],
+          "started_at": "2026-11-18T12:08:37Z",
+          "completed_at": "2026-11-18T12:09:48Z"
+        }
+      ],
+      "log_audits": [
+        {
+          "job_id": 134790714289,
+          "bytes": 116046,
+          "known_credential_matches": 0,
+          "credential_pattern_matches": 0
+        }
+      ],
+      "safe_summary_lines": [
+        "2026-11-18T12:09:37.8911070Z PHASE4B_PROVIDER=pexels status=blocked_unverified scenes=0",
+        "2026-11-18T12:09:38.6217627Z PHASE4B_PROVIDER=pixabay status=blocked_unverified scenes=0",
+        "2026-11-18T12:09:42.7973313Z PHASE4B_PROVIDER=wikimedia status=blocked_unverified scenes=0",
+        "2026-11-18T12:09:42.8448299Z PHASE4B_LIVE_RESULT=partial_provider_evidence_full_acceptance_failed",
+        "2026-11-18T12:09:43.0041060Z Evidence credential audit passed."
+      ],
+      "artifacts": [
+        {
+          "id": 14424224647,
+          "name": "phase4b-media-evidence-44301095341",
+          "size_in_bytes": 15904,
+          "expired": false
+        }
+      ]
+    },
+    "history_write": {
+      "id": 44297836963,
+      "name": "Phase 4B Isolated Media History Proof (no publishing)",
+      "event": "workflow_dispatch",
+      "path": ".github/workflows/phase4b_history_probe.yml",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "5c883f4ded05df896309274ed6e5a368eb178472",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297836963",
+      "created_at": "2026-11-18T11:47:17Z",
+      "updated_at": "2026-11-18T11:47:52Z",
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 134779415692,
+          "name": "isolated-history-proof",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-18T11:47:23Z",
+              "completed_at": "2026-11-18T11:47:26Z"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-18T11:47:26Z",
+              "completed_at": "2026-11-18T11:47:32Z"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-18T11:47:32Z",
+              "completed_at": "2026-11-18T11:47:33Z"
+            },
+            {
+              "name": "Minimal isolated-proof dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-18T11:47:33Z",
+              "completed_at": "2026-11-18T11:47:39Z"
+            },
+            {
+              "name": "Actual Contents HTTP write or distinct-run read and cleanup",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-18T11:47:39Z",
+              "completed_at": "2026-11-18T11:47:46Z"
+            },
+            {
+              "name": "Isolated cleanup after failed or cancelled proof",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 6,
+              "started_at": "2026-11-18T11:47:46Z",
+              "completed_at": "2026-11-18T11:47:46Z"
+            },
+            {
+              "name": "Stage safe result only (no local caches or lock files)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-18T11:47:46Z",
+              "completed_at": "2026-11-18T11:47:46Z"
+            },
+            {
+              "name": "Secret-pattern audit before upload",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-18T11:47:46Z",
+              "completed_at": "2026-11-18T11:47:46Z"
+            },
+            {
+              "name": "Audited history evidence only",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-18T11:47:46Z",
+              "completed_at": "2026-11-18T11:47:48Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-11-18T11:47:48Z",
+              "completed_at": "2026-11-18T11:47:48Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18,
+              "started_at": "2026-11-18T11:47:48Z",
+              "completed_at": "2026-11-18T11:47:48Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19,
+              "started_at": "2026-11-18T11:47:48Z",
+              "completed_at": "2026-11-18T11:47:48Z"
+            }
+          ],
+          "labels": [
+            "ubuntu-26.04"
+          ],
+          "started_at": "2026-11-18T11:47:22Z",
+          "completed_at": "2026-11-18T11:47:51Z"
+        }
+      ],
+      "log_audits": [
+        {
+          "job_id": 134779415692,
+          "bytes": 25950,
+          "known_credential_matches": 0,
+          "credential_pattern_matches": 0
+        }
+      ],
+      "safe_summary_lines": [
+        "2026-11-18T11:47:46.5568762Z PHASE4B_HISTORY_RESULT=passed_waiting_for_distinct_run2",
+        "2026-11-18T11:47:46.6329006Z Evidence credential audit passed."
+      ],
+      "artifacts": [
+        {
+          "id": 14424741945,
+          "name": "phase4b-history-write-44297836963",
+          "size_in_bytes": 1723,
+          "expired": false
+        }
+      ]
+    },
+    "history_verify": {
+      "id": 44298014849,
+      "name": "Phase 4B Isolated Media History Proof (no publishing)",
+      "event": "workflow_dispatch",
+      "path": ".github/workflows/phase4b_history_probe.yml",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "5c883f4ded05df896309274ed6e5a368eb178472",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44298014849",
+      "created_at": "2026-11-18T11:48:28Z",
+      "updated_at": "2026-11-18T11:48:43Z",
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 134780028337,
+          "name": "isolated-history-proof",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-18T11:48:33Z",
+              "completed_at": "2026-11-18T11:48:34Z"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-18T11:48:34Z",
+              "completed_at": "2026-11-18T11:48:35Z"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-18T11:48:35Z",
+              "completed_at": "2026-11-18T11:48:35Z"
+            },
+            {
+              "name": "Minimal isolated-proof dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-18T11:48:35Z",
+              "completed_at": "2026-11-18T11:48:36Z"
+            },
+            {
+              "name": "Actual Contents HTTP write or distinct-run read and cleanup",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-18T11:48:36Z",
+              "completed_at": "2026-11-18T11:48:40Z"
+            },
+            {
+              "name": "Isolated cleanup after failed or cancelled proof",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 6,
+              "started_at": "2026-11-18T11:48:40Z",
+              "completed_at": "2026-11-18T11:48:40Z"
+            },
+            {
+              "name": "Stage safe result only (no local caches or lock files)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-18T11:48:40Z",
+              "completed_at": "2026-11-18T11:48:40Z"
+            },
+            {
+              "name": "Secret-pattern audit before upload",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-18T11:48:40Z",
+              "completed_at": "2026-11-18T11:48:40Z"
+            },
+            {
+              "name": "Audited history evidence only",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-18T11:48:40Z",
+              "completed_at": "2026-11-18T11:48:41Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-11-18T11:48:41Z",
+              "completed_at": "2026-11-18T11:48:41Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18,
+              "started_at": "2026-11-18T11:48:41Z",
+              "completed_at": "2026-11-18T11:48:41Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19,
+              "started_at": "2026-11-18T11:48:41Z",
+              "completed_at": "2026-11-18T11:48:41Z"
+            }
+          ],
+          "labels": [
+            "ubuntu-26.04"
+          ],
+          "started_at": "2026-11-18T11:48:32Z",
+          "completed_at": "2026-11-18T11:48:43Z"
+        }
+      ],
+      "log_audits": [
+        {
+          "job_id": 134780028337,
+          "bytes": 26014,
+          "known_credential_matches": 0,
+          "credential_pattern_matches": 0
+        }
+      ],
+      "safe_summary_lines": [
+        "2026-11-18T11:48:40.4487889Z PHASE4B_HISTORY_RESULT=passed",
+        "2026-11-18T11:48:40.5563702Z Evidence credential audit passed."
+      ],
+      "artifacts": [
+        {
+          "id": 14423942369,
+          "name": "phase4b-history-verify-44298014849",
+          "size_in_bytes": 1513,
+          "expired": false
+        }
+      ]
+    },
+    "ci_before_dependency_fix": {
+      "id": 44297771082,
+      "name": "Ubuntu 26.04 Gecis Testi (Gecis Oncesi Deneme)",
+      "event": "push",
+      "path": ".github/workflows/ubuntu_26_test.yml",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "5c883f4ded05df896309274ed6e5a368eb178472",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297771082",
+      "created_at": "2026-11-18T11:46:50Z",
+      "updated_at": "2026-11-18T11:48:46Z",
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 134779178912,
+          "name": "ubuntu-26-probe",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-18T11:46:54Z",
+              "completed_at": "2026-11-18T11:46:54Z"
+            },
+            {
+              "name": "Depoyu Çek (Checkout)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-18T11:46:54Z",
+              "completed_at": "2026-11-18T11:46:56Z"
+            },
+            {
+              "name": "Sistem Bilgisi",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-18T11:46:56Z",
+              "completed_at": "2026-11-18T11:46:56Z"
+            },
+            {
+              "name": "FFmpeg + Font + Xvfb Kurulumu (26.04)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-18T11:46:56Z",
+              "completed_at": "2026-11-18T11:47:18Z"
+            },
+            {
+              "name": "Python + Node Kurulumu (Node 24 major'lar)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-18T11:47:18Z",
+              "completed_at": "2026-11-18T11:47:23Z"
+            },
+            {
+              "name": "Node Kurulumu",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-18T11:47:23Z",
+              "completed_at": "2026-11-18T11:47:31Z"
+            },
+            {
+              "name": "Uploader JavaScript Syntax Check",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-18T11:47:31Z",
+              "completed_at": "2026-11-18T11:47:32Z"
+            },
+            {
+              "name": "Python Bagimliliklari",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-18T11:47:32Z",
+              "completed_at": "2026-11-18T11:47:48Z"
+            },
+            {
+              "name": "Faz 3 CLI Import Smoke Test (yayın yok)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-18T11:47:48Z",
+              "completed_at": "2026-11-18T11:47:48Z"
+            },
+            {
+              "name": "Playwright + Chromium (--with-deps)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-11-18T11:47:48Z",
+              "completed_at": "2026-11-18T11:48:15Z"
+            },
+            {
+              "name": "Altyazi Montaj Testi (libass9 + FontSize=56 + MarginV=250)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-18T11:48:15Z",
+              "completed_at": "2026-11-18T11:48:16Z"
+            },
+            {
+              "name": "Faz 3: Semantik + Atomik Geçmiş Testleri (mock HTTP/API; yayın yok)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-18T11:48:16Z",
+              "completed_at": "2026-11-18T11:48:17Z"
+            },
+            {
+              "name": "Birim Testleri",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-11-18T11:48:17Z",
+              "completed_at": "2026-11-18T11:48:34Z"
+            },
+            {
+              "name": "Faz 4: provider/scene regressions and CLI smoke (mock catalogs; no publishing)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14,
+              "started_at": "2026-11-18T11:48:34Z",
+              "completed_at": "2026-11-18T11:48:37Z"
+            },
+            {
+              "name": "Faz 4B actual fixture producer-consumer, pre/post schema, cover and UTF-16 credit contract",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15,
+              "started_at": "2026-11-18T11:48:37Z",
+              "completed_at": "2026-11-18T11:48:41Z"
+            },
+            {
+              "name": "Faz 3 Probe Özeti",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16,
+              "started_at": "2026-11-18T11:48:41Z",
+              "completed_at": "2026-11-18T11:48:41Z"
+            },
+            {
+              "name": "Probe Ozeti",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-11-18T11:48:41Z",
+              "completed_at": "2026-11-18T11:48:41Z"
+            },
+            {
+              "name": "Post Node Kurulumu",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 32,
+              "started_at": "2026-11-18T11:48:41Z",
+              "completed_at": "2026-11-18T11:48:41Z"
+            },
+            {
+              "name": "Post Python + Node Kurulumu (Node 24 major'lar)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 33,
+              "started_at": "2026-11-18T11:48:41Z",
+              "completed_at": "2026-11-18T11:48:42Z"
+            },
+            {
+              "name": "Post Depoyu Çek (Checkout)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 34,
+              "started_at": "2026-11-18T11:48:42Z",
+              "completed_at": "2026-11-18T11:48:42Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 35,
+              "started_at": "2026-11-18T11:48:42Z",
+              "completed_at": "2026-11-18T11:48:42Z"
+            }
+          ],
+          "labels": [
+            "ubuntu-26.04"
+          ],
+          "started_at": "2026-11-18T11:46:53Z",
+          "completed_at": "2026-11-18T11:48:45Z"
+        }
+      ],
+      "log_audits": [
+        {
+          "job_id": 134779178912,
+          "bytes": 152765,
+          "known_credential_matches": 0,
+          "credential_pattern_matches": 0
+        }
+      ],
+      "safe_summary_lines": [
+        "2026-11-18T11:48:17.4299178Z 35 passed in 0.95s",
+        "2026-11-18T11:48:34.0881626Z 301 passed, 16 subtests passed in 16.34s",
+        "2026-11-18T11:48:36.2913896Z 122 passed in 1.75s",
+        "2026-11-18T11:48:41.7226182Z 8 passed in 4.44s"
+      ],
+      "artifacts": []
+    },
+    "media_cancelled_before_provider_tests": {
+      "id": 44297831876,
+      "name": "Phase 4B Media and Consumer Probe (no publishing)",
+      "event": "workflow_dispatch",
+      "path": ".github/workflows/phase4_media_probe.yml",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "head_sha": "5c883f4ded05df896309274ed6e5a368eb178472",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297831876",
+      "created_at": "2026-11-18T11:47:15Z",
+      "updated_at": "2026-11-18T12:04:24Z",
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 134779398197,
+          "name": "media-consumer-proof",
+          "conclusion": "cancelled",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-18T11:47:20Z",
+              "completed_at": "2026-11-18T11:47:23Z"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-18T11:47:23Z",
+              "completed_at": "2026-11-18T11:47:26Z"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-18T11:47:26Z",
+              "completed_at": "2026-11-18T11:47:27Z"
+            },
+            {
+              "name": "Run actions/setup-node@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-18T11:47:27Z",
+              "completed_at": "2026-11-18T11:47:30Z"
+            },
+            {
+              "name": "Media-only dependencies",
+              "status": "completed",
+              "conclusion": "cancelled",
+              "number": 5,
+              "started_at": "2026-11-18T11:47:30Z",
+              "completed_at": "2026-11-18T12:04:18Z"
+            },
+            {
+              "name": "Existing stock cookies only (no Google or YouTube sessions)",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 6,
+              "started_at": "2026-11-18T12:04:18Z",
+              "completed_at": "2026-11-18T12:04:18Z"
+            },
+            {
+              "name": "Live providers through actual isolated producer and consumer chain",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 7,
+              "started_at": "2026-11-18T12:04:18Z",
+              "completed_at": "2026-11-18T12:04:18Z"
+            },
+            {
+              "name": "Safe status summary (partial is NOT acceptance)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-18T12:04:18Z",
+              "completed_at": "2026-11-18T12:04:19Z"
+            },
+            {
+              "name": "Audit ONLY staged evidence before upload",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 9,
+              "started_at": "2026-11-18T12:04:19Z",
+              "completed_at": "2026-11-18T12:04:20Z"
+            },
+            {
+              "name": "Safe JSON plus necessary Commons composite and inspection frames",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 10,
+              "started_at": "2026-11-18T12:04:20Z",
+              "completed_at": "2026-11-18T12:04:20Z"
+            },
+            {
+              "name": "Remove ephemeral stock cookies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-18T12:04:20Z",
+              "completed_at": "2026-11-18T12:04:20Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v7",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 20,
+              "started_at": "2026-11-18T12:04:20Z",
+              "completed_at": "2026-11-18T12:04:20Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 21,
+              "started_at": "2026-11-18T12:04:20Z",
+              "completed_at": "2026-11-18T12:04:20Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 22,
+              "started_at": "2026-11-18T12:04:20Z",
+              "completed_at": "2026-11-18T12:04:20Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 23,
+              "started_at": "2026-11-18T12:04:20Z",
+              "completed_at": "2026-11-18T12:04:20Z"
+            }
+          ],
+          "labels": [
+            "ubuntu-26.04"
+          ],
+          "started_at": "2026-11-18T11:47:19Z",
+          "completed_at": "2026-11-18T12:04:24Z"
+        }
+      ],
+      "log_audits": [
+        {
+          "job_id": 134779398197,
+          "bytes": 44623,
+          "known_credential_matches": 0,
+          "credential_pattern_matches": 0
+        }
+      ],
+      "safe_summary_lines": [],
+      "artifacts": []
+    }
+  },
+  "cancelled_attempt_diagnosis": {
+    "run_id": 44297831876,
+    "source_sha": "5c883f4ded05df896309274ed6e5a368eb178472",
+    "cancel_request_http_status": 202,
+    "cancel_request_accepted_once": true,
+    "reason": "Only isolated publication-free media probe cancelled to obtain diagnostics after dependency step stalled for 996 seconds; provider tests had not started.",
+    "helper_note": "Existing API wrapper did not include 202 in its success-code list and raised after the accepted request. Do not resend cancellation."
+  },
+  "dependency_setup_fix": {
+    "source_before": "5c883f4ded05df896309274ed6e5a368eb178472",
+    "source_after": "59e2c79ae10ff38c297130d5b775a10427e64106",
+    "changed_files": [
+      ".github/workflows/phase4_media_probe.yml"
+    ],
+    "reason": "Initial isolated probe regional apt mirror downloaded continuously but too slowly for 996 seconds before provider steps. Official working CI Ubuntu mirror, no-recommends and step timeouts; Python first; safe infrastructure status if no provider evidence.",
+    "cancelled_run": 44297831876,
+    "local_regression": "301 passed +16 subtests, 1 existing warning,28.42s; topic history restored exact bytes; YAML/bash/embedded Python syntax passed"
+  },
+  "live_provider_evidence": {
+    "version": 1,
+    "phase": "4B",
+    "started_at": "2026-11-18T12:09:36.061622+00:00",
+    "github_run_id": "44301095341",
+    "github_sha": "59e2c79ae10ff38c297130d5b775a10427e64106",
+    "configuration_presence_only": {
+      "env_file_supplied": true,
+      "interpolation_enabled": false,
+      "providers": {
+        "pexels": {
+          "direct_name_supplied": false,
+          "allowlisted_env_name_present": false,
+          "placeholder_detected": false,
+          "api_key_present": false
+        },
+        "pixabay": {
+          "direct_name_supplied": false,
+          "allowlisted_env_name_present": false,
+          "placeholder_detected": false,
+          "api_key_present": false
+        }
+      }
+    },
+    "live_provider_calls": true,
+    "live_gemini": false,
+    "live_tts": false,
+    "publishing": false,
+    "timing_verified": false,
+    "visual_verification": "not_performed",
+    "full_acceptance": false,
+    "two_actions_history_proof": "separate_dedicated_workflow_required",
+    "providers": {
+      "pexels": {
+        "status": "blocked_unverified",
+        "selected_scenes": 0,
+        "chain": "pexels/chain.json",
+        "live_provider_evidence": false,
+        "configuration_presence_only": {
+          "direct_name_supplied": false,
+          "allowlisted_env_name_present": false,
+          "placeholder_detected": false,
+          "api_key_present": false,
+          "media_cookie_file_present": true
+        },
+        "failure": "scene_1_has_no_acceptable_media",
+        "provider_diagnostics": [
+          {
+            "provider": "pexels",
+            "http_status": null,
+            "query_id": "q-377953d30900",
+            "error_type": "api_key_not_configured_or_placeholder"
+          },
+          {
+            "provider": "pexels-browser",
+            "http_status": 403,
+            "query_id": "q-377953d30900",
+            "error_type": "BrowserHTTPBlocked"
+          }
+        ]
+      },
+      "pixabay": {
+        "status": "blocked_unverified",
+        "selected_scenes": 0,
+        "chain": "pixabay/chain.json",
+        "live_provider_evidence": false,
+        "configuration_presence_only": {
+          "direct_name_supplied": false,
+          "allowlisted_env_name_present": false,
+          "placeholder_detected": false,
+          "api_key_present": false,
+          "media_cookie_file_present": true
+        },
+        "failure": "scene_1_has_no_acceptable_media",
+        "provider_diagnostics": [
+          {
+            "provider": "pixabay",
+            "http_status": null,
+            "query_id": "q-377953d30900",
+            "error_type": "api_key_not_configured_or_placeholder"
+          },
+          {
+            "provider": "pixabay-browser",
+            "http_status": 403,
+            "query_id": "q-377953d30900",
+            "error_type": "BrowserHTTPBlocked"
+          }
+        ]
+      },
+      "wikimedia": {
+        "status": "blocked_unverified",
+        "selected_scenes": 0,
+        "chain": "wikimedia/chain.json",
+        "live_provider_evidence": false,
+        "failure": "scene_1_has_no_acceptable_media",
+        "provider_diagnostics": []
+      }
+    },
+    "commons_video_cc_by_chain_passed": false,
+    "all_providers_verified": false,
+    "overall": "partial_provider_evidence_full_acceptance_failed",
+    "acceptance_blockers": [
+      "pexels_live_access_unverified",
+      "pixabay_live_access_unverified",
+      "wikimedia_live_access_unverified",
+      "commons_video_cc_by_chain_missing"
+    ],
+    "completed_at": "2026-11-18T12:09:42.797145+00:00"
+  },
+  "actions_commons_consumer_chain": {
+    "version": 1,
+    "status": "blocked_unverified",
+    "started_at": "2026-11-18T12:09:38.622116+00:00",
+    "live_provider_calls": true,
+    "fixture_provider_calls": false,
+    "publishing": false,
+    "timing_verified": false,
+    "visual_verification": "not_performed",
+    "stages": {
+      "pre_media_validator": {
+        "status": "passed",
+        "jsonschema_errors": 0,
+        "runtime_validator_cli_exit": 0,
+        "sha256": "6b77a29f90a461f202b2fa1b88c15df9125134575b84a63c9de25d0b2ad848f0"
+      }
+    },
+    "producer": {
+      "writer": "content_engine.run_content_pipeline",
+      "writer_executed": true,
+      "transformation": "scripts.gemini_web_story.draft_to_script_metadata",
+      "scenario_boundary": "explicit_fixture_not_live_gemini",
+      "tts_boundary": "synthetic_test_tone_not_tts",
+      "independent_legacy_writer": "src/content_generation/engine.py inventoried, not executed"
+    },
+    "generation_id": "ac0ec446-b743-4bd3-8289-6329ea4d6847",
+    "error_type": "SceneMediaError",
+    "failure": "scene_1_has_no_acceptable_media",
+    "protected_files_unchanged": true,
+    "protected_file_sha256": {
+      ".used_topics.json": "ff92c691a8b14a69c6b6d750b2f008d783edaf84ae51bb0989285dc7d89c9ffd",
+      ".media_history.json": null,
+      ".gemini_topic_ledger.json": null,
+      "samples/script.json": "0d6a9e934f707abc34707b0cb31819eebde8729e2f5dc0077efd9e2ad8cad484",
+      "main.py": "6d3dca16e4facf7906bc1c673b1dd9fd09baa6656fbea45d0c3a77f2b4d26375",
+      "content_engine.py": "596d65f89081a10c6128e2e2c10a7a2d35b12aa1545d805a1f46f4be6d48964c",
+      "src/content_generation/engine.py": "6e522d506949e06adcdcea89a48bca88081b05ba5714fecda797741defb2e72a",
+      "youtube_studio_uploader.js": "28087d51afa6c3e95e072a0ff80dad889e905dbbc726605a75f9a42cd6394e47",
+      "scripts/embed_cover_frame.py": "27cd13a90ed1fec3993942de90e5aef33c7fd6c60f772915963781841347dc30",
+      "scripts/generate_fallback_thumbnail.py": "f15aa36a937dc4b66ffce44f3271dd43e2a101871d9b71fb36d23de907cdafa3",
+      ".github/workflows/daily_shorts.yml": "a6c4b829869765d48708a59f864f3e5d95565274b9a64116ec441088c953c8c9",
+      ".github/workflows/hourly_pruner.yml": "2fb05c28b35da9d9bb80a7d1ba707e8239c1d851b17286f85c7de47af6d920f3",
+      ".github/workflows/draft_publisher.yml": "f7bb3eab6a8a91df5ee2fc272452550f86dfeef5cf278330a9fe121d4f7b850b"
+    },
+    "completed_at": "2026-11-18T12:09:42.795419+00:00"
+  },
+  "failed_actions_input_contract_checks": {
+    "pexels": {
+      "pre_validator": "passed",
+      "post_input_schema": "passed",
+      "failed_selection_left_input_exact_bytes_unchanged": true,
+      "sha256": "a0a90ce9c84e8af335f8245861c61dede8819f149ed05d8a016addda3261f7e2",
+      "render_cover_and_pure_metadata_after_selection": "not_reached",
+      "chain": {
+        "version": 1,
+        "status": "blocked_unverified",
+        "started_at": "2026-11-18T12:09:36.062550+00:00",
+        "live_provider_calls": true,
+        "fixture_provider_calls": false,
+        "publishing": false,
+        "timing_verified": false,
+        "visual_verification": "not_performed",
+        "stages": {
+          "pre_media_validator": {
+            "status": "passed",
+            "jsonschema_errors": 0,
+            "runtime_validator_cli_exit": 0,
+            "sha256": "a0a90ce9c84e8af335f8245861c61dede8819f149ed05d8a016addda3261f7e2"
+          }
+        },
+        "producer": {
+          "writer": "content_engine.run_content_pipeline",
+          "writer_executed": true,
+          "transformation": "scripts.gemini_web_story.draft_to_script_metadata",
+          "scenario_boundary": "explicit_fixture_not_live_gemini",
+          "tts_boundary": "synthetic_test_tone_not_tts",
+          "independent_legacy_writer": "src/content_generation/engine.py inventoried, not executed"
+        },
+        "generation_id": "5246da48-edca-4155-bb25-0873882098fb",
+        "error_type": "SceneMediaError",
+        "failure": "scene_1_has_no_acceptable_media",
+        "protected_files_unchanged": true,
+        "protected_file_sha256": {
+          ".used_topics.json": "ff92c691a8b14a69c6b6d750b2f008d783edaf84ae51bb0989285dc7d89c9ffd",
+          ".media_history.json": null,
+          ".gemini_topic_ledger.json": null,
+          "samples/script.json": "0d6a9e934f707abc34707b0cb31819eebde8729e2f5dc0077efd9e2ad8cad484",
+          "main.py": "6d3dca16e4facf7906bc1c673b1dd9fd09baa6656fbea45d0c3a77f2b4d26375",
+          "content_engine.py": "596d65f89081a10c6128e2e2c10a7a2d35b12aa1545d805a1f46f4be6d48964c",
+          "src/content_generation/engine.py": "6e522d506949e06adcdcea89a48bca88081b05ba5714fecda797741defb2e72a",
+          "youtube_studio_uploader.js": "28087d51afa6c3e95e072a0ff80dad889e905dbbc726605a75f9a42cd6394e47",
+          "scripts/embed_cover_frame.py": "27cd13a90ed1fec3993942de90e5aef33c7fd6c60f772915963781841347dc30",
+          "scripts/generate_fallback_thumbnail.py": "f15aa36a937dc4b66ffce44f3271dd43e2a101871d9b71fb36d23de907cdafa3",
+          ".github/workflows/daily_shorts.yml": "a6c4b829869765d48708a59f864f3e5d95565274b9a64116ec441088c953c8c9",
+          ".github/workflows/hourly_pruner.yml": "2fb05c28b35da9d9bb80a7d1ba707e8239c1d851b17286f85c7de47af6d920f3",
+          ".github/workflows/draft_publisher.yml": "f7bb3eab6a8a91df5ee2fc272452550f86dfeef5cf278330a9fe121d4f7b850b"
+        },
+        "completed_at": "2026-11-18T12:09:37.889370+00:00"
+      }
+    },
+    "pixabay": {
+      "pre_validator": "passed",
+      "post_input_schema": "passed",
+      "failed_selection_left_input_exact_bytes_unchanged": true,
+      "sha256": "998d7092c43eebc9e5e4115f531963ca2a318c35b89c767d64ff349fad637740",
+      "render_cover_and_pure_metadata_after_selection": "not_reached",
+      "chain": {
+        "version": 1,
+        "status": "blocked_unverified",
+        "started_at": "2026-11-18T12:09:37.891448+00:00",
+        "live_provider_calls": true,
+        "fixture_provider_calls": false,
+        "publishing": false,
+        "timing_verified": false,
+        "visual_verification": "not_performed",
+        "stages": {
+          "pre_media_validator": {
+            "status": "passed",
+            "jsonschema_errors": 0,
+            "runtime_validator_cli_exit": 0,
+            "sha256": "998d7092c43eebc9e5e4115f531963ca2a318c35b89c767d64ff349fad637740"
+          }
+        },
+        "producer": {
+          "writer": "content_engine.run_content_pipeline",
+          "writer_executed": true,
+          "transformation": "scripts.gemini_web_story.draft_to_script_metadata",
+          "scenario_boundary": "explicit_fixture_not_live_gemini",
+          "tts_boundary": "synthetic_test_tone_not_tts",
+          "independent_legacy_writer": "src/content_generation/engine.py inventoried, not executed"
+        },
+        "generation_id": "2a859748-54a5-4e00-831c-1dbc79769f36",
+        "error_type": "SceneMediaError",
+        "failure": "scene_1_has_no_acceptable_media",
+        "protected_files_unchanged": true,
+        "protected_file_sha256": {
+          ".used_topics.json": "ff92c691a8b14a69c6b6d750b2f008d783edaf84ae51bb0989285dc7d89c9ffd",
+          ".media_history.json": null,
+          ".gemini_topic_ledger.json": null,
+          "samples/script.json": "0d6a9e934f707abc34707b0cb31819eebde8729e2f5dc0077efd9e2ad8cad484",
+          "main.py": "6d3dca16e4facf7906bc1c673b1dd9fd09baa6656fbea45d0c3a77f2b4d26375",
+          "content_engine.py": "596d65f89081a10c6128e2e2c10a7a2d35b12aa1545d805a1f46f4be6d48964c",
+          "src/content_generation/engine.py": "6e522d506949e06adcdcea89a48bca88081b05ba5714fecda797741defb2e72a",
+          "youtube_studio_uploader.js": "28087d51afa6c3e95e072a0ff80dad889e905dbbc726605a75f9a42cd6394e47",
+          "scripts/embed_cover_frame.py": "27cd13a90ed1fec3993942de90e5aef33c7fd6c60f772915963781841347dc30",
+          "scripts/generate_fallback_thumbnail.py": "f15aa36a937dc4b66ffce44f3271dd43e2a101871d9b71fb36d23de907cdafa3",
+          ".github/workflows/daily_shorts.yml": "a6c4b829869765d48708a59f864f3e5d95565274b9a64116ec441088c953c8c9",
+          ".github/workflows/hourly_pruner.yml": "2fb05c28b35da9d9bb80a7d1ba707e8239c1d851b17286f85c7de47af6d920f3",
+          ".github/workflows/draft_publisher.yml": "f7bb3eab6a8a91df5ee2fc272452550f86dfeef5cf278330a9fe121d4f7b850b"
+        },
+        "completed_at": "2026-11-18T12:09:38.619737+00:00"
+      }
+    },
+    "wikimedia": {
+      "pre_validator": "passed",
+      "post_input_schema": "passed",
+      "failed_selection_left_input_exact_bytes_unchanged": true,
+      "sha256": "6b77a29f90a461f202b2fa1b88c15df9125134575b84a63c9de25d0b2ad848f0",
+      "render_cover_and_pure_metadata_after_selection": "not_reached",
+      "chain": {
+        "version": 1,
+        "status": "blocked_unverified",
+        "started_at": "2026-11-18T12:09:38.622116+00:00",
+        "live_provider_calls": true,
+        "fixture_provider_calls": false,
+        "publishing": false,
+        "timing_verified": false,
+        "visual_verification": "not_performed",
+        "stages": {
+          "pre_media_validator": {
+            "status": "passed",
+            "jsonschema_errors": 0,
+            "runtime_validator_cli_exit": 0,
+            "sha256": "6b77a29f90a461f202b2fa1b88c15df9125134575b84a63c9de25d0b2ad848f0"
+          }
+        },
+        "producer": {
+          "writer": "content_engine.run_content_pipeline",
+          "writer_executed": true,
+          "transformation": "scripts.gemini_web_story.draft_to_script_metadata",
+          "scenario_boundary": "explicit_fixture_not_live_gemini",
+          "tts_boundary": "synthetic_test_tone_not_tts",
+          "independent_legacy_writer": "src/content_generation/engine.py inventoried, not executed"
+        },
+        "generation_id": "ac0ec446-b743-4bd3-8289-6329ea4d6847",
+        "error_type": "SceneMediaError",
+        "failure": "scene_1_has_no_acceptable_media",
+        "protected_files_unchanged": true,
+        "protected_file_sha256": {
+          ".used_topics.json": "ff92c691a8b14a69c6b6d750b2f008d783edaf84ae51bb0989285dc7d89c9ffd",
+          ".media_history.json": null,
+          ".gemini_topic_ledger.json": null,
+          "samples/script.json": "0d6a9e934f707abc34707b0cb31819eebde8729e2f5dc0077efd9e2ad8cad484",
+          "main.py": "6d3dca16e4facf7906bc1c673b1dd9fd09baa6656fbea45d0c3a77f2b4d26375",
+          "content_engine.py": "596d65f89081a10c6128e2e2c10a7a2d35b12aa1545d805a1f46f4be6d48964c",
+          "src/content_generation/engine.py": "6e522d506949e06adcdcea89a48bca88081b05ba5714fecda797741defb2e72a",
+          "youtube_studio_uploader.js": "28087d51afa6c3e95e072a0ff80dad889e905dbbc726605a75f9a42cd6394e47",
+          "scripts/embed_cover_frame.py": "27cd13a90ed1fec3993942de90e5aef33c7fd6c60f772915963781841347dc30",
+          "scripts/generate_fallback_thumbnail.py": "f15aa36a937dc4b66ffce44f3271dd43e2a101871d9b71fb36d23de907cdafa3",
+          ".github/workflows/daily_shorts.yml": "a6c4b829869765d48708a59f864f3e5d95565274b9a64116ec441088c953c8c9",
+          ".github/workflows/hourly_pruner.yml": "2fb05c28b35da9d9bb80a7d1ba707e8239c1d851b17286f85c7de47af6d920f3",
+          ".github/workflows/draft_publisher.yml": "f7bb3eab6a8a91df5ee2fc272452550f86dfeef5cf278330a9fe121d4f7b850b"
+        },
+        "completed_at": "2026-11-18T12:09:42.795419+00:00"
+      }
+    }
+  },
+  "provider_manifests": {
+    "pexels": {
+      "version": 1,
+      "status": "blocked",
+      "method": "metadata_lexical_technical_license_v1",
+      "created_at": "2026-11-18T12:09:36.275087+00:00",
+      "visual_verification": "not_performed",
+      "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+      "history_scope": "local_atomic_file",
+      "scenes": [
+        {
+          "scene_id": 1,
+          "narration": "Okyanus dalgaları sahilde hareket halinde görülüyor.",
+          "planned_duration": 3.0,
+          "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+          "queries_tried": [
+            "ocean waves beach"
+          ],
+          "provider_errors": [
+            {
+              "provider": "pexels",
+              "http_status": null,
+              "query_id": "q-377953d30900",
+              "error_type": "api_key_not_configured_or_placeholder"
+            },
+            {
+              "provider": "pexels-browser",
+              "http_status": 403,
+              "query_id": "q-377953d30900",
+              "error_type": "BrowserHTTPBlocked"
+            }
+          ],
+          "rejections": [],
+          "measured_candidates": [],
+          "ranking_scope": "at_most_four_downloads_per_scene_measured_rerank",
+          "selected_provider": null,
+          "selected_media_id": null,
+          "source_url": null,
+          "license": null,
+          "attribution": null,
+          "duration": null,
+          "resolution": null,
+          "aspect_ratio": null,
+          "selection_score": null,
+          "rejection_reason": "no_acceptable_media_after_bounded_queries",
+          "fallback_used": false
+        }
+      ],
+      "failure": "scene_1_has_no_acceptable_media"
+    },
+    "pixabay": {
+      "version": 1,
+      "status": "blocked",
+      "method": "metadata_lexical_technical_license_v1",
+      "created_at": "2026-11-18T12:09:38.075484+00:00",
+      "visual_verification": "not_performed",
+      "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+      "history_scope": "local_atomic_file",
+      "scenes": [
+        {
+          "scene_id": 1,
+          "narration": "Okyanus dalgaları sahilde hareket halinde görülüyor.",
+          "planned_duration": 3.0,
+          "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+          "queries_tried": [
+            "ocean waves beach"
+          ],
+          "provider_errors": [
+            {
+              "provider": "pixabay",
+              "http_status": null,
+              "query_id": "q-377953d30900",
+              "error_type": "api_key_not_configured_or_placeholder"
+            },
+            {
+              "provider": "pixabay-browser",
+              "http_status": 403,
+              "query_id": "q-377953d30900",
+              "error_type": "BrowserHTTPBlocked"
+            }
+          ],
+          "rejections": [],
+          "measured_candidates": [],
+          "ranking_scope": "at_most_four_downloads_per_scene_measured_rerank",
+          "selected_provider": null,
+          "selected_media_id": null,
+          "source_url": null,
+          "license": null,
+          "attribution": null,
+          "duration": null,
+          "resolution": null,
+          "aspect_ratio": null,
+          "selection_score": null,
+          "rejection_reason": "no_acceptable_media_after_bounded_queries",
+          "fallback_used": false
+        }
+      ],
+      "failure": "scene_1_has_no_acceptable_media"
+    },
+    "wikimedia": {
+      "version": 1,
+      "status": "blocked",
+      "method": "metadata_lexical_technical_license_v1",
+      "created_at": "2026-11-18T12:09:38.805355+00:00",
+      "visual_verification": "not_performed",
+      "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+      "history_scope": "local_atomic_file",
+      "scenes": [
+        {
+          "scene_id": 1,
+          "narration": "Okyanus dalgaları sahilde hareket halinde görülüyor.",
+          "planned_duration": 2.769,
+          "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+          "queries_tried": [
+            "ocean waves beach"
+          ],
+          "provider_errors": [],
+          "rejections": [
+            {
+              "key": "wikimedia:202887352",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Waves_at_Hikkaduwa_beach,_Sri_Lanka.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented",
+                "insufficient_resolution"
+              ]
+            },
+            {
+              "key": "wikimedia:96028844",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Waves_crashing_on_rocks_off_Beach_4,_Kalaloch_Beach,_Washington_01.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented"
+              ]
+            },
+            {
+              "key": "wikimedia:96028815",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Waves_crashing_on_rocks_off_Beach_4,_Kalaloch_Beach,_Washington_02.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented"
+              ]
+            },
+            {
+              "key": "wikimedia:102119646",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Havelock_Island,_Mangrove_tree_on_the_beach,_Andaman_Islands.jpg",
+              "reasons": [
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:12079178",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Ocean_beach_at_low_tide_against_the_sun.jpg",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented",
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:108127800",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Ocean_waves_in_Virginia_Beach,_VA.jpg",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented",
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:174336538",
+              "query": "ocean waves beach",
+              "reasons": [
+                "download_or_decode_failed"
+              ],
+              "error_type": "RuntimeError"
+            },
+            {
+              "key": "wikimedia:83680173",
+              "query": "ocean waves beach",
+              "reasons": [
+                "download_or_decode_failed"
+              ],
+              "error_type": "RuntimeError"
+            }
+          ],
+          "measured_candidates": [],
+          "ranking_scope": "at_most_four_downloads_per_scene_measured_rerank",
+          "selected_provider": null,
+          "selected_media_id": null,
+          "source_url": null,
+          "license": null,
+          "attribution": null,
+          "duration": null,
+          "resolution": null,
+          "aspect_ratio": null,
+          "selection_score": null,
+          "rejection_reason": "no_acceptable_media_after_bounded_queries",
+          "fallback_used": false
+        }
+      ],
+      "failure": "scene_1_has_no_acceptable_media"
+    }
+  },
+  "commons_consumer_chain_scope": "SOURCE_MATCHED_LOCAL_LIVE_NOT_ACTIONS",
+  "commons_consumer_chain": {
+    "version": 1,
+    "status": "passed",
+    "started_at": "2026-11-18T12:12:20.411100+00:00",
+    "live_provider_calls": true,
+    "fixture_provider_calls": false,
+    "publishing": false,
+    "timing_verified": false,
+    "visual_verification": "not_performed",
+    "stages": {
+      "pre_media_validator": {
+        "status": "passed",
+        "jsonschema_errors": 0,
+        "runtime_validator_cli_exit": 0,
+        "sha256": "2ec2689539ba3d32c8bfd31f1910a4712365dfcbb9176239038fc009d8fc8836"
+      },
+      "strict_media_wrapper": {
+        "status": "passed",
+        "entrypoint": "run_media_pipeline",
+        "legacy_fallback_used": false,
+        "history_scope": "isolated_local_selection_history_not_cross_actions_proof"
+      },
+      "post_media_validator": {
+        "status": "passed",
+        "jsonschema_errors": 0,
+        "runtime_validator_cli_exit": 0,
+        "sha256": "dafc80c3f20bbca23ddc7982ff5d0c58ea76fa4550670265b2ff9676e6e12929"
+      },
+      "pre_cover_decode": {
+        "status": "passed",
+        "sha256": "6d70df7e2ce22b70aee22bcb3316a21b31d0d92287de32df9c95081b0aa47361",
+        "bytes": 1995249
+      },
+      "cover_read_only_consumer": {
+        "status": "passed",
+        "entrypoint": "embed_cover_frame.main --no-ai",
+        "json_unchanged": true,
+        "same_json_sha256": "dafc80c3f20bbca23ddc7982ff5d0c58ea76fa4550670265b2ff9676e6e12929",
+        "actual_cover_generated_and_overlaid": true,
+        "ai_or_network_called": false,
+        "semantic_cover_approval": false
+      },
+      "uploader_pure_metadata_consumer": {
+        "status": "passed",
+        "utf16_units": 858,
+        "conservative_utf16_upper_bound": 858,
+        "budget": 4900,
+        "required_credits_count": 2,
+        "all_required_credits_preserved": true,
+        "entrypoint_executed": false,
+        "uploader_source_sha256": "28087d51afa6c3e95e072a0ff80dad889e905dbbc726605a75f9a42cd6394e47",
+        "extracted_functions_sha256": "2b7ce553b77b74cdbcb4b0cd7749fe97f8a7cd149d53e73df7601b7fb00efe07"
+      },
+      "final_qc": {
+        "status": "passed",
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1080,
+            "height": 1920,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "avg_frame_rate": "30/1",
+            "duration": "6.000000",
+            "nb_frames": "180"
+          },
+          {
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 1,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "duration": "6.000000",
+            "nb_frames": "283"
+          }
+        ],
+        "format": {
+          "duration": "6.000000",
+          "size": "1804923",
+          "bit_rate": "2406564"
+        }
+      },
+      "full_av_decode": {
+        "status": "passed",
+        "sha256": "92db77fa49a1c8d931ffa676a663d6a1bb4e5cd579500cf49f8513390d17b5b2",
+        "bytes": 1804923
+      },
+      "actual_source_and_license_http": {
+        "1": {
+          "status": "passed",
+          "source_page_http_status": 200,
+          "license_deed_http_status": 200,
+          "source_page_url": "https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm",
+          "license_deed_url": "https://creativecommons.org/licenses/by/4.0",
+          "canonical_file_identity_matched": true,
+          "declared_license_link_observed_on_file_page": true,
+          "declared_creator_text_observed_on_file_page": true,
+          "source_page_sha256": "bfd428b9921459b08b1fde0a0bbabcc710eec2ef4a72cf0be5d2e48ce82ba8ce",
+          "license_deed_sha256": "1a0016ca1363de22317d07e1711fb148131298a48f944089f70572c1c06dbd6b",
+          "method": "actual_commons_api_plus_canonical_file_html_plus_official_cc_deed_http",
+          "third_party_rights_verified": false
+        },
+        "2": {
+          "status": "passed",
+          "source_page_http_status": 200,
+          "license_deed_http_status": 200,
+          "source_page_url": "https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg",
+          "license_deed_url": "https://creativecommons.org/licenses/by/3.0",
+          "canonical_file_identity_matched": true,
+          "declared_license_link_observed_on_file_page": true,
+          "declared_creator_text_observed_on_file_page": true,
+          "source_page_sha256": "fcaa46937fc6d82732fcdeabd8bbd3e04a8ea662962e777e555e9e9b06080dbd",
+          "license_deed_sha256": "bb983965a8cfadbfd13c38dabd6dde29c5520fdd8be63cac9b4ad533674be4a0",
+          "method": "actual_commons_api_plus_canonical_file_html_plus_official_cc_deed_http",
+          "third_party_rights_verified": false
+        }
+      }
+    },
+    "producer": {
+      "writer": "content_engine.run_content_pipeline",
+      "writer_executed": true,
+      "transformation": "scripts.gemini_web_story.draft_to_script_metadata",
+      "scenario_boundary": "explicit_fixture_not_live_gemini",
+      "tts_boundary": "synthetic_test_tone_not_tts",
+      "independent_legacy_writer": "src/content_generation/engine.py inventoried, not executed"
+    },
+    "generation_id": "3db59da2-1079-4f90-b539-a33980bfbfca",
+    "motion_evidence": {
+      "1": {
+        "status": "temporal_pixel_change_observed",
+        "sample_times_seconds": [
+          0.9538,
+          2.3152
+        ],
+        "mean_absolute_rgb_difference_0_to_255": 33.031227,
+        "decoded_sample_sha256": [
+          "4e5b445d26d1f945cde94255d88a59dbe8c15c62de1a79bca5ae2a19d23711c0",
+          "971586b038ada6baf400a5fbc61d88f6881895a65cbcf486b9feb6f69966cda2"
+        ],
+        "inspection_files": [
+          "scene_1_motion_a_inspection.jpg",
+          "scene_1_motion_b_inspection.jpg"
+        ],
+        "sampled_contained_content_rectangle": {
+          "x": 108,
+          "y": 717,
+          "width": 864,
+          "height": 486
+        },
+        "cover_excluded": true,
+        "semantic_visual_verification": "not_performed"
+      }
+    },
+    "selected_media": [
+      {
+        "scene_id": 1,
+        "provider": "wikimedia",
+        "media_id": "174336538",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm",
+        "download_url": "https://upload.wikimedia.org/wikipedia/commons/8/87/Strong_waves_from_hurricane_Erin_at_white_crest_beach%2C_Wellfleet%2C_MA_august_22%2C_2025.webm",
+        "media_type": "video",
+        "license": {
+          "name": "CC BY 4.0",
+          "url": "https://creativecommons.org/licenses/by/4.0",
+          "verified": true,
+          "evidence_url": "https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm",
+          "evidence_method": "commons_per_file_extmetadata",
+          "checked_at": "2026-11-18T12:12:22.334641+00:00",
+          "attribution_required": true,
+          "attribution": "Strong waves from hurricane Erin at white crest beach, Wellfleet, MA august 22, 2025.webm — Magpieturtle — CC BY 4.0 (https://creativecommons.org/licenses/by/4.0); https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+          "creator": "Magpieturtle",
+          "evidence_sha256": "6d0de592823e30be7519614013d53a501d12d40eb4c3678f5f34e462b258e6f1",
+          "restrictions": [
+            "third_party_rights_not_verified"
+          ],
+          "rejection_reason": null
+        },
+        "sha256": "59521adeb0585c6734e9187501765130e420465a8df92f676d0c199ad7451340",
+        "measured_resolution": {
+          "width": 1920,
+          "height": 1080
+        },
+        "measured_aspect_ratio": 1.777778,
+        "measured_duration": 16.933,
+        "decode_status": "passed",
+        "acceptance_rationale": "source_and_file_license_gates_plus_full_decode_and_measured_technical_gates; metadata_supported_not_visual_approval",
+        "consumer_result": "passed"
+      },
+      {
+        "scene_id": 2,
+        "provider": "wikimedia",
+        "media_id": "83667454",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg",
+        "download_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg/1920px-Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg",
+        "media_type": "image",
+        "license": {
+          "name": "CC BY 3.0",
+          "url": "https://creativecommons.org/licenses/by/3.0",
+          "verified": true,
+          "evidence_url": "https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg",
+          "evidence_method": "commons_per_file_extmetadata",
+          "checked_at": "2026-11-18T12:12:28.096558+00:00",
+          "attribution_required": true,
+          "attribution": "Kolufoss waterfall water flowing downstream, July 2019.jpg — Alexander Grebenkov — CC BY 3.0 (https://creativecommons.org/licenses/by/3.0); https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+          "creator": "Alexander Grebenkov",
+          "evidence_sha256": "89e521fe4cd209a9ee9a7dd64301b047a4fc88bec8b291f01ecc8c7cde9867ac",
+          "restrictions": [
+            "third_party_rights_not_verified"
+          ],
+          "rejection_reason": null
+        },
+        "sha256": "b1856b8e0986a993d194b910494e5ce8c8f5d94c88117edc8ec6881922ee64e0",
+        "measured_resolution": {
+          "width": 1920,
+          "height": 2893
+        },
+        "measured_aspect_ratio": 0.663671,
+        "measured_duration": null,
+        "decode_status": "passed",
+        "acceptance_rationale": "source_and_file_license_gates_plus_full_decode_and_measured_technical_gates; metadata_supported_not_visual_approval",
+        "consumer_result": "passed"
+      }
+    ],
+    "real_video_selected": true,
+    "required_cc_by_selected": true,
+    "same_json_identity_preserved": true,
+    "protected_files_unchanged": true,
+    "protected_file_sha256": {
+      ".used_topics.json": "ff92c691a8b14a69c6b6d750b2f008d783edaf84ae51bb0989285dc7d89c9ffd",
+      ".media_history.json": null,
+      ".gemini_topic_ledger.json": null,
+      "samples/script.json": "0d6a9e934f707abc34707b0cb31819eebde8729e2f5dc0077efd9e2ad8cad484",
+      "main.py": "6d3dca16e4facf7906bc1c673b1dd9fd09baa6656fbea45d0c3a77f2b4d26375",
+      "content_engine.py": "596d65f89081a10c6128e2e2c10a7a2d35b12aa1545d805a1f46f4be6d48964c",
+      "src/content_generation/engine.py": "6e522d506949e06adcdcea89a48bca88081b05ba5714fecda797741defb2e72a",
+      "youtube_studio_uploader.js": "28087d51afa6c3e95e072a0ff80dad889e905dbbc726605a75f9a42cd6394e47",
+      "scripts/embed_cover_frame.py": "27cd13a90ed1fec3993942de90e5aef33c7fd6c60f772915963781841347dc30",
+      "scripts/generate_fallback_thumbnail.py": "f15aa36a937dc4b66ffce44f3271dd43e2a101871d9b71fb36d23de907cdafa3",
+      ".github/workflows/daily_shorts.yml": "a6c4b829869765d48708a59f864f3e5d95565274b9a64116ec441088c953c8c9",
+      ".github/workflows/hourly_pruner.yml": "2fb05c28b35da9d9bb80a7d1ba707e8239c1d851b17286f85c7de47af6d920f3",
+      ".github/workflows/draft_publisher.yml": "f7bb3eab6a8a91df5ee2fc272452550f86dfeef5cf278330a9fe121d4f7b850b"
+    },
+    "completed_at": "2026-11-18T12:12:50.311137+00:00"
+  },
+  "local_live_commons": {
+    "provenance": {
+      "execution_scope": "local_not_github_actions",
+      "source_sha": "59e2c79ae10ff38c297130d5b775a10427e64106",
+      "live_provider_calls": true,
+      "scenario_boundary": "explicit_fixture_not_live_gemini",
+      "tts_boundary": "synthetic_tone_not_tts",
+      "stock_provider_retry": false,
+      "production_files_unchanged": true
+    },
+    "chain_folder": "output/phase4b_local_verified_59e2c79",
+    "staging_folder": "output/phase4b_local_verified_evidence",
+    "staged_audit": {
+      "status": "passed",
+      "known_secret_matches": 0,
+      "credential_pattern_matches": 0,
+      "url_query_or_credentials_matches": 0,
+      "files": [
+        {
+          "path": "provenance.json",
+          "bytes": 317,
+          "sha256": "9c32c29531b6f9943612911543317c112e6c1a18fccfc56249670b549ea399e4"
+        },
+        {
+          "path": "wikimedia/chain.json",
+          "bytes": 11278,
+          "sha256": "29d42d57b88704ec155f450ef62ea8f300bdcef8f22e759e62a80ff7ae832013"
+        },
+        {
+          "path": "wikimedia/consumer.mp4",
+          "bytes": 1804923,
+          "sha256": "92db77fa49a1c8d931ffa676a663d6a1bb4e5cd579500cf49f8513390d17b5b2"
+        },
+        {
+          "path": "wikimedia/pre_media_script.json",
+          "bytes": 3210,
+          "sha256": "2ec2689539ba3d32c8bfd31f1910a4712365dfcbb9176239038fc009d8fc8836"
+        },
+        {
+          "path": "wikimedia/scene_1_inspection.jpg",
+          "bytes": 13782,
+          "sha256": "926ada1462179e4e985e20377e48320077e983e0ffe279b0bc99f5bc0fc277a3"
+        },
+        {
+          "path": "wikimedia/scene_1_motion_a_inspection.jpg",
+          "bytes": 6007,
+          "sha256": "f86cdd31bce832ca5a4d62c6a69b94e3cbf1ee787a88d5402162303db10e8382"
+        },
+        {
+          "path": "wikimedia/scene_1_motion_b_inspection.jpg",
+          "bytes": 6031,
+          "sha256": "ed29c02475e3eae88d1b24c9ab17c8dcba7fea723c792a9b8e45fe3ab7f4fef0"
+        },
+        {
+          "path": "wikimedia/scene_2_inspection.jpg",
+          "bytes": 42931,
+          "sha256": "899d7ee73c8f49718551da707d967fcea693fcd25494c686694b71fe45d496a2"
+        },
+        {
+          "path": "wikimedia/scene_media_manifest.json",
+          "bytes": 27733,
+          "sha256": "361f777805af0d627c2bd91f3b792e82076b06ea9a835ba19982eb07f1ae3e2c"
+        },
+        {
+          "path": "wikimedia/script.json",
+          "bytes": 32378,
+          "sha256": "dafc80c3f20bbca23ddc7982ff5d0c58ea76fa4550670265b2ff9676e6e12929"
+        },
+        {
+          "path": "wikimedia/uploader_pure_metadata.json",
+          "bytes": 1412,
+          "sha256": "703960c041aaa9d3bed8f855a80e63283aa47fe3ba779e860ce30b62ee870977"
+        }
+      ]
+    },
+    "scene_media_manifest": {
+      "version": 1,
+      "status": "selected_metadata_and_technical_checks_passed",
+      "method": "metadata_lexical_technical_license_v1",
+      "created_at": "2026-11-18T12:12:22.196380+00:00",
+      "visual_verification": "not_performed",
+      "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+      "history_scope": "local_atomic_file",
+      "scenes": [
+        {
+          "scene_id": 1,
+          "narration": "Okyanus dalgaları sahilde hareket halinde görülüyor.",
+          "planned_duration": 2.769,
+          "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+          "queries_tried": [
+            "ocean waves beach"
+          ],
+          "provider_errors": [],
+          "rejections": [
+            {
+              "key": "wikimedia:202887352",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Waves_at_Hikkaduwa_beach,_Sri_Lanka.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented",
+                "insufficient_resolution"
+              ]
+            },
+            {
+              "key": "wikimedia:96028844",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Waves_crashing_on_rocks_off_Beach_4,_Kalaloch_Beach,_Washington_01.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented"
+              ]
+            },
+            {
+              "key": "wikimedia:96028815",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Waves_crashing_on_rocks_off_Beach_4,_Kalaloch_Beach,_Washington_02.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented"
+              ]
+            },
+            {
+              "key": "wikimedia:102119646",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Havelock_Island,_Mangrove_tree_on_the_beach,_Andaman_Islands.jpg",
+              "reasons": [
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:12079178",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Ocean_beach_at_low_tide_against_the_sun.jpg",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented",
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:108127800",
+              "query": "ocean waves beach",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Ocean_waves_in_Virginia_Beach,_VA.jpg",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented",
+                "media_type_mismatch"
+              ]
+            }
+          ],
+          "measured_candidates": [
+            {
+              "media": {
+                "provider": "wikimedia",
+                "media_id": "174336538",
+                "source_url": "https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm",
+                "download_url": "https://upload.wikimedia.org/wikipedia/commons/8/87/Strong_waves_from_hurricane_Erin_at_white_crest_beach%2C_Wellfleet%2C_MA_august_22%2C_2025.webm",
+                "media_type": "video",
+                "width": 1920,
+                "height": 1080,
+                "duration": 16.933,
+                "title": "File:Strong waves from hurricane Erin at white crest beach, Wellfleet, MA august 22, 2025.webm",
+                "description": "Strong waves from hurricane Erin at white crest beach, Wellfleet, MA august 22, 2025. White crest beach, along with many others, were closed due to waves up to 12 feet. Visible here are cones meant to block the path down to the beach, and double red flags flying to indicate its closure.",
+                "tags": [
+                  "Sea spray",
+                  "Videos of water waves",
+                  "License review needed (video)",
+                  "Uploaded with video2commons",
+                  "Effects of hurricane Erin (2025) in Massachusetts",
+                  "Breaking ocean waves in Massachusetts"
+                ],
+                "license": {
+                  "name": "CC BY 4.0",
+                  "url": "https://creativecommons.org/licenses/by/4.0",
+                  "verified": true,
+                  "evidence_url": "https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm",
+                  "evidence_method": "commons_per_file_extmetadata",
+                  "checked_at": "2026-11-18T12:12:22.334641+00:00",
+                  "attribution_required": true,
+                  "attribution": "Strong waves from hurricane Erin at white crest beach, Wellfleet, MA august 22, 2025.webm — Magpieturtle — CC BY 4.0 (https://creativecommons.org/licenses/by/4.0); https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+                  "creator": "Magpieturtle",
+                  "evidence_sha256": "6d0de592823e30be7519614013d53a501d12d40eb4c3678f5f34e462b258e6f1",
+                  "restrictions": [
+                    "third_party_rights_not_verified"
+                  ],
+                  "rejection_reason": null
+                },
+                "download_status": "downloaded_and_decoded",
+                "catalog_transport": "api",
+                "media_url": "https://upload.wikimedia.org/wikipedia/commons/8/87/Strong_waves_from_hurricane_Erin_at_white_crest_beach%2C_Wellfleet%2C_MA_august_22%2C_2025.webm",
+                "aspect_ratio": 1.777778
+              },
+              "file_probe": {
+                "width": 1920,
+                "height": 1080,
+                "duration": 16.933,
+                "sha256": "59521adeb0585c6734e9187501765130e420465a8df92f676d0c199ad7451340",
+                "decode_status": "passed",
+                "bytes": 18536930
+              },
+              "assessment": {
+                "eligible": true,
+                "score": 96.0,
+                "components": {
+                  "query_metadata": 30.0,
+                  "narration_metadata": 20,
+                  "resolution": 15,
+                  "aspect_ratio": 6,
+                  "duration": 10,
+                  "provider_provenance": 5,
+                  "license_evidence": 10,
+                  "recent_use_penalty": 0
+                },
+                "rejection_reasons": [],
+                "relevance_status": "metadata_supported",
+                "visual_verification": "not_performed",
+                "query_coverage": 1.0,
+                "primary_narration_overlap": [
+                  "beach",
+                  "ocean",
+                  "wave"
+                ],
+                "quality_basis": "measured_dimensions_duration_and_full_decode",
+                "framing": "contain_letterbox"
+              },
+              "recent_hash_match": false,
+              "decision": "selected_highest_measured_rank"
+            },
+            {
+              "media": {
+                "provider": "wikimedia",
+                "media_id": "83680173",
+                "source_url": "https://commons.wikimedia.org/wiki/File:Ocean_waves_at_L%C3%A6kjavik_beach,_Iceland.webm",
+                "download_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Ocean_waves_at_L%C3%A6kjavik_beach%2C_Iceland.webm",
+                "media_type": "video",
+                "width": 1920,
+                "height": 1080,
+                "duration": 8.661,
+                "title": "File:Ocean waves at Lækjavik beach, Iceland.webm",
+                "description": "Ocean waves at Lækjavik beach, Iceland",
+                "tags": [
+                  "Self-published work",
+                  "Hringvegur (Austurlandsvegur, East Iceland)",
+                  "Files with coordinates missing SDC location of creation",
+                  "Videos of beaches",
+                  "Þvottáskriður",
+                  "Mælifell (Austurland)"
+                ],
+                "license": {
+                  "name": "CC BY 3.0",
+                  "url": "https://creativecommons.org/licenses/by/3.0",
+                  "verified": true,
+                  "evidence_url": "https://commons.wikimedia.org/wiki/File:Ocean_waves_at_L%C3%A6kjavik_beach,_Iceland.webm",
+                  "evidence_method": "commons_per_file_extmetadata",
+                  "checked_at": "2026-11-18T12:12:22.334067+00:00",
+                  "attribution_required": true,
+                  "attribution": "Ocean waves at Lækjavik beach, Iceland.webm — Alexander Grebenkov — CC BY 3.0 (https://creativecommons.org/licenses/by/3.0); https://commons.wikimedia.org/wiki/File:Ocean_waves_at_L%C3%A6kjavik_beach,_Iceland.webm; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+                  "creator": "Alexander Grebenkov",
+                  "evidence_sha256": "db4a6474f57f5db5d3d795e59c46344a6e1eb1252434971b0e866828db803a56",
+                  "restrictions": [
+                    "third_party_rights_not_verified"
+                  ],
+                  "rejection_reason": null
+                },
+                "download_status": "downloaded_and_decoded",
+                "catalog_transport": "api",
+                "media_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Ocean_waves_at_L%C3%A6kjavik_beach%2C_Iceland.webm",
+                "aspect_ratio": 1.777778
+              },
+              "file_probe": {
+                "width": 1920,
+                "height": 1080,
+                "duration": 8.661,
+                "sha256": "538fb3999c7426fd32e49aec4329cf88cd8fb1a36c81484bbc8297bedce61e4b",
+                "decode_status": "passed",
+                "bytes": 2206099
+              },
+              "assessment": {
+                "eligible": true,
+                "score": 96.0,
+                "components": {
+                  "query_metadata": 30.0,
+                  "narration_metadata": 20,
+                  "resolution": 15,
+                  "aspect_ratio": 6,
+                  "duration": 10,
+                  "provider_provenance": 5,
+                  "license_evidence": 10,
+                  "recent_use_penalty": 0
+                },
+                "rejection_reasons": [],
+                "relevance_status": "metadata_supported",
+                "visual_verification": "not_performed",
+                "query_coverage": 1.0,
+                "primary_narration_overlap": [
+                  "beach",
+                  "ocean",
+                  "wave"
+                ],
+                "quality_basis": "measured_dimensions_duration_and_full_decode",
+                "framing": "contain_letterbox"
+              },
+              "recent_hash_match": false,
+              "decision": "not_selected_lower_measured_rank"
+            }
+          ],
+          "ranking_scope": "at_most_four_downloads_per_scene_measured_rerank",
+          "selected_provider": "wikimedia",
+          "selected_media_id": "174336538",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm",
+          "license": {
+            "name": "CC BY 4.0",
+            "url": "https://creativecommons.org/licenses/by/4.0",
+            "verified": true,
+            "evidence_url": "https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm",
+            "evidence_method": "commons_per_file_extmetadata",
+            "checked_at": "2026-11-18T12:12:22.334641+00:00",
+            "attribution_required": true,
+            "attribution": "Strong waves from hurricane Erin at white crest beach, Wellfleet, MA august 22, 2025.webm — Magpieturtle — CC BY 4.0 (https://creativecommons.org/licenses/by/4.0); https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+            "creator": "Magpieturtle",
+            "evidence_sha256": "6d0de592823e30be7519614013d53a501d12d40eb4c3678f5f34e462b258e6f1",
+            "restrictions": [
+              "third_party_rights_not_verified"
+            ],
+            "rejection_reason": null
+          },
+          "attribution": "Strong waves from hurricane Erin at white crest beach, Wellfleet, MA august 22, 2025.webm — Magpieturtle — CC BY 4.0 (https://creativecommons.org/licenses/by/4.0); https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+          "duration": 16.933,
+          "resolution": {
+            "width": 1920,
+            "height": 1080
+          },
+          "aspect_ratio": 1.777778,
+          "selection_score": 96.0,
+          "rejection_reason": null,
+          "fallback_used": false,
+          "selected_query": "ocean waves beach",
+          "assessment": {
+            "eligible": true,
+            "score": 96.0,
+            "components": {
+              "query_metadata": 30.0,
+              "narration_metadata": 20,
+              "resolution": 15,
+              "aspect_ratio": 6,
+              "duration": 10,
+              "provider_provenance": 5,
+              "license_evidence": 10,
+              "recent_use_penalty": 0
+            },
+            "rejection_reasons": [],
+            "relevance_status": "metadata_supported",
+            "visual_verification": "not_performed",
+            "query_coverage": 1.0,
+            "primary_narration_overlap": [
+              "beach",
+              "ocean",
+              "wave"
+            ],
+            "quality_basis": "measured_dimensions_duration_and_full_decode",
+            "framing": "contain_letterbox"
+          },
+          "media": {
+            "provider": "wikimedia",
+            "media_id": "174336538",
+            "source_url": "https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm",
+            "download_url": "https://upload.wikimedia.org/wikipedia/commons/8/87/Strong_waves_from_hurricane_Erin_at_white_crest_beach%2C_Wellfleet%2C_MA_august_22%2C_2025.webm",
+            "media_type": "video",
+            "width": 1920,
+            "height": 1080,
+            "duration": 16.933,
+            "title": "File:Strong waves from hurricane Erin at white crest beach, Wellfleet, MA august 22, 2025.webm",
+            "description": "Strong waves from hurricane Erin at white crest beach, Wellfleet, MA august 22, 2025. White crest beach, along with many others, were closed due to waves up to 12 feet. Visible here are cones meant to block the path down to the beach, and double red flags flying to indicate its closure.",
+            "tags": [
+              "Sea spray",
+              "Videos of water waves",
+              "License review needed (video)",
+              "Uploaded with video2commons",
+              "Effects of hurricane Erin (2025) in Massachusetts",
+              "Breaking ocean waves in Massachusetts"
+            ],
+            "license": {
+              "name": "CC BY 4.0",
+              "url": "https://creativecommons.org/licenses/by/4.0",
+              "verified": true,
+              "evidence_url": "https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm",
+              "evidence_method": "commons_per_file_extmetadata",
+              "checked_at": "2026-11-18T12:12:22.334641+00:00",
+              "attribution_required": true,
+              "attribution": "Strong waves from hurricane Erin at white crest beach, Wellfleet, MA august 22, 2025.webm — Magpieturtle — CC BY 4.0 (https://creativecommons.org/licenses/by/4.0); https://commons.wikimedia.org/wiki/File:Strong_waves_from_hurricane_Erin_at_white_crest_beach,_Wellfleet,_MA_august_22,_2025.webm; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+              "creator": "Magpieturtle",
+              "evidence_sha256": "6d0de592823e30be7519614013d53a501d12d40eb4c3678f5f34e462b258e6f1",
+              "restrictions": [
+                "third_party_rights_not_verified"
+              ],
+              "rejection_reason": null
+            },
+            "download_status": "downloaded_and_decoded",
+            "catalog_transport": "api",
+            "media_url": "https://upload.wikimedia.org/wikipedia/commons/8/87/Strong_waves_from_hurricane_Erin_at_white_crest_beach%2C_Wellfleet%2C_MA_august_22%2C_2025.webm",
+            "aspect_ratio": 1.777778
+          },
+          "file_probe": {
+            "width": 1920,
+            "height": 1080,
+            "duration": 16.933,
+            "sha256": "59521adeb0585c6734e9187501765130e420465a8df92f676d0c199ad7451340",
+            "decode_status": "passed",
+            "bytes": 18536930
+          },
+          "media_type": "video",
+          "fit_mode": "contain",
+          "download_status": "downloaded_and_decoded"
+        },
+        {
+          "scene_id": 2,
+          "narration": "Şelalede akan suyun görüntüsü burada yer alıyor.",
+          "planned_duration": 3.231,
+          "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+          "queries_tried": [
+            "waterfall flowing water"
+          ],
+          "provider_errors": [],
+          "rejections": [
+            {
+              "key": "wikimedia:62028652",
+              "query": "waterfall flowing water",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Iguazu_Falls,_Garganta_del_Diablo.webm",
+              "reasons": [
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:27334919",
+              "query": "waterfall flowing water",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Sanjo_no_Taki(waterfall)_in_Oze.webm",
+              "reasons": [
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:184375721",
+              "query": "waterfall flowing water",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Shohola_Falls_PA_2025-09-29.webm",
+              "reasons": [
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:144779963",
+              "query": "waterfall flowing water",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Under_bridge_cascade_at_Cascade_Springs,_Nov_20.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented",
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:135337405",
+              "query": "waterfall flowing water",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Water_flow_sound.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented",
+                "media_type_mismatch",
+                "insufficient_resolution"
+              ]
+            },
+            {
+              "key": "wikimedia:78789162",
+              "query": "waterfall flowing water",
+              "source_url": "https://commons.wikimedia.org/wiki/File:%E2%99%A5%E2%99%A5_Relaxing_3_Hour_Video_of_Hot_Springs_at_Yellowstone.webm",
+              "reasons": [
+                "media_type_mismatch"
+              ]
+            },
+            {
+              "key": "wikimedia:95238420",
+              "query": "waterfall flowing water",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Sarca_di_Nambrone,_flowing_water_02.jpg",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented"
+              ]
+            }
+          ],
+          "measured_candidates": [
+            {
+              "media": {
+                "provider": "wikimedia",
+                "media_id": "83667454",
+                "source_url": "https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg",
+                "download_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg/1920px-Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg",
+                "media_type": "image",
+                "width": 1920,
+                "height": 2893,
+                "duration": null,
+                "title": "File:Kolufoss waterfall water flowing downstream, July 2019.jpg",
+                "description": "Kolufoss waterfall water flowing downstream, July 2019",
+                "tags": [
+                  "Self-published work",
+                  "Iceland photographs taken on 2019-07-13",
+                  "Files with coordinates missing SDC location of creation",
+                  "Kolufossar"
+                ],
+                "license": {
+                  "name": "CC BY 3.0",
+                  "url": "https://creativecommons.org/licenses/by/3.0",
+                  "verified": true,
+                  "evidence_url": "https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg",
+                  "evidence_method": "commons_per_file_extmetadata",
+                  "checked_at": "2026-11-18T12:12:28.096558+00:00",
+                  "attribution_required": true,
+                  "attribution": "Kolufoss waterfall water flowing downstream, July 2019.jpg — Alexander Grebenkov — CC BY 3.0 (https://creativecommons.org/licenses/by/3.0); https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+                  "creator": "Alexander Grebenkov",
+                  "evidence_sha256": "89e521fe4cd209a9ee9a7dd64301b047a4fc88bec8b291f01ecc8c7cde9867ac",
+                  "restrictions": [
+                    "third_party_rights_not_verified"
+                  ],
+                  "rejection_reason": null
+                },
+                "download_status": "downloaded_and_decoded",
+                "catalog_transport": "api",
+                "media_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg/1920px-Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg",
+                "aspect_ratio": 0.663671
+              },
+              "file_probe": {
+                "width": 1920,
+                "height": 2893,
+                "duration": null,
+                "sha256": "b1856b8e0986a993d194b910494e5ce8c8f5d94c88117edc8ec6881922ee64e0",
+                "decode_status": "passed",
+                "bytes": 2363257
+              },
+              "assessment": {
+                "eligible": true,
+                "score": 100.0,
+                "components": {
+                  "query_metadata": 30.0,
+                  "narration_metadata": 20,
+                  "resolution": 15,
+                  "aspect_ratio": 10,
+                  "duration": 10,
+                  "provider_provenance": 5,
+                  "license_evidence": 10,
+                  "recent_use_penalty": 0
+                },
+                "rejection_reasons": [],
+                "relevance_status": "metadata_supported",
+                "visual_verification": "not_performed",
+                "query_coverage": 1.0,
+                "primary_narration_overlap": [
+                  "flowing",
+                  "water",
+                  "waterfall"
+                ],
+                "quality_basis": "measured_dimensions_duration_and_full_decode",
+                "framing": "contain_letterbox"
+              },
+              "recent_hash_match": false,
+              "decision": "selected_highest_measured_rank"
+            }
+          ],
+          "ranking_scope": "at_most_four_downloads_per_scene_measured_rerank",
+          "selected_provider": "wikimedia",
+          "selected_media_id": "83667454",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg",
+          "license": {
+            "name": "CC BY 3.0",
+            "url": "https://creativecommons.org/licenses/by/3.0",
+            "verified": true,
+            "evidence_url": "https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg",
+            "evidence_method": "commons_per_file_extmetadata",
+            "checked_at": "2026-11-18T12:12:28.096558+00:00",
+            "attribution_required": true,
+            "attribution": "Kolufoss waterfall water flowing downstream, July 2019.jpg — Alexander Grebenkov — CC BY 3.0 (https://creativecommons.org/licenses/by/3.0); https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+            "creator": "Alexander Grebenkov",
+            "evidence_sha256": "89e521fe4cd209a9ee9a7dd64301b047a4fc88bec8b291f01ecc8c7cde9867ac",
+            "restrictions": [
+              "third_party_rights_not_verified"
+            ],
+            "rejection_reason": null
+          },
+          "attribution": "Kolufoss waterfall water flowing downstream, July 2019.jpg — Alexander Grebenkov — CC BY 3.0 (https://creativecommons.org/licenses/by/3.0); https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+          "duration": null,
+          "resolution": {
+            "width": 1920,
+            "height": 2893
+          },
+          "aspect_ratio": 0.663671,
+          "selection_score": 100.0,
+          "rejection_reason": null,
+          "fallback_used": false,
+          "selected_query": "waterfall flowing water",
+          "assessment": {
+            "eligible": true,
+            "score": 100.0,
+            "components": {
+              "query_metadata": 30.0,
+              "narration_metadata": 20,
+              "resolution": 15,
+              "aspect_ratio": 10,
+              "duration": 10,
+              "provider_provenance": 5,
+              "license_evidence": 10,
+              "recent_use_penalty": 0
+            },
+            "rejection_reasons": [],
+            "relevance_status": "metadata_supported",
+            "visual_verification": "not_performed",
+            "query_coverage": 1.0,
+            "primary_narration_overlap": [
+              "flowing",
+              "water",
+              "waterfall"
+            ],
+            "quality_basis": "measured_dimensions_duration_and_full_decode",
+            "framing": "contain_letterbox"
+          },
+          "media": {
+            "provider": "wikimedia",
+            "media_id": "83667454",
+            "source_url": "https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg",
+            "download_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg/1920px-Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg",
+            "media_type": "image",
+            "width": 1920,
+            "height": 2893,
+            "duration": null,
+            "title": "File:Kolufoss waterfall water flowing downstream, July 2019.jpg",
+            "description": "Kolufoss waterfall water flowing downstream, July 2019",
+            "tags": [
+              "Self-published work",
+              "Iceland photographs taken on 2019-07-13",
+              "Files with coordinates missing SDC location of creation",
+              "Kolufossar"
+            ],
+            "license": {
+              "name": "CC BY 3.0",
+              "url": "https://creativecommons.org/licenses/by/3.0",
+              "verified": true,
+              "evidence_url": "https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg",
+              "evidence_method": "commons_per_file_extmetadata",
+              "checked_at": "2026-11-18T12:12:28.096558+00:00",
+              "attribution_required": true,
+              "attribution": "Kolufoss waterfall water flowing downstream, July 2019.jpg — Alexander Grebenkov — CC BY 3.0 (https://creativecommons.org/licenses/by/3.0); https://commons.wikimedia.org/wiki/File:Kolufoss_waterfall_water_flowing_downstream,_July_2019.jpg; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı.",
+              "creator": "Alexander Grebenkov",
+              "evidence_sha256": "89e521fe4cd209a9ee9a7dd64301b047a4fc88bec8b291f01ecc8c7cde9867ac",
+              "restrictions": [
+                "third_party_rights_not_verified"
+              ],
+              "rejection_reason": null
+            },
+            "download_status": "downloaded_and_decoded",
+            "catalog_transport": "api",
+            "media_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg/1920px-Kolufoss_waterfall_water_flowing_downstream%2C_July_2019.jpg",
+            "aspect_ratio": 0.663671
+          },
+          "file_probe": {
+            "width": 1920,
+            "height": 2893,
+            "duration": null,
+            "sha256": "b1856b8e0986a993d194b910494e5ce8c8f5d94c88117edc8ec6881922ee64e0",
+            "decode_status": "passed",
+            "bytes": 2363257
+          },
+          "media_type": "image",
+          "fit_mode": "contain",
+          "download_status": "downloaded_and_decoded"
+        }
+      ],
+      "failure": null
+    },
+    "earlier_development_local_chain_retained": "output/phase4b_local_commons/chain.json",
+    "earlier_supplemental_http_motion_retained": "output/phase4b_local_commons/extra_live_evidence.json"
+  },
+  "history_proof": {
+    "writer": {
+      "version": 1,
+      "phase": "4B",
+      "mode": "write",
+      "probe_id": "p4b-20261118-34bcd240392c",
+      "branch": "phase4b-media-history/p4b-20261118-34bcd240392c",
+      "remote_path": ".phase4b-probes/p4b-20261118-34bcd240392c/media_history.json",
+      "github_run_id": "44297836963",
+      "github_sha": "5c883f4ded05df896309274ed6e5a368eb178472",
+      "started_at": "2026-11-18T11:47:39.352337+00:00",
+      "status": "passed_waiting_for_distinct_run2",
+      "publishing": false,
+      "production_history_targeted": false,
+      "local_flock_is_distributed_lock": false,
+      "synthetic_history_sentinels_not_media_selections": true,
+      "http_trace": [
+        {
+          "method": "GET",
+          "http_status": 404,
+          "blob_sha": null
+        },
+        {
+          "method": "PUT",
+          "http_status": 201,
+          "submitted_blob_sha": null,
+          "result_blob_sha": "4a251101d07ab9f1e38da785f455dea64930023b"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "blob_sha": "4a251101d07ab9f1e38da785f455dea64930023b"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "blob_sha": "4a251101d07ab9f1e38da785f455dea64930023b"
+        },
+        {
+          "method": "PUT",
+          "http_status": 200,
+          "submitted_blob_sha": "4a251101d07ab9f1e38da785f455dea64930023b",
+          "result_blob_sha": "8c9d8f86e4fc65294d4b8d605e3c9cd8540a12aa"
+        },
+        {
+          "method": "PUT",
+          "http_status": 409,
+          "submitted_blob_sha": "4a251101d07ab9f1e38da785f455dea64930023b"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "blob_sha": "8c9d8f86e4fc65294d4b8d605e3c9cd8540a12aa"
+        },
+        {
+          "method": "PUT",
+          "http_status": 200,
+          "submitted_blob_sha": "8c9d8f86e4fc65294d4b8d605e3c9cd8540a12aa",
+          "result_blob_sha": "04fb90a1a33f9e74bbbc0a73b62afab54e089930"
+        },
+        {
+          "method": "GET",
+          "http_status": 200,
+          "blob_sha": "04fb90a1a33f9e74bbbc0a73b62afab54e089930"
+        }
+      ],
+      "production_main_before": {
+        ".used_topics.json": {
+          "http_status": 200,
+          "blob_sha": "e5a987fccba23d6d37f1aed76e560cd0647e8f26"
+        },
+        ".media_history.json": {
+          "http_status": 404,
+          "blob_sha": null
+        }
+      },
+      "writer_run_id": "44297836963",
+      "cas": {
+        "real_http": true,
+        "actual_conflict_http_status": 409,
+        "reread_and_merged_retry_passed": true,
+        "controlled_two_client_interleaving_in_run1": true,
+        "spontaneous_cross_actions_race_claimed": false,
+        "merged_roles": [
+          "competing_writer",
+          "primary_writer",
+          "seed"
+        ],
+        "distributed_reservation_claimed": false
+      },
+      "persisted_entries": [
+        {
+          "key": "phase4b:p4b-20261118-34bcd240392c:seed",
+          "sha256": "cd5a4d70c8fece1cc829afbaac1a408d79049d15beedf4bc3d5b85f1d22c847b",
+          "source_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297836963",
+          "selected_at": "2026-11-18T11:47:40.724934+00:00",
+          "generation_id": "phase4b:p4b-20261118-34bcd240392c:actions:44297836963",
+          "probe_id": "p4b-20261118-34bcd240392c",
+          "role": "seed",
+          "writer_run_id": "44297836963",
+          "synthetic_probe_sentinel": true
+        },
+        {
+          "key": "phase4b:p4b-20261118-34bcd240392c:competing_writer",
+          "sha256": "65828d3846db72d3be8f1b979a95b203c1ca06a13a0b3ce808e39167ccffea01",
+          "source_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297836963",
+          "selected_at": "2026-11-18T11:47:42.056432+00:00",
+          "generation_id": "phase4b:p4b-20261118-34bcd240392c:actions:44297836963",
+          "probe_id": "p4b-20261118-34bcd240392c",
+          "role": "competing_writer",
+          "writer_run_id": "44297836963",
+          "synthetic_probe_sentinel": true
+        },
+        {
+          "key": "phase4b:p4b-20261118-34bcd240392c:primary_writer",
+          "sha256": "fdac1bcc7f601da60e246ebd3f7f37a74327f9280bfded32d2dc4f608f655ade",
+          "source_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297836963",
+          "selected_at": "2026-11-18T11:47:42.056459+00:00",
+          "generation_id": "phase4b:p4b-20261118-34bcd240392c:actions:44297836963",
+          "probe_id": "p4b-20261118-34bcd240392c",
+          "role": "primary_writer",
+          "writer_run_id": "44297836963",
+          "synthetic_probe_sentinel": true
+        }
+      ],
+      "isolated_branch_commit_sha": "9483658d1cd3accdc9c6a1fbfd1634e9e6c4daf5",
+      "cleanup": {
+        "status": "retained_only_for_run2_verification",
+        "required_next_action": "verify_in_distinct_actions_run_then_delete_ref"
+      },
+      "production_main_after": {
+        ".used_topics.json": {
+          "http_status": 200,
+          "blob_sha": "e5a987fccba23d6d37f1aed76e560cd0647e8f26"
+        },
+        ".media_history.json": {
+          "http_status": 404,
+          "blob_sha": null
+        }
+      },
+      "production_main_unchanged_during_probe": true,
+      "completed_at": "2026-11-18T11:47:46.554884+00:00"
+    },
+    "distinct_reader": {
+      "version": 1,
+      "phase": "4B",
+      "mode": "verify",
+      "probe_id": "p4b-20261118-34bcd240392c",
+      "branch": "phase4b-media-history/p4b-20261118-34bcd240392c",
+      "remote_path": ".phase4b-probes/p4b-20261118-34bcd240392c/media_history.json",
+      "github_run_id": "44298014849",
+      "github_sha": "5c883f4ded05df896309274ed6e5a368eb178472",
+      "started_at": "2026-11-18T11:48:36.820913+00:00",
+      "status": "passed",
+      "publishing": false,
+      "production_history_targeted": false,
+      "local_flock_is_distributed_lock": false,
+      "synthetic_history_sentinels_not_media_selections": true,
+      "http_trace": [
+        {
+          "method": "GET",
+          "http_status": 200,
+          "blob_sha": "04fb90a1a33f9e74bbbc0a73b62afab54e089930"
+        }
+      ],
+      "production_main_before": {
+        ".used_topics.json": {
+          "http_status": 200,
+          "blob_sha": "e5a987fccba23d6d37f1aed76e560cd0647e8f26"
+        },
+        ".media_history.json": {
+          "http_status": 404,
+          "blob_sha": null
+        }
+      },
+      "writer_run_id": "44297836963",
+      "observed_entries": [
+        {
+          "key": "phase4b:p4b-20261118-34bcd240392c:seed",
+          "sha256": "cd5a4d70c8fece1cc829afbaac1a408d79049d15beedf4bc3d5b85f1d22c847b",
+          "source_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297836963",
+          "selected_at": "2026-11-18T11:47:40.724934+00:00",
+          "generation_id": "phase4b:p4b-20261118-34bcd240392c:actions:44297836963",
+          "probe_id": "p4b-20261118-34bcd240392c",
+          "role": "seed",
+          "writer_run_id": "44297836963",
+          "synthetic_probe_sentinel": true
+        },
+        {
+          "key": "phase4b:p4b-20261118-34bcd240392c:competing_writer",
+          "sha256": "65828d3846db72d3be8f1b979a95b203c1ca06a13a0b3ce808e39167ccffea01",
+          "source_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297836963",
+          "selected_at": "2026-11-18T11:47:42.056432+00:00",
+          "generation_id": "phase4b:p4b-20261118-34bcd240392c:actions:44297836963",
+          "probe_id": "p4b-20261118-34bcd240392c",
+          "role": "competing_writer",
+          "writer_run_id": "44297836963",
+          "synthetic_probe_sentinel": true
+        },
+        {
+          "key": "phase4b:p4b-20261118-34bcd240392c:primary_writer",
+          "sha256": "fdac1bcc7f601da60e246ebd3f7f37a74327f9280bfded32d2dc4f608f655ade",
+          "source_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297836963",
+          "selected_at": "2026-11-18T11:47:42.056459+00:00",
+          "generation_id": "phase4b:p4b-20261118-34bcd240392c:actions:44297836963",
+          "probe_id": "p4b-20261118-34bcd240392c",
+          "role": "primary_writer",
+          "writer_run_id": "44297836963",
+          "synthetic_probe_sentinel": true
+        }
+      ],
+      "cross_actions_persistence": {
+        "status": "passed",
+        "writer_run_id": "44297836963",
+        "reader_run_id": "44298014849",
+        "distinct_actions_runs": true,
+        "read_from_github_contents_api": true,
+        "all_three_writer_entries_observed": true
+      },
+      "cleanup": {
+        "status": "passed",
+        "delete_http_status": 204,
+        "probe_file_delete_http_status": 200,
+        "probe_file_absence_before_ref_delete_http_status": 404,
+        "ref_absence_http_status": 404,
+        "probe_path_absence_http_status": 404,
+        "branch_and_accessible_probe_data_removed": true,
+        "git_object_secure_erasure_claimed": false
+      },
+      "production_main_after": {
+        ".used_topics.json": {
+          "http_status": 200,
+          "blob_sha": "e5a987fccba23d6d37f1aed76e560cd0647e8f26"
+        },
+        ".media_history.json": {
+          "http_status": 404,
+          "blob_sha": null
+        }
+      },
+      "production_main_unchanged_during_probe": true,
+      "completed_at": "2026-11-18T11:48:40.447087+00:00"
+    },
+    "independent_cleanup_http": {
+      "ref": 404,
+      "probe_path": 404,
+      "main_probe_path": 404,
+      "production_media_history": 404
+    }
+  },
+  "artifacts": {
+    "media": {
+      "id": 14424224647,
+      "name": "phase4b-media-evidence-44301095341",
+      "size_in_bytes": 15904,
+      "expired": false,
+      "local_path": "output/phase4b_actions_44301095341",
+      "upload_audit": {
+        "status": "passed",
+        "known_secret_matches": 0,
+        "credential_pattern_matches": 0,
+        "url_query_or_credentials_matches": 0,
+        "files": [
+          {
+            "path": "evidence.json",
+            "bytes": 3354,
+            "sha256": "64a3ee04d8b2130c838c01a4ffc845d2024c1d21dc5aaba6426ccbbfb9680e27"
+          },
+          {
+            "path": "pexels/chain.json",
+            "bytes": 2344,
+            "sha256": "fa81402da4de45d1ad4492dd257eda1ca3220e3db3515941c20b1afc57672d20"
+          },
+          {
+            "path": "pexels/pre_media_script.json",
+            "bytes": 3132,
+            "sha256": "a0a90ce9c84e8af335f8245861c61dede8819f149ed05d8a016addda3261f7e2"
+          },
+          {
+            "path": "pexels/scene_media_manifest.json",
+            "bytes": 1533,
+            "sha256": "c26dcc0779b9b114a6f8a72e0adb0f1c4edc20685ccea06e62fb612319c1d849"
+          },
+          {
+            "path": "pexels/script.json",
+            "bytes": 3132,
+            "sha256": "a0a90ce9c84e8af335f8245861c61dede8819f149ed05d8a016addda3261f7e2"
+          },
+          {
+            "path": "pixabay/chain.json",
+            "bytes": 2344,
+            "sha256": "9887ac1eba8e3876035aff40d41d54774516b9ed2aae638f8c39bb8dfad5ada2"
+          },
+          {
+            "path": "pixabay/pre_media_script.json",
+            "bytes": 3134,
+            "sha256": "998d7092c43eebc9e5e4115f531963ca2a318c35b89c767d64ff349fad637740"
+          },
+          {
+            "path": "pixabay/scene_media_manifest.json",
+            "bytes": 1535,
+            "sha256": "6591ba9756c28400baf9a488f779f0e7c05ed1378c81909decf0ad40d2a0417a"
+          },
+          {
+            "path": "pixabay/script.json",
+            "bytes": 3134,
+            "sha256": "998d7092c43eebc9e5e4115f531963ca2a318c35b89c767d64ff349fad637740"
+          },
+          {
+            "path": "wikimedia/chain.json",
+            "bytes": 2344,
+            "sha256": "fe4c7070037edd49a9556f223771a373a4f48cd530bb2cf5af434d65e1385764"
+          },
+          {
+            "path": "wikimedia/pre_media_script.json",
+            "bytes": 3288,
+            "sha256": "6b77a29f90a461f202b2fa1b88c15df9125134575b84a63c9de25d0b2ad848f0"
+          },
+          {
+            "path": "wikimedia/scene_media_manifest.json",
+            "bytes": 3592,
+            "sha256": "aae0f4db4335dc1dd7423f6e852ce123afa07d16a6b4b8db5148a758667adcc6"
+          },
+          {
+            "path": "wikimedia/script.json",
+            "bytes": 3288,
+            "sha256": "6b77a29f90a461f202b2fa1b88c15df9125134575b84a63c9de25d0b2ad848f0"
+          }
+        ]
+      }
+    },
+    "history_write": {
+      "id": 14424741945,
+      "name": "phase4b-history-write-44297836963",
+      "size_in_bytes": 1723,
+      "expired": false,
+      "local_path": "output/phase4b_actions_44297836963",
+      "upload_audit": {
+        "status": "passed",
+        "known_secret_matches": 0,
+        "credential_pattern_matches": 0,
+        "url_query_or_credentials_matches": 0,
+        "files": [
+          {
+            "path": "result.json",
+            "bytes": 4805,
+            "sha256": "0f27d7c5a7511c87c24606004c2b8a800c40490beaf5fbe4ede9aacfebe04fce"
+          }
+        ]
+      }
+    },
+    "history_verify": {
+      "id": 14423942369,
+      "name": "phase4b-history-verify-44298014849",
+      "size_in_bytes": 1513,
+      "expired": false,
+      "local_path": "output/phase4b_actions_44298014849",
+      "upload_audit": {
+        "status": "passed",
+        "known_secret_matches": 0,
+        "credential_pattern_matches": 0,
+        "url_query_or_credentials_matches": 0,
+        "files": [
+          {
+            "path": "result.json",
+            "bytes": 3645,
+            "sha256": "efd758ba720ddba1e2d2e95429003bc1eaf4f492f08088e2d44bc5e7121e351c"
+          }
+        ]
+      }
+    }
+  },
+  "independent_artifact_checks": {
+    "scope": "source_matched_local_live_commons_NOT_actions_live",
+    "pre_validator": {
+      "status": "passed",
+      "jsonschema_errors": 0,
+      "runtime_validator_cli_exit": 0,
+      "sha256": "2ec2689539ba3d32c8bfd31f1910a4712365dfcbb9176239038fc009d8fc8836"
+    },
+    "post_validator": {
+      "status": "passed",
+      "jsonschema_errors": 0,
+      "runtime_validator_cli_exit": 0,
+      "sha256": "dafc80c3f20bbca23ddc7982ff5d0c58ea76fa4550670265b2ff9676e6e12929"
+    },
+    "same_generation_and_storyboard": true,
+    "post_media_json_sha256": "dafc80c3f20bbca23ddc7982ff5d0c58ea76fa4550670265b2ff9676e6e12929",
+    "unchanged_fact_status": "unavailable",
+    "existing_validate_output": "passed",
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1080,
+          "height": 1920,
+          "pix_fmt": "yuv420p",
+          "color_range": "tv",
+          "avg_frame_rate": "30/1"
+        },
+        {
+          "codec_name": "aac",
+          "codec_type": "audio",
+          "sample_rate": "48000",
+          "channels": 1,
+          "avg_frame_rate": "0/0"
+        }
+      ],
+      "format": {
+        "duration": "6.000000",
+        "size": "1804923"
+      }
+    },
+    "full_av_decode": {
+      "status": "passed",
+      "sha256": "92db77fa49a1c8d931ffa676a663d6a1bb4e5cd579500cf49f8513390d17b5b2",
+      "bytes": 1804923
+    },
+    "pure_metadata_recomputed_identically": true,
+    "uploader_utf16_units": 858,
+    "conservative_utf16_upper_bound": 858,
+    "credit_budget": 4900,
+    "all_required_credits_retained": true,
+    "motion_recomputed": {
+      "1": {
+        "status": "temporal_pixel_change_observed",
+        "sample_times_seconds": [
+          0.9538,
+          2.3152
+        ],
+        "mean_absolute_rgb_difference_0_to_255": 33.031227,
+        "decoded_sample_sha256": [
+          "4e5b445d26d1f945cde94255d88a59dbe8c15c62de1a79bca5ae2a19d23711c0",
+          "971586b038ada6baf400a5fbc61d88f6881895a65cbcf486b9feb6f69966cda2"
+        ],
+        "inspection_files": [
+          "scene_1_motion_a_inspection.jpg",
+          "scene_1_motion_b_inspection.jpg"
+        ],
+        "sampled_contained_content_rectangle": {
+          "x": 108,
+          "y": 717,
+          "width": 864,
+          "height": 486
+        },
+        "cover_excluded": true,
+        "semantic_visual_verification": "not_performed"
+      }
+    },
+    "downloaded_actions_artifact_scans": {
+      "media": {
+        "status": "passed",
+        "known_secret_matches": 0,
+        "credential_pattern_matches": 0,
+        "url_query_or_credentials_matches": 0,
+        "files": [
+          {
+            "path": "artifact_audit.json",
+            "bytes": 2216,
+            "sha256": "3d92e63c9e400259fbe3130c67be59cdbfda8ffb8de7f1ca5781583240c6c436"
+          },
+          {
+            "path": "evidence.json",
+            "bytes": 3354,
+            "sha256": "64a3ee04d8b2130c838c01a4ffc845d2024c1d21dc5aaba6426ccbbfb9680e27"
+          },
+          {
+            "path": "pexels/chain.json",
+            "bytes": 2344,
+            "sha256": "fa81402da4de45d1ad4492dd257eda1ca3220e3db3515941c20b1afc57672d20"
+          },
+          {
+            "path": "pexels/pre_media_script.json",
+            "bytes": 3132,
+            "sha256": "a0a90ce9c84e8af335f8245861c61dede8819f149ed05d8a016addda3261f7e2"
+          },
+          {
+            "path": "pexels/scene_media_manifest.json",
+            "bytes": 1533,
+            "sha256": "c26dcc0779b9b114a6f8a72e0adb0f1c4edc20685ccea06e62fb612319c1d849"
+          },
+          {
+            "path": "pexels/script.json",
+            "bytes": 3132,
+            "sha256": "a0a90ce9c84e8af335f8245861c61dede8819f149ed05d8a016addda3261f7e2"
+          },
+          {
+            "path": "pixabay/chain.json",
+            "bytes": 2344,
+            "sha256": "9887ac1eba8e3876035aff40d41d54774516b9ed2aae638f8c39bb8dfad5ada2"
+          },
+          {
+            "path": "pixabay/pre_media_script.json",
+            "bytes": 3134,
+            "sha256": "998d7092c43eebc9e5e4115f531963ca2a318c35b89c767d64ff349fad637740"
+          },
+          {
+            "path": "pixabay/scene_media_manifest.json",
+            "bytes": 1535,
+            "sha256": "6591ba9756c28400baf9a488f779f0e7c05ed1378c81909decf0ad40d2a0417a"
+          },
+          {
+            "path": "pixabay/script.json",
+            "bytes": 3134,
+            "sha256": "998d7092c43eebc9e5e4115f531963ca2a318c35b89c767d64ff349fad637740"
+          },
+          {
+            "path": "wikimedia/chain.json",
+            "bytes": 2344,
+            "sha256": "fe4c7070037edd49a9556f223771a373a4f48cd530bb2cf5af434d65e1385764"
+          },
+          {
+            "path": "wikimedia/pre_media_script.json",
+            "bytes": 3288,
+            "sha256": "6b77a29f90a461f202b2fa1b88c15df9125134575b84a63c9de25d0b2ad848f0"
+          },
+          {
+            "path": "wikimedia/scene_media_manifest.json",
+            "bytes": 3592,
+            "sha256": "aae0f4db4335dc1dd7423f6e852ce123afa07d16a6b4b8db5148a758667adcc6"
+          },
+          {
+            "path": "wikimedia/script.json",
+            "bytes": 3288,
+            "sha256": "6b77a29f90a461f202b2fa1b88c15df9125134575b84a63c9de25d0b2ad848f0"
+          }
+        ]
+      },
+      "history_write": {
+        "status": "passed",
+        "known_secret_matches": 0,
+        "credential_pattern_matches": 0,
+        "url_query_or_credentials_matches": 0,
+        "files": [
+          {
+            "path": "artifact_audit.json",
+            "bytes": 293,
+            "sha256": "fe88053fb592f4ab21ffbf900ebe7d85fca4143d74f9bca0ac4a2d6225023848"
+          },
+          {
+            "path": "result.json",
+            "bytes": 4805,
+            "sha256": "0f27d7c5a7511c87c24606004c2b8a800c40490beaf5fbe4ede9aacfebe04fce"
+          }
+        ]
+      },
+      "history_verify": {
+        "status": "passed",
+        "known_secret_matches": 0,
+        "credential_pattern_matches": 0,
+        "url_query_or_credentials_matches": 0,
+        "files": [
+          {
+            "path": "artifact_audit.json",
+            "bytes": 293,
+            "sha256": "1a3849a1570dd400b71366081b12e5843276aa7df2ea5ba49f746f3e8d534ed7"
+          },
+          {
+            "path": "result.json",
+            "bytes": 3645,
+            "sha256": "efd758ba720ddba1e2d2e95429003bc1eaf4f492f08088e2d44bc5e7121e351c"
+          }
+        ]
+      }
+    }
+  },
+  "safety": {
+    "forbidden_workflow_dispatches": [],
+    "youtube_upload_publish_or_delete_performed": false,
+    "main_or_uploader_entrypoint_executed": false,
+    "repository_secret_values_retrieved_via_secrets_api": false,
+    "repository_secret_writes": [],
+    "existing_stock_values_parsed_only_in_probe_memory": true,
+    "secret_name_metadata_presence_only": {
+      "ENV_FILE": true,
+      "MEDIA_COOKIES_JSON": true,
+      "PEXELS_API_KEY": false,
+      "PIXABAY_API_KEY": false,
+      "ENV_FILE_1": false,
+      "ENV_FILE_2": false,
+      "ENV_FILE_3": false,
+      "ENV_FILE_4": false,
+      "ENV_FILE_5": false,
+      "ENV_FILE_6": false,
+      "ENV_FILE_7": false,
+      "ENV_FILE_8": false,
+      "ENV_FILE_9": false,
+      "ENV_FILE_10": false
+    },
+    "media_workflow_permissions": "contents:read",
+    "isolated_history_job_permissions": "contents:write only",
+    "new_log_audits": [
+      {
+        "job_id": 134790621953,
+        "bytes": 152851,
+        "known_credential_matches": 0,
+        "credential_pattern_matches": 0,
+        "run_id": 44301070745
+      },
+      {
+        "job_id": 134790714289,
+        "bytes": 116046,
+        "known_credential_matches": 0,
+        "credential_pattern_matches": 0,
+        "run_id": 44301095341
+      },
+      {
+        "job_id": 134779415692,
+        "bytes": 25950,
+        "known_credential_matches": 0,
+        "credential_pattern_matches": 0,
+        "run_id": 44297836963
+      },
+      {
+        "job_id": 134780028337,
+        "bytes": 26014,
+        "known_credential_matches": 0,
+        "credential_pattern_matches": 0,
+        "run_id": 44298014849
+      },
+      {
+        "job_id": 134779178912,
+        "bytes": 152765,
+        "known_credential_matches": 0,
+        "credential_pattern_matches": 0,
+        "run_id": 44297771082
+      },
+      {
+        "job_id": 134779398197,
+        "bytes": 44623,
+        "known_credential_matches": 0,
+        "credential_pattern_matches": 0,
+        "run_id": 44297831876
+      }
+    ],
+    "log_audit_scope": "supplied GitHub credential and unmasked GitHub/Google key patterns; inaccessible masked stock values were not retrieved to scan logs",
+    "artifact_audit_scope": "workflow compares available allowlisted secret material in memory before upload; independent downloads checked supplied GitHub credential, key patterns, all JSON URL fields, file allowlist, byte counts and hashes",
+    "cookie_or_env_or_raw_stock_artifact_files": false,
+    "credential_file_ignored_and_untracked": true,
+    "origin_credential_free": true,
+    "protected_file_blobs_unchanged": {
+      "main.py": {
+        "starting_blob_sha": "6722c73a542413055571ce804f5799eb5f6dca6b",
+        "source_blob_sha": "6722c73a542413055571ce804f5799eb5f6dca6b",
+        "remote_blob_sha": "6722c73a542413055571ce804f5799eb5f6dca6b"
+      },
+      "content_engine.py": {
+        "starting_blob_sha": "97925a8bb9939dede38d0c1304d83cfb7d006f7d",
+        "source_blob_sha": "97925a8bb9939dede38d0c1304d83cfb7d006f7d",
+        "remote_blob_sha": "97925a8bb9939dede38d0c1304d83cfb7d006f7d"
+      },
+      "src/content_generation/engine.py": {
+        "starting_blob_sha": "be4a431bc98dbd721fea796999534ea080683ae9",
+        "source_blob_sha": "be4a431bc98dbd721fea796999534ea080683ae9",
+        "remote_blob_sha": "be4a431bc98dbd721fea796999534ea080683ae9"
+      },
+      "src/content_generation/__init__.py": {
+        "starting_blob_sha": "350d7bef07eab0c95c49a3ad6562b3ddd3552ae9",
+        "source_blob_sha": "350d7bef07eab0c95c49a3ad6562b3ddd3552ae9",
+        "remote_blob_sha": "350d7bef07eab0c95c49a3ad6562b3ddd3552ae9"
+      },
+      "scripts/gemini_web_story.py": {
+        "starting_blob_sha": "d288f2ef8518cdcdcb91dc5f5bfddae6df234091",
+        "source_blob_sha": "d288f2ef8518cdcdcb91dc5f5bfddae6df234091",
+        "remote_blob_sha": "d288f2ef8518cdcdcb91dc5f5bfddae6df234091"
+      },
+      "youtube_studio_uploader.js": {
+        "starting_blob_sha": "db7226def587e75efbc70729e40133c0f85b8e6d",
+        "source_blob_sha": "db7226def587e75efbc70729e40133c0f85b8e6d",
+        "remote_blob_sha": "db7226def587e75efbc70729e40133c0f85b8e6d"
+      },
+      "src/youtube_upload/youtube_uploader.py": {
+        "starting_blob_sha": "e5098361d49ceae9dea2ff66d388d87ad5a01d8c",
+        "source_blob_sha": "e5098361d49ceae9dea2ff66d388d87ad5a01d8c",
+        "remote_blob_sha": "e5098361d49ceae9dea2ff66d388d87ad5a01d8c"
+      },
+      "scripts/embed_cover_frame.py": {
+        "starting_blob_sha": "4693c2f595cf69e284dec2fbb51216a2ff3101aa",
+        "source_blob_sha": "4693c2f595cf69e284dec2fbb51216a2ff3101aa",
+        "remote_blob_sha": "4693c2f595cf69e284dec2fbb51216a2ff3101aa"
+      },
+      "scripts/generate_fallback_thumbnail.py": {
+        "starting_blob_sha": "75d873f198bbe2f717a702be18c4c1652d9362ec",
+        "source_blob_sha": "75d873f198bbe2f717a702be18c4c1652d9362ec",
+        "remote_blob_sha": "75d873f198bbe2f717a702be18c4c1652d9362ec"
+      },
+      ".github/workflows/daily_shorts.yml": {
+        "starting_blob_sha": "ff5ff2aa853ab3a1c545f276866cc9ce15369479",
+        "source_blob_sha": "ff5ff2aa853ab3a1c545f276866cc9ce15369479",
+        "remote_blob_sha": "ff5ff2aa853ab3a1c545f276866cc9ce15369479"
+      },
+      ".github/workflows/hourly_pruner.yml": {
+        "starting_blob_sha": "6a94567877621c924eae78fadef87c921e3ae96c",
+        "source_blob_sha": "6a94567877621c924eae78fadef87c921e3ae96c",
+        "remote_blob_sha": "6a94567877621c924eae78fadef87c921e3ae96c"
+      },
+      ".github/workflows/draft_publisher.yml": {
+        "starting_blob_sha": "b7f10d852923bcf2824ca20a4f97678a404037d8",
+        "source_blob_sha": "b7f10d852923bcf2824ca20a4f97678a404037d8",
+        "remote_blob_sha": "b7f10d852923bcf2824ca20a4f97678a404037d8"
+      },
+      ".used_topics.json": {
+        "starting_blob_sha": "e5a987fccba23d6d37f1aed76e560cd0647e8f26",
+        "source_blob_sha": "e5a987fccba23d6d37f1aed76e560cd0647e8f26",
+        "remote_blob_sha": "e5a987fccba23d6d37f1aed76e560cd0647e8f26"
+      },
+      "samples/script.json": {
+        "starting_blob_sha": "03e495f7668648917d91c24b7398e5f44953bf6c",
+        "source_blob_sha": "03e495f7668648917d91c24b7398e5f44953bf6c",
+        "remote_blob_sha": "03e495f7668648917d91c24b7398e5f44953bf6c"
+      },
+      "schemas/script.schema.json": {
+        "starting_blob_sha": "91567daa7e263aa55e5521e25f2e26be70ec2ff3",
+        "source_blob_sha": "91567daa7e263aa55e5521e25f2e26be70ec2ff3",
+        "remote_blob_sha": "91567daa7e263aa55e5521e25f2e26be70ec2ff3"
+      },
+      "scripts/validate_script_json.py": {
+        "starting_blob_sha": "63571101132b1ea2af4e0fe53183d74f8570a5e6",
+        "source_blob_sha": "63571101132b1ea2af4e0fe53183d74f8570a5e6",
+        "remote_blob_sha": "63571101132b1ea2af4e0fe53183d74f8570a5e6"
+      },
+      "src/media_processing/media_processor.py": {
+        "starting_blob_sha": "b2fe3f589808b71eb684a86e7551c6443007497a",
+        "source_blob_sha": "b2fe3f589808b71eb684a86e7551c6443007497a",
+        "remote_blob_sha": "b2fe3f589808b71eb684a86e7551c6443007497a"
+      },
+      "video_fetcher.js": {
+        "starting_blob_sha": "148aa1f2e91dad94ea78d442da87014a0e08cc0c",
+        "source_blob_sha": "148aa1f2e91dad94ea78d442da87014a0e08cc0c",
+        "remote_blob_sha": "148aa1f2e91dad94ea78d442da87014a0e08cc0c"
+      },
+      "config/settings.py": {
+        "starting_blob_sha": "bc6bb0b134ef87ce78bd321ec543b0cd0e8f7b1e",
+        "source_blob_sha": "bc6bb0b134ef87ce78bd321ec543b0cd0e8f7b1e",
+        "remote_blob_sha": "bc6bb0b134ef87ce78bd321ec543b0cd0e8f7b1e"
+      }
+    },
+    "topic_title_count": 25,
+    "topic_pending_count": 0,
+    "topic_title_list_sha256": "7eca291fbb7b1f462b92210afce9c0c328971d78ef98413a45a3e0644184176d",
+    "production_media_history_http_status": 404,
+    "main_probe_data_http_status": 404,
+    "local_development_failures_retained": [
+      "Initial new test imports used an unqualified tests module: collection failed, fixed to tests.test_phase4_media.",
+      "Initial fail-closed byte comparison exposed pre-snapshot newline normalization; snapshot changed to exact bytes from actual root writer. Both failures preceded the first source commit/Actions runs."
+    ]
+  }
+}

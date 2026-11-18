@@ -1,5 +1,7 @@
 # Faz 4 — Sahne bazlı medya motoru: kod, CI ve canlı kanıt
 
+> **Tarihsel kapsam:** Aşağıdaki §1–7 e4d1144 Faz4 snapshot’ıdır; o tarihteki başarısız/kısmi sonuçlar korunur. Faz4B güncellemesi §8 ve [ayrı rapordadır](PHASE4B_ACCEPTANCE_2026-11-18.md); eski JSON değiştirilmedi.
+
 **Tarih:** 2026-11-18 · **Karar: FAZ 4 TAM KABULÜ GEÇMEDİ — kısmi canlı sağlayıcı kanıtı.**
 
 Kod uygulanıp main'e push edildi; yeni kod CI'da geçti ve Commons üzerinde gerçek iki-sahne dosya/consumer kanıtı alındı. Ancak Pexels/Pixabay'dan kabul edilmiş canlı asset yok. Yeşil workflow'u tüm sağlayıcıların veya sahne-anlatım görsel anlamının doğrulandığı şeklinde yorumlamıyoruz. **Otomatik PUBLIC yayına hazır olunduğu sonucu kesinlikle çıkarılmaz.** Faz 5 gerçek TTS zamanlaması ve bütünleşik yayın kalite kapısı ayrı/açık kalır.
@@ -131,3 +133,15 @@ Faz 3 `.used_topics.json` **25 title / 0 pending** kaldı; title-list SHA-256 `7
 | Otomatik PUBLIC yayın hazırlığı | **DOĞRULANMADI / hazır denemez** |
 
 **Sıradaki güvenli iş:** Pexels/Pixabay erişimini ve mevcut konfigürasyonun probe'a güvenli aktarımını izinli yoldan doğrulamak; ardından ayrı provider bazında source/license/download/decode ve hareketli/atıf-gerektiren asset tüketici kanıtını almak. Mevcut key/cookie'yi loga/mesaja isteme veya 403'ü aşmaya çalışma; güvenli erişim sağlanamıyorsa blokajı koru. Ayrı medya-history cross-run persistence ve açık Faz 1 gerçek producer→consumer zincirini tamamlamak gerekir; [TODO](../GEMINI_AUTONOMOUS_SHORTS_TODO.md). Faz 5 ses/timing ve son yayın kapısı bunlardan ayrı yürütülür. Ortak sınıf + yeşil mock/CI tek başına Faz 4'ü tamamlamaz.
+
+## 8. Faz4B ek kanıtı — eski ve yeni başarısızlıklar korunur
+
+Başlangıç [`316ae2e`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/316ae2e3e1aff89483d367a5d7ea2e82f0f68665), ana kod [`5c883f4`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/5c883f4ded05df896309274ed6e5a368eb178472), yalnız dependency-workflow düzeltmesiyle final test edilmiş kaynak [`59e2c79`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/59e2c79ae10ff38c297130d5b775a10427e64106). CI [44301070745](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44301070745) **301+16**, hedefli tekrar altkümeleri35/122/8 ve11 Node başarılı. Önceki core CI [44297771082](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297771082) de successful; farklı source’lar aynı head diye sunulmaz.
+
+İlk media [44297831876](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297831876) 996 saniyelik yavaş Ubuntu apt indirmesinde, provider’a ulaşmadan iptal edildi. Tek gerekçeli dependency-fix sonrası media [44301095341](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44301095341) **failure/partial_provider_evidence_full_acceptance_failed**: Pexels/Pixabay exact-name nonempty allowed API key gözlenmedi; cookie file vardı, browser403. Commons katalog gerçek adaylar buldu; video174336538/83680173 generic download/decode RuntimeError ile reddedildi. Remote render/post-validator/cover/saf metadata’ya ulaşılmadı; HTTP/download/full-decode nedeni ayrışmıyor.
+
+**Aynı final kaynakla ayrı yerel canlı** Commons gerçek hareketli CC BY4.0 video174336538 + CC BY3.0 still83667454, canonical File/creator/deed HTTP200, download/full decode ve actual root writer→same-JSON strict wrapper→cover→saf metadata geçti. Yerel başarı Actions başarısı değildir; explicit fixture/synthetic tone canlı Gemini/TTS veya visual semantic onay değildir.
+
+History [44297836963](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297836963) → [44298014849](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44298014849) kaynak [`5c883f4`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/5c883f4ded05df896309274ed6e5a368eb178472) üzerinde ayrı ref/path: üç synthetic sentinel, gerçek controlled HTTP409/reread/merge, distinct-run aynı blob/entry read, fileDELETE200/refDELETE204/404 cleanup geçti. History bileşenleri final source’la aynı blob’dur. Spontane cross-Actions race/distributed reservation iddiası yoktur.
+
+Altı yeni job logu/üç Actions artifact’i + 11 dosyalı yerel staging audit0; önceki sekiz audit korunur. Production history/main/uploader/kapak/production-pruner-publisher değişmedi. **Faz4B TAM KABUL GEÇMEDİ**: zorunlu stock ve Actions Commons açık. Faz5 başlamadı. [Tam rapor](PHASE4B_ACCEPTANCE_2026-11-18.md) · [Yeni JSON](PHASE4B_ACTIONS_EVIDENCE_2026-11-18.json).

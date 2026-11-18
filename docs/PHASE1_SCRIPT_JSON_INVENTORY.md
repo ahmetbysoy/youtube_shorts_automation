@@ -1,6 +1,8 @@
 # Faz 1 — script.json Sözleşme Envanteri
 
-> İlk kayıt: 2026-11-17. **1–6. bölümler tarihsel başlangıç snapshot'ıdır**; “şema henüz yok/tek doğrulanmış üretici” ifadeleri bugünkü durumu göstermez. Schema v2/runtime kapısı sonradan eklendi. 2026-11-18 Faz 4 sırasında genişletilen statik okuma/yazma taraması ve açık gerçek tüketici işleri **7. bölümde**. Tam Faz 1 kabulü hâlâ açık.
+> **Güncel Faz 4B — 2026-11-18: TAM KABUL GEÇMEDİ.** Final test edilmiş kaynak [`59e2c79`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/59e2c79ae10ff38c297130d5b775a10427e64106); Ubuntu 26 CI [44301070745](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44301070745) **301 Python + 16 alt test**, hedefli tekrar altkümeleri **35 Faz 3 / 122 medya / 8 tüketici**, **11 Node** başarılı. **Yerel, aynı-SHA canlı Commons** hareketli CC BY video + CC BY still ve gerçek writer→strict wrapper→kapak→saf metadata zinciri geçti. **Actions medya [44301095341](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44301095341) failure:** stock browser 403; Commons iki adayda `download_or_decode_failed/RuntimeError`, tam zincir geçmedi. Ayrı history [44297836963](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44297836963) → [44298014849](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44298014849) gerçek HTTP **409/reread/merge**, distinct-run okuma ve dosya/ref cleanup geçti; history kaynak SHA’sı [`5c883f4`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/5c883f4ded05df896309274ed6e5a368eb178472), bileşenleri final kaynakla aynı. Fixture/sentetik ton ≠ canlı Gemini/TTS; yerel başarı ≠ Actions başarısı; Faz 5 başlamadı. [12 başlıklı rapor](evidence/PHASE4B_ACCEPTANCE_2026-11-18.md) · [JSON kanıt](evidence/PHASE4B_ACTIONS_EVIDENCE_2026-11-18.json).
+
+> İlk kayıt: 2026-11-17. **1–6. bölümler tarihsel başlangıç snapshot'ıdır**; “şema henüz yok/tek doğrulanmış üretici” ifadeleri bugünkü durumu göstermez. Schema v2/runtime kapısı sonradan eklendi. 2026-11-18 Faz 4 sırasında genişletilen statik okuma/yazma taraması ve açık gerçek tüketici işleri **7. bölümde**; Faz4B gerçek explicit-fixture zinciri **8. bölümde**. Dinamik/external caller tamlığı açık; tam Faz1 kabulü hâlâ açık.
 
 ## 1. Üretici
 
@@ -70,6 +72,8 @@ Mevcut üretici payload'ında `storyboard`, `schema_version`, `generation_id`, `
 
 ## 7. 2026-11-18 Faz 4 — genişletilmiş statik üretici/tüketici taraması
 
+> Bu bölüm c29f7e7/e4d1144 tarihsel snapshot’ıdır. Fixture consumer/cover boşluğu Faz4B §8’de yerel canlı ve CI offline kapsamıyla daraltıldı; canlı Gemini/TTS ve dinamik runtime tamlığı hâlâ açık.
+
 İnceleme kaynak kodu `c29f7e7` (medya kodu; tabloyu etkileyen diğer dosyalar Faz 4 öncesiyle aynı). Yöntem: Git'in izlediği Python/JS/CJS/shell/YAML dosyalarında `script.json`, `DEFAULT_JSON_OUT`, `SCRIPT_PATH`, `script_data`, JSON read/write ve metadata/storyboard alanları arandı; aşağıdaki gerçek çağrı/alan noktaları okundu. Bu, dinamik yol aktarımı ve tüm import/caller kombinasyonlarının kanıtı değildir. Cookie/ENV_FILE/credential dosyası okunması bu envanterin parçası değildir.
 
 | Yol | Rol / doğrulanan alanlar | Kanıt / kalan sınır |
@@ -94,3 +98,23 @@ Mevcut üretici payload'ında `storyboard`, `schema_version`, `generation_id`, `
 - Faz 4 canlı probe selector + gerçek download/decode + assemble/QC'yi doğrular, fakat `run_media_pipeline` strict wrapper entegrasyon testinde provider/download/montaj kısımları stub/mock'ludur. **Media CLI `--help` parse etmez:** son kontrolde benign yardım varsayımıyla yapılan çağrı gerçekte legacy samples montajını çalıştırdı. `samples/script.json` HEAD içeriğine geri alındı, ignored MP4/ASS ayrıldı; topic/media production history ve uploader etkilenmedi. Bu yanlış çağrı gerçek strict producer→consumer kabulü değildir. Yardım smoke'u diye tekrarlama; yalnız Python compile/izole test veya gerçek argparse probe/topic CLI'larını kullan. Ayrıntı [kanıt raporu §6](evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md#6-güvenlik-ve-test-komutu-düzeltmesi).
 - Yeni zorunlu-atıf bütçesi ve gerçek saf JS builder testleri belirli bir tüketici kontrat boşluğunu daraltır; Studio'nun kaydettiği açıklamanın tamlığına veya genel yayın kalite kapısına kanıt oluşturmaz.
 - Başarılı güncel schema/CI, eski Faz 1 kutularını ya da Faz 5 ses-sahne zamanlamasını kendiliğinden kapatmaz.
+
+## 8. 2026-11-18 Faz4B — aynı JSON gerçek tüketici entegrasyonu
+
+Kaynak [`59e2c79`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/59e2c79ae10ff38c297130d5b775a10427e64106), CI [44301070745](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44301070745). **Aşağıdaki bütün zincir aynı kaynakla yerel canlı Commons’ta geçti; CI provider/download offline fixture kullanır. Actions canlı [44301095341](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44301095341) selection’da bloklandı.** Fixture ≠ canlı Gemini/TTS. [Kanıt](evidence/PHASE4B_ACCEPTANCE_2026-11-18.md).
+
+| Aşama | Gerçek çağrı/veri | Fixture veya açık sınır |
+|---|---|---|
+| Ara dönüşüm | Gerçek scripts.gemini_web_story.draft_to_script_metadata storyboard/legacy keywords/fact metadata taşır | Girdi explicit sabit taslak; Gemini Web çağrılmadı |
+| Ana üretici | ROOT content_engine.run_content_pipeline gerçek v2 UUID ve JSON/TXT/SRT yazar | Yalnız generate_scenario/synthesize_voiceover sınırları fixture/synthetic tone; model/TTS/normalizasyon başarısı iddiası yok |
+| Eski üretici | src/content_generation.engine.run_content_pipeline bağımsız legacy writer; paket export’u ona gider | Root wrapper değil; bu zincirde çalışmadı/değiştirilmedi; dış caller tamlığı açık |
+| Ön kapı | validate_payload + gerçek validate_script_json --input SAME_PATH; 0 schema hata | main.py çalıştırılmadı; başarısız Actions’ta da bu kapı geçti |
+| Medya | Gerçek run_media_pipeline → strict selector → download/probe/ASS/FFmpeg/QC → aynı JSON atomic persist | İzole path/provider/history factory; yerel canlı gerçek HTTP, CI offline fixture; Actions selection fail |
+| Son kapı | Reload aynı UUID/storyboard/narration; scene_media/selection/media_credits/description ve gerçek post-validator | Fact status unavailable kalır; Actions’ta ulaşılmadı |
+| Kapak | Gerçek embed_cover_frame.main --no-ai, cover üretilir/izole MP4 değişir, JSON SHA aynı | Best-effort exit0 tek başına yeterli sayılmaz; AI/network/semantic onay yok; Actions’ta ulaşılmadı |
+| Uploader metadata | Unchanged source’tan gerçek readScenarioField/buildFinalDescription, ağsız kısıtlı VM | Uploader require/import/entrypoint/Studio/UI kalıcılığı yok; Actions’ta ulaşılmadı |
+| Credit budget | İki mandatory CC BY atfı description+media_credits+actual builder’da tam; 858 UTF16≤4900 | Affiliate üç dal/emoji4900 sınırı Node fixture’da ayrıca testli; gerçek yayın yok |
+
+Pre-media snapshot gerçek root writer çıktısının exact bytes kopyasıdır. Post-media JSON SHA cover ve saf JS’den sonra değişmez; gerçek full AV decode uygulanır. Ayrı iki-Actions history proof bu local selection-history dosyasından çıkarılmaz; kendi remote ref/path/409/read/cleanup kanıtıdır.
+
+**Kapanan alt boşluk:** izin verilen explicit fixture ile actual writer→same JSON strict wrapper→post validator→cover→saf metadata. **Açık kalan:** dinamik/external caller’lar, eski writer’ın tüm kullanımları, backup API/Studio consumer, canlı Gemini/TTS ve Faz5 timing/audio; ayrıca Actions canlı Commons seçimi. Tam Faz1 veya PUBLIC hazırlığı işaretlenmez.
