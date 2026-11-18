@@ -669,5 +669,68 @@
       "created_at": "2026-11-18T09:52:53.655276+00:00"
     }
   ],
-  "pending": []
+  "pending": [
+    {
+      "title": "Dünya'nın En Derin Sondajı 12 Kilometrede Neden Durduruldu? #Shorts",
+      "topic": "Bilim",
+      "topic_subject": "Dünya'nın En Derin Sondajı 12 Kilometrede Neden Durduruldu? #Shorts",
+      "topic_key": "",
+      "category": "bilim",
+      "entities": [
+        "bilim",
+        "derin",
+        "dunya",
+        "durduruldu",
+        "kilometrede",
+        "sondaji"
+      ],
+      "claims": [],
+      "scenario_tokens": [
+        "altin",
+        "baslayan",
+        "beklenen",
+        "bilim",
+        "cause",
+        "davranip",
+        "delik",
+        "depth",
+        "derec",
+        "derecey",
+        "durduruld",
+        "earth",
+        "erimis",
+        "firlad",
+        "fosilleri",
+        "gectikler",
+        "heat",
+        "insan",
+        "insanligin",
+        "karsilast",
+        "kaya",
+        "kazdig",
+        "kilometr",
+        "kilometre",
+        "kilometred",
+        "kola",
+        "matkap",
+        "metrey",
+        "mikroskobik",
+        "nin",
+        "plankton",
+        "plastik",
+        "projed",
+        "sikistirinc",
+        "sondaj",
+        "superderin",
+        "te",
+        "uclarin",
+        "ulast",
+        "year",
+        "yerin"
+      ],
+      "created_at": "2026-11-18T13:00:58.586790+00:00",
+      "reservation_id": "d124ccc0-13a8-4154-9506-39ae8a02bba8",
+      "run_id": "44309121732:1"
+    }
+  ]
 }
