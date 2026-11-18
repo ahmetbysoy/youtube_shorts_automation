@@ -33,8 +33,9 @@ jobs:
 
       - name: Sistem kurulumu (ffmpeg + fonts)
         run: |
+          export DEBIAN_FRONTEND=noninteractive
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-liberation fonts-dejavu-core libass9
+          sudo apt-get install -y -qq --no-install-recommends ffmpeg libass9 fonts-liberation fonts-dejavu-core
           ffmpeg -version | head -1
 
       - uses: actions/setup-python@v5
