@@ -71,6 +71,66 @@ def prepare_media_cookies(path: Path, raw: str) -> dict:
     return {"secret_supplied": True, "stock_cookie_file_created": bool(cookies)}
 
 
+def cookie_only_preflight(path: Path, raw: str, *, api_presence: dict | None = None) -> dict:
+    """No API credential is read/required. Counts are matching-cookie counts.
+
+    Secret material stays in memory or an exclusive 0600 ephemeral cookie file;
+    the RETURN VALUE is safe booleans/counts/fixed status codes only.
+    """
+    api_presence = {} if api_presence is None else api_presence
+    result = {"access_mode": "cookie_only", "status": "failed", "media_cookies_secret_present": bool(raw),
+        "pexels_api_key_present": api_presence.get("pexels") is True, "pixabay_api_key_present": api_presence.get("pixabay") is True,
+        "api_presence_scope": "direct_repository_secret_names_boolean_only" if api_presence else "not_supplied_to_cookie_only_preflight",
+        "api_credentials_evaluated": False, "api_credentials_loaded": False, "env_file_read": False,
+        "pexels_cookie_domain_count": 0, "pixabay_cookie_domain_count": 0,
+        "stock_cookie_file_created": False, "missing_configuration": []}
+    created = False
+    try:
+        if not raw:
+            result["missing_configuration"] = ["MEDIA_COOKIES_JSON"]; return result
+        data = json.loads(raw)
+        data = data.get("cookies") if isinstance(data, dict) else data
+        if not isinstance(data, list): raise ValueError("invalid_cookie_json")
+        allowed = {"pexels.com", "www.pexels.com", ".pexels.com", "pixabay.com", "www.pixabay.com", ".pixabay.com"}
+        fields = {"name", "value", "domain", "path", "expires", "httpOnly", "secure", "sameSite"}
+        rows = []; identities = {}
+        for row in data:
+            if not isinstance(row, dict): raise ValueError("invalid_cookie_json")
+            domain = row.get("domain")
+            if not isinstance(domain, str) or domain.lower() not in allowed: continue
+            c = {k: v for k, v in row.items() if k in fields}; c["domain"] = domain.lower(); c.setdefault("path", "/")
+            if not isinstance(c.get("name"), str) or not c["name"] or not isinstance(c.get("value"), str): raise ValueError("invalid_cookie_json")
+            if not isinstance(c["path"], str) or not c["path"].startswith("/"): raise ValueError("invalid_cookie_json")
+            if any(ord(ch) < 32 or ord(ch) == 127 for key in ("name", "value", "path") for ch in c[key]): raise ValueError("invalid_cookie_json")
+            if any(key in c and type(c[key]) is not bool for key in ("secure", "httpOnly")): raise ValueError("invalid_cookie_json")
+            if "expires" in c and (type(c["expires"]) not in (int, float) or not -1 <= c["expires"] < 10**12): raise ValueError("invalid_cookie_json")
+            if "sameSite" in c:
+                value = c["sameSite"]
+                normalized = {"strict": "Strict", "lax": "Lax", "none": "None", "no_restriction": "None"}.get(value.lower() if isinstance(value, str) else "")
+                if normalized is None: raise ValueError("invalid_cookie_json")
+                c["sameSite"] = normalized
+            identity = c["domain"], c["path"], c["name"]
+            if identity in identities:
+                if identities[identity] != c: raise ValueError("conflicting_cookie_rows")
+                continue
+            identities[identity] = c; rows.append(c)
+        for provider in ("pexels", "pixabay"):
+            result[provider+"_cookie_domain_count"] = sum(c["domain"].lstrip(".").removeprefix("www.") == provider+".com" for c in rows)
+        if not all(result[p+"_cookie_domain_count"] for p in ("pexels", "pixabay")):
+            result["missing_configuration"] = ["MEDIA_COOKIES_JSON"]; return result
+        if path.exists(): raise ValueError("cookie_path_already_exists")
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        created = True
+        with os.fdopen(fd, "w") as handle: json.dump(rows, handle)
+        result.update(status="passed", stock_cookie_file_created=True)
+    except Exception:
+        if created: path.unlink(missing_ok=True)
+        # Never serialize parser/Playwright messages, cookie names or values.
+        result["error_class"] = "invalid_cookie_configuration"
+        result["invalid_configuration"] = ["MEDIA_COOKIES_JSON"]
+    return result
+
+
 def _audit_values(environ) -> list[bytes]:
     """Compare available secret material IN MEMORY, with no value output."""
     values = []
@@ -124,10 +184,20 @@ def audit_artifacts(root: Path, environ=None) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("operation", choices=["cookies", "audit"])
+    ap.add_argument("operation", choices=["cookies", "preflight", "audit"])
     ap.add_argument("--path", type=Path, required=True)
+    ap.add_argument("--report", type=Path)
     args = ap.parse_args()
     try:
+        if args.operation == "preflight":
+            # Actions evaluates these two booleans WITHOUT passing key values.
+            presence = {p: os.environ.pop(p.upper()+"_API_KEY_PRESENT", "false").lower() == "true" for p in STOCK_KEYS}
+            result = cookie_only_preflight(args.path, os.environ.pop("MEDIA_COOKIES_JSON", ""), api_presence=presence)
+            if args.report:
+                args.report.parent.mkdir(parents=True, exist_ok=True)
+                args.report.write_text(json.dumps(result, indent=2)+"\n")
+            print("PHASE4C_PREFLIGHT="+json.dumps(result))
+            return 0 if result["status"] == "passed" else 1
         if args.operation == "cookies":
             result = prepare_media_cookies(args.path, os.environ.pop("MEDIA_COOKIES_JSON", ""))
             print("MEDIA_COOKIE_CONFIGURATION="+json.dumps(result))

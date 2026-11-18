@@ -26,7 +26,7 @@ from src.media_processing.media_history import MediaHistory, atomic_json
 from src.media_processing.media_providers import now
 
 ROOT = Path(__file__).resolve().parents[1]
-PROTECTED = (".used_topics.json", ".media_history.json", ".gemini_topic_ledger.json", "samples/script.json",
+PROTECTED = ("prune_state.json", ".used_topics.json", ".media_history.json", ".gemini_topic_ledger.json", "samples/script.json",
              "main.py", "content_engine.py", "src/content_generation/engine.py", "youtube_studio_uploader.js",
              "scripts/embed_cover_frame.py", "scripts/generate_fallback_thumbnail.py",
              ".github/workflows/daily_shorts.yml", ".github/workflows/hourly_pruner.yml", ".github/workflows/draft_publisher.yml")
@@ -106,6 +106,16 @@ def full_av_decode(path: Path) -> dict:
     return {"status": "passed", "sha256": sha256(path), "bytes": path.stat().st_size}
 
 
+def selected_media_summary(persisted: dict, consumer_result: str) -> list[dict]:
+    """Only selector-sanitized fields, retained even if a later consumer fails."""
+    return [{"scene_id": s["scene_id"], "provider": s["selected_provider"], "media_id": s["selected_media_id"],
+            "source_url": s["source_url"], "download_url": s["media"]["download_url"], "media_type": s["media_type"], "license": s["license"],
+            "sha256": s["file_probe"]["sha256"], "measured_resolution": s["resolution"], "measured_aspect_ratio": s["aspect_ratio"],
+            "measured_duration": s["duration"], "decode_status": s["file_probe"]["decode_status"],
+            "acceptance_rationale": "source_and_file_license_gates_plus_full_decode_and_measured_technical_gates; metadata_supported_not_visual_approval",
+            "consumer_result": consumer_result} for s in persisted["scene_media"]]
+
+
 def run_consumer_chain(folder: Path, *, providers: list, provider: str = "wikimedia", duration: float = 6.0,
                        offline_downloader=None, live_provider_calls: bool = True, exercise_cover: bool = True) -> dict:
     folder = folder.resolve()
@@ -117,6 +127,7 @@ def run_consumer_chain(folder: Path, *, providers: list, provider: str = "wikime
                            "transformation": "scripts.gemini_web_story.draft_to_script_metadata",
                            "scenario_boundary": "explicit_fixture_not_live_gemini", "tts_boundary": "synthetic_test_tone_not_tts",
                            "independent_legacy_writer": "src/content_generation/engine.py inventoried, not executed"}}
+    current_stage = "fixture_writer"
     try:
         data = write_fixture_with_actual_root_producer(folder, provider=provider, duration=duration)
         report["producer"]["writer_executed"] = True
@@ -124,6 +135,7 @@ def run_consumer_chain(folder: Path, *, providers: list, provider: str = "wikime
         generation = data["generation_id"]; uuid.UUID(generation)
         report["generation_id"] = generation
         (folder/"pre_media_script.json").write_bytes((folder/"script.json").read_bytes())
+        current_stage = "pre_media_validator"
         report["stages"]["pre_media_validator"] = validate_file(folder/"script.json")
         # Configure isolated paths and the provider/history factories only. The
         # public run_media_pipeline -> strict wrapper -> selector -> persistence
@@ -131,6 +143,7 @@ def run_consumer_chain(folder: Path, *, providers: list, provider: str = "wikime
         paths = {"BASE_DIR": folder, "SCRIPT_JSON_PATH": folder/"script.json", "SRT_PATH": folder/"voiceover.srt",
                  "VOICEOVER_MP3_PATH": folder/"voiceover.mp3", "OUTPUT_DIR": folder, "ASSETS_DIR": folder/"assets",
                  "FINAL_OUTPUT": folder/"consumer.mp4"}
+        current_stage = "strict_media_wrapper"
         with ExitStack() as stack:
             for name, value in paths.items(): stack.enter_context(patch.object(mp, name, value))
             stack.enter_context(patch.object(scene_media, "default_providers", return_value=providers))
@@ -146,12 +159,16 @@ def run_consumer_chain(folder: Path, *, providers: list, provider: str = "wikime
             raise ValueError("same_json_identity_or_storyboard_changed")
         if [s["scene_id"] for s in persisted["scene_media"]] != [s["scene_id"] for s in original_board]:
             raise ValueError("consumer_scene_coverage_mismatch")
+        report["selected_media"] = selected_media_summary(persisted, "render_passed_final_validation_pending")
+        current_stage = "post_media_validator"
         report["stages"]["post_media_validator"] = validate_file(folder/"script.json")
         media_hash = sha256(folder/"script.json")
+        current_stage = "pre_cover_decode"
         report["stages"]["pre_cover_decode"] = full_av_decode(video)
         # Read-only JSON consumer, real no-network cover main on the isolated
         # video. Best-effort return 0 is NOT enough: require an actual cover and
         # changed video. No AI/free-vision/Gemini service or Studio is executed.
+        current_stage = "cover_read_only_consumer"
         if exercise_cover:
             cover = folder/"cover.jpg"; old_video_hash = sha256(video)
             argv = ["embed_cover_frame.py", "--video", str(video), "--script", str(folder/"script.json"),
@@ -167,6 +184,7 @@ def run_consumer_chain(folder: Path, *, providers: list, provider: str = "wikime
                 "ai_or_network_called": False, "semantic_cover_approval": False}
         else:
             report["stages"]["cover_read_only_consumer"] = {"status": "not_requested"}
+        current_stage = "uploader_pure_metadata_consumer"
         pure = subprocess.run(["node", str(ROOT/"scripts/uploader_metadata_probe.cjs")], input=json.dumps(persisted),
                               capture_output=True, text=True, check=True, timeout=20)
         metadata = json.loads(pure.stdout)
@@ -181,12 +199,16 @@ def run_consumer_chain(folder: Path, *, providers: list, provider: str = "wikime
             "conservative_utf16_upper_bound": upper, "budget": 4900, "required_credits_count": len(credits), "all_required_credits_preserved": True,
             "entrypoint_executed": False, "uploader_source_sha256": metadata["uploader_source_sha256"],
             "extracted_functions_sha256": metadata["extracted_functions_sha256"]}
+        current_stage = "final_qc"
         report["stages"]["final_qc"] = {"status": "passed", **mp.validate_output(video)}
+        current_stage = "full_av_decode"
         report["stages"]["full_av_decode"] = full_av_decode(video)
+        current_stage = "actual_source_and_license_http"
         if live_provider_calls and provider == "wikimedia":
             report["stages"]["actual_source_and_license_http"] = {str(s["scene_id"]): verify_commons_file_pages(s) for s in persisted["scene_media"]}
         else:
             report["stages"]["actual_source_and_license_http"] = {"status": "not_run_offline_fixture_or_non_commons"}
+        current_stage = "motion_evidence"
         elapsed = 0.0
         report["motion_evidence"] = {}
         for index, scene in enumerate(persisted["scene_media"]):
@@ -200,19 +222,22 @@ def run_consumer_chain(folder: Path, *, providers: list, provider: str = "wikime
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{at:.3f}", "-i", str(video), "-frames:v", "1",
                             "-vf", "scale=360:640", str(folder/f"scene_{scene['scene_id']}_inspection.jpg")], check=True, capture_output=True, timeout=30)
             elapsed += scene["planned_duration"]
-        report["selected_media"] = [{"scene_id": s["scene_id"], "provider": s["selected_provider"], "media_id": s["selected_media_id"],
-            "source_url": s["source_url"], "download_url": s["media"]["download_url"], "media_type": s["media_type"], "license": s["license"],
-            "sha256": s["file_probe"]["sha256"], "measured_resolution": s["resolution"], "measured_aspect_ratio": s["aspect_ratio"],
-            "measured_duration": s["duration"], "decode_status": s["file_probe"]["decode_status"],
-            "acceptance_rationale": "source_and_file_license_gates_plus_full_decode_and_measured_technical_gates; metadata_supported_not_visual_approval",
-            "consumer_result": "passed"} for s in persisted["scene_media"]]
+        for selected in report["selected_media"]: selected["consumer_result"] = "passed"
         report["real_video_selected"] = any(s["media_type"] == "video" for s in persisted["scene_media"])
         report["required_cc_by_selected"] = any(s["license"]["attribution_required"] and s["license"]["name"].startswith("CC BY ") for s in persisted["scene_media"])
         report["same_json_identity_preserved"] = True
         report["status"] = "passed"
     except Exception as exc:
+        if not report.get("selected_media") and (folder/"script.json").is_file():
+            try:
+                report["selected_media"] = selected_media_summary(json.loads((folder/"script.json").read_text()), "not_verified_see_actual_stage_status")
+            except Exception:
+                pass  # No raw exception/source JSON is ever emitted.
         report["status"] = "blocked_unverified" if isinstance(exc, scene_media.SceneMediaError) else "failed"
         report["error_type"] = type(exc).__name__
+        report["failure_stage"] = current_stage
+        report["safe_error_class"] = "scene_selection_failed" if isinstance(exc, scene_media.SceneMediaError) else "consumer_render_failed" if current_stage == "strict_media_wrapper" else current_stage+"_failed"
+        report["stages"].setdefault(current_stage, {"status": "failed", "error_class": report["safe_error_class"]})
         if isinstance(exc, scene_media.SceneMediaError): report["failure"] = exc.report["failure"]
     finally:
         after = safety_snapshot()

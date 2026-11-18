@@ -1,7 +1,14 @@
-name: Phase 4B Media and Consumer Probe (no publishing)
+name: Phase 4C Cookie Media and Consumer Probe (no publishing)
 
 on:
   workflow_dispatch:
+    inputs:
+      stock_access_mode:
+        description: "Cookie-only is user-approved; auto is the historical explicit API/cookie route"
+        required: true
+        type: choice
+        default: cookie_only
+        options: [cookie_only, auto]
 
 # This workflow cannot write repository history or publish anything.
 permissions:
@@ -24,6 +31,21 @@ jobs:
       - name: Python probe dependencies (before optional system downloads)
         timeout-minutes: 4
         run: python -m pip install requests==2.34.2 beautifulsoup4==4.15.0 python-dotenv==1.2.4 Pillow==11.3.0 'jsonschema>=4.23,<5'
+      - name: Cookie-only preflight BEFORE provider or system/browser setup
+        id: preflight
+        env:
+          MEDIA_COOKIES_JSON: ${{ secrets.MEDIA_COOKIES_JSON }}
+          # Presence booleans only, never API credential values in this step.
+          PEXELS_API_KEY_PRESENT: ${{ secrets.PEXELS_API_KEY != '' }}
+          PIXABAY_API_KEY_PRESENT: ${{ secrets.PIXABAY_API_KEY != '' }}
+          STOCK_ACCESS_MODE: ${{ inputs.stock_access_mode }}
+        run: |
+          set -euo pipefail
+          if [ "$STOCK_ACCESS_MODE" = "cookie_only" ]; then
+            python -m scripts.media_probe_security preflight --path cookies.json --report output/phase4b_evidence/preflight.json
+          else
+            python -m scripts.media_probe_security cookies --path cookies.json
+          fi
       - name: Media system dependencies (bounded official Ubuntu mirror)
         timeout-minutes: 5
         run: |
@@ -52,18 +74,17 @@ jobs:
       - name: Chromium probe dependencies
         timeout-minutes: 5
         run: npx playwright install --with-deps chromium
-      - name: Existing stock cookies only (no Google or YouTube sessions)
-        env:
-          MEDIA_COOKIES_JSON: ${{ secrets.MEDIA_COOKIES_JSON }}
-        run: python -m scripts.media_probe_security cookies --path cookies.json
       - name: Live providers through actual isolated producer and consumer chain
         env:
           # Parse as DATA, no interpolation/source/eval/disk copy. Only exact
           # PEXELS_API_KEY/PIXABAY_API_KEY names can reach their own provider.
-          PHASE4_PROVIDER_ENV: ${{ secrets.ENV_FILE }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-        run: python -m scripts.phase4b_media_probe
+          # Cookie-only loads NO API key/ENV_FILE. Exact legacy names remain
+          # available only for a separately requested explicit auto run.
+          STOCK_ACCESS_MODE: ${{ inputs.stock_access_mode }}
+          PHASE4_PROVIDER_ENV: ${{ inputs.stock_access_mode == 'auto' && secrets.ENV_FILE || '' }}
+          PEXELS_API_KEY: ${{ inputs.stock_access_mode == 'auto' && secrets.PEXELS_API_KEY || '' }}
+          PIXABAY_API_KEY: ${{ inputs.stock_access_mode == 'auto' && secrets.PIXABAY_API_KEY || '' }}
+        run: python -m scripts.phase4b_media_probe --stock-access-mode "$STOCK_ACCESS_MODE"
       - name: Safe status summary (partial is NOT acceptance)
         if: always()
         run: |
@@ -73,13 +94,13 @@ jobs:
           p=Path('output/phase4b_evidence/evidence.json')
           if not p.exists():
               p.parent.mkdir(parents=True,exist_ok=True)
-              p.write_text(json.dumps({'phase':'4B','github_run_id':os.environ.get('GITHUB_RUN_ID'),
+              p.write_text(json.dumps({'phase':'4C','github_run_id':os.environ.get('GITHUB_RUN_ID'),
                   'github_sha':os.environ.get('GITHUB_SHA'),'providers':{},'live_provider_calls':False,
                   'overall':'not_run_infrastructure_or_setup_failure','full_acceptance':False},indent=2)+'\n')
           if p.exists():
               d=json.loads(p.read_text())
               with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
-                  f.write('### Faz 4B — publication-free evidence, not automatic acceptance\n')
+                  f.write('### Faz 4C — publication-free cookie evidence, not automatic acceptance\n')
                   for name,item in d['providers'].items():
                       f.write(f"- {name}: {item['status']}; scenes={item['selected_scenes']}\n")
                   f.write(f"- Overall: {d.get('overall','incomplete')}; full_acceptance=false\n")
@@ -89,16 +110,16 @@ jobs:
         id: audit
         if: always()
         env:
-          AUDIT_PROVIDER_ENV: ${{ secrets.ENV_FILE }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          AUDIT_PROVIDER_ENV: ${{ inputs.stock_access_mode == 'auto' && secrets.ENV_FILE || '' }}
+          PEXELS_API_KEY: ${{ inputs.stock_access_mode == 'auto' && secrets.PEXELS_API_KEY || '' }}
+          PIXABAY_API_KEY: ${{ inputs.stock_access_mode == 'auto' && secrets.PIXABAY_API_KEY || '' }}
           MEDIA_COOKIES_JSON: ${{ secrets.MEDIA_COOKIES_JSON }}
         run: python -m scripts.media_probe_security audit --path output/phase4b_evidence
       - name: Safe JSON plus necessary Commons composite and inspection frames
         if: ${{ always() && steps.audit.outcome == 'success' }}
         uses: actions/upload-artifact@v7
         with:
-          name: phase4b-media-evidence-${{ github.run_id }}
+          name: phase4c-media-evidence-${{ github.run_id }}
           path: output/phase4b_evidence/
           retention-days: 14
       - name: Remove ephemeral stock cookies

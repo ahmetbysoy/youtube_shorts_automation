@@ -14,8 +14,13 @@ from dataclasses import replace
 from pathlib import Path
 
 from .media_history import MediaHistory, atomic_json
-from .media_io import download_candidate, probe_media
+from .media_io import MediaIOError, download_candidate, io_evidence, probe_media
 from .media_providers import DOWNLOAD_HOSTS, SOURCE_HOSTS, MediaCandidate, default_providers, now, public_url, valid_url
+
+# Identity anchors distinguish the real IO functions from legacy test adapters.
+# Real download and probe share one trace; injected two-argument fixtures need
+# not accept new keyword arguments or become falsely "live download" evidence.
+_DIAGNOSTIC_DOWNLOADER, _DIAGNOSTIC_PROBER = download_candidate, probe_media
 
 METHOD = "metadata_lexical_technical_license_v1"
 STOP = set("the a an of and or in on at with for from this that is are to bir ve bu su ile icin olan olarak da de daha gibi goruntu goruntusu gosterir gosteriyor gorulur footage video image photo images photos view scene scenic cinematic closeup close up landscape background beautiful generic stock nature space surface planet historical history science city old new photograph file jpg jpeg png webm mp4 shows showing birer uzerinde".split())
@@ -182,6 +187,11 @@ def provider_issue(provider, query: str, exc: Exception | None = None) -> dict:
     diagnostics = getattr(provider, "last_diagnostics", {})
     diagnostics = diagnostics if isinstance(diagnostics, dict) else {}
     status = diagnostics.get("search_http_status")
+    if status == 200:
+        source_codes = diagnostics.get("source_http_statuses", [])
+        failed = [s for s in source_codes if type(s) is int and 100 <= s <= 599 and s != 200] if isinstance(source_codes, list) else []
+        license_status = diagnostics.get("license_http_status")
+        status = failed[0] if failed else license_status if type(license_status) is int and license_status != 200 else status
     status = status if type(status) is int and 100 <= status <= 599 else None
     error = "NoCatalogCandidates"
     if status and status != 200:
@@ -252,9 +262,16 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                         break
                     downloads += 1
                     path = work_dir/f"scene_{scene['scene_id']}_{downloads}.{'jpg' if candidate.media_type == 'image' else 'mp4'}"
+                    staged_io = io_evidence()
                     try:
-                        downloader(candidate, path)
-                        probe = prober(path, candidate.media_type)
+                        if downloader is _DIAGNOSTIC_DOWNLOADER:
+                            downloader(candidate, path, evidence=staged_io)
+                        else:
+                            downloader(candidate, path)
+                        if prober is _DIAGNOSTIC_PROBER:
+                            probe = prober(path, candidate.media_type, evidence=staged_io)
+                        else:
+                            probe = prober(path, candidate.media_type)
                         measured = replace(candidate, width=probe["width"], height=probe["height"], duration=probe["duration"], download_status="downloaded_and_decoded")
                         verdict = evaluate(measured, scene, query, used=used, recent=recent, measured=True)
                         if probe.get("decode_status") != "passed":
@@ -269,12 +286,15 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                             verdict["components"]["recent_use_penalty"] = -25
                             verdict["score"] = max(0, verdict["score"]-25)
                         evidence = {"media": measured.record(), "file_probe": probe, "assessment": verdict,
-                                    "recent_hash_match": hash_hit, "decision": "not_selected_lower_measured_rank"}
+                                    "recent_hash_match": hash_hit, "decision": "not_selected_lower_measured_rank", "io_stages": staged_io}
                         record["measured_candidates"].append(evidence)
                         measured_pool.append((measured, verdict, pi, path, probe, evidence))
                     except Exception as exc:
                         path.unlink(missing_ok=True)
-                        record["rejections"].append({"key": candidate.key, "query": query, "reasons": ["download_or_decode_failed"], "error_type": type(exc).__name__})
+                        failure = {"key": candidate.key, "query": query, "reasons": ["download_or_decode_failed"], "error_type": type(exc).__name__}
+                        if isinstance(exc, MediaIOError):
+                            failure.update(safe_error_class=exc.safe_error_class, io_stages=exc.evidence)
+                        record["rejections"].append(failure)
                 # Measure a bounded pool, THEN choose. A new URL/ID may hide a
                 # recent byte hash, and advertised dimensions may be wrong. A
                 # post-download penalty without reranking does not avoid reuse.

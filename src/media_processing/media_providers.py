@@ -79,15 +79,37 @@ class _PublicOnlyAuth(requests.auth.AuthBase):
 _PUBLIC_ONLY_AUTH = _PublicOnlyAuth()
 
 
-def get_public(session, url: str, hosts: set[str], **kwargs):
-    """Allowlisted HTTPS, bounded redirects; no session/API/cookie credentials."""
+class PublicHTTPError(RuntimeError):
+    """Safe status only; never retain a response/request URL, headers or body."""
+    def __init__(self, status: int):
+        self.http_status = status
+        super().__init__(f"media_http_{status}")
+
+
+def get_public(session, url: str, hosts: set[str], *, trace: dict | None = None, **kwargs):
+    """Allowlisted HTTPS, bounded redirects; optional VALUE-FREE transport trace."""
     if {"headers", "auth", "cookies", "allow_redirects"} & kwargs.keys():
         raise ValueError("public_transport_credentials_not_allowed")
+    trace = {} if trace is None else trace
+    trace.clear()
+    trace.update(status="started", http_status=None, final_host=None, final_host_allowed=False, hops=[])
     for _ in range(4):
         if not valid_url(url, hosts):
+            trace.update(status="failed", error_class="redirect_rejected", final_host=None, final_host_allowed=False)
             raise ValueError("untrusted_media_host")
-        r = session.get(url, headers={"User-Agent": USER_AGENT}, auth=_PUBLIC_ONLY_AUTH,
-                        cookies={}, timeout=(5, 25), allow_redirects=False, **kwargs)
+        host = urlsplit(url).hostname  # only an already allowlisted public host
+        trace.update(final_host=host, final_host_allowed=True)
+        try:
+            r = session.get(url, headers={"User-Agent": USER_AGENT}, auth=_PUBLIC_ONLY_AUTH,
+                            cookies={}, timeout=(5, 25), allow_redirects=False, **kwargs)
+        except requests.Timeout:
+            trace.update(status="failed", error_class="download_timeout")
+            raise
+        except requests.RequestException:
+            trace.update(status="failed", error_class="http_error")
+            raise
+        trace["http_status"] = r.status_code
+        trace["hops"].append({"host": host, "http_status": r.status_code})
         if r.status_code in (301, 302, 303, 307, 308):
             nxt = urljoin(url, r.headers.get("Location", ""))
             r.close()
@@ -95,9 +117,12 @@ def get_public(session, url: str, hosts: set[str], **kwargs):
             continue
         if r.status_code != 200:
             status = r.status_code
+            trace.update(status="failed", error_class="http_error")
             r.close()
-            raise RuntimeError(f"media_http_{status}")
+            raise PublicHTTPError(status)
+        trace["status"] = "passed"
         return r
+    trace.update(status="failed", error_class="redirect_rejected", final_host=None, final_host_allowed=False)
     raise RuntimeError("media_redirect_limit")
 
 
@@ -164,13 +189,14 @@ class StockTerms:
     def __init__(self, session=requests):
         self.session = session
         self.cache: dict[str, MediaLicense] = {}
+        self.last_http_evidence: dict = {}
 
     def check(self, provider: str) -> MediaLicense:
         if provider in self.cache:
             return self.cache[provider]
         url = self.URLS[provider]
         try:
-            with get_public(self.session, url, SOURCE_HOSTS[provider]) as r:
+            with get_public(self.session, url, SOURCE_HOSTS[provider], trace=self.last_http_evidence) as r:
                 text = plain(r.text, 100000).lower()
             # Check permission and restriction clauses together, not a title alone.
             markers = (
@@ -319,11 +345,13 @@ class WikimediaProvider:
 
     def search(self, query: str) -> list[MediaCandidate]:
         results = []
+        self.last_diagnostics = {"metadata_http_responses": []}
         for kind in ("video", "bitmap"):
             r = self.session.get("https://commons.wikimedia.org/w/api.php",
                                  params={"action": "query", "format": "json", "generator": "search", "gsrsearch": f"filetype:{kind} {query}",
                                          "gsrnamespace": 6, "gsrlimit": 6, "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata|metadata", "iiurlwidth": 1440},
                                  headers={"User-Agent": USER_AGENT}, timeout=(5, 25), allow_redirects=False)
+            self.last_diagnostics["metadata_http_responses"].append({"kind": kind, "http_status": r.status_code})
             if r.status_code != 200:
                 raise RuntimeError(f"commons_catalog_http_{r.status_code}")
             for page in ((r.json().get("query") or {}).get("pages") or {}).values():
@@ -366,6 +394,7 @@ class BrowserStockProvider:
         if not any((ROOT/p).exists() for p in ("cookies.json", "storage_state.json")):
             self.last_diagnostics = {"status": "media_cookie_configuration_absent"}
             return []
+        self.last_diagnostics = {"status": "browser_catalog_started", "search_http_status": None}
         # A stock browser needs PATH/HOME/display, not API keys, the dotenv
         # secret, GitHub credentials or Gemini sessions from its parent process.
         safe_names = {"PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "LC_CTYPE", "DISPLAY",
@@ -379,9 +408,16 @@ class BrowserStockProvider:
         diagnostics = raw.get("diagnostics") or {}
         status = diagnostics.get("search_http_status")
         self.last_diagnostics = {"search_http_status": status if type(status) is int and 100 <= status <= 599 else None}
-        if status != 200 or not raw.get("candidates"):
+        if status != 200:
+            return []
+        sources = diagnostics.get("source_http_statuses", [])
+        self.last_diagnostics["source_http_statuses"] = [s for s in sources[:3] if type(s) is int and 100 <= s <= 599] if isinstance(sources, list) else []
+        if not raw.get("candidates"):
             return []
         lic = self.terms.check(self.provider)
+        license_trace = getattr(self.terms, "last_http_evidence", {})
+        if isinstance(license_trace, dict):
+            self.last_diagnostics["license_http_status"] = license_trace.get("http_status")
         out = []
         for row in raw.get("candidates", [])[:6]:
             if row.get("provider") != self.provider or not row.get("license_link_observed"):

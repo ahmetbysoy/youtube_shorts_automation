@@ -32,17 +32,31 @@ function parseCatalog(payload, sourceUrl, provider, licenseLinkObserved) {
   walk(payload);
   return rows.slice(0, 6);
 }
+function providerCookies(rows, provider) {
+  const domains = new Set([`${provider}.com`, `www.${provider}.com`, `.${provider}.com`]);
+  if (!['pexels', 'pixabay'].includes(provider)) return [];
+  const fields = new Set(['name', 'value', 'domain', 'path', 'expires', 'httpOnly', 'secure', 'sameSite']);
+  return rows.filter(c => c && domains.has(String(c.domain || '').toLowerCase()))
+    .map(c => Object.fromEntries(Object.entries(c).filter(([key]) => fields.has(key))));
+}
+function officialLicenseLink(href, provider) {
+  try {
+    const u = new URL(href);
+    return u.protocol === 'https:' && !u.username && !u.password && !u.search && !u.hash && !u.port && (
+      provider === 'pexels' ? ['pexels.com', 'www.pexels.com'].includes(u.hostname) && /^\/license\/?$/.test(u.pathname)
+        : provider === 'pixabay' && ['pixabay.com', 'www.pixabay.com'].includes(u.hostname) && /^\/service\/(terms|license-summary)\/?$/.test(u.pathname));
+  } catch { return false; }
+}
 async function main(args) {
   const { chromium } = require('playwright');
   const query = args[0]; const provider = args[args.indexOf('--provider') + 1];
   if (!query || query.length > 180 || !['pexels', 'pixabay'].includes(provider)) throw new Error('invalid_catalog_arguments');
   const storagePath = path.join(ROOT, 'storage_state.json'); const cookiesPath = path.join(ROOT, 'cookies.json');
-  const domains = provider === 'pexels' ? /(^|\.)pexels\.com$/i : /(^|\.)pixabay\.com$/i;
   // Do not bring YouTube/Google sessions into stock-catalog browser contexts.
   let cookies = [];
   if (fs.existsSync(storagePath)) cookies.push(...(JSON.parse(fs.readFileSync(storagePath, 'utf8')).cookies || []));
   if (fs.existsSync(cookiesPath)) cookies.push(...JSON.parse(fs.readFileSync(cookiesPath, 'utf8')));
-  cookies = cookies.filter(c => domains.test(String(c.domain || '').replace(/^\./, '')));
+  cookies = providerCookies(cookies, provider);
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   try {
     const context = await browser.newContext({ locale: 'en-US' });
@@ -51,7 +65,7 @@ async function main(args) {
     const base = provider === 'pexels' ? 'https://www.pexels.com' : 'https://pixabay.com';
     const search = provider === 'pexels' ? `${base}/search/videos/${encodeURIComponent(query)}/` : `${base}/videos/search/${encodeURIComponent(query)}/`;
     const response = await page.goto(search, { waitUntil: 'domcontentloaded', timeout: 20000 });
-    const diagnostics = { search_http_status: response?.status() || null, source_links: 0, source_pages_parsed: 0, license_links_observed: 0 };
+    const diagnostics = { search_http_status: response?.status() || null, source_http_statuses: [], source_links: 0, source_pages_parsed: 0, license_links_observed: 0 };
     // Stop at HTTP denial. No challenge handling, bypass, source navigation or
     // request/body/cookie logging. Python emits only a hashed query identifier.
     if (diagnostics.search_http_status !== 200) {
@@ -63,12 +77,16 @@ async function main(args) {
     diagnostics.source_links = links.length;
     const candidates = [];
     for (const source of links) {
-      await page.goto(source, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      const sourceResponse = await page.goto(source, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      diagnostics.source_http_statuses.push(sourceResponse?.status() || null);
+      // A denied source page is never parsed, navigated around or treated as a
+      // valid catalog. Stop further source requests on an access denial.
+      if (sourceResponse?.status() !== 200) break;
       const raw = await page.evaluate(() => ({
         json: [...document.querySelectorAll('script[type="application/ld+json"]')].map(s => { try { return JSON.parse(s.textContent); } catch { return null; } }),
         links: [...document.querySelectorAll('a[href]')].map(a => a.href)
       }));
-      const observed = raw.links.some(href => href.startsWith(provider === 'pexels' ? 'https://www.pexels.com/license' : 'https://pixabay.com/service/'));
+      const observed = raw.links.some(href => officialLicenseLink(href, provider));
       diagnostics.source_pages_parsed += 1;
       diagnostics.license_links_observed += Number(observed);
       candidates.push(...parseCatalog(raw.json, page.url(), provider, observed));
@@ -76,4 +94,4 @@ async function main(args) {
     console.log(JSON.stringify({ provider, candidates, diagnostics }));
   } finally { await browser.close(); }
 }
-module.exports = { parseCatalog, durationSeconds, main };
+module.exports = { parseCatalog, durationSeconds, providerCookies, officialLicenseLink, main };

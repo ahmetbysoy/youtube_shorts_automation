@@ -19,14 +19,35 @@ def _same_file_url(left: str, right: str) -> bool:
     return a.hostname == b.hostname == "commons.wikimedia.org" and unquote(a.path).replace("_", " ") == unquote(b.path).replace("_", " ")
 
 
-def verify_commons_file_pages(scene: dict) -> dict:
-    """API declaration + actual canonical File page + actual official CC deed."""
+def verify_commons_file_pages(scene: dict, *, evidence: dict | None = None) -> dict:
+    """API declaration + canonical File page + official deed; safe HTTP stages."""
+    evidence = {} if evidence is None else evidence
+    evidence.update(source_page_http={"status": "not_reached"}, license_deed_http={"status": "not_reached"})
+    def fetch_text(url, hosts, key):
+        trace = {}; evidence[key] = trace
+        try:
+            with get_public(requests, url, hosts, trace=trace) as r:
+                text, status = r.text, r.status_code
+            trace.update(status="passed", http_status=status)
+            return text, status
+        except Exception:
+            trace.update(status="failed", error_class=trace.get("error_class", "license_evidence_failed"))
+            raise
     source, license_url = scene["source_url"], scene["license"]["url"]
     license_path = urlsplit(license_url).path.rstrip("/")
     if not re.fullmatch(r"/licenses/by/(2\.0|2\.5|3\.0|4\.0)(?:/[a-z-]+)?", license_path):
         raise ValueError("live_cc_by_deed_declaration_not_supported")
-    with get_public(requests, source, {"commons.wikimedia.org"}) as r:
-        html = r.text; source_status = r.status_code
+    fetched = {}; http_failed = False
+    for key, url, hosts in (("source_page_http", source, {"commons.wikimedia.org"}),
+                            ("license_deed_http", license_url, {"creativecommons.org", "www.creativecommons.org"})):
+        try:
+            fetched[key] = fetch_text(url, hosts, key)
+        except Exception:
+            http_failed = True
+    if http_failed:
+        raise ValueError("live_source_or_license_http_failed") from None
+    html, source_status = fetched["source_page_http"]
+    deed_html, deed_status = fetched["license_deed_http"]
     soup = BeautifulSoup(html, "html.parser")
     canonical = soup.select_one('link[rel="canonical"]')
     if not canonical or not _same_file_url(source, canonical.get("href", "")):
@@ -40,8 +61,6 @@ def verify_commons_file_pages(scene: dict) -> dict:
     creator_observed = bool(scene["license"]["creator"] and scene["license"]["creator"].casefold() in text.casefold())
     if not observed or not creator_observed:
         raise ValueError("live_file_page_license_or_creator_not_observed")
-    with get_public(requests, license_url, {"creativecommons.org", "www.creativecommons.org"}) as r:
-        deed_html = r.text; deed_status = r.status_code
     deed = BeautifulSoup(deed_html, "html.parser")
     deed_text = " ".join(deed.get_text(" ").lower().split())
     if not all(word in deed_text for word in ("share", "adapt", "attribution")):
