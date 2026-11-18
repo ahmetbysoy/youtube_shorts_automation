@@ -68,6 +68,7 @@ function parseArgs(argv) {
     provider: 'all',
     portrait: false,
     metadata: false,
+    fetchTerms: false,
     minDuration: 2.0,
     maxDuration: 60.0,
     minWidth: 854,
@@ -83,6 +84,7 @@ function parseArgs(argv) {
       case '--provider':   opts.provider = argv[++i]; break;
       case '--portrait':   opts.portrait = true; break;
       case '--metadata':   opts.metadata = true; break;
+      case '--fetch-terms': opts.fetchTerms = true; break;
       case '--cookies-file': opts.cookiesFile = argv[++i]; break;
       case '--diag-file': opts.diagFile = argv[++i]; break;
       case '--min-duration': opts.minDuration = parseFloat(argv[++i]); break;
@@ -574,6 +576,47 @@ async function fetchFromPexels(page, kw, opts) {
   return { candidates: candidates.slice(0, 8), diagnostics: diag };
 }
 
+// ── Provider terms page fetch (cookie üzerinden, CF bypass) ──
+const TERMS_URL = {
+  pexels: 'https://www.pexels.com/license/',
+  pixabay: 'https://pixabay.com/service/terms/',
+};
+
+async function fetchProviderTerms(provider) {
+  const envName = provider === 'pexels' ? 'PEXELS_COOK' : 'PIXABAY_COOK';
+  const defaultDomain = provider === 'pexels' ? '.pexels.com' : '.pixabay.com';
+  const diag = { provider, cookie_present: false, cookie_count: 0, cookie_domain_ok: false, http_status: null, error: null };
+  const envRaw = process.env[envName];
+  let cookies = [];
+  if (envRaw && envRaw.trim()) cookies.push(...loadCookies(envRaw, defaultDomain));
+  const seen = new Map();
+  for (const c of cookies) seen.set(`${c.name}|${c.domain}|${c.path}`, c);
+  cookies = [...seen.values()];
+  diag.cookie_present = cookies.length > 0;
+  diag.cookie_count = cookies.length;
+  if (cookies.length === 0) { diag.error = 'cookie_missing'; return { ok: false, text: '', diag }; }
+  diag.cookie_domain_ok = cookies.every(c => c.domain === defaultDomain || c.domain.endsWith(defaultDomain));
+  if (!diag.cookie_domain_ok) { diag.error = 'cookie_wrong_domain'; return { ok: false, text: '', diag }; }
+  const { browser, ctx } = await launchContext(cookies, provider);
+  try {
+    const page = await ctx.newPage();
+    const resp = await page.goto(TERMS_URL[provider], { waitUntil: 'domcontentloaded', timeout: 30000 });
+    diag.http_status = resp ? resp.status() : null;
+    await page.waitForTimeout(2000);
+    const text = await page.evaluate(() => {
+      const s = document.querySelector('script,style');
+      document.querySelectorAll('script,style,noscript').forEach(n => n.remove());
+      return (document.body && document.body.innerText) ? document.body.innerText : document.documentElement.innerText;
+    });
+    await browser.close();
+    return { ok: true, text: text || '', diag };
+  } catch (e) {
+    diag.error = String(e && e.message || e).slice(0,200);
+    try { await browser.close(); } catch {}
+    return { ok: false, text: '', diag };
+  }
+}
+
 // ── Provider runner ──────────────────────────────────────────
 async function runProvider(provider, opts) {
   const envName = provider === 'pexels' ? 'PEXELS_COOK' : 'PIXABAY_COOK';
@@ -762,6 +805,14 @@ async function main() {
   if (providers.some(p => !['pexels','pixabay'].includes(p))) {
     console.error('gecersiz_provider');
     process.exit(2);
+  }
+
+  if (opts.fetchTerms) {
+    // Provider terms sayfasini cookie ile fetch et (duz HTTP CF'ye takilir)
+    const p = providers[0];
+    const r = await fetchProviderTerms(p);
+    process.stdout.write(JSON.stringify({ ok: r.ok, text: r.text, diagnostics: r.diag }));
+    process.exit(r.ok ? 0 : 1);
   }
 
   if (opts.metadata) {

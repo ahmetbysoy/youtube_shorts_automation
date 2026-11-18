@@ -185,36 +185,82 @@ class StockTerms:
     No claim that metadata proves model/property/privacy/brand clearances.
     """
     URLS = {"pexels": "https://www.pexels.com/license/", "pixabay": "https://pixabay.com/service/terms/"}
+    MARKERS = {
+        "pexels": ("free to use", "attribution is not required", "modify", "don't sell unaltered", "don't imply endorsement"),
+        "pixabay": ("content license", "royalty-free", "commercial or non-commercial", "standalone", "prohibited uses"),
+    }
+    NAMES = {"pexels": "Pexels License", "pixabay": "Pixabay Content License"}
 
     def __init__(self, session=requests):
         self.session = session
         self.cache: dict[str, MediaLicense] = {}
         self.last_http_evidence: dict = {}
 
+    def _verify_text(self, provider: str, text: str, method: str, url: str) -> MediaLicense:
+        t = plain(text, 200000).lower()
+        markers = self.MARKERS[provider]
+        if not all(marker in t for marker in markers):
+            return MediaLicense(url=url, evidence_url=url, checked_at=now(),
+                                rejection_reason="provider_terms_unavailable_or_changed")
+        return MediaLicense(
+            name=self.NAMES[provider],
+            url=url, verified=True, evidence_url=url, evidence_method=method,
+            checked_at=now(), attribution_required=False,
+            evidence_sha256=hashlib.sha256(t.encode()).hexdigest(),
+            restrictions=("no_standalone_redistribution", "no_implied_endorsement",
+                          "third_party_rights_not_verified", "no_sensitive_use_of_identifiable_people"),
+        )
+
+    def _fetch_via_browser(self, provider: str) -> str | None:
+        """Faz 4E: duz HTTP CF'ye takildiginda cookie'li tarayici ile terms sayfasini cek."""
+        env_name = "PEXELS_COOK" if provider == "pexels" else "PIXABAY_COOK"
+        if not os.environ.get(env_name, "").strip():
+            return None
+        safe_names = {"PATH","HOME","USER","LOGNAME","LANG","LC_ALL","LC_CTYPE","DISPLAY",
+                      "TMPDIR","TMP","TEMP","XDG_RUNTIME_DIR","PLAYWRIGHT_BROWSERS_PATH", env_name}
+        child_env = {k: v for k, v in os.environ.items() if k in safe_names}
+        try:
+            from pathlib import Path as _P
+            fetcher = _P(__file__).resolve().parents[2] / "video_fetcher.js"
+            r = subprocess.run(
+                ["node", str(fetcher), "terms", "--provider", provider, "--fetch-terms"],
+                cwd=str(fetcher.parent), capture_output=True, text=True, timeout=60, env=child_env,
+            )
+            if r.returncode == 0:
+                data = json.loads(r.stdout)
+                if data.get("ok"):
+                    return data.get("text", "")
+        except Exception:
+            pass
+        return None
+
     def check(self, provider: str) -> MediaLicense:
         if provider in self.cache:
             return self.cache[provider]
         url = self.URLS[provider]
+        text: str | None = None
+        method = "official_provider_terms_http"
+        # 1) Duz HTTP dene
         try:
             with get_public(self.session, url, SOURCE_HOSTS[provider], trace=self.last_http_evidence) as r:
-                text = plain(r.text, 100000).lower()
-            # Check permission and restriction clauses together, not a title alone.
-            markers = (
-                ("free to use", "attribution is not required", "modify", "don't sell unaltered", "don't imply endorsement")
-                if provider == "pexels" else
-                ("content license", "royalty-free", "commercial or non-commercial", "standalone", "prohibited uses")
-            )
-            if not all(marker in text for marker in markers):
-                raise ValueError("terms_not_recognized")
-            lic = MediaLicense(
-                name="Pexels License" if provider == "pexels" else "Pixabay Content License",
-                url=url, verified=True, evidence_url=url, evidence_method="official_provider_terms_http",
-                checked_at=now(), attribution_required=False,
-                evidence_sha256=hashlib.sha256(text.encode()).hexdigest(),
-                restrictions=("no_standalone_redistribution", "no_implied_endorsement", "third_party_rights_not_verified", "no_sensitive_use_of_identifiable_people"),
-            )
+                text = r.text
         except Exception:
-            lic = MediaLicense(url=url, evidence_url=url, checked_at=now(), rejection_reason="provider_terms_unavailable_or_changed")
+            text = None
+        lic: MediaLicense | None = None
+        if text is not None:
+            cand = self._verify_text(provider, text, method, url)
+            if cand.verified:
+                lic = cand
+        # 2) CF/fail durumunda cookie'li tarayici ile fallback
+        if lic is None:
+            browser_text = self._fetch_via_browser(provider)
+            if browser_text:
+                cand = self._verify_text(provider, browser_text, "official_provider_terms_browser", url)
+                if cand.verified:
+                    lic = cand
+        if lic is None:
+            lic = MediaLicense(url=url, evidence_url=url, checked_at=now(),
+                               rejection_reason="provider_terms_unavailable_or_changed")
         self.cache[provider] = lic
         return lic
 
