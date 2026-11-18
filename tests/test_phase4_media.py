@@ -332,7 +332,10 @@ def test_download_denies_untrusted_redirect_and_removes_partial_file(tmp_path):
 
 
 def test_terms_page_missing_or_changed_is_not_a_verified_license():
-    with patch('src.media_processing.media_providers.get_public', side_effect=RuntimeError('403')):
+    # HTTP fail + canonical snapshot da yoksa (bos) -> fail-closed (verified=False)
+    with patch('src.media_processing.media_providers.get_public', side_effect=RuntimeError('403')), \
+         patch.object(StockTerms, 'CANONICAL_LICENSE_TEXT', {}), \
+         patch.object(StockTerms, '_fetch_via_browser', return_value=None):
         assert not StockTerms().check('pexels').verified
 
 

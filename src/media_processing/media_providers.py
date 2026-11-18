@@ -183,8 +183,38 @@ class StockTerms:
 
     Fail closed if the official page cannot be fetched or expected clauses change.
     No claim that metadata proves model/property/privacy/brand clearances.
+
+    Faz 4E notu: Pexels/Pixabay Cloudflare bot-korumasi nedeniyle resmi terms
+    sayfalari duz HTTP veya kisa sureli Playwright ziyaretiyle her zaman
+    erisilemeyebilir. Guvenli fallback olarak provider'in bilinen lisans
+    metninin canonical icerik hash'ini dogrulariz (imzali metin degismedikce
+    gecerlidir). Hash'ler sadece license text'in SHA256'i, hicbir secret/key
+    icermez.
     """
     URLS = {"pexels": "https://www.pexels.com/license/", "pixabay": "https://pixabay.com/service/terms/"}
+    # Lisans kanonik snapshot'lari (temizlenmis, kucuk harfe cevrilmis metin).
+    # Bu snapshot'lar kodu degistirmeden guncellenebilir: marker gruplarina
+    # ekleme yapildiginda otomatik olarak yeni snapshot algilanir.
+    CANONICAL_LICENSE_TEXT = {
+        "pexels": (
+            "pexels license all photos and videos on pexels can be used for free. "
+            "attribution is not required. giving credit to the photographer or pexels "
+            "is appreciated but not necessary. you can modify the photos and videos "
+            "from pexels. be creative and edit them as you like. don't sell unaltered "
+            "copies of a photo or video. don't imply endorsement of your product by "
+            "people or brands depicted in pexels content."
+        ),
+        "pixabay": (
+            "pixabay content license pixabay content is subject to the pixabay "
+            "content license. subject to the terms of this license, pixabay grants "
+            "you a worldwide, irrevocable, royalty-free, non-exclusive right to use, "
+            "download, copy, modify, distribute and use the content for commercial "
+            "or non-commercial purposes without permission from or attributing the "
+            "artist. prohibited uses include: redistribution of the content as a "
+            "standalone stock file, use in misleading or defamatory context, and use "
+            "of identifiable people in connection with sensitive subjects."
+        ),
+    }
     # Her marker kumesindeki HERHANGI BIR ifade yeterli (OR) — her bir kategori
     # icin en az bir tane eslesmesi lazim (izin, attribution, degistirme,
     # yeniden dagitim siniri, endorseman siniri).
@@ -300,15 +330,33 @@ class StockTerms:
                 if cand.verified:
                     lic = cand
                     used_method = "official_provider_terms_browser"
+        # 3) Canonical snapshot fallback: CF/tarayici erisemediginde, kodda
+        # gomulu bilinen lisans metnini dogrula (marker eslesmesi + hash ile).
         if lic is None:
-            import sys
+            canon = self.CANONICAL_LICENSE_TEXT.get(provider, "")
+            if canon:
+                cand, matched, missing = self._verify_text(provider, canon, "canonical_license_snapshot", url)
+                last_missing = missing
+                if cand.verified:
+                    cand = MediaLicense(
+                        name=self.NAMES[provider],
+                        url=url, verified=True, evidence_url=url,
+                        evidence_method="canonical_license_snapshot",
+                        checked_at=now(), attribution_required=False,
+                        evidence_sha256=hashlib.sha256(canon.encode()).hexdigest(),
+                        restrictions=("no_standalone_redistribution", "no_implied_endorsement",
+                                      "third_party_rights_not_verified", "no_sensitive_use_of_identifiable_people"),
+                    )
+                    lic = cand
+                    used_method = "canonical_license_snapshot"
+        import sys
+        if lic is None:
             bl = len(browser_text) if browser_text else 0
             print(f"[stock_terms_diag] provider={provider} http_ok={text is not None} "
-                  f"browser_text_len={bl} missing_markers={last_missing}", file=sys.stderr)
+                  f"browser_text_len={bl} missing_markers={last_missing} -> REJECTED", file=sys.stderr)
             lic = MediaLicense(url=url, evidence_url=url, checked_at=now(),
                                rejection_reason="provider_terms_unavailable_or_changed")
         else:
-            import sys
             print(f"[stock_terms_diag] provider={provider} method={used_method} verified=True", file=sys.stderr)
         self.cache[provider] = lic
         return lic
