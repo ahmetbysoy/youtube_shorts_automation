@@ -669,25 +669,5 @@
       "created_at": "2026-11-18T09:52:53.655276+00:00"
     }
   ],
-  "pending": [
-    {
-      "title": "__PHASE3_PERSISTENCE_PROBE__ phase3-20261118",
-      "topic": "__phase3_probe_phase3-20261118",
-      "topic_subject": "phase3 probe phase3-20261118",
-      "topic_key": "phase3 probe phase3 20261118",
-      "category": "phase3 probe phase3 20261118",
-      "entities": [
-        "phase3 probe phase3 20261118"
-      ],
-      "claims": [],
-      "scenario_tokens": [
-        "persistenc",
-        "phas",
-        "prob"
-      ],
-      "created_at": "2026-11-18T09:52:53.347647+00:00",
-      "reservation_id": "phase3-probe-phase3-20261118",
-      "run_id": "probe:phase3-20261118"
-    }
-  ]
+  "pending": []
 }
