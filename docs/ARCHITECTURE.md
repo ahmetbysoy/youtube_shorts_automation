@@ -1,6 +1,6 @@
 # Sistem Mimarisi ve Teknik Veri Sözleşmeleri (`ARCHITECTURE.md`)
 
-> **Faz 4 implementation (2026-11-18):** Storyboard mevcutsa strict scene selection eklendi; eksik sahne generic legacy’ye düşmez. Provider interface/license evidence, metadata+technical scoring, safe download/full decode, scene manifest and separate media history are implemented. Narration-weighted durations are provisional (Phase 5), visual verification is not performed. Legacy scripts retain the prior path. **Acceptance pending new CI/live provider coverage**; [baseline inventory](PHASE4_MEDIA_BASELINE.md).
+> **Faz 4 sonucu (2026-11-18):** Strict storyboard selector/common provider/license/manifest/dedup ve ayrı media history uygulandı. Son kaynak [`e4d1144`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/e4d1144116887b31c459bb6a7e171589d214c687) üzerinde CI [44288761602](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761602) **233 + 16**, ayrı 62 Faz 4/35 Faz 3/5 Node parser başarılı. Live [44288761461](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761461) **partial_provider_evidence**: Commons iki PD still + decode/consumer geçti; stock runtime API key yok, cookie file var, browser 403. **Tam kabul GEÇMEDİ**, PUBLIC hazırlığı iddia edilmez. Metadata relevance ≠ visual verification; provisional duration ≠ TTS alignment. [Kanıt](evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md), [ayrıntılı medya kontratı](PHASE4_MEDIA_ENGINE.md), [baseline](PHASE4_MEDIA_BASELINE.md).
 
 
 > **Sürüm:** Güncel çalışma durumu (Gemini Web route + mevcut `PUBLIC` üretim hattı)
@@ -29,8 +29,9 @@ Bu doküman, `youtube_shorts_automation` boru hattındaki modüllerin iç yapıs
    └─ production_gate.sh
        └─ max-parallel: 1 → python main.py --channel_id N
            ├─ content_engine.py --gemini-web-only → fallback on error
-           ├─ script.json v2: sources/fact_check/storyboard
-           ├─ media_processor.py (storyboard visual_query preferred)
+           ├─ script.json v2: sources/fact_check/storyboard → pre-media validator
+           ├─ media_processor.py → storyboard varsa strict scenes; yoksa legacy
+           ├─ post-media validator: manifest kapsamı/credit → durdurma
            ├─ embed_cover_frame.py (best-effort)
            └─ youtube_studio_uploader.js → Studio'da aynı video ID + PUBLIC doğrulaması
 ```
@@ -91,7 +92,7 @@ youtube_shorts_automation/
 │   ├── ARCHITECTURE.md            # Bu teknik mimari belgesi
 │   └── setup/                     # Kurulum ve bağımlılık karar raporları
 ├── src/
-│   ├── content_generation/        # İçerik motoru paket sarmalayıcısı
+│   ├── content_generation/        # Ayrı eski writer/export; root content_engine.py sarmalayıcısı değil
 │   ├── media_processing/
 │   │   └── media_processor.py     # Faz 3: Stok video indirme, .ass altyazı ve FFmpeg montaj
 │   └── youtube_upload/
@@ -105,7 +106,9 @@ youtube_shorts_automation/
 
 ## 3. Veri Sözleşmeleri (Data Contracts)
 
-### `script.json` (Faz 2 Çıktısı -> Faz 3 & Faz 5 Girdisi)
+### `script.json` (içerik → medya → uploader)
+
+Güncel kaynak `schemas/script.schema.json`: legacy v1 + v2. Root producer v2 sources/fact_check/storyboard metadata taşıyabilir; strict media sonrasında opsiyonel `scene_media` + `media_selection` çifti eklenir. Ayrıntı §9–10 ve [producer/consumer envanteri §7](PHASE1_SCRIPT_JSON_INVENTORY.md). **Aşağıdaki duration_seconds/subtitle_file örneği tarihsel temsildir**, bugünkü producer alanları `audio_duration_sec` ve `srt_file` olarak korunur.
 ```json
 {
   "topic": "Tarih",
@@ -138,6 +141,8 @@ youtube_shorts_automation/
 ---
 
 ## 4. FFmpeg Montaj Mimarisi (`src/media_processing/media_processor.py`)
+
+Aşağıdaki loop/crop/zoompan özeti **storyboard’suz legacy** yoldur. Yeni strict storyboard dosyaları contain/letterbox ile çerçeveyi korur, video loop etmez; minimum ölçülen süre/çözünürlük/oran ve full decode zorunludur. Strict JPEG kaynaklar limited range ve 30 FPS CFR normalize edilir; final yuv420p QC gevşetilmedi. Ses miksajı ve subtitle renderer korunur; gerçek TTS scene hizalaması Faz 5’te açık kalır.
 
 - **Çözünürlük ve Mobil-Optimize Sinematik Filtreler (Faz 8):** `1080x1920` (`setsar=1`, `30 fps`, `yuv420p`, `libx264`, `-preset fast`, `-crf 23`), keskinleştirme (`unsharp=5:5:1.0:5:5:0.0`), canlı renk/kontrast patlaması (`eq=contrast=1.15:saturation=1.2:brightness=0.05`) ve dinamik `zoompan=z='min(zoom+0.0015,1.5)':d=1`.
 - **Bellek Dostu Döngü:** FFmpeg `loop` filtresi yerine girdi seviyesinde `-stream_loop` + `-t` kullanılarak bulut sunucularında RAM taşması (OOM) tamamen engellenir.
@@ -294,3 +299,36 @@ video tags → çocuk güvenliği → görünürlük(PUBLIC) → YAYIN` tamamlan
 - Testler: `tests/test_script_json_schema.py` legacy/v2 ve hatalı veri örneklerini; `tests/test_full_pipeline_fallback.py` ise gerçek üretilen JSON'u doğrular.
 - Schema doğrulayıcı `jsonschema` hem test hem runtime bağımlılığıdır (`requirements-test.txt` ve `requirements.txt`). `main.py`, medya işlemeden önce `scripts/validate_script_json.py` ile JSON'u fail-closed doğrular; hata varsa süreç 1 koduyla durur.
 - 2026-11-18 Gemini Web/Faz 3 durumu: önceki gerçek cookie dry-run `44262444017` korunur. Yeni kod `0dee88e` için Ubuntu 26 CI [44279794329](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44279794329) (**171 + 16 subtests**) ve ayrı reserve/verify Actions koşuları [44280024395](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280024395) → [44280111635](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280111635) başarılı; Faz 3 yayınsız kabul kapısı geçti. `partial` PUBLIC onayı ve uploader davranışı değişmedi. Gerçek üretim/yayın/finalize uçtan uca koşusu kapsam dışı; [kanıt ve sınırlar](evidence/PHASE3_ACTIONS_EVIDENCE_2026-11-18.md), [TODO](GEMINI_AUTONOMOUS_SHORTS_TODO.md).
+
+
+---
+
+## 10. Gemini Faz 4 — strict storyboard medya yolu
+
+```text
+storyboard anahtarı var (boş/bozuk olsa da legacy’ye düşme)
+  → narration + primary query + ≤3 ordered alternatives, bounded plan
+  → Pexels API / Pixabay API / Pixabay browser / Pexels browser / Commons
+      (query başına hepsi; havuz global score, provider sırası tie-break)
+  → metadata relevance + license/attribution + teknik hard gates
+  → bounded HTTPS download → SHA256 + gerçek ölçüm + tam decode → gates tekrar
+  → her scene için farklı identity/URL/hash → tam manifest/credit → ayrı history
+  → atomic script JSON → contain/non-looping strict assembly → sert final QC
+  → mevcut main post-media validator (tam kapsama/identity/credit)
+```
+
+Common candidate: provider/media_id/media_url/source_url/download_url/type/width/height/duration/aspect_ratio/download_status, title/description/tags, license evidence(method/URL/hash/check time)/attribution requirement/text. Eksik değer uydurulmaz. Manifest zorunlu scene alanları: `scene_id`, `selected_provider`, `selected_media_id`, `source_url`, `license`, `attribution`, `duration`, `resolution`, `aspect_ratio`, `selection_score`, `rejection_reason`, `fallback_used`. Görüntü still'inde duration null, `planned_duration` ayrıdır. Rejection/queries/score/probe da tutulur.
+
+Hard ret'ler soft score ile geçilemez: metadata subject kanıtı yok, düşük çözünürlük, extreme oran, yetersiz video süresi, unknown/uygulanmayan lisans, kayıp atıf, same-video tekrar, corrupt/HTML download veya provider error. CC BY atfı kaybolmaz; uploader CTA/hashtag eklediğinde kesilmeyecek konservatif UTF-16 bütçe ayrılır. BY-SA/NC/ND yükümlülükleri uygulanmadan otomatik strict kabul yok; Commons supported PD/CC0/CC BY dosyalarıyla korunur. Stock terms-marker değişir/erişilemezse güvenli ret. Provider reliability skoru ölçülmüş uptime değil, bilinen source-provenance proxy'sidir.
+
+State ikiye ayrıdır: Faz 3 `.used_topics.json` untouched; yeni `.media_history.json` local lock+fsync+atomic veya Contents blob SHA-CAS (6 bounded reread/merge/retry). 200 kayıt/100 recency, −25 penalty; distributed reservation/perceptual dedup değil. Yeni hash-only recent hit indirme sonrası skor değiştirir, global rerank yok. Gerçek iki-Actions media persistence testi **yok**, probe production history'ye yazmaz.
+
+Mevcut `main.py`, PUBLIC/uploader/partial politikası, channel/concurrency, Gemini cookie-only/fallback ve kapak davranışı değişmedi. Storyboard'suz eski random/diluted query/loop ve daha zayıf lisans kontrolleri bu değişiklikle doğrulanmaz. Strict label `metadata_supported`, `visual_verification=not_performed`; örnek consumer sentetik test tone kullanır ve `timing_verified=false`. Uygulama/test ve canlı kabul aynı şey değildir; [Faz 4 raporu](evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md) kabulü açık tutar.
+
+## 11. Üretici/tüketici sınırları ve güvenli test
+
+[Envanter §7](PHASE1_SCRIPT_JSON_INVENTORY.md) root producer dışında bağımsız eski `src/content_generation/engine.py` writer'ını, media reader+writer'ını, main'in iki validator child'ını, cover reader'ını, Studio description builder ve API backup reader'ını kaydeder. Repo genelinde dinamik/caller tamlığı ve gerçek root TTS → media CLI → cover → yayınsız tüketici zinciri henüz kanıtlanmadı. Yeni actual pure-JS metadata testleri gerçek uploader çalıştırılması değildir; Faz 1 otomatik kapanmaz.
+
+`phase4_media_probe.yml` manuel/yayınsız/contents-read-only; yalnız iki stock key adı process'te parse edilir, cookie domain filtresi Google/YouTube oturumlarını dışlar, artifact upload öncesi secret taraması yapılır. Her provider sonucu ayrı yorumlanır; workflow exit 0 en az bir provider+istenmiş consumer smoke geçti demektir, all-provider kabulü değil.
+
+**Tuzak:** `media_processor.py` `--help` parse etmez; direkt invocation `--help` ile bile montaj başlatır ve root JSON yoksa samples'a yazabilir. Son kontrolde bu legacy-only yan etki geri alındı; kabul kanıtı sayılmadı. Benign syntax kontrolü `py_compile`/izole testtir. Gerçek `phase4_media_probe --help` ve topic-history CLI'ları güvenlidir. `main.py`, prod/pruner/publisher ve YouTube uploader bu doğrulama için çalıştırılmaz. Faz 5 ses/timing, siyah/boş kare/ses/clipping ve bütünleşik yayın gate'i ayrı/açıktır.

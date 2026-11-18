@@ -1,0 +1,1222 @@
+{
+  "version": 1,
+  "recorded_at": "2026-11-18T10:50:38.979808+00:00",
+  "phase": "Gemini Phase 4 scene-based media engine",
+  "acceptance": {
+    "status": "not_passed_partial_provider_evidence",
+    "publishing_ready": false,
+    "reasons": [
+      "pexels_and_pixabay_no_accepted_live_assets",
+      "stock_api_keys_not_available_in_this_probe_environment_and_browser_search_403",
+      "real_attribution_required_and_provider_video_download_paths_not_demonstrated_by_final_live_probe",
+      "metadata_support_is_not_visual_action_era_or_factual_verification"
+    ],
+    "open_proof": [
+      "cross_actions_media_history_persistence",
+      "phase1_full_reader_writer_runtime_inventory_and_true_consumer_chain"
+    ],
+    "phase5_separate": [
+      "real_tts_scene_subtitle_alignment",
+      "complete_audio_visual_qc_and_publication_gate"
+    ]
+  },
+  "implementation_commits": [
+    {
+      "sha": "eb9910914dfff018e202d9ce467dbe15ce2e0c5a",
+      "purpose": "provider contract, strict scene selection, media history, tests, safe workflow"
+    },
+    {
+      "sha": "c2ad1c98a941907db199e41f8c1c9c283bb09c98",
+      "purpose": "FFmpeg full-range JPEG normalization and safe catalog diagnostics"
+    },
+    {
+      "sha": "c29f7e7c888681bedf2a2a9f384ba3e30350075f",
+      "purpose": "conservative UTF-16 uploader credit budget and real pure-JS consumer contract tests"
+    },
+    {
+      "sha": "e4d1144116887b31c459bb6a7e171589d214c687",
+      "purpose": "reject conflicting/unknown CC BY versions, restricted-name mismatch and unsafe license URLs"
+    }
+  ],
+  "verification": {
+    "ci": {
+      "id": 44288761602,
+      "head_sha": "e4d1144116887b31c459bb6a7e171589d214c687",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761602",
+      "event": "push",
+      "path": ".github/workflows/ubuntu_26_test.yml",
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 134748175453,
+          "name": "ubuntu-26-probe",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-18T10:47:57Z",
+              "completed_at": "2026-11-18T10:47:58Z"
+            },
+            {
+              "name": "Depoyu Çek (Checkout)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-18T10:47:58Z",
+              "completed_at": "2026-11-18T10:47:59Z"
+            },
+            {
+              "name": "Sistem Bilgisi",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-18T10:47:59Z",
+              "completed_at": "2026-11-18T10:47:59Z"
+            },
+            {
+              "name": "FFmpeg + Font + Xvfb Kurulumu (26.04)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-18T10:47:59Z",
+              "completed_at": "2026-11-18T10:48:22Z"
+            },
+            {
+              "name": "Python + Node Kurulumu (Node 24 major'lar)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-18T10:48:22Z",
+              "completed_at": "2026-11-18T10:48:29Z"
+            },
+            {
+              "name": "Node Kurulumu",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-18T10:48:29Z",
+              "completed_at": "2026-11-18T10:48:32Z"
+            },
+            {
+              "name": "Uploader JavaScript Syntax Check",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-18T10:48:32Z",
+              "completed_at": "2026-11-18T10:48:32Z"
+            },
+            {
+              "name": "Python Bagimliliklari",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-18T10:48:32Z",
+              "completed_at": "2026-11-18T10:48:51Z"
+            },
+            {
+              "name": "Faz 3 CLI Import Smoke Test (yayın yok)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-18T10:48:51Z",
+              "completed_at": "2026-11-18T10:48:51Z"
+            },
+            {
+              "name": "Playwright + Chromium (--with-deps)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-11-18T10:48:51Z",
+              "completed_at": "2026-11-18T10:49:09Z"
+            },
+            {
+              "name": "Altyazi Montaj Testi (libass9 + FontSize=56 + MarginV=250)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-11-18T10:49:09Z",
+              "completed_at": "2026-11-18T10:49:09Z"
+            },
+            {
+              "name": "Faz 3: Semantik + Atomik Geçmiş Testleri (mock HTTP/API; yayın yok)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-11-18T10:49:09Z",
+              "completed_at": "2026-11-18T10:49:12Z"
+            },
+            {
+              "name": "Birim Testleri",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-11-18T10:49:12Z",
+              "completed_at": "2026-11-18T10:49:24Z"
+            },
+            {
+              "name": "Faz 4: provider/scene regressions and CLI smoke (mock catalogs; no publishing)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14,
+              "started_at": "2026-11-18T10:49:24Z",
+              "completed_at": "2026-11-18T10:49:26Z"
+            },
+            {
+              "name": "Faz 3 Probe Özeti",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15,
+              "started_at": "2026-11-18T10:49:26Z",
+              "completed_at": "2026-11-18T10:49:26Z"
+            },
+            {
+              "name": "Probe Ozeti",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16,
+              "started_at": "2026-11-18T10:49:26Z",
+              "completed_at": "2026-11-18T10:49:26Z"
+            },
+            {
+              "name": "Post Node Kurulumu",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 30,
+              "started_at": "2026-11-18T10:49:26Z",
+              "completed_at": "2026-11-18T10:49:26Z"
+            },
+            {
+              "name": "Post Python + Node Kurulumu (Node 24 major'lar)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 31,
+              "started_at": "2026-11-18T10:49:26Z",
+              "completed_at": "2026-11-18T10:49:26Z"
+            },
+            {
+              "name": "Post Depoyu Çek (Checkout)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 32,
+              "started_at": "2026-11-18T10:49:26Z",
+              "completed_at": "2026-11-18T10:49:26Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 33,
+              "started_at": "2026-11-18T10:49:26Z",
+              "completed_at": "2026-11-18T10:49:27Z"
+            }
+          ],
+          "runner_name": "GitHub Actions 1000005657",
+          "runner_id": 1000005657,
+          "labels": [
+            "ubuntu-26.04"
+          ],
+          "started_at": "2026-11-18T10:47:56Z",
+          "completed_at": "2026-11-18T10:49:31Z"
+        }
+      ],
+      "artifacts": [],
+      "selected_log_lines": [
+        "2026-11-18T10:49:11.9545150Z 35 passed in 1.11s",
+        "2026-11-18T10:49:24.0116170Z 233 passed, 16 subtests passed in 11.72s",
+        "2026-11-18T10:49:26.0014812Z 62 passed in 1.63s"
+      ]
+    },
+    "live_probe": {
+      "id": 44288761461,
+      "head_sha": "e4d1144116887b31c459bb6a7e171589d214c687",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761461",
+      "event": "workflow_dispatch",
+      "path": ".github/workflows/phase4_media_probe.yml",
+      "run_attempt": 1,
+      "jobs": [
+        {
+          "id": 134748185034,
+          "name": "media-source-proof",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-11-18T10:47:58Z",
+              "completed_at": "2026-11-18T10:47:59Z"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-11-18T10:47:59Z",
+              "completed_at": "2026-11-18T10:48:00Z"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-11-18T10:48:00Z",
+              "completed_at": "2026-11-18T10:48:00Z"
+            },
+            {
+              "name": "Run actions/setup-node@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-11-18T10:48:00Z",
+              "completed_at": "2026-11-18T10:48:04Z"
+            },
+            {
+              "name": "Media-only dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-11-18T10:48:04Z",
+              "completed_at": "2026-11-18T10:48:43Z"
+            },
+            {
+              "name": "Media cookies only (never Google or YouTube sessions)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-11-18T10:48:43Z",
+              "completed_at": "2026-11-18T10:48:43Z"
+            },
+            {
+              "name": "Live provider search, license, download, decode and consumer smoke",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-11-18T10:48:43Z",
+              "completed_at": "2026-11-18T10:48:53Z"
+            },
+            {
+              "name": "Safe summary",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-11-18T10:48:53Z",
+              "completed_at": "2026-11-18T10:48:53Z"
+            },
+            {
+              "name": "Secret-pattern audit before artifact upload",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-11-18T10:48:53Z",
+              "completed_at": "2026-11-18T10:48:53Z"
+            },
+            {
+              "name": "Evidence only (no stock source-file redistribution or cookies)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-11-18T10:48:53Z",
+              "completed_at": "2026-11-18T10:48:55Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18,
+              "started_at": "2026-11-18T10:48:55Z",
+              "completed_at": "2026-11-18T10:48:55Z"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19,
+              "started_at": "2026-11-18T10:48:55Z",
+              "completed_at": "2026-11-18T10:48:56Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 20,
+              "started_at": "2026-11-18T10:48:56Z",
+              "completed_at": "2026-11-18T10:48:56Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-11-18T10:48:56Z",
+              "completed_at": "2026-11-18T10:48:56Z"
+            }
+          ],
+          "runner_name": "GitHub Actions 1000005658",
+          "runner_id": 1000005658,
+          "labels": [
+            "ubuntu-26.04"
+          ],
+          "started_at": "2026-11-18T10:47:57Z",
+          "completed_at": "2026-11-18T10:48:59Z"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 14420900886,
+          "name": "phase4-media-evidence-44288761461",
+          "size_in_bytes": 858416,
+          "expired": false,
+          "archive_download_url": "https://api.github.com/repos/ahmetbysoy/youtube_shorts_automation/actions/artifacts/14420900886/zip"
+        }
+      ],
+      "selected_log_lines": [
+        "2026-11-18T10:48:45.7264337Z PROVIDER=pexels status=blocked_unverified",
+        "2026-11-18T10:48:47.6455823Z PROVIDER=pixabay status=blocked_unverified",
+        "2026-11-18T10:48:53.7733802Z PROVIDER=wikimedia status=passed scenes=2 relevance=metadata_supported visual_verification=not_performed",
+        "2026-11-18T10:48:53.7740710Z PHASE4_LIVE_RESULT=partial_provider_evidence",
+        "2026-11-18T10:48:53.8593930Z \u001b***36;1mprint('Evidence credential audit passed.')\u001b***0m",
+        "2026-11-18T10:48:53.9116206Z Evidence credential audit passed."
+      ]
+    },
+    "counts": {
+      "python_full": 233,
+      "python_subtests": 16,
+      "python_phase4_targeted": 62,
+      "python_phase3_targeted": 35,
+      "node_catalog": 5,
+      "node_existing_local": 7
+    },
+    "local_full_suite_seconds": 15.23,
+    "ci_full_suite_seconds": 11.72,
+    "local_warning": "existing content_engine.py:3329 asyncio.get_event_loop DeprecationWarning",
+    "provider_tests_are_mocked_except_separately_identified_live_probe": true,
+    "real_offline_io_tests": [
+      "Pillow decode and measured dimensions",
+      "valid/truncated FFmpeg video decode",
+      "JPEG and synthetic-tone FFmpeg consumer yuv420p CFR",
+      "unchanged uploader pure metadata functions in isolated VM, never uploader entrypoint"
+    ]
+  },
+  "live_evidence": {
+    "version": 1,
+    "started_at": "2026-11-18T10:48:43.560919+00:00",
+    "github_run_id": "44288761461",
+    "github_sha": "e4d1144116887b31c459bb6a7e171589d214c687",
+    "live_provider_calls": true,
+    "mock_provider_calls": false,
+    "publishing": false,
+    "production_history_modified": false,
+    "timing_verified": false,
+    "providers": {
+      "pexels": {
+        "configured": true,
+        "api_key_present": false,
+        "media_cookie_file_present": true,
+        "live_selection": "blocked_unverified",
+        "selected_scenes": 0,
+        "catalog_transports": [],
+        "failure": "scene_1_has_no_acceptable_media"
+      },
+      "pixabay": {
+        "configured": true,
+        "api_key_present": false,
+        "media_cookie_file_present": true,
+        "live_selection": "blocked_unverified",
+        "selected_scenes": 0,
+        "catalog_transports": [],
+        "failure": "scene_1_has_no_acceptable_media"
+      },
+      "wikimedia": {
+        "configured": true,
+        "api_key_present": null,
+        "media_cookie_file_present": null,
+        "live_selection": "passed",
+        "selected_scenes": 2,
+        "catalog_transports": [
+          "api"
+        ],
+        "manifest": "wikimedia/manifest.json",
+        "license_evidence": [
+          {
+            "name": "Public domain",
+            "url": "",
+            "evidence_url": "https://commons.wikimedia.org/wiki/File:NASA_Apollo_17_Lunar_Roving_Vehicle.jpg",
+            "method": "commons_per_file_extmetadata"
+          },
+          {
+            "name": "Public domain",
+            "url": "",
+            "evidence_url": "https://commons.wikimedia.org/wiki/File:Louis-Emile_Durandelle,_The_Eiffel_Tower_-_State_of_the_Construction,_1888.jpg",
+            "method": "commons_per_file_extmetadata"
+          }
+        ],
+        "render_smoke": {
+          "status": "passed",
+          "audio_source": "synthetic_test_tone_not_tts",
+          "timing_verified": false,
+          "format": {
+            "duration": "6.000000",
+            "size": "822155",
+            "bit_rate": "1096206"
+          },
+          "streams": [
+            {
+              "codec_name": "h264",
+              "codec_type": "video",
+              "width": 1080,
+              "height": 1920,
+              "pix_fmt": "yuv420p",
+              "r_frame_rate": "30/1",
+              "avg_frame_rate": "30/1",
+              "duration": "6.000000",
+              "nb_frames": "180"
+            },
+            {
+              "codec_name": "aac",
+              "codec_type": "audio",
+              "sample_rate": "48000",
+              "channels": 1,
+              "r_frame_rate": "0/0",
+              "avg_frame_rate": "0/0",
+              "duration": "6.000000",
+              "nb_frames": "283"
+            }
+          ],
+          "file": "media_probe.mp4"
+        }
+      }
+    },
+    "overall": "partial_provider_evidence",
+    "all_requested_providers_verified": false,
+    "completed_at": "2026-11-18T10:48:53.772723+00:00"
+  },
+  "provider_manifests": {
+    "pexels": {
+      "version": 1,
+      "status": "blocked",
+      "method": "metadata_lexical_technical_license_v1",
+      "created_at": "2026-11-18T10:48:43.561047+00:00",
+      "visual_verification": "not_performed",
+      "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+      "history_scope": "local_atomic_file",
+      "scenes": [
+        {
+          "scene_id": 1,
+          "narration": "Okyanus dalgaları deniz üzerinde hareket ediyor.",
+          "planned_duration": 3.0,
+          "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+          "queries_tried": [
+            "ocean sea waves",
+            "ocean waves",
+            "sea waves water"
+          ],
+          "provider_errors": [
+            {
+              "provider": "pexels",
+              "query": "ocean sea waves",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "status": "api_key_not_configured_or_placeholder"
+              }
+            },
+            {
+              "provider": "pexels-browser",
+              "query": "ocean sea waves",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "search_http_status": 403,
+                "source_links": 0,
+                "source_pages_parsed": 0,
+                "license_links_observed": 0
+              }
+            },
+            {
+              "provider": "pexels",
+              "query": "ocean waves",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "status": "api_key_not_configured_or_placeholder"
+              }
+            },
+            {
+              "provider": "pexels-browser",
+              "query": "ocean waves",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "search_http_status": 403,
+                "source_links": 0,
+                "source_pages_parsed": 0,
+                "license_links_observed": 0
+              }
+            },
+            {
+              "provider": "pexels",
+              "query": "sea waves water",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "status": "api_key_not_configured_or_placeholder"
+              }
+            },
+            {
+              "provider": "pexels-browser",
+              "query": "sea waves water",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "search_http_status": 403,
+                "source_links": 0,
+                "source_pages_parsed": 0,
+                "license_links_observed": 0
+              }
+            }
+          ],
+          "rejections": [],
+          "selected_provider": null,
+          "selected_media_id": null,
+          "source_url": null,
+          "license": null,
+          "attribution": null,
+          "duration": null,
+          "resolution": null,
+          "aspect_ratio": null,
+          "selection_score": null,
+          "rejection_reason": "no_acceptable_media_after_bounded_queries",
+          "fallback_used": false
+        }
+      ],
+      "failure": "scene_1_has_no_acceptable_media"
+    },
+    "pixabay": {
+      "version": 1,
+      "status": "blocked",
+      "method": "metadata_lexical_technical_license_v1",
+      "created_at": "2026-11-18T10:48:45.726898+00:00",
+      "visual_verification": "not_performed",
+      "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+      "history_scope": "local_atomic_file",
+      "scenes": [
+        {
+          "scene_id": 1,
+          "narration": "Okyanus dalgaları deniz üzerinde hareket ediyor.",
+          "planned_duration": 3.0,
+          "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+          "queries_tried": [
+            "ocean sea waves",
+            "ocean waves",
+            "sea waves water"
+          ],
+          "provider_errors": [
+            {
+              "provider": "pixabay",
+              "query": "ocean sea waves",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "status": "api_key_not_configured_or_placeholder"
+              }
+            },
+            {
+              "provider": "pixabay-browser",
+              "query": "ocean sea waves",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "search_http_status": 403,
+                "source_links": 0,
+                "source_pages_parsed": 0,
+                "license_links_observed": 0
+              }
+            },
+            {
+              "provider": "pixabay",
+              "query": "ocean waves",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "status": "api_key_not_configured_or_placeholder"
+              }
+            },
+            {
+              "provider": "pixabay-browser",
+              "query": "ocean waves",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "search_http_status": 403,
+                "source_links": 0,
+                "source_pages_parsed": 0,
+                "license_links_observed": 0
+              }
+            },
+            {
+              "provider": "pixabay",
+              "query": "sea waves water",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "status": "api_key_not_configured_or_placeholder"
+              }
+            },
+            {
+              "provider": "pixabay-browser",
+              "query": "sea waves water",
+              "error_type": "NoCatalogCandidates",
+              "diagnostics": {
+                "search_http_status": 403,
+                "source_links": 0,
+                "source_pages_parsed": 0,
+                "license_links_observed": 0
+              }
+            }
+          ],
+          "rejections": [],
+          "selected_provider": null,
+          "selected_media_id": null,
+          "source_url": null,
+          "license": null,
+          "attribution": null,
+          "duration": null,
+          "resolution": null,
+          "aspect_ratio": null,
+          "selection_score": null,
+          "rejection_reason": "no_acceptable_media_after_bounded_queries",
+          "fallback_used": false
+        }
+      ],
+      "failure": "scene_1_has_no_acceptable_media"
+    },
+    "wikimedia": {
+      "version": 1,
+      "status": "selected_metadata_and_technical_checks_passed",
+      "method": "metadata_lexical_technical_license_v1",
+      "created_at": "2026-11-18T10:48:47.646174+00:00",
+      "visual_verification": "not_performed",
+      "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+      "history_scope": "local_atomic_file",
+      "scenes": [
+        {
+          "scene_id": 1,
+          "narration": "Apollo astronot Ay yüzeyinde duruyor.",
+          "planned_duration": 3.333,
+          "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+          "queries_tried": [
+            "Moon Apollo astronaut"
+          ],
+          "provider_errors": [],
+          "rejections": [
+            {
+              "key": "wikimedia:10646916",
+              "query": "Moon Apollo astronaut",
+              "source_url": "https://commons.wikimedia.org/wiki/File:An_Astronaut%27s_Snapshot_of_the_Moon.jpg",
+              "reasons": [
+                "insufficient_resolution",
+                "unsupported_aspect_ratio"
+              ]
+            },
+            {
+              "key": "wikimedia:171454045",
+              "query": "Moon Apollo astronaut",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Apollo_17_Harrison_H._Schmitt_and_Tracy%27s_Rock_-_AS17-140-21493%2BAS17-140-21497_2025.jpg",
+              "reasons": [
+                "insufficient_resolution"
+              ]
+            }
+          ],
+          "selected_provider": "wikimedia",
+          "selected_media_id": "12872",
+          "source_url": "https://commons.wikimedia.org/wiki/File:NASA_Apollo_17_Lunar_Roving_Vehicle.jpg",
+          "license": {
+            "name": "Public domain",
+            "url": "",
+            "verified": true,
+            "evidence_url": "https://commons.wikimedia.org/wiki/File:NASA_Apollo_17_Lunar_Roving_Vehicle.jpg",
+            "evidence_method": "commons_per_file_extmetadata",
+            "checked_at": "2026-11-18T10:48:48.515733+00:00",
+            "attribution_required": false,
+            "attribution": "",
+            "creator": "NASA / Harrison H. Schmitt",
+            "evidence_sha256": "61fb1bbf58765eedad27a2db5f93dc8c5aa96b0b85e5a22f7c1a649726409b79",
+            "restrictions": [
+              "third_party_rights_not_verified"
+            ],
+            "rejection_reason": null
+          },
+          "attribution": "",
+          "duration": null,
+          "resolution": {
+            "width": 1920,
+            "height": 1920
+          },
+          "aspect_ratio": 1.0,
+          "selection_score": 96.0,
+          "rejection_reason": null,
+          "fallback_used": false,
+          "selected_query": "Moon Apollo astronaut",
+          "assessment": {
+            "eligible": true,
+            "score": 96.0,
+            "components": {
+              "query_metadata": 30.0,
+              "narration_metadata": 20,
+              "resolution": 15,
+              "aspect_ratio": 6,
+              "duration": 10,
+              "provider_provenance": 5,
+              "license_evidence": 10,
+              "recent_use_penalty": 0
+            },
+            "rejection_reasons": [],
+            "relevance_status": "metadata_supported",
+            "visual_verification": "not_performed",
+            "query_coverage": 1.0,
+            "primary_narration_overlap": [
+              "apollo",
+              "astronaut",
+              "moon"
+            ],
+            "quality_basis": "measured_dimensions_duration_and_full_decode",
+            "framing": "contain_letterbox"
+          },
+          "media": {
+            "provider": "wikimedia",
+            "media_id": "12872",
+            "source_url": "https://commons.wikimedia.org/wiki/File:NASA_Apollo_17_Lunar_Roving_Vehicle.jpg",
+            "download_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/NASA_Apollo_17_Lunar_Roving_Vehicle.jpg/1920px-NASA_Apollo_17_Lunar_Roving_Vehicle.jpg",
+            "media_type": "image",
+            "width": 1920,
+            "height": 1920,
+            "duration": null,
+            "title": "File:NASA Apollo 17 Lunar Roving Vehicle.jpg",
+            "description": "Apollo 17 mission, 12 December 1972. Astronaut Eugene A. Cernan , commander, makes a short checkout of the Lunar Roving Vehicle (LRV) during the early part of the first Apollo 17 Extravehicular Activity (EVA-1) at the Taurus-Littrow landing site. This view of the \"stripped down\" LRV is prior to loading up. Equipment later loaded onto the LRV included the ground-controlled television assembly, the lunar communications relay unit, hi-gain antenna, low-gain antenna, aft tool pallet, lunar tools and scientific gear. This photograph was taken by scientist-astronaut Harrison H. Schmitt, lunar module pilot. The mountain in the right background is the east end of South Massif. While astronauts Cernan and Schmitt descended in the Lunar Module (LM) \"Challenger\" to explore the Moon, astronaut Ronald E. Evans, command module pilot, remained with the Command and Service Modules (CSM) \"America\" in lunar-orbit. N.B: Original NASA caption.",
+            "tags": [
+              "PD NASA",
+              "Featured pictures on Wikipedia, English",
+              "Featured pictures of automobiles",
+              "Featured pictures on Wikipedia, Persian",
+              "Featured pictures on Wikipedia, Turkish",
+              "Great Images in NASA",
+              "Photographs taken on 1972-12-12",
+              "Featured pictures of Apollo program",
+              "Featured pictures of the Moon",
+              "Featured photographs in the public domain",
+              "Files from NASA with known IDs",
+              "Apollo 17 lunar rover on the Moon",
+              "Apollo lunar extra-vehicular activity",
+              "Eugene A. Cernan in 1972",
+              "Lunar surface photography during Apollo 17",
+              "Moon buggies in motion",
+              "Male people with land vehicles",
+              "Lunar surface photography during the Apollo program"
+            ],
+            "license": {
+              "name": "Public domain",
+              "url": "",
+              "verified": true,
+              "evidence_url": "https://commons.wikimedia.org/wiki/File:NASA_Apollo_17_Lunar_Roving_Vehicle.jpg",
+              "evidence_method": "commons_per_file_extmetadata",
+              "checked_at": "2026-11-18T10:48:48.515733+00:00",
+              "attribution_required": false,
+              "attribution": "",
+              "creator": "NASA / Harrison H. Schmitt",
+              "evidence_sha256": "61fb1bbf58765eedad27a2db5f93dc8c5aa96b0b85e5a22f7c1a649726409b79",
+              "restrictions": [
+                "third_party_rights_not_verified"
+              ],
+              "rejection_reason": null
+            },
+            "download_status": "downloaded_and_decoded",
+            "catalog_transport": "api",
+            "media_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/NASA_Apollo_17_Lunar_Roving_Vehicle.jpg/1920px-NASA_Apollo_17_Lunar_Roving_Vehicle.jpg",
+            "aspect_ratio": 1.0
+          },
+          "file_probe": {
+            "width": 1920,
+            "height": 1920,
+            "duration": null,
+            "sha256": "938bcb6629448c99cd29c7196c062cfe2c6d328f5bccc87e7d8bd4a111060f52",
+            "decode_status": "passed",
+            "bytes": 987058
+          },
+          "media_type": "image",
+          "fit_mode": "contain",
+          "download_status": "downloaded_and_decoded"
+        },
+        {
+          "scene_id": 2,
+          "narration": "Paris Eyfel kulesi görülüyor.",
+          "planned_duration": 2.667,
+          "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+          "queries_tried": [
+            "Eiffel Tower Paris"
+          ],
+          "provider_errors": [],
+          "rejections": [
+            {
+              "key": "wikimedia:37668863",
+              "query": "Eiffel Tower Paris",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Eiffel_Tower_shortly_before_the_New_Year.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented"
+              ]
+            },
+            {
+              "key": "wikimedia:139343199",
+              "query": "Eiffel Tower Paris",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Eiffel_tower_141853_1.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented"
+              ]
+            },
+            {
+              "key": "wikimedia:90124421",
+              "query": "Eiffel Tower Paris",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Sunset_on_Eiffel_Tower_in_Paris_-_Vimeo.webm",
+              "reasons": [
+                "missing_or_unsupported_file_license"
+              ]
+            },
+            {
+              "key": "wikimedia:73113913",
+              "query": "Eiffel Tower Paris",
+              "source_url": "https://commons.wikimedia.org/wiki/File:Timelapse_Tour_Eiffel_%C3%A0_Paris.webm",
+              "reasons": [
+                "share_alike_downstream_policy_not_implemented"
+              ]
+            }
+          ],
+          "selected_provider": "wikimedia",
+          "selected_media_id": "30184966",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Louis-Emile_Durandelle,_The_Eiffel_Tower_-_State_of_the_Construction,_1888.jpg",
+          "license": {
+            "name": "Public domain",
+            "url": "",
+            "verified": true,
+            "evidence_url": "https://commons.wikimedia.org/wiki/File:Louis-Emile_Durandelle,_The_Eiffel_Tower_-_State_of_the_Construction,_1888.jpg",
+            "evidence_method": "commons_per_file_extmetadata",
+            "checked_at": "2026-11-18T10:48:49.687766+00:00",
+            "attribution_required": false,
+            "attribution": "",
+            "creator": "Louis-Emile Durandelle",
+            "evidence_sha256": "2d27943b01e9a5c61a8a7e68eee0b204e397e147d19f9840bd8b99159836bad6",
+            "restrictions": [
+              "third_party_rights_not_verified"
+            ],
+            "rejection_reason": null
+          },
+          "attribution": "",
+          "duration": null,
+          "resolution": {
+            "width": 1920,
+            "height": 2443
+          },
+          "aspect_ratio": 0.785919,
+          "selection_score": 100.0,
+          "rejection_reason": null,
+          "fallback_used": false,
+          "selected_query": "Eiffel Tower Paris",
+          "assessment": {
+            "eligible": true,
+            "score": 100.0,
+            "components": {
+              "query_metadata": 30.0,
+              "narration_metadata": 20,
+              "resolution": 15,
+              "aspect_ratio": 10,
+              "duration": 10,
+              "provider_provenance": 5,
+              "license_evidence": 10,
+              "recent_use_penalty": 0
+            },
+            "rejection_reasons": [],
+            "relevance_status": "metadata_supported",
+            "visual_verification": "not_performed",
+            "query_coverage": 1.0,
+            "primary_narration_overlap": [
+              "eiffel",
+              "paris",
+              "tower"
+            ],
+            "quality_basis": "measured_dimensions_duration_and_full_decode",
+            "framing": "contain_letterbox"
+          },
+          "media": {
+            "provider": "wikimedia",
+            "media_id": "30184966",
+            "source_url": "https://commons.wikimedia.org/wiki/File:Louis-Emile_Durandelle,_The_Eiffel_Tower_-_State_of_the_Construction,_1888.jpg",
+            "download_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/14/Louis-Emile_Durandelle%2C_The_Eiffel_Tower_-_State_of_the_Construction%2C_1888.jpg/1920px-Louis-Emile_Durandelle%2C_The_Eiffel_Tower_-_State_of_the_Construction%2C_1888.jpg",
+            "media_type": "image",
+            "width": 1920,
+            "height": 2443,
+            "duration": null,
+            "title": "File:Louis-Emile Durandelle, The Eiffel Tower - State of the Construction, 1888.jpg",
+            "description": "The Centennial Exposition of 1889 was organized by the French government to commemorate the French Revolution. Bridge engineer Gustave Eiffel's 984-foot (300-meter) tower of open-lattice wrought iron was selected in a competition to erect a memorial at the exposition. Twice as high as the dome of St. Peter's in Rome or the Great Pyramid of Giza, nothing like it had ever been built before. This view was made about four months short of the tower's completion. Louis-Émile Durandelle photographed the tower from a low vantage point to emphasize its monumentality. The massive building barely visible in the far distance is dwarfed under the tower's arches. Incidentally, the tower's innovative glass-cage elevators, engineered to ascend on a curve, were designed by the Otis Elevator Company of New York, the same company that designed the Getty Center's diagonally ascending tram.",
+            "tags": [
+              "Albumen prints",
+              "Exposition Universelle (1889)",
+              "Palais du Trocadéro",
+              "Author died more than 100 years ago public domain images",
+              "Louis-Emile Durandelle",
+              "Artworks without Wikidata item",
+              "Photographs in The J. Paul Getty Museum",
+              "Black and white photographs of the Eiffel Tower",
+              "Artworks with known accession number",
+              "Eiffel Tower under construction",
+              "Featured pictures on Wikipedia, Persian",
+              "1888 in Paris",
+              "CC-PD-Mark",
+              "Featured pictures of the Eiffel Tower",
+              "1888 photographs of France",
+              "Files from the Getty's Open Content Program",
+              "Featured black and white photographs",
+              "Featured photographs in the public domain",
+              "PD-old missing SDC copyright status",
+              "Eiffel Tower from Champ-de-Mars before 2000",
+              "Images of Paris from the Getty Museum"
+            ],
+            "license": {
+              "name": "Public domain",
+              "url": "",
+              "verified": true,
+              "evidence_url": "https://commons.wikimedia.org/wiki/File:Louis-Emile_Durandelle,_The_Eiffel_Tower_-_State_of_the_Construction,_1888.jpg",
+              "evidence_method": "commons_per_file_extmetadata",
+              "checked_at": "2026-11-18T10:48:49.687766+00:00",
+              "attribution_required": false,
+              "attribution": "",
+              "creator": "Louis-Emile Durandelle",
+              "evidence_sha256": "2d27943b01e9a5c61a8a7e68eee0b204e397e147d19f9840bd8b99159836bad6",
+              "restrictions": [
+                "third_party_rights_not_verified"
+              ],
+              "rejection_reason": null
+            },
+            "download_status": "downloaded_and_decoded",
+            "catalog_transport": "api",
+            "media_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/14/Louis-Emile_Durandelle%2C_The_Eiffel_Tower_-_State_of_the_Construction%2C_1888.jpg/1920px-Louis-Emile_Durandelle%2C_The_Eiffel_Tower_-_State_of_the_Construction%2C_1888.jpg",
+            "aspect_ratio": 0.785919
+          },
+          "file_probe": {
+            "width": 1920,
+            "height": 2443,
+            "duration": null,
+            "sha256": "9c67de360bab67bc5de849d7846bf1f2972ca0722b6152c48ef753fa309bc784",
+            "decode_status": "passed",
+            "bytes": 847198
+          },
+          "media_type": "image",
+          "fit_mode": "contain",
+          "download_status": "downloaded_and_decoded"
+        }
+      ],
+      "failure": null
+    }
+  },
+  "artifact_file_hashes": {
+    "evidence.json": {
+      "bytes": 2831,
+      "sha256": "84b62713bdca0595467524e63b416667a87f542e35ec6e6145d7645117e3f2ae"
+    },
+    "pexels/manifest.json": {
+      "bytes": 2811,
+      "sha256": "78c11be497d2191fe709db6c7daeb07e6aa675dbcac7d3778b7cb31faf38ac34"
+    },
+    "pixabay/manifest.json": {
+      "bytes": 2817,
+      "sha256": "3d7bcead27c211b1b3c4c8a26d03d75fc4c1ad764cd2c4732cbd074ae4be8332"
+    },
+    "wikimedia/manifest.json": {
+      "bytes": 14501,
+      "sha256": "d668a034638805225dd87944ceb7527f3b0217613418d95dde9291dd782fa33e"
+    },
+    "wikimedia/media_probe.mp4": {
+      "bytes": 822155,
+      "sha256": "d6a1d9757cfcaa775bb62d5df55a88fc4ad55eeb07fe7ee5603414ed7d64f02c"
+    },
+    "wikimedia/scene_1_inspection.jpg": {
+      "bytes": 27891,
+      "sha256": "a598e04bf2d1862eea3e88f42fb67b6eac142d4433141430d864372a8a6cf715"
+    },
+    "wikimedia/scene_2_inspection.jpg": {
+      "bytes": 16990,
+      "sha256": "bd58cb496fbcd3d5c6ca3614e4c73fc5d06b84a71a4baa2cbc12a5bd398f65c8"
+    },
+    "wikimedia/script.json": {
+      "bytes": 15801,
+      "sha256": "5a1454f48e9098171d639013a147507d24d69ab3a8143b6f93342a073a01bfa0"
+    }
+  },
+  "independent_downloaded_artifact_checks": {
+    "script_validator_errors": 0,
+    "existing_final_video_qc": "passed",
+    "file_full_decode": "passed_audio_and_video",
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1080,
+          "height": 1920,
+          "pix_fmt": "yuv420p",
+          "color_range": "tv",
+          "r_frame_rate": "30/1",
+          "avg_frame_rate": "30/1",
+          "nb_frames": "180"
+        },
+        {
+          "codec_name": "aac",
+          "codec_type": "audio",
+          "sample_rate": "48000",
+          "channels": 1,
+          "r_frame_rate": "0/0",
+          "avg_frame_rate": "0/0",
+          "nb_frames": "283"
+        }
+      ],
+      "format": {
+        "duration": "6.000000",
+        "size": "822155"
+      }
+    },
+    "inspected_frames": 2,
+    "inspection_limitations": [
+      "scene 1 shows a lunar rover and astronaut, not validated exact standing action",
+      "scene 2 is an 1888 construction-era Eiffel Tower photograph, not a present-day scene",
+      "two frames do not prove whole-video semantic quality"
+    ]
+  },
+  "safety": {
+    "no_youtube_publication_or_deletion": true,
+    "forbidden_workflows_dispatched_by_agent": [],
+    "probe_contents_permission": "read",
+    "production_history_modified": false,
+    "production_media_history_path_http_status": 404,
+    "protected_files_unchanged_from_phase4_baseline": [
+      "main.py",
+      "content_engine.py",
+      "scripts/gemini_web_story.py",
+      "youtube_studio_uploader.js",
+      "src/youtube_upload/youtube_uploader.py",
+      ".github/workflows/daily_shorts.yml",
+      ".github/workflows/hourly_pruner.yml",
+      ".github/workflows/draft_publisher.yml",
+      ".used_topics.json"
+    ],
+    "topic_title_count": 25,
+    "topic_pending_count": 0,
+    "topic_title_sha256": "7eca291fbb7b1f462b92210afce9c0c328971d78ef98413a45a3e0644184176d",
+    "topic_history_blob": "e5a987fccba23d6d37f1aed76e560cd0647e8f26",
+    "repository_secret_values_read_or_changed": false,
+    "probe_runtime_parses_allowed_stock_names_from_existing_secret_in_memory": true,
+    "logs_and_json_known_credential_audits": [
+      {
+        "run_id": 44284971550,
+        "jobs": 1,
+        "log_characters_scanned": 143846,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44285033824,
+        "jobs": 1,
+        "log_characters_scanned": 109937,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44285743243,
+        "jobs": 1,
+        "log_characters_scanned": 143706,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44285746809,
+        "jobs": 1,
+        "log_characters_scanned": 110965,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44286729473,
+        "jobs": 1,
+        "log_characters_scanned": 143590,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44286729732,
+        "jobs": 1,
+        "log_characters_scanned": 110960,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44288761602,
+        "jobs": 1,
+        "log_characters_scanned": 143817,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      },
+      {
+        "run_id": 44288761461,
+        "jobs": 1,
+        "log_characters_scanned": 110961,
+        "supplied_credential_matches": 0,
+        "unmasked_github_google_key_pattern_matches": 0
+      }
+    ],
+    "cookie_files_uploaded": false,
+    "stock_source_files_uploaded": false,
+    "media_cli_help_side_effect": {
+      "occurred": true,
+      "details": "media_processor.py does not parse --help; standalone invocation ran legacy samples route (no uploader). samples/script.json restored to HEAD and ignored MP4/ASS isolated. Not strict-live acceptance proof."
+    }
+  },
+  "historical_actions": [
+    {
+      "id": 44284971550,
+      "head_sha": "eb9910914dfff018e202d9ce467dbe15ce2e0c5a",
+      "conclusion": "success",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44284971550"
+    },
+    {
+      "id": 44285033824,
+      "head_sha": "eb9910914dfff018e202d9ce467dbe15ce2e0c5a",
+      "conclusion": "failure",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44285033824"
+    },
+    {
+      "id": 44285743243,
+      "head_sha": "c2ad1c98a941907db199e41f8c1c9c283bb09c98",
+      "conclusion": "success",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44285743243"
+    },
+    {
+      "id": 44285746809,
+      "head_sha": "c2ad1c98a941907db199e41f8c1c9c283bb09c98",
+      "conclusion": "success",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44285746809"
+    },
+    {
+      "id": 44286729473,
+      "head_sha": "c29f7e7c888681bedf2a2a9f384ba3e30350075f",
+      "conclusion": "success",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44286729473"
+    },
+    {
+      "id": 44286729732,
+      "head_sha": "c29f7e7c888681bedf2a2a9f384ba3e30350075f",
+      "conclusion": "success",
+      "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44286729732"
+    }
+  ],
+  "notes": [
+    "Green workflow means at least one provider passed, not all providers verified.",
+    "Final live assets are two public-domain images; mandatory CC BY credit retention is mock/provider-contract plus real pure JS function evidence, not a live CC BY publication.",
+    "Synthetic tone and word-weighted durations are not TTS synchronization.",
+    "Media history recency is a penalty with bounded CAS writes, not distributed reservation or perceptual near-duplicate detection."
+  ]
+}

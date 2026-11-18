@@ -1,7 +1,6 @@
 # Faz 1 — script.json Sözleşme Envanteri
 
-> Tarih: 2026-11-17  
-> Durum: Envanter tamamlandı; yeni şema henüz uygulanmadı. Bu belge yalnız mevcut kod ve örnek dosyalardan doğrulanan yapıyı kaydeder.
+> İlk kayıt: 2026-11-17. **1–6. bölümler tarihsel başlangıç snapshot'ıdır**; “şema henüz yok/tek doğrulanmış üretici” ifadeleri bugünkü durumu göstermez. Schema v2/runtime kapısı sonradan eklendi. 2026-11-18 Faz 4 sırasında genişletilen statik okuma/yazma taraması ve açık gerçek tüketici işleri **7. bölümde**. Tam Faz 1 kabulü hâlâ açık.
 
 ## 1. Üretici
 
@@ -67,3 +66,31 @@ Mevcut üretici payload'ında `storyboard`, `schema_version`, `generation_id`, `
 - `scripts/embed_cover_frame.py` — `title` / `topic` tüketimi.
 - `tests/test_full_pipeline_fallback.py` — mevcut çıktı sözleşmesi için test.
 - `tests/test_content_engine_fallback.py` — senaryo alanları için test.
+
+
+## 7. 2026-11-18 Faz 4 — genişletilmiş statik üretici/tüketici taraması
+
+İnceleme kaynak kodu `c29f7e7` (medya kodu; tabloyu etkileyen diğer dosyalar Faz 4 öncesiyle aynı). Yöntem: Git'in izlediği Python/JS/CJS/shell/YAML dosyalarında `script.json`, `DEFAULT_JSON_OUT`, `SCRIPT_PATH`, `script_data`, JSON read/write ve metadata/storyboard alanları arandı; aşağıdaki gerçek çağrı/alan noktaları okundu. Bu, dinamik yol aktarımı ve tüm import/caller kombinasyonlarının kanıtı değildir. Cookie/ENV_FILE/credential dosyası okunması bu envanterin parçası değildir.
+
+| Yol | Rol / doğrulanan alanlar | Kanıt / kalan sınır |
+|---|---|---|
+| `content_engine.py:3351–3421` | Üretim ana writer: v2 + UUID, audio/srt/duration, legacy visual_keywords ve word_timestamps; Gemini sources/fact_check/storyboard/claims/prompt sürümünü korur | `main.py` bu dosyayı `--gemini-web-only` ile çağırır. `generate_gemini_web_scenario:3051` normalizasyon sonrası narration/claim span kontrol eder. Gerçek yeni-code Gemini+TTS+media zinciri bu görevde çalıştırılmadı |
+| `scripts/gemini_web_story.py:413–434` | Ara dict dönüştürücü; doğrulanmış storyboard/alternatives nesnelerini korur, legacy keywords listesine query'leri de taşır | Disk `script.json` writer'ı değil; raw cookie taslak yanıtı ayrı sözleşmedir |
+| `src/content_generation/engine.py:610–660`, `src/content_generation/__init__.py` | **İkinci, eski bağımsız writer**; paket public exports'u buraya gider. v2/storyboard alanlarını yazmaz; legacy payload üretir | Root `content_engine.py` sarmalayıcısı değildir. Mevcut `main.py` yolu bunu çağırmaz; başka dış caller'lar için sözleşme/runtime doğrulama çalışması açık. Bu Faz 4 işinde değiştirilmedi |
+| `src/media_processing/media_processor.py:628–747` | Reader + writer: storyboard anahtarı strict route; selector başarılıysa scene_media/media_selection/media_credits/description atomik yazılır. Storyboard yoksa legacy query/duration ve eski Commons attribution yazımı | Başarısız strict scene montage'a geçmez. Legacy random/loop/atıf kesme sınırlamaları korunur, strict doğrulanmış sayılmaz |
+| `src/media_processing/scene_media.py` | Mutating helper: her scene'in metadata/license/ölçüm/provenance kaydı ve tam attribution; ayrı history | Kendi başına public uploader değildir. Manifest ayrı kanıt dosyasıdır; script dosyasını processor atomik kaydeder |
+| `scripts/validate_script_json.py:17–48`, `main.py:165–201` | JSON reader/validator, medya öncesi ve sonrası fail-closed orchestration. Optional manifest varsa birebir sıralı scene coverage, identity dedup ve mandatory description credit | Main'in kendisi script JSON içeriğini okuyup dönüştürmez; child validator çağırır. Uploader'ın doğrudan çalıştırılması bu orchestration kapısını atlar; bu görevde kullanılmadı |
+| `scripts/embed_cover_frame.py:169–189` | JSON salt-okur; `title` ve `topic`; eski thumbnail_prompt'u varsayılan prompt için okumaz | Video/kapak dosyası değiştirebilir; script JSON yazmaz. Tam storyboard+atıf+kapak entegrasyon testi açık; kapak kodu değiştirilmedi |
+| `youtube_studio_uploader.js:458–501,823–831` | Production reader: title (100), description, affiliate_hook/CTA/link, cta_line, ilk 3 viral_hashtags, thumbnail_prompt; sonra ayrı topic tüketimi | `buildFinalDescription` ek bloklardan sonra **JS UTF-16 `.slice(0,4900)`** uygular; sadece script.description uzunluğunu kontrol etmek tam atıf garantisi değildir. Faz 4 strict selector, mevcut builder için konservatif UTF-16 üst bütçe kontrolü ekler. Üç affiliate dalı gerçek **saf fonksiyonlarla**, ağsız VM'de test edilir; gerçek uploader entrypoint'i çalıştırılmaz/değiştirilmez. Studio formuna kalıcı atıf aktarımı hâlâ canlı kanıt değildir |
+| `src/youtube_upload/youtube_uploader.py:182–198,89` | Ayrı API yedek reader: title/description, upload snippet'te description[:5000]; PRIVATE queue ve approve CLI | Güncel main Studio yolunda değil. JSON Schema/scene_media'ya doğrudan bağlı değil; gerçek API tüketici entegrasyonu açık. Çalıştırılmadı |
+| `scripts/phase4_media_probe.py` | Test-only writer: fixed iki-scene input → selector → schema validation → izole output script/manifest | Gerçek provider HTTP/download ve consumer smoke içerir; Gemini/TTS çıktısı değildir. Production `script.json`/history'yi değiştirmez |
+| `.github/workflows/daily_shorts.yml:319` / `phase4_media_probe.yml` | JSON'u artifact listesine koyar; kendi başına alan reader/writer değil | Güvenli probe yalnız sanitized output seçer; production workflow tetiklenmedi |
+| `samples/script.json`, `tests/test_*` | Fixture ve test-only writers/readers | Üretim çağrısı/YouTube consumer kanıtı değildir |
+
+### 7.1 Açık Faz 1 kabul işleri (kapatılmadı)
+
+- İkinci eski producer ve paket caller'ları, dinamik/CLI JSON path aktarımı, bütün external API tüketicilerinin sözleşmesi/geriye uyumluluğu tamamlanmış sayılmaz; genişletilmiş statik tarama tam runtime inventory değildir.
+- Gerçek root content-engine JSON + gerçek TTS dosyaları → **aynı production media CLI** → post-media validator → kapak → gerçek uploader'ın **yayınsız** veri tüketimi uçtan uca doğrulanmadı. `main.py`/YouTube uploader/production workflow'ları bu görevde çalıştırılmadı; aşağıdaki standalone legacy CLI yan etkisi bundan ayrıdır.
+- Faz 4 canlı probe selector + gerçek download/decode + assemble/QC'yi doğrular, fakat `run_media_pipeline` strict wrapper entegrasyon testinde provider/download/montaj kısımları stub/mock'ludur. **Media CLI `--help` parse etmez:** son kontrolde benign yardım varsayımıyla yapılan çağrı gerçekte legacy samples montajını çalıştırdı. `samples/script.json` HEAD içeriğine geri alındı, ignored MP4/ASS ayrıldı; topic/media production history ve uploader etkilenmedi. Bu yanlış çağrı gerçek strict producer→consumer kabulü değildir. Yardım smoke'u diye tekrarlama; yalnız Python compile/izole test veya gerçek argparse probe/topic CLI'larını kullan. Ayrıntı [kanıt raporu §6](evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md#6-güvenlik-ve-test-komutu-düzeltmesi).
+- Yeni zorunlu-atıf bütçesi ve gerçek saf JS builder testleri belirli bir tüketici kontrat boşluğunu daraltır; Studio'nun kaydettiği açıklamanın tamlığına veya genel yayın kalite kapısına kanıt oluşturmaz.
+- Başarılı güncel schema/CI, eski Faz 1 kutularını ya da Faz 5 ses-sahne zamanlamasını kendiliğinden kapatmaz.

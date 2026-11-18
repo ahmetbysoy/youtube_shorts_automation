@@ -1,6 +1,6 @@
 # YouTube Shorts Automation — Tam Otonom İçerik Fabrikası
 
-> **Gemini Faz 4 çalışması — 2026-11-18:** Storyboard için ayrı provider sözleşmesi, sınırlı scene sorguları, metadata/lisans/teknik puanlar, gerçek dosya decode, sahne manifesti ve ayrı SHA-CAS medya geçmişi uygulanıyor. Legacy yol, Commons, Faz 3 ve PUBLIC/uploader davranışı korunuyor. **Faz 4 henüz kabul edilmedi:** yeni kod CI ve güvenli canlı sağlayıcı kapsamı bekleniyor. İlk Commons HTTP/download/FFmpeg denemesi başarılı; stock-provider kanıtı değildir. [Başlangıç envanteri](docs/PHASE4_MEDIA_BASELINE.md).
+> **Gemini Faz 4 — 2026-11-18: uygulama var, TAM KABUL GEÇMEDİ.** Son kod [`e4d1144`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/e4d1144116887b31c459bb6a7e171589d214c687); Ubuntu 26 CI [44288761602](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761602) **233 Python + 16 alt test**, ayrı **62** Faz 4 testi ve **5** Node parser testiyle geçti. Yayınsız canlı [44288761461](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761461) yeşil ama **partial_provider_evidence**: Commons iki ayrı sahnede gerçek lisans/download/decode + 6 sn consumer MP4 geçti; Pexels/Pixabay koşu env’inde API key yok, cookie dosyası var, browser aramaları **HTTP 403**. Metadata eşleşmesi görsel anlam doğrulaması değildir; sentetik ton TTS değildir. Legacy/Commons/Faz 3/PUBLIC-uploader davranışı korundu; üretim/publisher/pruner tetiklenmedi. [Kanıt ve kabul açıkları](docs/evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md), [tasarım](docs/PHASE4_MEDIA_ENGINE.md).
 
 
 > **Güncel durum — 2026-11-18:** **Gemini Faz 3 kabul kapısı geçti.** Kod `0dee88e` üzerinde Ubuntu 26 CI [44279794329](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44279794329) başarılı: **171 Python testi + 16 alt test**, ayrıca 35 hedefli Faz 3 testi. İki ayrı Actions koşusu [44280024395](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280024395) (`reserve`) ve [44280111635](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280111635) (`verify`) kalıcı rezervasyonu yazdı, sonraki koşuda okuyup serbest bıraktı. Mevcut 25 başlık korundu; test başlığı kullanım geçmişine eklenmedi. Exact quote, muhafazakâr deterministik ilişki/sayı-birim denetimi ve Wikipedia HTTP/canonical sayfa kimliği kontrolleri ayrı değerlendirilir. Önceki gerçek Gemini Web probe **44262444017** (58 kelime, 5 sahne, 3 claim; `draft_only=true`, `publish=false`) korunur; yeni kod için canlı model/YouTube yayın kanıtı değildir. Cookie-only/fallback, secret’lar ve kullanıcı onaylı `partial` yayın politikası değişmedi; `partial`, `verified` diye etiketlenmez. Bu doğrulamada üretim/publisher/pruner workflow’u tetiklenmedi. [Actions kanıt raporu](docs/evidence/PHASE3_ACTIONS_EVIDENCE_2026-11-18.md), [TODO](docs/GEMINI_AUTONOMOUS_SHORTS_TODO.md), [plan](docs/GEMINI_AUTONOMOUS_SHORTS_PLAN.md), [mimari](docs/ARCHITECTURE.md).
@@ -29,8 +29,9 @@ Python, FFmpeg ve Node.js Playwright tabanlı, GitHub Actions üzerinde Türkçe
 | **Faz 1** | `youtube_auth.py`, `src/youtube_upload/` | Headless/bulut uyumlu OAuth2 PKCE akışı ve YouTube Data API v3 yedek yükleme modülü | ✅ |
 | **Faz 2** | `content_engine.py`, `scripts/gemini_web_story.py` | Cookie-only Gemini Web, free Wikipedia HTTP araştırması, JSON/quote/storyboard sözleşmesi; gerçek taslak kanıtı [44262444017](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44262444017); paid text API yok, cookie failure'da mevcut fallback | ✅ (eski live probe) |
 | **Gemini Faz 3** | `scripts/semantic_fact_check.py`, `scripts/topic_history.py`, `daily_shorts.yml` | Exact quote’tan bağımsız muhafazakâr ilişki/sayı-birim denetimi; Contents API SHA-CAS rezervasyonu; Ubuntu 26 CI ve iki ayrı Actions koşusunda kalıcılık/release başarılı | ✅ (yayınsız kabul) |
-| **Medya Faz 3** | `src/media_processing/media_processor.py` | Dikey stok video indirme (Pexels / Pixabay / Wikimedia), pop-animasyonlu `.ass` altyazı, arka plan müziği miksajı ve tek geçişli `1080x1920` (30 FPS, H.264/AAC) FFmpeg montajı | ✅ |
-| **Faz 4** | `src/youtube_upload/youtube_uploader.py` | Resumable API yükleme ve onay kuyruğu altyapısı (`22/22` birim testi) | ✅ |
+| **Gemini Faz 4** | `media_providers.py`, `scene_media.py`, `media_io.py`, `media_history.py` | Strict storyboard query/alternatives, lisans/atıf, ölçüm/decode, 1:1 manifest/dedup; Commons canlı, stock blocked | 🟡 Kabul geçmedi |
+| **Medya Faz 3 (legacy)** | `src/media_processing/media_processor.py` | Dikey stok video indirme (Pexels / Pixabay / Wikimedia), pop-animasyonlu `.ass` altyazı, arka plan müziği miksajı ve tek geçişli `1080x1920` (30 FPS, H.264/AAC) FFmpeg montajı | ✅ |
+| **Tarihsel Faz 4 (uploader)** | `src/youtube_upload/youtube_uploader.py` | Resumable API yükleme ve onay kuyruğu altyapısı (`22/22` birim testi) | ✅ |
 | **Faz 5** | `youtube_studio_uploader.js` | API kotasını (`10.000 birim`) tamamen aşan Playwright Chromium YouTube Studio yükleyicisi + kalıcı oturum (`cookies.json`, `storage_state.json`) | ✅ |
 | **Faz 6** | `main.py`, `.github/workflows/daily_shorts.yml` | Tüm fazları tek komutta zincirleyen Ana Orkestratör ve GitHub Actions `ubuntu-latest` + `Xvfb` bulut otomasyonu | ✅ |
 | **Faz 7** | `daily_shorts.yml`, `youtube_studio_uploader.js`, `scripts/rotate_cookies.py` | Doğrudan **`PUBLIC` (Herkese Açık)** otomatik yayın; kanal matrisi 10 kanalı `max-parallel: 1` ile sırayla işler; 14 günlük Cookie/StorageState rotasyon aracı | ✅ |
@@ -78,8 +79,23 @@ xvfb-run -a --server-args="-screen 0 1366x900x24" python main.py
 python -m pip install -r requirements-test.txt
 env -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN python -m pytest -q tests
 npm test
+node --test tests/stock_media_catalog.test.cjs
 npm run test:syntax
 ```
+
+---
+
+## Gemini Faz 4 — strict sahne-medya yolu
+
+- `storyboard` anahtarı varsa her sahne ayrı `visual_query`, en fazla 3 sıralı `alternative_queries` ve `narration` ile değerlendirilir. Boş/bozuk board veya tükenen sorgular legacy/random klibe dönmez; montaj durur. Storyboard **yoksa** eski Playwright → Pexels → Pixabay → Commons yolu aynen kalır (eski eksikleri strict doğrulanmış sayılmaz).
+- Pexels/Pixabay API + source-page metadata Playwright ve Commons ortak source/media ID/URL, gerçek boyut-süre-oran, license evidence, attribution ve download durumu döndürür. Her query'de sağlayıcı havuzu global puanlanır; indirme başarısı tek başına kabul değildir. Eksik/uyumsuz lisans, atıf, subject kanıtı veya teknik koşul güvenli ret.
+- Seçim/ret ayrıntısı `output/scene_media_manifest.json` ve `script.json.scene_media/media_selection` içine yazılır. Required credit tam korunur; unchanged uploader'ın CTA/hashtag eklemesi ve JS UTF-16 kesmesi için de güvenli bütçe ayrılır. Public-domain LicenseUrl yoksa uydurulmaz; BY-SA/NC/ND downstream policy olmadan otomatik kabul edilmez.
+- İç-video ID/URL/dosya-hash tekrarları reddedilir; ayrı `.media_history.json` yakın dönem tekrara ceza verir. Local atomic lock / optional Contents SHA-CAS var; **medya** history için gerçek iki-run persistence proof henüz yok. Faz 3 topic history değişmedi.
+- Minimum çözünürlük/oran/süre ve tam dosya decode kapıları var; strict framing contain/pad, video loop yok. Relevance **metadata_supported**, visual verification **not_performed**. Scene süreleri word-weighted provisional; gerçek TTS alignment, motion/era anlam doğrulaması ve bütünleşik yayın QC tamamlanmadı.
+
+[Eski davranış envanteri](docs/PHASE4_MEDIA_BASELINE.md) · [ayrıntılı kontrat/puanlar/sınırlar](docs/PHASE4_MEDIA_ENGINE.md) · [canlı ve mock kanıt ayrımı](docs/evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md) · [Faz 1 ek tüketici envanteri](docs/PHASE1_SCRIPT_JSON_INVENTORY.md#7-2026-11-18-faz-4--genişletilmiş-statik-üreticitüketici-taraması).
+
+**Test güvenliği:** `main.py` PUBLIC yayın yapar; `daily_shorts.yml`, pruner ve draft publisher test amacıyla çalıştırılmaz. `media_processor.py` gerçek bir `--help` parser'ı içermez: **`--help` bile montaj başlatır**, benign smoke diye kullanmayın. Güvenli CLI `python -m scripts.phase4_media_probe --help`; gerçek provider kanıtı ayrı `phase4_media_probe.yml` ile, source/secret denetimi sonrası alınır. Yeşil probe en az bir provider'ın geçtiğini gösterir, tüm sağlayıcıların kabulü değildir. Yerel yanlış media `--help` çağrısının örnek-dosya yan etkisi geri alındı; [rapor §6](docs/evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md#6-güvenlik-ve-test-komutu-düzeltmesi).
 
 ---
 
@@ -471,4 +487,4 @@ Gemini Web route’u ile Faz 3 kaynak/tekrar-koruma uygulandı. **Faz 3 kabul ed
 
 İlerleme kuralı: Her iş yalnız gerçek kod değişikliği, başarılı test ve gereken CI/Studio doğrulaması görüldüğünde tamamlandı işaretlenir. Ücretli API/görsel/video üretimi veya billing açılmaz; ücretsiz erişimi doğrulanmayan özellik etkinleştirilmez. Mevcut cron, kanal, pruner, PUBLIC yayın ve güvenlik davranışları başlangıç denetimi yapılmadan değiştirilmez.
 
-**Sıradaki adım: Gemini Faz 4 — sahne bazlı medya adaptörleri, lisans/atıf kaydı ve alakasız medya için fail-closed seçim; ayrıca TODO’daki açık Faz 1 entegrasyon işleri korunur.**
+**Sıradaki adım: Gemini Faz 4 stock-provider canlı erişim/lisans/video kanıtı ve açık medya-history/consumer boşluklarını kapatmak. Faz 4 tam kabulü geçmedi; Faz 5 gerçek TTS timing ve son yayın kapısı ayrıdır. Faz 1 ek runtime okuyucu/yazıcı ve gerçek tüketici entegrasyonu açık kalır.**

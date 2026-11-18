@@ -1,6 +1,6 @@
 # Gemini Tabanlı Otonom Shorts — Canlı TODO
 
-> **Faz 4 çalışma durumu (2026-11-18):** Strict storyboard provider/selection/manifest/history uygulandı; 47 yeni Python ve 5 Node parser testi yerel geçti. Yeni-kod CI/canlı sağlayıcı kapsamı bekleniyor, **kabul açık**. Commons ilk gerçek HTTP/download ve FFmpeg smoke denemesi başarılı; stock-provider entegrasyonu bu kanıtla başarılı ilan edilmez. Faz 1 açık tüketici/entegrasyon işleri ve Faz 5 gerçek TTS timing ayrı kalır. [Başlangıç incelemesi](PHASE4_MEDIA_BASELINE.md).
+> **Faz 4 sonucu (2026-11-18):** **Tam kabul GEÇMEDİ.** Son kaynak [`e4d1144`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/e4d1144116887b31c459bb6a7e171589d214c687); CI [44288761602](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761602) **233 + 16 subtests**, 62 Faz 4/35 Faz 3 ve 5 Node parser başarılı. Canlı [44288761461](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761461) yeşil ama **partial_provider_evidence**: Commons iki gerçek PD still + consumer; Pexels/Pixabay key probe env’de yok/cookie file var/browser 403. Metadata-supported relevance görsel doğrulama değildir; sentetik test tonu TTS/timing kanıtı değildir. Faz 1 gerçek consumer ve Faz 5 açık. [Final kanıt](evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md), [kontrat](PHASE4_MEDIA_ENGINE.md).
 
 
 > Bu dosya uygulamanın tekil takip listesidir. Bir kutu yalnız ilgili kod/test/CI veya canlı kanıt elde edilince işaretlenir. Mimari: [GEMINI_AUTONOMOUS_SHORTS_PLAN.md](GEMINI_AUTONOMOUS_SHORTS_PLAN.md).
@@ -11,7 +11,7 @@
 - [x] Kod entegrasyonu başladı: JSON v2 metadata ve üretim öncesi fail-closed doğrulama kapısı eklendi; Faz 1 kabulü henüz tamamlanmadı.
 - [x] Faz 0 başlangıç incelemesi, doküman uzlaştırması ve güncel test baseline tamamlandı; secret metadata ad envanteri connector kısıtı ve kullanıcının secret'ları koruma kararı nedeniyle istisna olarak kapatıldı. Hiçbir secret değiştirilmedi.
 - [x] `main.py` içerik motorunu `--gemini-web-only` ile çağırır; `daily_shorts.yml` `GEMINI_COOK` secret’ını process env’e verir. Cookie/schema/source kontrolü başarısızsa mevcut yerel fallback kullanılır ve ücretli text API’ye geçilmez. Eski gerçek cookie dry-run ve yeni Faz 3 CI/kalıcılık kanıtları aşağıdadır; yeni kodla canlı üretim/yayın entegrasyonu kapsam dışıdır.
-- [x] `script.json` v2’ye Gemini `sources`, `fact_check`, `storyboard`, `claims` ve prompt sürümü taşınır; medya işlemcisi `storyboard[].visual_query` değerlerini tercih eder. Scene timing/media QC açık; Faz 3 claim kontrolü ve iki-run kalıcılık kabulü tamamlandı.
+- [x] `script.json` v2’ye Gemini `sources`, `fact_check`, `storyboard`, `claims` ve prompt sürümü taşınır; medya işlemcisi `storyboard[].visual_query` değerlerini tercih eder. Strict scene-media uygulandı/kısmi canlı kanıtı var; gerçek TTS scene timing ve bütünleşik QC açık. Faz 3 claim kontrolü ve iki-run kalıcılık kabulü tamamlandı.
 - [ ] Yeni kalite kapısı yayın akışına bağlanmadı.
 
 ## Faz 0 — Başlangıç envanteri ve emniyet
@@ -34,7 +34,7 @@
 
 - [x] İlk script.json üretici/tüketici envanterini çıkar ve gerçek örnekle karşılaştır: [PHASE1_SCRIPT_JSON_INVENTORY.md](PHASE1_SCRIPT_JSON_INVENTORY.md). (content_engine.py üretici; media_processor.py ve embed_cover_frame.py doğrulanmış tüketiciler.)
 - [x] Mevcut JSON örneğini ve geriye uyumluluk gereksinimlerini kaydet. (samples/script.json eski örnek; üretici payload'ıyla alan farkları belgelendi.)
-- [ ] Repo genelindeki ek script.json okuyucu/yazıcı yollarını taramayı tamamla.
+- [~] Repo genelindeki ek script.json okuyucu/yazıcı taraması genişletildi: [envanter §7](PHASE1_SCRIPT_JSON_INVENTORY.md#7-2026-11-18-faz-4--genişletilmiş-statik-üreticitüketici-taraması), eski bağımsız paket writer ve Studio/API uploader/cover/validator yolları kaydedildi. Dinamik caller tamlığı ve gerçek consumer zinciri hâlâ açık; bu kutu tamamlandı sayılmaz.
 - [x] Versiyonlu JSON Schema tanımla: `schemas/script.schema.json` (legacy v1 + current v2).
 - [x] `schema_version`, `generation_id`, `fact_check`, `sources` ve `storyboard` alanlarının tiplerini belirle.
 - [x] Legacy örnek, v2 örneği, eksik alan, yanlış tip, bozuk UUID ve timestamp sınır testlerini ekle: `tests/test_script_json_schema.py`.
@@ -83,18 +83,29 @@ Durum: **YAYINSIZ KABUL TAMAMLANDI (2026-11-18).** Doğrulanmış kod `0dee88e18
 
 ## Faz 4 — Sahne bazlı medya motoru
 
-- [x] Medya işlemcisinde storyboard sahnelerinin `visual_query` değerlerini, varsa legacy `visual_keywords` alanına tercih et; storyboard yoksa eski arama ve güvenli varsayılan davranışı koru. Birim testleri geçti. Bu henüz sahne-süre eşleme veya alternatif sorgu retry değildir.
-- [ ] Pixabay/Pexels/Wikimedia adaptörlerinin gerçek davranışını ve lisans alanlarını belgele.
-- [ ] Ortak medya sağlayıcı arayüzü oluştur.
-- [ ] Her storyboard sahnesi için ayrı sorgu ve alternatif sorgu üret.
-- [ ] Adayları konu uyumu, süre, çözünürlük, oran, kalite ve lisansa göre puanla.
-- [ ] Medya kaynağı/URL/lisans/atıf verisini sahne kaydında sakla.
-- [ ] Aynı video içindeki klip tekrarını ve yakın dönem tekrarını azalt.
-- [ ] Alakasız medya örneklerini reddeden testler ekle.
-- [ ] Uygun medya yoksa sınırlı sorgu yenile; rastgele klibe düşme.
-- [ ] Onaylı temsili canlandırma veya güvenli durdurma davranışını test et.
+**Durum: UYGULAMA + KISMİ GERÇEK KANIT; TAM KABUL GEÇMEDİ.** Kod `eb99109` → `c2ad1c9` → `c29f7e7` → `e4d1144`. Son aynı-kod CI 44288761602 / live 44288761461. [Kanıt](evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md) · [tasarım](PHASE4_MEDIA_ENGINE.md) · [baseline](PHASE4_MEDIA_BASELINE.md).
 
-**Kabul kapısı:** Her sahnenin kabul edilmiş medya kaynağı ve lisans kaydı var; başarısız sahne rastgele kliple doldurulmuyor.
+- [x] Eski arama sırası/API/Playwright/download/license davranışını ve eksiklerini belgele; Pexels/Pixabay/**Commons** ve API/cookie konfigürasyonları korundu.
+- [x] Ortak provider/candidate/license sözleşmesi: gerçek source/media ID/URL, tür/boyut/süre/oran, lisans evidence/atıf ve download durumu; bilinmeyen değer/izin uydurulmaz. Commons CC BY ad/sürüm/jurisdiction ile URL çelişirse, restricted name permissive URL taşıyorsa veya lisans URL’sinde credential/standart dışı port varsa ret (`e4d1144`, 6 ek regresyon).
+- [x] Her storyboard scene için primary `visual_query`, ≤3 ordered `alternative_queries`, narration context ayrı tüketilir. Storyboard anahtarı varsa bozuk/boş board legacy'ye düşmez. Query başına bounded provider havuzu global puanlanır; blanket reuse yok.
+- [x] Metadata relevance/subject anchor + çözünürlük/oran/süre/lisans/atıf hard gates, score components, trusted-provenance proxy, recent-use penalty ve tam file decode. Unverified görsel anlam için doğru etiketler korunur.
+- [x] Scene manifest gerekli alanları, queries/rejections/provider diagnostics/measured SHA/decode ve tam attribution saklar; schema/validator exact ordered coverage ve identity/credit gerektirir.
+- [x] Required credit kesilmeden description'a yazılır; unchanged uploader CTA/hashtag eklemesi + UTF-16 `.slice` için konservatif budget, sığmıyorsa history/render öncesi fail-closed. Uploader değiştirilmedi; üç affiliate dalında iki **gerçek saf JS** metadata fonksiyonu ağsız VM'de test edildi, uploader entrypoint'i çalışmadı.
+- [x] Within-video ID/URL/actual-hash hard dedup; ayrı local atomic/flock + optional Contents SHA-CAS medya recency history. Faz 3 topic history korunur. Distributed reservation/perceptual near-duplicate garanti edilmez.
+- [x] 62 targeted Python test: independent scenes, ordered alternatives, unrelated/low-res/aspect/duration/unlicensed/attribution, duplicate/content hash, provider failure→Commons, all-fail, legacy, corrupt/truncated byte ve gerçek offline FFmpeg/Pillow. Provider çağrılarının çoğu mock; canlı kanıt yerine geçmez.
+- [x] Beş Node katalog parser testi; yerel mevcut Node 7 ve syntax; son Ubuntu 26 CI **233 passed + 16 subtests**, ayrı 62 Faz 4/35 Faz 3/5 Node parser. İlk FFmpeg full-range hatası QC gevşetilmeden strict limited-range+CFR ile giderildi.
+- [x] Ayrı güvenli `phase4_media_probe.yml`, contents-read-only/no publishing/no production history; stock-cookie domain filtresi, ENV_FILE data-only allowed-key parsing ve upload öncesi secret audit.
+- [x] Son kodda gerçek Commons iki scene/source/download/per-file PD/full image decode + 6 sn 1080×1920 H264/AAC/yuv420p/CFR consumer smoke; artifact indirilip validator/ffprobe/full AV decode tekrar geçti. İki inspection frame incelendi; exact action/era anlamı ve gerçek TTS/timing **doğrulanmadı**.
+- [x] İstenen beş belge, yeni kontrat/puanlar/baseline, genişletilmiş Faz 1 inventory ve tarihsel/final kanıt güncellendi; sekiz CI/live job logunda known credential/pattern scan 0; secret ve production workflow değişmedi.
+- [ ] **Pexels/Pixabay canlı kabul:** bu run'da `api_key_present=false`, `media_cookie_file_present=true`; üçer gerçek browser search **403**, source candidates 0. İzinli erişim/anahtar aktarımı doğrulanmadan stock license/source/JSON-LD/download başarı sayılmaz. Hesap geneli anahtar yok/cookie süresi doldu diye çıkarım yapma; aynı koşulu körlemesine tekrar tetikleme.
+- [ ] Gerçek hareketli ve atıf-gerektiren provider dosyasında uçtan uca source/license/download/consumer kanıtı; final live iki PD still bu yolları kanıtlamaz.
+- [ ] Ayrı `.media_history.json` için gerçek iki-Actions persistence/CAS kanıtı; şu an local + mock CAS/403 testli, production media history oluşturulmadı. Hash-only recent hit download sonrası rerank yapmaz; near-duplicate/concurrency sınırlamaları açık.
+- [ ] Daha geniş scene-action/era/relationship uygunluk kanıtı. Metadata 100 puan görsel yüzde yüz doğruluk değildir; model/human visual approval yapılmış gibi etiketleme.
+- [ ] Açık Faz 1 full runtime inventory + gerçek root content/TTS→aynı media CLI→post validator→cover→yayınsız tüketici zinciri; ayrı eski package producer da açık. Bunu Faz 4 probe wrapper testlerinden tamamlandı çıkarma.
+
+**Kabul kapısı: GEÇMEDİ.** İki Commons scene için gerçek konu/source/lisans/dosya kanıtı var; tüm zorunlu provider/uygunluk/consumer yolları kanıtlanmadı. Random fallback yok, başarısız stock sahne güvenli durdu. Genel görsel-anlam doğrulaması ve otomatik PUBLIC hazırlığı iddia edilmez. Faz 5 gerçek TTS timing/audio ve final yayın gate'i ayrı açık hedeflerdir, bu eksikler tamamlandı diye işaretlenmez.
+
+**Güvenli test tuzağı:** `media_processor.py --help` flag parse etmez; legacy montajı başlatabilir ve root JSON yoksa samples JSON'a credit yazabilir. Yerel yanlış çağrının samples yan etkisi geri alındı, ignored MP4/ASS ayrıldı; strict kabul sayılmaz. Bunu tekrarlama; Python compile/izole test ve gerçek argparse `phase4_media_probe --help` kullan. Üretim `main.py`/uploader/pruner/publisher çalıştırma.
 
 ## Faz 5 — Ses, zamanlama ve FFmpeg montajı
 
@@ -189,3 +200,4 @@ Durum: **YAYINSIZ KABUL TAMAMLANDI (2026-11-18).** Doğrulanmış kod `0dee88e18
 | 2026-11-18 | Faz 2 live cookie dry-run + secret-context teşhisi | Diagnostic workflow commit `57166f8`; Actions [44262444017](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44262444017) **success** | `GEMINI_COOK_CONTEXT_PRESENT=true`; provider `gemini-web-session`; 58 kelimelik Türkçe taslak, 1 Wikipedia source, 3 claim, 5 scene; ham model yanıtı response schema'dan geçti; `text_probe_result.json` artifact taraması temiz; `draft_only=true`, `publish=false` | Bu tarih kaydında semantic entailment ve kalıcı ledger açık durumdaydı; 2026-11-18 Faz 3 implementation satırı için aşağıya bakın. Canlı timeout/expired/rate-limit ayrıca test edilmedi |
 | 2026-11-18 | Gemini Faz 3 ilk yerel snapshot (tarihsel) | Targeted Phase 3 tests 35 passed; content-engine fallback + Phase 3 selection 40 passed; real Wikipedia HTTP `Venus` 200 + canonical identity match | Deterministic semantic relation and number/unit checks, v2 state enum compatibility, source HTTP/page identity validation, legacy `.used_topics.json` migration, topic/claim/scenario fingerprint CAS reservation, 30m TTL, failure release, SHA retry; added publish-free Ubuntu CI path and two-run persistence probe workflow | Bu ilk yerel snapshot sırasında CI ve iki-run proof bekleniyordu; kod henüz push edilmemişti. Tarihsel kayıt: güncel kabul bir sonraki satırdadır; production/pruner/publisher tetiklenmedi |
 | 2026-11-18 | Gemini Faz 3 yayınsız kabul | Feature `c2729cc`; ortam düzeltmeleri `28e1d6e` / `0dee88e`; CI [44279794329](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44279794329); reserve [44280024395](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280024395); verify [44280111635](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280111635) | Yeni kodda 171 test + 16 subtest, ayrı 35 hedefli test; gerçek iki-run SHA-CAS reservation/read/release, legacy 25 başlık korundu; credential/log taraması temiz | Faz 3 kabul geçti. Daily canlı finalize/yayın ve CAS race yapılmadı; Faz 4 medya uyumu/lisans/zamanlama ile açık Faz 1 entegrasyon işleri korunur |
+| 2026-11-18 | Gemini Faz 4 uygulama + kısmi canlı kanıt | Feature [`eb99109`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/eb9910914dfff018e202d9ce467dbe15ce2e0c5a), strict FFmpeg/diagnostics `c2ad1c9`, credit budget [`c29f7e7`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/c29f7e7c888681bedf2a2a9f384ba3e30350075f), license gate [`e4d1144`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/e4d1144116887b31c459bb6a7e171589d214c687); CI [44288761602](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761602), live [44288761461](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44288761461) | 233 + 16, 62 hedefli Python/5 Node; Commons iki farklı PD still gerçek download/decode+consumer QC. İlk yuvj420p hatası düzeldi; atıf uploader dönüşümü UTF-16 preflight ile korundu. [Kanıt](evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md) | **Faz 4 tam kabul geçmedi:** stock browser 403/API key bu env'de yok; gerçek video/CC BY consumer ve medya-history cross-run proof açık. Faz 1 runtime consumer ve Faz 5 timing ayrı; production/pruner/publisher tetiklenmedi |
