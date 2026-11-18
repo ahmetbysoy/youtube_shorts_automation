@@ -1,13 +1,10 @@
-> **GÜNCEL DEVİR NOTU — 2026-11-18 (öncelikli):** Bu belgenin aşağıdaki faz notları ve tabloları tarihsel operasyon kayıtlarıdır; bazıları eski 22/22 test ve 3'lü paralel matris durumunu anlatır. Güncel geliştirme başlangıç noktası [Gemini otonom Shorts planı](docs/GEMINI_AUTONOMOUS_SHORTS_PLAN.md), [canlı TODO](docs/GEMINI_AUTONOMOUS_SHORTS_TODO.md), [Faz 0 baseline kanıtı](docs/evidence/FAZ0_BASELINE_2026-11-17.md) ve [güncel mimari özeti](docs/ARCHITECTURE.md) dosyalarıdır.
+> **GÜNCEL DEVİR NOTU — 2026-11-18 (öncelikli):** Faz 3 kodu çalışma ağacında uygulanıyor; son bilinen başlangıç HEAD `bacc967751836502021d513a0c58b92c163689d1`. Değişen kod henüz CI/Actions üzerinde doğrulanmadı; commit/push henüz yapılmadı. Local Phase 3 targeted suite **35 passed**, content fallback + Phase 3 suite **40 passed**; gerçek Wikipedia HTTP request `Venus` için HTTP 200 ve canonical page match verdi. Ancak new Ubuntu 26 CI ve **iki ayrı Actions run** arası pending reservation gözlemi/release kanıtı yok; Faz 3 kabul kapısı açık. Yerel test/HTTP kanıtı: [PHASE3_LOCAL_EVIDENCE_2026-11-18.md](docs/evidence/PHASE3_LOCAL_EVIDENCE_2026-11-18.md).
 >
-> Güncel kod durumu (2026-11-18): `main.py` artık `content_engine.py --gemini-web-only` çağırır; `daily_shorts.yml` `GEMINI_COOK` secret'ını yalnız Orchestrator process env'ine aktarır. Cookie/session/yanıt hatasında içerik motoru mevcut fallback'e döner; Gemini Web metin kipinde Groq/Gemini API endpoint'lerine geçmez. Kaynak alıntısı tam eşleşmiş olsa bile semantik doğrulama bağımsız yapılmadığından script'te `fact_check.status=partial` kalır; kullanıcı bu taslakların mevcut PUBLIC hattında devam etmesine onay verdi. Yerel seçili suite 140 passed, 3 skipped, 12 subtests; push sonrası yayın yapmayan Ubuntu 26 CI run [44200069203](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44200069203) in progress. Gerçek cookie/HTTP/publication testi yapılmadı. Aşağıdaki eski Faz 1–7 ve run notları tarihsel kayıt olarak kalır. `hourly_pruner.yml` videoları silebilir ve `draft_publisher.yml` taslakları PUBLIC yapabilir; geliştirme için bu workflow'lar tetiklenmemelidir.
+> Korunacak mevcut gerçek Gemini Web kanıtı: [44262444017](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44262444017), SHA `57166f8`, 58 kelime/5 sahne/3 claim, `draft_only=true`, `publish=false`; bu önceki successful run yeni Faz 3 code'u çalıştırmadı. Eski CI [44263321930](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44263321930) da prior HEAD success. Cookie-only Gemini Web, `GEMINI_COOK`, `GEMINI_API_KEY`, local fallback ve user-approved `partial` publication behavior korunur; secrets asla loglama/artifact'e koyma.
 >
-> Secret güvenliği: Secret değerlerini asla görüntüleme, loglama veya artifact'e yazma. Bu oturumdaki GitHub connector Secrets API uçlarını desteklemediğinden secret isimlerinin varlığı doğrulanamadı. Bu konuda tahmin yürütme.
-
----
-
-# 🤖 AI_HANDOFF.md — Yapay Zeka Devir Teslim ve Operasyon Kılavuzu
-
+> Hemen sonraki adımlar: tests/syntax/YAML review + `git diff --check`; push sonrası yalnız publish-free `.github/workflows/ubuntu_26_test.yml` run'ını doğrula; sonra `.github/workflows/topic_history_persistence_probe.yml` iki ayrı dispatch ile `reserve` ve aynı `probe_id` üzerinde `verify` yapıp pending entry'nin ikinci run'da görüldüğünü ve release edildiğini kanıtla. **`daily_shorts.yml`, `hourly_pruner.yml`, `draft_publisher.yml` tetikleme.** Gerçek CI + two-run proof olmadıkça Faz 3 kabul edildi deme. Yeni HTTP canonical-page probe bu oturumda başarılı; HTTP probe Gemini model run'ı değildir.
+>
+> Secret güvenliği: Secret değerlerini asla görüntüleme, loglama veya artifact'e yazma. Credential path `/home/user/repo_review/jeton/github_erisim.json` gizlidir, repoya ekleme. `hourly_pruner.yml` videoları silebilir, `draft_publisher.yml` PUBLIC yapabilir.
 > **Faz 15:** [Canlı plan ve TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md). 08:39 UTC HAR Studio envanterinde 58 PUBLIC + 3 taslak; PUBLIC kapaklar ve örnek kareler, taslak önizlemeleri incelendi. Baştan sona video/ses ve iddia doğrulaması yapılmadı. Gerçek #123 yükleme işi PUBLIC başarılı, workflow geneli cron-kick iptal; günlük özel kapak kotası dolu ve hiçbir mevcut kapak değiştirilmedi. Gemini kare eşleşmesi canlı örnekte yanlış pozitif olduğundan otomatik kabul varsayılan kapalı, test amaçlı istisna dışında yerel temsili karta düşülür. Kullanıcı kota doluyken YouTube otomatik kapağıyla yayını seçti; ücretli API açma. 58 PUBLIC ID için yüklenmemiş temsili adaylar var; iki final short konusu yalnız otomatik altyazıdan alındı, ses doğrulaması gerekir. `41996283537` tek olumsuz gerçek örnekte ret success; otomatik kare kabulünü tek teste bakarak açma.
 
 > **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı önceki silme isteğini değiştirerek tüm taslakların PUBLIC yayınını seçti. 26 mevcut video Studio’da aynı ID üzerinden PUBLIC doğrulandı; silme yapılmadı. [Kanıt listesi](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; içerik tekrarı, görsel uyumu ve açıklamalar çözülmedi. Aktif otomasyon/pruner değiştirilmedi. Önceki bloklar tarihsel kanıttır.
@@ -16,7 +13,7 @@
 
 > **Faz 14:** Kullanıcı ücretli AI görsel API kullanımını reddetti; [plan](docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md). Google API key GitHub Secrets içinde; değerini asla gösterme. Şu an ücretsiz proje olduğu Studio UI üzerinden gözlendi; API görüntü üretimi ücretsiz değildir.
 
-> **Son Güncelleme:** `2026-11-18` (Gemini Web content route main.py'ye bağlandı; canlı oturum/CI doğrulaması bekliyor)
+> **Son Güncelleme:** `2026-11-18` (Faz 3 local implementation + tests; CI/two-run persistence proof pending; acceptance gate açık)
 > **Hedef Kitle:** Bu projeyi devralacak bir sonraki Yapay Zeka Ajanı (Arena Agent, Claude Code, Cursor, Codex vb.) veya Geliştirici.
 
 Bu belge, projeyi devralan bir yapay zekanın **sıfır tahmin, sıfır deneme-yanılma ve sıfır güvenlik ihlali** ile 30 saniye içinde sistemi anlayıp geliştirmeye devam edebilmesi için hazırlanmıştır.
@@ -150,18 +147,15 @@ curl -X POST \
 
 ---
 
-## 6. Sıradaki Faz Yol Haritası (Faz 8 ve Sonrası İçin Öneriler)
+## 6. Sıradaki Güvenli Adımlar (Faz 3 kabulünü tamamla)
 
-Bir sonraki yapay zeka ajanının doğrudan başlayabileceği geliştirmeler:
+1. Working tree diff'i code-review et, targeted tests (`tests/test_phase3_fact_checks.py`, `tests/test_topic_history.py`, `tests/test_gemini_web_story.py`, `tests/test_script_json_schema.py`) ve `git diff --check` çalıştır.
+2. Yalnız publish-free Ubuntu 26 validation workflow'u push/CI ile doğrula; run URL/SHA ve sonucu TODO/README/ARCHITECTURE'a ekle.
+3. `topic_history_persistence_probe.yml`'i iki ayrı Actions run olarak dispatch et: önce `phase=reserve`, sonra aynı `probe_id` ile `phase=verify`. İkinci run pending blob'u GitHub Contents API'den okur, release eder; `.used_topics.json` used history'ye test başlığı eklenmemelidir. İki run linkini ve outcome'u kaydet.
+4. CI veya two-run proof başarısız/eksikse Faz 3 gate open bırak. Yalnız ikisi de başarılıysa acceptance review yap; prod workflow still not to trigger.
+5. Faz 3 acceptance sonrasında Faz 4 sahne-medya semantik uygunluğu ve timing/media QC planlanabilir.
 
-1. **Faz 8 — Kendi Kendini Eğiten Analitik Geri Besleme Döngüsü (`analytics_scraper.js`):**
-   - Playwright ile `https://studio.youtube.com/channel/UCBZVbwc7s7TeUCcOaN58oHQ/analytics` sayfasından son 10 Shorts videosunun **İzlenme Sayısı**, **Ortalama Görüntüleme Yüzdesi (Retention %)** ve **Geçme/İzleme Oranı (Viewed vs Swiped Away)** metriklerini çekip `analytics_report.json` dosyasına kaydetmek.
-   - `content_engine.py` içindeki LLM sistem istemine (prompt) en yüksek tutma oranına sahip kanca (`hook`) kalıplarını besleyerek kanalın kendi kendini optimize etmesini sağlamak.
-2. **Gemini Web cookie dry-run ve kaynak/semantik kalite tamamlaması:**
-   - `main.py` Gemini Web route'a bağlandı. Sonraki güvenli adım, yayın yapmayan `free_gemini_text_probe.yml` dry-run'ını kullanıcı onayıyla çalıştırıp gerçek cookie ve JSON artifact'i doğrulamaktır; ardından claim entailment doğrulaması, topic history kalıcılığı, scene timing/media QC tamamlanmalıdır. Cookie başarısız olduğunda paid API yoluna geçilmez.
-3. **2. ve 3. Bağımsız YouTube Kanallarının Bağlanması:**
-   - Farklı nişlerde (ör. Kanal 1: *Tarih*, Kanal 2: *Uzay & Bilim*, Kanal 3: *Psikoloji & İlginç Bilgiler*) yeni Gmail/YouTube kanalları açıldığında `COOKIES_JSON_2` / `STORAGE_STATE_JSON_2` ve `_3` secret'ları güncellenerek 3 ayrı kanala eşzamanlı yayın yapılabilir.
-
+Gemini Web cookie dry-run `44262444017` önceki başarılı kanıttır; sırf bu Faz 3 değişikliği için tekrar tetiklenmesi şart değildir. Gerçek YouTube üretim/yayın, pruner veya publisher workflow'u kullanılmaz.
 ---
 
 ## 7. Faz 10 — Otonom "Ölü Ağırlık" Temizleyici (Auto-Pruner) Operasyon Protokolü
@@ -249,7 +243,7 @@ Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olama
 - Kare seçimi: ffprobe ile süre bulunur → %22–78 aralığında 5 aday kare → en yüksek kontrastlı (grayscale stddev) kare seçilir → 1080×1920'e merkezden kırpılır.
 - Video yoksa/ffmpeg yoksa metin kartına düşülür (zorunlu kapak teslimi yine de yapılır).
 - Run #58, 13.3 öncesindeki yerel yedeği kanıtlar; yeni kare seçiminin canlı Studio sonucu henüz kanıtlanmadı. Kontrast ölçümü konu görünürlüğü, yazısız kare veya bitiş kartı dışlama garantisi değildir.
-- 13.4 henüz uygulanmadı: `.used_topics.json` ignore edildiğinden CI koşularında kalıcı değil; sayısal kanal seçimi eski başlıkları kontrol etmiyor. Ayrıntılı güvenli uygulama ve gerçek veri şartları için `docs/FAZ13_AUDIT_PLAN.md`.
+- Tarihsel 13.4 audit: `.used_topics.json` title-only state ve eski CI gözlemleri. Gemini Faz 3 bu dosyaya CAS topic/core-claim reservations ekledi; gerçek two-run Actions proof henüz pending, ayrı Faz13 audit planı bu proof yerine geçmez.
 - Gerçek veri hazırlığı: `scripts/audit_public_feed.py` ve `docs/evidence/*2026-11-04.json`. 16:59:49 UTC kamuya açık akışında 7 kayıt; 16:59:00 UTC Studio pruner raporunda 8 korunan video; `8_bf4eAz3a0` akışta yok. Farklı zamanlı görüntüler, neden bilinmiyor. Akış tek başına güvenilir tam geçmiş değildir. Betik salt okunur; üretim iş akışına bağlı değil. Başlık denetimi `scripts/audit_repeat_candidates.py` + `docs/evidence/repeat_candidates_2026-11-04.json`: Mariana 1.000, denizanası 0.125; salt Jaccard eşik yaklaşımı yetersiz. Script sayıları çıkarır, rakam değişikliğini yeni açı olarak kabul etmez. `scripts/build_verified_history.py` + `docs/evidence/observed_history_2026-11-04_1711.json` kanal eşleşmesini doğrulayarak 7 kayıtlı Atom görüntüsü ve 8 kayıtlı gerçek Studio raporunu 9 ayrı ID halinde birleştirir. Studio gözlem zamanı yayın zamanı değildir. `BlrZMXlIbU0` ve `T_yIHvyUY2Y` aynı Antikythera başlığını taşır. Bu offline gözlem geçmişi üretime bağlı/kalıcı koruma değildir.
 
 ## 9. Faz 11 — Operasyon Düzeltmesi: "10 kanal aynı anda" ve "boşuna iş yükü"
@@ -360,7 +354,7 @@ Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olama
 - Run #90 (`41939518221`) `studio_error.png`: zorunlu çocuklara özel seçimi yanıtlanmamış, İleri pasif; PUBLIC seçicisi timeout. Sadece bu koşunun nedeni kanıtlıdır.
 - `youtube_studio_uploader.js`: hedef radyo görünür olana kadar bekler, seçimi `aria-checked` ile doğrular; PUBLIC için de aynı kontrol. Yayın sonrası yeni video ID'sinin Studio satırında PUBLIC ikon ve etiketi aranır; yoksa `publish_unverified`, yeniden yükleme öncesi insan kontrolü. Yerel eski video ID temizlenir.
 - Studio'da gerçek taslakta çocuk seçimi `true`; eski PUBLIC video `1IAgNqsjgvQ` üzerinde görünürlük seçicisi doğrulandı. Yeni versiyonla uçtan uca yayın henüz kanıtlanmadı.
-- Tarihsel 5 Kasım notu: o tarihte CI `--force-fallback` kullanıyordu. 18 Kasım'dan itibaren main Gemini Web cookie-only üretim yoluna geçti; gerçek cookie/CI kanıtı bekleniyor. `docs/AI_VIDEO_HERO_PROMPT.md` ayrı medya arama yönergesidir; sahne-medya semantik uygunluğu hâlâ açık.
+- Tarihsel 5 Kasım notu: o tarihte CI `--force-fallback` kullanıyordu. Gemini Web cookie-only route'unun gerçek, yayın yapmayan başarılı run'ı 44262444017'dir. Yeni Faz 3 code için Ubuntu 26 CI/two-run persistence proof pending. `docs/AI_VIDEO_HERO_PROMPT.md` ayrı medya arama yönergesidir; scene-to-media semantic suitability hâlâ açık.
 - Cleanup sırasında `daily_shorts.yml` geçici durduruldu; run #96 iptal edildi ve workflow tekrar etkinleştirildi. Studio 25 taslak/0 başka kayıt seçimine rağmen kimlik doğrulaması istedi; hiçbiri silinmedi.
 - Run #97 (`41948576364`): build-and-upload başarılı, `7DULxjp6PsQ` Studio PUBLIC doğrulandı ve girişsiz player OK. Cron-kick yeni 01:45 UTC zincirini tetiklerken run geneli cancelled.
-- Canlı videoda örneklenen sahneler (uçak, yan dönmüş kıyı, alakasız yazılı grafik) Zanzibar savaşına uymuyor; kalite başarısız. `WKYwF96hQzg` aynı başlığın başka PUBLIC videosu. 13.4 tekrar koruması henüz yok.
+- Tarihsel 13.4/kalite bulgusu: canlı videodaki uçak, yan dönmüş kıyı ve alakasız yazılı grafik Zanzibar savaşına uymuyordu; kalite başarısızdı. `WKYwF96hQzg` aynı başlığın başka PUBLIC videosu. Sonraki Gemini Faz 3 kodu tekrar korumasını ekledi; gerçek cross-Actions proof bekleniyor.

@@ -1,0 +1,51 @@
+name: Topic History Persistence Probe (no publishing)
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Run reserve first, then verify with a second Actions run"
+        required: true
+        type: choice
+        options: [reserve, verify]
+      probe_id:
+        description: "Same 8-48 character lowercase ID on both runs"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  persistence-proof:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Python setup
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Reserve or verify across Actions runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TOPIC_HISTORY_REF: main
+          PHASE: ${{ inputs.phase }}
+          PROBE_ID: ${{ inputs.probe_id }}
+        run: |
+          set -euo pipefail
+          python scripts/topic_persistence_probe.py "$PHASE" "$PROBE_ID"
+
+      - name: Evidence summary
+        if: always()
+        run: |
+          echo "### Topic History Persistence Probe" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Phase: ${{ inputs.phase }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Probe ID: ${{ inputs.probe_id }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Publishing/uploader workflows: not invoked" >> "$GITHUB_STEP_SUMMARY"

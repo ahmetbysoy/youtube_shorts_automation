@@ -77,9 +77,11 @@
         "status": {
           "enum": [
             "verified",
+            "partial",
             "partially_verified",
             "unverified",
-            "rejected"
+            "rejected",
+            "unavailable"
           ]
         },
         "source_ids": {
@@ -310,8 +312,11 @@
           "properties": {
             "status": {
               "enum": [
-                "passed",
+                "verified",
                 "partial",
+                "rejected",
+                "unavailable",
+                "passed",
                 "failed",
                 "not_run"
               ]

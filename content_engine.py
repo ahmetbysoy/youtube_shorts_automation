@@ -38,6 +38,7 @@ import random
 import re
 import subprocess
 import sys
+import tempfile
 import unicodedata
 import uuid
 from datetime import datetime, timezone
@@ -2205,20 +2206,41 @@ def load_recent_titles() -> list[str]:
         return []
     try:
         data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
-        return data[-25:] if isinstance(data, list) else []
-    except (json.JSONDecodeError, OSError) as exc:
-        print(f"[UYARI] HISTORY_FILE okunamadı ({HISTORY_FILE}): {exc}", file=sys.stderr)
-        return []
+        if isinstance(data, list):
+            if not all(isinstance(item, str) for item in data):
+                raise ValueError("legacy title history contains non-string values")
+            return data[-25:]
+        if isinstance(data, dict) and data.get("version") == 2:
+            from scripts.topic_history import load_recent_titles as load_topic_titles
+            return load_topic_titles(HISTORY_FILE)
+        raise ValueError("unsupported history format")
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        raise RuntimeError(f"Konu geçmişi okunamadı; tekrar üretimi fail-closed durduruldu ({type(exc).__name__}).") from None
 
 
-def save_recent_title(title: str) -> None:
+def save_recent_title(title: str, scenario: dict[str, Any] | None = None) -> None:
+    # In Actions, reserve against the repository's latest Contents API blob
+    # before continuing. This commit is the cross-run compare-and-swap lock.
+    if os.environ.get("GITHUB_REPOSITORY") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN"):
+        from scripts.topic_history import make_store_from_environment, reserve_candidate
+        reserve_candidate(title, scenario or {}, path=HISTORY_FILE, store=make_store_from_environment())
+        return
     history = load_recent_titles()
     if title not in history:
         history.append(title)
-    HISTORY_FILE.write_text(
-        json.dumps(history[-25:], ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    fd, temp_name = tempfile.mkstemp(prefix=HISTORY_FILE.name + ".", suffix=".tmp", dir=HISTORY_FILE.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(history[-25:], handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp_name, HISTORY_FILE)
+    finally:
+        try:
+            os.unlink(temp_name)
+        except FileNotFoundError:
+            pass
 
 
 PRUNE_STATE_FILE = Path(__file__).parent / "prune_state.json"
@@ -3076,14 +3098,14 @@ def generate_scenario(
         scenario = pick_fallback_scenario(
             recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
         )
-        save_recent_title(scenario["title"])
+        save_recent_title(scenario["title"], scenario)
         return scenario
 
     if gemini_web_only:
         try:
             print("[LLM] Ücretsiz Gemini Web cookie oturumu deneniyor; ücretli/API anahtarı sağlayıcısı kullanılmayacak.")
             scenario = generate_gemini_web_scenario(concept, recent_titles)
-            save_recent_title(scenario["title"])
+            save_recent_title(scenario["title"], scenario)
             return scenario
         except Exception as exc:
             # İstemci istisnaları oturum verisi taşıyabileceğinden yalnız türünü yaz.
@@ -3094,7 +3116,7 @@ def generate_scenario(
             scenario = pick_fallback_scenario(
                 recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
             )
-            save_recent_title(scenario["title"])
+            save_recent_title(scenario["title"], scenario)
             return scenario
 
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
@@ -3113,7 +3135,7 @@ def generate_scenario(
             try:
                 print("[LLM] Birincil sağlayıcı deneniyor: Groq API (llama-3.3-70b-versatile)...")
                 scenario = call_groq_llm(system_prompt, user_prompt, groq_key)
-                save_recent_title(scenario["title"])
+                save_recent_title(scenario["title"], scenario)
                 return scenario
             except Exception as exc:
                 print(f"[UYARI] Groq API hatası/kotası ({exc}); ikinci katmana geçiliyor...", file=sys.stderr)
@@ -3123,7 +3145,7 @@ def generate_scenario(
             try:
                 print("[LLM] İkincil sağlayıcı deneniyor: Google Gemini API (gemini-2.0-flash-lite)...")
                 scenario = call_gemini_llm(system_prompt, user_prompt, gemini_key)
-                save_recent_title(scenario["title"])
+                save_recent_title(scenario["title"], scenario)
                 return scenario
             except Exception as exc:
                 print(f"[UYARI] Gemini API hatası/kotası ({exc}); yedek senaryo havuzuna geçiliyor...", file=sys.stderr)
@@ -3138,7 +3160,7 @@ def generate_scenario(
         scenario = pick_fallback_scenario(
             recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
         )
-        save_recent_title(scenario["title"])
+        save_recent_title(scenario["title"], scenario)
         return scenario
     except Exception as exc:
         raise RuntimeError(f"Kritik hata: Yedek senaryo havuzu bile yüklenemedi: {exc}") from exc

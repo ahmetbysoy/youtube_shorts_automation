@@ -1,6 +1,6 @@
 # Gemini Tabanlı Otonom Shorts Üretimi — Mimari ve Uygulama Planı
 
-> Durum (2026-11-18): **Gemini Web cookie-only route `main.py` → `content_engine.py` içine bağlandı; storyboard ve kaynak/fact-check metadata `script.json` v2'ye taşınıyor. Push sonrası yayın yapmayan Ubuntu 26 doğrulama run'ı 44200069203 in progress; gerçek cookie/üretim koşusu yapılmadı. Semantik doğrulama, Actions koşuları arası konu-ledger ve tam sahne medya QC açık.**
+> Durum (2026-11-18, Faz 3 implementation): **Gemini Web cookie-only route, backward-compatible v2 claim statuses, independent exact-quote/semantic checks, numeric/unit comparison, URL/page identity checks, and Contents API SHA-CAS topic reservations are implemented in the working tree. Targeted local suites pass (35 tests); real Wikipedia HTTP probe returned 200 with canonical page identity match. New Ubuntu 26 CI and the two-run Actions persistence probe have not yet run; Faz 3 acceptance is NOT passed. No production/publisher workflow was triggered.**
 > Kapsam: Mevcut YouTube Shorts otomasyonunu Gemini destekli, sahne bazlı ve kalite kapılı içerik üretimine geçirmek.  
 > Kural: Bu belge planı tanımlar. Bir iş ancak kod, test ve gerekli doğrulama kanıtı varsa tamamlandı sayılır.
 
@@ -14,7 +14,7 @@ Başarı yalnızca MP4 üretmek değildir. İçerik yeni ve doğrulanabilir olma
 
 | Dosya | Şu anki rol | Doğrulanan bulgu |
 |---|---|---|
-| main.py | Ana orkestrasyon | `content_engine.py --gemini-web-only` çağrılıyor; Gemini Web taslağı cookie/source/schema kontrollerinden geçerse kullanılıyor, hata durumunda mevcut fallback devrede. Canlı cookie koşusu doğrulanmadı. |
+| main.py | Ana orkestrasyon | `content_engine.py --gemini-web-only` çağrılıyor; başarılı gerçek Gemini Web dry-run [44262444017](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44262444017) mevcut. Yeni Faz 3 doğrulamasında kritik rejected iddia üretimi durdurur, hata halinde mevcut fallback korunur. |
 | content_engine.py | Konu/senaryo, seslendirme ve script.json | Hazır senaryo havuzu, LLM prompt/sağlayıcı yolları ve visual_keywords alanı var. |
 | src/media_processing/media_processor.py | Medya bulma, altyazı ve FFmpeg montajı | `storyboard[].visual_query` varsa bunları aramada tercih ediyor; scene duration alignment, alternatives/retries ve media licensing QC henüz tamam değil. |
 | video_fetcher.js | Tarayıcı tabanlı stok medya araması | Pixabay/Pexels arama akışında kullanılıyor. |
@@ -48,21 +48,23 @@ Başarı yalnızca MP4 üretmek değildir. İçerik yeni ve doğrulanabilir olma
 - 17 Kasım 2026: `scripts/gemini_web_text_probe.py` ve `free_gemini_text_probe.yml` cookie tabanlı, yalnızca taslak JSON üreten manuel teste çevrildi. `GEMINI_API_KEY` bu testte kullanılmaz. Çıktı şema/kelime/görsel arama alanı kontrollerinden geçer; yayın ve TTS adımı yoktur. `gemini_webapi==2.1.1` sürümü sabitlendi. Cookie parser uyumluluk düzeltmesi CI run `44171572008` üzerinde 131 test + 8 alt test ile başarılı; gerçek cookie metin üretim testi henüz çalıştırılmadı.
 - `GEMINI_API_KEY` mevcut secret olarak kullanıcı kararıyla olduğu gibi bırakılır; yeni metin/storyboard tasarımı bu anahtara bağımlı olmayacaktır.
 - 18 Kasım 2026: `main.py` artık `--gemini-web-only` ile ana içerik motorunu çağırır; `daily_shorts.yml` `GEMINI_COOK` değerini process env'e verir. Hatalı/eksik cookie veya draft sorunu halinde mevcut fallback kullanılır; Groq/Gemini text API'ye geçiş yoktur. JSON v2'ye `sources`, `fact_check`, `storyboard` ve `prompt_version` aktarılır; media processor sahne `visual_query` alanını tercih eder.
-- Kullanıcı, kaynak alıntısı birebir eşleşmiş fakat bağımsız semantik doğrulaması olmayan `fact_check.status=partial` taslakların mevcut PUBLIC hattında devam etmesine açıkça izin verdi. Bu, iddianın anlamca doğrulandığı iddiası değildir. Canlı cookie, HTTP araştırma, CI ve PUBLIC sonucu bu kod değişikliğiyle doğrulanmadı.
+- Kullanıcı, `fact_check.status=partial` taslakların mevcut PUBLIC hattında devam etmesine açıkça izin verdi; bu yayın politikası Faz 3'te değiştirilmez ve `partial` hiçbir zaman `verified` diye yazılmaz. Yeni semantik denetim exact quote'tan ayrıdır: known relation/subject lexical match ile sayısal/date/unit karşılaştırması kullanır; düşük kanıt `partial`, çelişkili/unsupported kritik claim üretim ret/fallback olur. Bu muhafazakâr, sözlük/rule tabanlı kontrol genel amaçlı insan/LLM entailment kanıtı değildir; tanınmayan ilişkiyi `verified` etmez.
 - **Mevcut legacy istisna:** `daily_shorts.yml` `GEMINI_API_KEY` ve `GEMINI_FREE_VISION_ENABLED` değerlerini `generate_fallback_thumbnail.py` / `gemini_frame_selector.py` yoluna aktarır. Bu, yalnız mevcut kareleri analiz eden ayrı bir API yoludur; repository variable'ın anlık değeri bu bağlantıyla doğrulanamadı. Kullanıcı onayı olmadan mevcut üretim davranışı değiştirilmez.
 - Ücretli API, ücretli görsel/video üretimi veya billing açılması yeni mimarinin parçası değildir. Cookie oturumu bozulursa sistem ücretli API'ye sessizce düşmez; güvenli yedek veya durdurma uygulanır.
 
-### 4.2 Araştırma ve doğruluk
-- Gemini'nin ürettiği kaynak adı/URL'si tek başına kanıt değildir.
-- Kaynak erişilebilirliği ve içerikle ilişkisi kontrol edilir; kritik tarih/sayı/ölçü iddiaları kaynak metniyle karşılaştırılır.
-- Doğrulanamayan iddia çıkarılır veya konu değiştirilir.
-- Kaynak doğrulama başarısızsa video yayın kuyruğuna ilerlemez.
-- Bilimsel belirsizlik, tahmin ve canlandırma açıkça belirtilir.
+### 4.2 Araştırma ve doğruluk — Faz 3 implementasyonu
+- Exact `quote_match` (`evidence_quote` ham araştırma extract'inde birebir) ile `semantic_support` ayrı alanlardır.
+- `fetch_topic_research` Wikipedia REST summary'yi ve bildirilen canonical article URL'sini ayrı GET ile doğrular: HTTP status, final host/path, HTML canonical URL ve title/page identity eşleşmelidir; boş/bozuk extract, redirect veya erişim hatası konu yeniden seçimini/durdurmayı sağlar.
+- `semantic_fact_check.py` ücretsiz/offline deterministic kontrol uygular: Türkçe/İngilizce normalize edilmiş claim/source terimleri, ilişki grupları ve sayısal değer/tarih/birim karşılaştırması (km/m/mile, km/h/m/s/mph, day/hour/year, %, mass, temperature); quote mismatch, relation mismatch, negation mismatch veya numeric/unit mismatch `rejected` olur. Bilinmeyen ilişki `verified` olamaz; `partial` mevcut yayın onayı kapsamında korunur.
+- Gemini'ye kendi iddiasını onaylatma, paid Gemini/Groq/text API yoktur. Her claim sonucunda exact quote, semantic support, numeric checks, method ve reason codes ayrı yazılır. Rejected critical claims script'e aktarılmaz; draft üretimi durur ve mevcut fallback/reselection davranışı işler.
+- V2 schema yeni `verified`, `partial`, `rejected`, `unavailable` değerlerini ekler; eski `passed`/`failed`/`not_run` ve claim durumları geriye uyumludur.
 
-### 4.3 Tekrar önleme ve kalıcı durum
-- GitHub Actions çalışma alanındaki geçici JSON dosyası kalıcı geçmiş sayılmaz.
-- SQLite tek başına CI koşuları arasında kalıcı değildir; kullanılacaksa güvenli kalıcı depolama/restore yöntemi ayrıca tasarlanır.
-- Artifact/cache tek başına transaction garantili veritabanı değildir. Depolama seçimi çakışma ve eşzamanlı çalışma testleriyle yapılır.
+### 4.3 Tekrar önleme ve kalıcı durum — Faz 3 implementasyonu
+- Mevcut `.used_topics.json` array'i v2 store'a yükseltilirken tüm eski title'lar `used_titles` ve legacy-derived records olarak korunur.
+- Store `normalized topic`, `category`, `entities`, core claim term sets, scenario tokens, title history ve `pending` reservations taşır. Local history okunamaz/bozuksa fail-closed.
+- `daily_shorts.yml` üretim adımına `GITHUB_TOKEN` yalnız process env olarak verir. `content_engine.save_recent_title` candidate'i GitHub Contents API `sha`-guarded CAS ile üretim devam etmeden rezerve eder; 409/422 conflict sonrasında reread/re-evaluate kontrollü retry yapılır. Orchestrator success: finalize `used`; failure: pending release; 30 dk orphan TTL.
+- `.github/workflows/topic_history_persistence_probe.yml` iki manuel dispatch (önce `reserve`, sonra aynı `probe_id` ile `verify`) için vardır; yalnız `.used_topics.json` geçici `pending` entry'sini test eder ve ikinci run'da siler, yayın workflow'u çağırmaz. Bu çapraz-run probe henüz çalıştırılmadı; gerçek kalıcılık kanıtı olmadan kabul yok.
+- Yerel Phase 3 test suite ve real HTTP check başarılı; new CI/action run pending.
 - Tekrar kontrolü yalnız başlığa değil; normalize konuya, ana iddialara, varlıklara ve içerik özetine bakar.
 - Geçmiş okunamazsa veya tekrar kararı belirsizse sistem durur.
 - Paralel workflow'ların aynı konuyu seçmesini önlemek için atomik rezervasyon/lock ve idempotency gerekir.
@@ -147,11 +149,16 @@ Bu tablo hedef sözleşmedir; mevcut script.json şeması değildir. Nihai şema
 **Kabul:** Cookie oturumuyla gerçek metin/storyboard yanıtı geçerli şemada doğrulanır; API key kullanılmaz; PUBLIC yayın yapılmaz.
 
 ### Faz 3 — Araştırma ve tekrar koruması
-- Kaynak fetch/parse/iddia eşleştirme katmanı.
-- Kalıcı geçmiş ve eşzamanlı üretim rezervasyonu.
-- Konu/iddia/varlık benzerliği ve güvenli durdurma.
+**Kod/test durumu: implemented in working tree; acceptance gate OPEN until CI and a real two-run Actions persistence proof.**
+- [x] URL/HTTP/canonical article identity validation; bad/empty source fails safely.
+- [x] Exact quote check separate from semantic relation + numeric/date/unit checks; v2 four-state statuses with legacy compatibility.
+- [x] Topic/category/entity/core-claim/scenario/title fingerprints; preserve old `.used_topics.json` titles; fail-closed reads.
+- [x] GitHub Contents SHA-CAS reservation with bounded conflict retry, success commit, failed-run release and stale reservation TTL.
+- [x] Targeted mocked tests for 14 acceptance scenarios; local real Wikipedia HTTP check HTTP 200 + canonical identity.
+- [ ] Ubuntu 26 publish-free CI for new code after push.
+- [ ] Two different Actions runs: `topic_history_persistence_probe.yml` reserve/verify, then confirm pending seen and safely released.
 
-**Kabul:** Tekrar, kaynak bozulması, geçmiş erişim hatası ve paralel workflow testleri geçer.
+**Kabul:** Unit tests and tests with mocks are necessary but insufficient. Close gate only after the publish-free CI is green and the two-run Actions persistence proof is green. Production/publisher/pruner workflows are not part of acceptance.
 
 ### Faz 4 — Sahne bazlı medya adaptörü
 - Mevcut sağlayıcı fonksiyonlarını ortak arayüze al.

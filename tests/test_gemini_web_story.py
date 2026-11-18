@@ -28,6 +28,7 @@ class TestGroundedGeminiStory(unittest.TestCase):
             "title": "Venus facts",
             "url": "https://en.wikipedia.org/wiki/Venus",
             "accessed_at": "2026-11-18T12:00:00+00:00",
+            "source_validation": {"status": "verified", "content_matches_page": True, "http_status": 200},
             "extract": (
                 "Venus completes one rotation in about 243 Earth days. "
                 "It completes one orbit around the Sun in about 225 Earth days. "
@@ -103,17 +104,22 @@ class TestGroundedGeminiStory(unittest.TestCase):
     def tearDown(self):
         self.tempdir.cleanup()
 
-    def test_response_contract_checks_research_and_marks_semantic_review_partial(self):
+    def test_response_contract_checks_exact_quotes_semantic_support_and_partial_rollup(self):
         draft = validate_grounded_response(
             json.dumps(self.raw, ensure_ascii=False), topic_slug=self.slug, research=self.research
         )
-        self.assertEqual(draft["fact_check"]["status"], "partial")
+        self.assertEqual(draft["fact_check"]["status"], "verified")
         self.assertEqual(len(draft["fact_check"]["claims"]), 3)
+        self.assertTrue(all(item["quote_match"] for item in draft["fact_check"]["claims"]))
+        self.assertTrue(all(item["semantic_support"] == "verified" for item in draft["fact_check"]["claims"]))
+        self.assertEqual(draft["fact_check"]["verification_method"], "deterministic_lexical_numeric_v1")
         self.assertTrue(draft["draft_only"])
         self.assertFalse(draft["publish"])
         script = draft_to_script_metadata(draft)
         self.assertEqual(script["visual_keywords"], [scene["visual_query"] for scene in self.raw["storyboard"]])
         self.assertEqual(len(script["sources"]), 1)
+        self.assertTrue(script["sources"][0]["validation"]["content_matches_page"])
+        self.assertEqual(script["sources"][0]["validation"]["http_status"], 200)
 
     def test_rejects_malformed_model_json_before_schema_or_network_side_effects(self):
         with self.assertRaises(json.JSONDecodeError):
@@ -164,19 +170,27 @@ class TestGroundedGeminiStory(unittest.TestCase):
     def test_fetch_research_requires_real_wikipedia_response_and_canonical_url(self):
         response = Mock()
         response.url = "https://en.wikipedia.org/api/rest_v1/page/summary/Venus"
+        response.status_code = 200
         response.json.return_value = {
             "title": "Venus",
             "extract": "Venus is a planet.",
             "content_urls": {"desktop": {"page": "https://en.wikipedia.org/wiki/Venus"}},
         }
+        page = Mock()
+        page.url = "https://en.wikipedia.org/wiki/Venus"
+        page.status_code = 200
+        page.text = '<html><head><title>Venus - Wikipedia</title><link rel="canonical" href="https://en.wikipedia.org/wiki/Venus" /></head></html>'
         session = Mock()
-        session.get.return_value = response
+        session.get.side_effect = [response, page]
         research = fetch_topic_research("Venus", session=session)
         self.assertEqual(research["title"], "Venus")
         self.assertIn("accessed_at", research)
-        session.get.assert_called_once()
+        self.assertTrue(research["source_validation"]["content_matches_page"])
+        self.assertEqual(session.get.call_count, 2)
 
         response.url = "https://example.invalid/redirect"
+        session.get.side_effect = None
+        session.get.return_value = response
         with self.assertRaisesRegex(ValueError, "alan adının dışına"):
             fetch_topic_research("Venus", session=session)
 

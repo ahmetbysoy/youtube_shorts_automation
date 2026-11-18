@@ -15,9 +15,15 @@ on:
       - 'youtube_studio_uploader.js'
       - 'scripts/embed_cover_frame.py'
       - 'content_engine.py'
+      - 'src/content_generation/**'
       - 'main.py'
       - 'scripts/validate_script_json.py'
       - 'scripts/gemini_web_text_probe.py'
+      - 'scripts/gemini_web_story.py'
+      - 'scripts/semantic_fact_check.py'
+      - 'scripts/topic_history.py'
+      - 'scripts/topic_persistence_probe.py'
+      - '.github/workflows/topic_history_persistence_probe.yml'
       - 'schemas/**'
       - 'requirements.txt'
       - 'tests/**'
@@ -88,8 +94,17 @@ jobs:
           ls -la /tmp/probe.mp4
           echo "- Altyazi montaj testi: BASARILI" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: "Faz 3: Semantik + Atomik Geçmiş Testleri (mock HTTP/API; yayın yok)"
+        run: python -m pytest -q tests/test_phase3_fact_checks.py tests/test_topic_history.py tests/test_gemini_web_story.py tests/test_script_json_schema.py
+
       - name: "Birim Testleri"
         run: python -m pytest -q tests
+
+      - name: "Faz 3 Probe Özeti"
+        run: |
+          echo "- Deterministik semantic_support, exact quote ve kaynak URL aidiyeti testleri: BASARILI" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Contents API SHA-conflict, eşzamanlı rezervasyon, fail-closed ve başarısız koşu release testleri: BASARILI" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Test HTTP/API çağrıları mock'tur; canlı HTTP ve Actions run'ları ayrı kanıttır." >> "$GITHUB_STEP_SUMMARY"
 
       - name: "Probe Ozeti"
         run: |

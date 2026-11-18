@@ -1,8 +1,9 @@
 """Grounded, publication-free Gemini Web story drafting helpers.
 
-Only the existing Gemini Web cookie client is used. Research is fetched from a
-real Wikipedia REST page; this module deliberately marks claim checking as
-partial because substring checks cannot prove semantic entailment.
+Only the existing Gemini Web cookie client is used. Research uses the free
+Wikipedia REST summary plus an HTTP-checked canonical article page. Exact quote
+matching is independent from conservative deterministic relation/quantity checks;
+unsupported critical claims stop the draft, while ambiguity remains ``partial``.
 """
 from __future__ import annotations
 
@@ -18,9 +19,11 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 import requests
+
+from scripts.semantic_fact_check import assess_claim
 from jsonschema import Draft202012Validator, FormatChecker
 
 from content_engine import WIKI_SEED_TOPICS, extract_json_object
@@ -149,7 +152,7 @@ def finish_topic_reservation(
         _write_ledger(ledger_path, ledger)
 
 
-def fetch_topic_research(topic_slug: str, *, session: Any = requests) -> dict[str, str]:
+def fetch_topic_research(topic_slug: str, *, session: Any = requests) -> dict[str, Any]:
     """Fetch a current public source excerpt and reject redirects off Wikipedia."""
     url = WIKIPEDIA_API.format(quote(topic_slug.replace("_", " "), safe=""))
     try:
@@ -171,14 +174,50 @@ def fetch_topic_research(topic_slug: str, *, session: Any = requests) -> dict[st
     page_url = payload.get("content_urls", {}).get("desktop", {}).get("page") if isinstance(payload, dict) else None
     if not all(isinstance(value, str) and value.strip() for value in (title, extract, page_url)):
         raise ValueError("Araştırma yanıtı başlık, içerik veya kaynak URL'si içermiyor.")
-    if not page_url.startswith("https://en.wikipedia.org/wiki/"):
+    parsed_page = urlparse(page_url)
+    if parsed_page.scheme != "https" or parsed_page.hostname != "en.wikipedia.org" or not parsed_page.path.startswith("/wiki/"):
         raise ValueError("Araştırma kaynağının kanonik URL'si geçersiz.")
+    try:
+        page_response = session.get(
+            page_url,
+            headers={"User-Agent": "ShortsResearchBot/1.0 (publication-free factual draft)"},
+            timeout=(5, 15),
+            allow_redirects=True,
+        )
+        page_response.raise_for_status()
+        page_final = urlparse(str(page_response.url))
+        if page_final.scheme != "https" or page_final.hostname != "en.wikipedia.org" or not page_final.path.startswith("/wiki/"):
+            raise ValueError("Kaynak sayfası izin verilen Wikipedia sayfasında sonlanmadı.")
+        html = page_response.text or ""
+        canonical_tag = next((tag for tag in re.findall(r"<link\b[^>]*>", html, re.I) if re.search(r"\brel=[\"\']canonical[\"\']", tag, re.I)), "")
+        canonical_match = re.search(r"""href=["\']([^"\']+)""", canonical_tag, re.I) if canonical_tag else None
+        if not canonical_match:
+            raise ValueError("Kaynak sayfasında kanonik kimlik doğrulanamadı.")
+        canonical = urlparse(canonical_match.group(1))
+        if canonical.hostname != "en.wikipedia.org" or canonical.path.rstrip("/") != page_final.path.rstrip("/"):
+            raise ValueError("Kaynak içeriğinin kanonik sayfa kimliği URL ile uyuşmuyor.")
+        title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
+        html_title = re.sub(r"\s+", " ", title_match.group(1)).strip() if title_match else ""
+        if not html_title or title.strip().casefold() not in html_title.casefold():
+            raise ValueError("Kaynak başlığı alınan sayfa içeriğiyle uyuşmuyor.")
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise ValueError(f"Kaynak sayfası erişilemedi/doğrulanamadı ({type(exc).__name__}).") from None
     return {
         "source_id": _topic_id(topic_slug),
         "title": title.strip(),
         "extract": extract.strip(),
         "url": page_url,
         "accessed_at": _utc_now().isoformat(),
+        "source_validation": {
+            "status": "verified",
+            "http_status": int(getattr(page_response, "status_code", 200)),
+            "final_url": str(page_response.url),
+            "canonical_url": canonical_match.group(1),
+            "page_title": html_title,
+            "content_matches_page": True,
+        },
     }
 
 
@@ -211,7 +250,7 @@ def select_researched_topic(
     *,
     recent_titles: list[str] | None = None,
     session: Any = requests,
-) -> tuple[str, str, dict[str, str]]:
+) -> tuple[str, str, dict[str, Any]]:
     """Try unused source seeds, excluding durable recent title history."""
     titles = recent_titles or []
     slugs = [slug for slug in WIKI_SEED_TOPICS if not _topic_appears_in_recent_titles(slug, titles)]
@@ -222,7 +261,8 @@ def select_researched_topic(
         try:
             research = fetch_topic_research(slug, session=session)
             return slug, reservation_id, research
-        except ValueError:
+        except ValueError as exc:
+            print(f"[SOURCE_CHECK] unavailable id={_topic_id(slug)} reason={type(exc).__name__}; trying next seed.")
             finish_topic_reservation(slug, reservation_id, commit=False, ledger_path=ledger_path)
             slugs.remove(slug)
     raise ValueError(f"Seed konularının hiçbiri araştırılamadı ({len(attempted)} konu denendi).")
@@ -236,7 +276,7 @@ def validate_grounded_response(
     raw_text: str,
     *,
     topic_slug: str,
-    research: dict[str, str],
+    research: dict[str, Any],
 ) -> dict[str, Any]:
     """Validate the raw Gemini draft contract and source-quote relationships."""
     raw = extract_json_object(raw_text)
@@ -250,8 +290,21 @@ def validate_grounded_response(
         raise ValueError(f"Gemini içerik sözleşmesi geçersiz ({field}): {first.message}")
 
     expected_id = _topic_id(topic_slug)
-    if raw["topic_source_id"] != expected_id or research["source_id"] != expected_id:
+    if raw["topic_source_id"] != expected_id or research.get("source_id") != expected_id:
         raise ValueError("Üretilen konu, araştırma kaynağıyla eşleşmiyor.")
+    parsed_source = urlparse(str(research.get("url", "")))
+    source_validation = research.get("source_validation")
+    if (
+        parsed_source.scheme != "https"
+        or parsed_source.hostname != "en.wikipedia.org"
+        or not parsed_source.path.startswith("/wiki/")
+        or not isinstance(source_validation, dict)
+        or source_validation.get("status") != "verified"
+        or source_validation.get("content_matches_page") is not True
+    ):
+        raise ValueError("Kaynak URL erişilebilirliği ve sayfa aidiyeti bağımsız olarak doğrulanmadı.")
+    if not isinstance(research.get("extract"), str) or not research["extract"].strip():
+        raise ValueError("Kaynak metni boş veya bozuk; konu yeniden seçilmeli.")
     script = raw["script_text"].strip()
     count = _word_count(script)
     if not 55 <= count <= 95:
@@ -261,11 +314,34 @@ def validate_grounded_response(
     if raw["cta_line"].strip() not in script:
         raise ValueError("CTA, senaryo metninin içinde birebir bulunmuyor.")
 
+    checked_claims = []
     for index, claim in enumerate(raw["claims"], start=1):
         if claim["script_span"].strip() not in script:
             raise ValueError(f"claim {index}: script_span senaryonun içinde birebir bulunmuyor.")
         if claim["evidence_quote"].strip() not in research["extract"]:
+            print(f"[FACT_CHECK] claim_index={index} quote_match=false semantic_support=not_run reason=quote_not_found")
             raise ValueError(f"claim {index}: evidence_quote alınan kaynak metninde birebir bulunmuyor.")
+        assessment = assess_claim(claim["claim"], claim["evidence_quote"], research["extract"])
+        if assessment["quote_match"] is not True:
+            raise ValueError(f"claim {index}: exact quote kontrolü başarısız.")
+        if assessment["semantic_support"] != "verified":
+            codes = ", ".join(assessment["reason_codes"]) or "uncertainty_unresolved"
+            print(f"[FACT_CHECK] claim_index={index} quote_match=true semantic_support={assessment['semantic_support']} reason_codes={codes}")
+        if assessment["semantic_support"] == "rejected":
+            codes = ", ".join(assessment["reason_codes"])
+            raise ValueError(f"claim {index}: kritik iddia kaynakça desteklenmiyor/çelişiyor ({codes}); konu yeniden seçilmeli.")
+        checked_claims.append({
+            "claim": claim["claim"],
+            "status": assessment["semantic_support"],
+            "source_ids": [expected_id],
+            "quote_match": assessment["quote_match"],
+            "semantic_support": assessment["semantic_support"],
+            "numeric_checks": assessment["numeric_checks"],
+            "lexical_coverage": assessment["lexical_coverage"],
+            "verification_method": assessment["verification_method"],
+            "reason_codes": assessment["reason_codes"],
+            "notes": "Exact quote eşleşmesi ve deterministik ilişki/sayı kontrolleri ayrı kaydedildi; bağımsız LLM onayı kullanılmadı.",
+        })
 
     scene_ids = [scene["scene_id"] for scene in raw["storyboard"]]
     if scene_ids != list(range(1, len(scene_ids) + 1)):
@@ -280,23 +356,21 @@ def validate_grounded_response(
         "name": research["title"],
         "url": research["url"],
         "accessed_at": research["accessed_at"],
+        "validation": dict(source_validation),
     }
     return {
         **raw,
         "topic_source_id": expected_id,
         "source": source,
         "fact_check": {
-            "status": "partial",
+            "status": (
+                "verified" if all(item["status"] == "verified" for item in checked_claims)
+                else "partial"
+            ),
             "checked_at": now,
-            "claims": [
-                {
-                    "claim": claim["claim"],
-                    "status": "partially_verified",
-                    "source_ids": [expected_id],
-                    "notes": "Script span and source evidence quote are exact substring matches; semantic entailment requires independent review.",
-                }
-                for claim in raw["claims"]
-            ],
+            "claims": checked_claims,
+            "verification_method": "deterministic_lexical_numeric_v1",
+            "source_status": source_validation["status"],
         },
         "word_count": count,
         "provider": "gemini-web-session",
@@ -307,7 +381,7 @@ def validate_grounded_response(
 
 
 def build_grounded_prompt(
-    research: dict[str, str],
+    research: dict[str, Any],
     recent_topics: list[str] | None = None,
     recent_titles: list[str] | None = None,
 ) -> tuple[str, str]:

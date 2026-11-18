@@ -172,19 +172,25 @@ def load_recent_titles() -> list[str]:
         return []
     try:
         data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
-        return data[-25:] if isinstance(data, list) else []
-    except Exception:
-        return []
+        if isinstance(data, list) and all(isinstance(item, str) for item in data):
+            return data[-25:]
+        if isinstance(data, dict) and data.get("version") == 2:
+            from scripts.topic_history import load_recent_titles as load_topic_titles
+            return load_topic_titles(HISTORY_FILE)
+        raise ValueError("unsupported history format")
+    except Exception as exc:
+        raise RuntimeError(f"Konu geçmişi okunamadı; tekrar üretimi fail-closed durduruldu ({type(exc).__name__}).") from None
 
 
-def save_recent_title(title: str) -> None:
+def save_recent_title(title: str, scenario: dict[str, Any] | None = None) -> None:
+    if os.environ.get("GITHUB_REPOSITORY") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN"):
+        from scripts.topic_history import make_store_from_environment, reserve_candidate
+        reserve_candidate(title, scenario or {}, path=HISTORY_FILE, store=make_store_from_environment())
+        return
     history = load_recent_titles()
     if title not in history:
         history.append(title)
-    HISTORY_FILE.write_text(
-        json.dumps(history[-25:], ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    HISTORY_FILE.write_text(json.dumps(history[-25:], ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def fetch_wikipedia_grounding(recent_titles: list[str]) -> dict[str, str] | None:
@@ -392,7 +398,7 @@ def generate_scenario(concept: str = "İlginç Bilgiler ve Tarih", force_fallbac
     if force_fallback:
         print("[BİLGİ] '--force-fallback' aktif: Yerel yedek senaryo havuzu kullanılıyor.")
         scenario = pick_fallback_scenario(recent_titles)
-        save_recent_title(scenario["title"])
+        save_recent_title(scenario["title"], scenario)
         return scenario
 
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
@@ -409,7 +415,7 @@ def generate_scenario(concept: str = "İlginç Bilgiler ve Tarih", force_fallbac
             try:
                 print("[LLM] Birincil sağlayıcı deneniyor: Groq API (llama-3.3-70b-versatile)...")
                 scenario = call_groq_llm(system_prompt, user_prompt, groq_key)
-                save_recent_title(scenario["title"])
+                save_recent_title(scenario["title"], scenario)
                 return scenario
             except Exception as exc:
                 print(f"[UYARI] Groq API hatası/kotası ({exc}); ikinci katmana geçiliyor...", file=sys.stderr)
@@ -419,7 +425,7 @@ def generate_scenario(concept: str = "İlginç Bilgiler ve Tarih", force_fallbac
             try:
                 print("[LLM] İkincil sağlayıcı deneniyor: Google Gemini API (gemini-2.5-flash)...")
                 scenario = call_gemini_llm(system_prompt, user_prompt, gemini_key)
-                save_recent_title(scenario["title"])
+                save_recent_title(scenario["title"], scenario)
                 return scenario
             except Exception as exc:
                 print(f"[UYARI] Gemini API hatası/kotası ({exc}); yedek senaryo havuzuna geçiliyor...", file=sys.stderr)
@@ -432,7 +438,7 @@ def generate_scenario(concept: str = "İlginç Bilgiler ve Tarih", force_fallbac
     # 3. Katman: Garantili Yedek Havuz (Asla çökmez)
     try:
         scenario = pick_fallback_scenario(recent_titles)
-        save_recent_title(scenario["title"])
+        save_recent_title(scenario["title"], scenario)
         return scenario
     except Exception as exc:
         raise RuntimeError(f"Kritik hata: Yedek senaryo havuzu bile yüklenemedi: {exc}") from exc
