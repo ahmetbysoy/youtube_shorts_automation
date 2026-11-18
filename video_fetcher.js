@@ -253,4 +253,11 @@ async function main() {
   await browser.close();
 }
 
-main().catch(e => { console.error('KRİTİK HATA:', e.message); process.exit(1); });
+if (args.includes('--metadata')) {
+  // Strict scene mode is a catalog only. Legacy download CLI below is unchanged.
+  require('./scripts/stock_media_catalog.cjs').main(args).catch(() => {
+    console.error('STOCK_CATALOG_FAILED'); process.exitCode = 1;
+  });
+} else {
+  main().catch(e => { console.error('KRİTİK HATA:', e.message); process.exit(1); });
+}

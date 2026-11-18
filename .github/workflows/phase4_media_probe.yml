@@ -1,0 +1,103 @@
+name: Phase 4 Media Source Probe (no publishing)
+
+on:
+  workflow_dispatch:
+
+# No production/orchestrator/uploader/YouTube steps and no repository writes.
+permissions:
+  contents: read
+
+jobs:
+  media-source-proof:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+      - name: Media-only dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-montserrat fonts-liberation
+          python -m pip install requests==2.34.2 beautifulsoup4==4.15.0 python-dotenv==1.2.4 Pillow==11.3.0 'jsonschema>=4.23,<5'
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Media cookies only (never Google or YouTube sessions)
+        env:
+          MEDIA_COOKIES_JSON: ${{ secrets.MEDIA_COOKIES_JSON }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          raw = os.environ.get('MEDIA_COOKIES_JSON', '')
+          if raw:
+              data = json.loads(raw)
+              if isinstance(data, dict): data = data.get('cookies', [])
+              allowed = lambda d: d.lstrip('.') in {'pexels.com', 'www.pexels.com', 'pixabay.com', 'www.pixabay.com'}
+              cookies = [c for c in data if allowed(str(c.get('domain','')))]
+              if cookies:
+                  p=Path('cookies.json');p.write_text(json.dumps(cookies));p.chmod(0o600)
+          PY
+      - name: Live provider search, license, download, decode and consumer smoke
+        env:
+          # Parse as data in-memory; never source or persist the ENV_FILE secret.
+          PHASE4_PROVIDER_ENV: ${{ secrets.ENV_FILE }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: python -m scripts.phase4_media_probe --provider all --output output/phase4_probe --render
+      - name: Safe summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path('output/phase4_probe/evidence.json')
+          if p.exists():
+              d=json.loads(p.read_text())
+              with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+                  f.write('### Phase 4 live media evidence (no publishing)\n')
+                  for name,item in d['providers'].items():
+                      f.write(f"- {name}: {item['live_selection']}; scenes={item['selected_scenes']}\n")
+                  f.write('- Metadata relevance only; no visual-model or TTS-alignment proof.\n')
+          PY
+      - name: Secret-pattern audit before artifact upload
+        id: audit
+        if: always()
+        env:
+          PROVIDER_ENV: ${{ secrets.ENV_FILE }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os,re
+          from io import StringIO
+          from pathlib import Path
+          from dotenv import dotenv_values
+          data=dotenv_values(stream=StringIO(os.environ.get('PROVIDER_ENV','')),interpolate=False)
+          values=[v for k,v in data.items() if v and len(v)>=12 and re.search('key|token|password|cookie',k,re.I)]
+          values += [os.environ[k] for k in ['PEXELS_API_KEY','PIXABAY_API_KEY'] if os.environ.get(k)]
+          root=Path('output/phase4_probe')
+          if not (root/'evidence.json').exists(): raise SystemExit('No evidence available; skip artifacts.')
+          for p in root.rglob('*.json'):
+              text=p.read_text()
+              if any(value in text for value in values) or re.search(r'(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]{20,}|AIza[0-9A-Za-z_-]{30,}',text):
+                  raise SystemExit('Evidence credential audit failed; do not upload.')
+          print('Evidence credential audit passed.')
+          PY
+      - name: Evidence only (no stock source-file redistribution or cookies)
+        if: ${{ always() && steps.audit.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase4-media-evidence-${{ github.run_id }}
+          path: |
+            output/phase4_probe/evidence.json
+            output/phase4_probe/*/manifest.json
+            output/phase4_probe/*/script.json
+            output/phase4_probe/wikimedia/media_probe.mp4
+            output/phase4_probe/wikimedia/scene_*_inspection.jpg
+          retention-days: 14

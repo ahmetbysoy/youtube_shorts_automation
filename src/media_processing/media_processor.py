@@ -432,8 +432,22 @@ def assemble_video_ffmpeg(
         media_kind: str = scene["media_kind"]
         if media_kind == "image":
             cmd.extend(["-loop", "1", "-t", f"{seg_dur:.2f}", "-i", str(clip_path.resolve())])
-        else:
+        elif scene.get("loop_allowed", True):
+            # Legacy path retains looping; strict storyboard clips must be long enough.
             cmd.extend(["-stream_loop", "-1", "-t", f"{seg_dur:.2f}", "-i", str(clip_path.resolve())])
+        else:
+            cmd.extend(["-t", f"{seg_dur:.3f}", "-i", str(clip_path.resolve())])
+
+        if scene.get("fit_mode") == "contain":
+            # Preserve the whole subject rather than cropping unknown off-centre
+            # objects. Real voice/timestamp alignment remains Phase 5 work.
+            v_filter_parts.append(
+                f"[{idx}:v]fps=30,scale=1080:1920:force_original_aspect_ratio=decrease,"
+                f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p,"
+                f"trim=duration={seg_dur:.3f},setpts=PTS-STARTPTS[v{idx}]"
+            )
+            concat_inputs.append(f"[v{idx}]")
+            continue
 
         v_filter_parts.append(
             f"[{idx}:v]fps=30,"
@@ -607,6 +621,26 @@ def get_visual_search_queries(script_data: Dict[str, Any]) -> List[str]:
     return ["history", "nature", "cinematic"]
 
 
+def run_storyboard_pipeline(script_data: dict, script_json: Path, srt_file: Path, voiceover_mp3: Path) -> Path:
+    """Phase 4 strict scene path. Any unfilled scene stops before montage/upload."""
+    # main.py still invokes this file directly; keep that public entrypoint and
+    # resolve the repository package without relying on runner PYTHONPATH.
+    if str(BASE_DIR) not in sys.path:
+        sys.path.insert(0, str(BASE_DIR))
+    from src.media_processing.scene_media import select_storyboard_media
+    from src.media_processing.media_history import atomic_json
+
+    with tempfile.TemporaryDirectory(dir=OUTPUT_DIR, prefix="storyboard_") as work:
+        scenes, _report = select_storyboard_media(script_data, Path(work), report_path=OUTPUT_DIR/"scene_media_manifest.json")
+        # The post-media validator in main.py will also validate these new fields.
+        atomic_json(script_json, script_data)
+        ass_path = OUTPUT_DIR/"final.ass"
+        convert_srt_to_ass(srt_file, ass_path)
+        assemble_video_ffmpeg(scenes, voiceover_mp3, float(script_data["audio_duration_sec"]), ass_path, FINAL_OUTPUT)
+    validate_output(FINAL_OUTPUT)
+    return FINAL_OUTPUT
+
+
 def run_media_pipeline() -> Path:
     load_env()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -620,6 +654,10 @@ def run_media_pipeline() -> Path:
         raise FileNotFoundError(f"Faz 2 çıktısı (script.json) bulunamadı: {script_json}")
 
     script_data = json.loads(script_json.read_text(encoding="utf-8"))
+    # Presence, not truthiness: malformed/empty storyboards must not silently
+    # fall through to the generic legacy search path.
+    if "storyboard" in script_data:
+        return run_storyboard_pipeline(script_data, script_json, srt_file, voiceover_mp3)
     keywords = get_visual_search_queries(script_data)
     audio_duration = float(script_data.get("audio_duration_sec", 30.0))
     per_scene_sec = max(8.0, round((audio_duration + 2.0) / max(1, len(keywords)), 2))

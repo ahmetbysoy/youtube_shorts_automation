@@ -16,6 +16,11 @@ on:
       - 'scripts/embed_cover_frame.py'
       - 'content_engine.py'
       - 'src/content_generation/**'
+      - 'src/media_processing/**'
+      - 'video_fetcher.js'
+      - 'scripts/stock_media_catalog.cjs'
+      - 'scripts/phase4_media_probe.py'
+      - '.github/workflows/phase4_media_probe.yml'
       - 'main.py'
       - 'scripts/validate_script_json.py'
       - 'scripts/gemini_web_text_probe.py'
@@ -107,6 +112,14 @@ jobs:
         # Unset persistence credentials in the test process, not the runner.
         # Production keeps its fail-closed requirement for incomplete config.
         run: env -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN python -m pytest -q tests
+
+      - name: "Faz 4: provider/scene regressions and CLI smoke (mock catalogs; no publishing)"
+        run: |
+          env -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN python -m pytest -q tests/test_phase4_media.py
+          python -m scripts.phase4_media_probe --help
+          node --test tests/stock_media_catalog.test.cjs
+          node --check video_fetcher.js
+          node --check scripts/stock_media_catalog.cjs
 
       - name: "Faz 3 Probe Özeti"
         run: |

@@ -1,5 +1,8 @@
 # Gemini Tabanlı Otonom Shorts Üretimi — Mimari ve Uygulama Planı
 
+> **Faz 4 implementation (2026-11-18):** Ortak provider sözleşmesi ve strict storyboard seçimi kodlandı; source/license/attribution, açıklanabilir metadata-teknik puan, bounded alternatives, tam decode, sahne manifesti ve ayrı atomik/CAS medya geçmişi var. Legacy/Pexels/Pixabay/Commons korunur. Visual verification ve TTS alignment iddia edilmez. **Kabul henüz açık:** yeni CI/canlı provider kanıtı bekleniyor. [İnceleme envanteri](PHASE4_MEDIA_BASELINE.md).
+
+
 > Durum (2026-11-18): **Faz 3 yayınsız kabul tamamlandı.** Gemini Web cookie-only route, legacy-compatible v2 claim statuses, independent quote/semantic/numeric checks, source URL/page identity and Contents API SHA-CAS reservations are implemented. New-code Ubuntu 26 CI [44279794329](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44279794329) on `0dee88e` passed **171 tests + 16 subtests** (separate targeted suite: **35 passed**). Two distinct Actions runs [44280024395](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280024395) / [44280111635](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280111635) persisted, observed and released the reservation while preserving 25 old titles. [Evidence and limitations](evidence/PHASE3_ACTIONS_EVIDENCE_2026-11-18.md). No production, publisher or pruner workflow was dispatched for this validation; this is not new live-model or YouTube-publication proof.
 > Kapsam: Mevcut YouTube Shorts otomasyonunu Gemini destekli, sahne bazlı ve kalite kapılı içerik üretimine geçirmek.  
 > Kural: Bu belge planı tanımlar. Bir iş ancak kod, test ve gerekli doğrulama kanıtı varsa tamamlandı sayılır.

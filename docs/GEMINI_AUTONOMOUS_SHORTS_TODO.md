@@ -1,5 +1,8 @@
 # Gemini Tabanlı Otonom Shorts — Canlı TODO
 
+> **Faz 4 çalışma durumu (2026-11-18):** Strict storyboard provider/selection/manifest/history uygulandı; 47 yeni Python ve 5 Node parser testi yerel geçti. Yeni-kod CI/canlı sağlayıcı kapsamı bekleniyor, **kabul açık**. Commons ilk gerçek HTTP/download ve FFmpeg smoke denemesi başarılı; stock-provider entegrasyonu bu kanıtla başarılı ilan edilmez. Faz 1 açık tüketici/entegrasyon işleri ve Faz 5 gerçek TTS timing ayrı kalır. [Başlangıç incelemesi](PHASE4_MEDIA_BASELINE.md).
+
+
 > Bu dosya uygulamanın tekil takip listesidir. Bir kutu yalnız ilgili kod/test/CI veya canlı kanıt elde edilince işaretlenir. Mimari: [GEMINI_AUTONOMOUS_SHORTS_PLAN.md](GEMINI_AUTONOMOUS_SHORTS_PLAN.md).
 
 ## Durum özeti

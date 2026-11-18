@@ -1,5 +1,8 @@
 # Sistem Mimarisi ve Teknik Veri Sözleşmeleri (`ARCHITECTURE.md`)
 
+> **Faz 4 implementation (2026-11-18):** Storyboard mevcutsa strict scene selection eklendi; eksik sahne generic legacy’ye düşmez. Provider interface/license evidence, metadata+technical scoring, safe download/full decode, scene manifest and separate media history are implemented. Narration-weighted durations are provisional (Phase 5), visual verification is not performed. Legacy scripts retain the prior path. **Acceptance pending new CI/live provider coverage**; [baseline inventory](PHASE4_MEDIA_BASELINE.md).
+
+
 > **Sürüm:** Güncel çalışma durumu (Gemini Web route + mevcut `PUBLIC` üretim hattı)
 >
 > **Son Güncelleme:** `2026-11-18`

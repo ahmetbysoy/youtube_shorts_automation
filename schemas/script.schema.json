@@ -258,6 +258,42 @@
           "items": {
             "$ref": "#/$defs/wordTimestamp"
           }
+        },
+        "scene_media": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/sceneMedia"
+          }
+        },
+        "media_selection": {
+          "type": "object",
+          "required": [
+            "version",
+            "status",
+            "method",
+            "visual_verification",
+            "timing_basis"
+          ],
+          "properties": {
+            "version": {
+              "const": 1
+            },
+            "status": {
+              "const": "selected_metadata_and_technical_checks_passed"
+            },
+            "method": {
+              "const": "metadata_lexical_technical_license_v1"
+            },
+            "visual_verification": {
+              "const": "not_performed"
+            },
+            "timing_basis": {
+              "const": "narration_word_weighted_provisional_not_tts_aligned"
+            }
+          },
+          "additionalProperties": true
         }
       },
       "additionalProperties": true
@@ -342,6 +378,175 @@
           }
         }
       }
+    },
+    "mediaLicense": {
+      "type": "object",
+      "required": [
+        "name",
+        "url",
+        "verified",
+        "evidence_url",
+        "evidence_method",
+        "checked_at",
+        "attribution_required",
+        "attribution"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string"
+        },
+        "verified": {
+          "const": true
+        },
+        "evidence_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "evidence_method": {
+          "enum": [
+            "commons_per_file_extmetadata",
+            "official_provider_terms_http"
+          ]
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "attribution_required": {
+          "type": "boolean"
+        },
+        "attribution": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "sceneMedia": {
+      "type": "object",
+      "required": [
+        "scene_id",
+        "selected_provider",
+        "selected_media_id",
+        "source_url",
+        "license",
+        "attribution",
+        "duration",
+        "resolution",
+        "aspect_ratio",
+        "selection_score",
+        "rejection_reason",
+        "fallback_used",
+        "planned_duration",
+        "timing_basis",
+        "assessment",
+        "download_status"
+      ],
+      "properties": {
+        "scene_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "selected_provider": {
+          "enum": [
+            "pexels",
+            "pixabay",
+            "wikimedia"
+          ]
+        },
+        "selected_media_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "license": {
+          "$ref": "#/$defs/mediaLicense"
+        },
+        "attribution": {
+          "type": "string"
+        },
+        "duration": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "resolution": {
+          "type": "object",
+          "required": [
+            "width",
+            "height"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 720
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 720
+            }
+          }
+        },
+        "aspect_ratio": {
+          "type": "number",
+          "minimum": 0.4,
+          "maximum": 2.2
+        },
+        "selection_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "rejection_reason": {
+          "type": "null"
+        },
+        "fallback_used": {
+          "type": "boolean"
+        },
+        "planned_duration": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "timing_basis": {
+          "const": "narration_word_weighted_provisional_not_tts_aligned"
+        },
+        "assessment": {
+          "type": "object",
+          "required": [
+            "relevance_status",
+            "visual_verification",
+            "quality_basis",
+            "rejection_reasons"
+          ],
+          "properties": {
+            "relevance_status": {
+              "const": "metadata_supported"
+            },
+            "visual_verification": {
+              "const": "not_performed"
+            },
+            "quality_basis": {
+              "const": "measured_dimensions_duration_and_full_decode"
+            },
+            "rejection_reasons": {
+              "type": "array",
+              "maxItems": 0
+            }
+          }
+        },
+        "download_status": {
+          "const": "downloaded_and_decoded"
+        }
+      },
+      "additionalProperties": true
     }
   }
 }

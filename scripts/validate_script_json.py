@@ -20,10 +20,33 @@ def validate_payload(payload: Any, schema_path: Path = DEFAULT_SCHEMA) -> list[s
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     errors = sorted(validator.iter_errors(payload), key=lambda err: list(map(str, err.absolute_path)))
-    return [
+    messages = [
         f"{'.'.join(map(str, error.absolute_path)) or '<root>'}: {error.message}"
         for error in errors
     ]
+    if messages or not isinstance(payload, dict):
+        return messages
+    # Optional Phase 4 output: require complete one-to-one scene coverage, never
+    # let an incomplete/duplicate manifest pass the existing post-media gate.
+    has_media = "scene_media" in payload or "media_selection" in payload
+    if has_media:
+        board, media = payload.get("storyboard"), payload.get("scene_media")
+        if not isinstance(board, list) or not isinstance(media, list) or "media_selection" not in payload:
+            messages.append("scene_media: storyboard, scene_media and media_selection must be present together")
+        else:
+            ids = [scene.get("scene_id") for scene in board]
+            matched = [scene.get("scene_id") for scene in media]
+            if ids != matched or len(set(matched)) != len(matched):
+                messages.append("scene_media: exact ordered one-to-one storyboard coverage required")
+            sources = [(item["selected_provider"], item["selected_media_id"]) for item in media]
+            if len(set(sources)) != len(sources):
+                messages.append("scene_media: duplicate clip identity in the same video")
+            for item in media:
+                if item["license"]["attribution_required"] and (
+                    not item["attribution"] or item["attribution"] not in payload.get("description", "")
+                ):
+                    messages.append("scene_media: required attribution must be retained in full in description")
+    return messages
 
 
 def main() -> int:
