@@ -342,8 +342,7 @@ async function fetchFromPixabay(page, kw, opts) {
   try {
     const resp = await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
     diag.browser_access = resp ? resp.status() : null;
-    await page.waitForTimeout(3000);
-    diag.search = 'loaded';
+    await page.waitForTimeout(5000); // Cloudflare challenge icin biraz daha bekle
   } catch (e) {
     diag.browser_access = 'timeout_or_navigation_error';
     diag.search = 'failed';
@@ -353,6 +352,20 @@ async function fetchFromPixabay(page, kw, opts) {
     diag.search = 'blocked_unverified';
     return { candidates: [], diagnostics: diag };
   }
+  // Cloudflare/Turnstile kontrolu (status 200 olsa bile challenge sayfasi gelebilir)
+  const pageTitle = await page.title();
+  diag.page_title = pageTitle.slice(0, 120);
+  const isChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(pageTitle);
+  if (isChallenge) {
+    // Bir kez daha bekle — Cloudflare bazen otomatik geciyor
+    await page.waitForTimeout(8000);
+    const t2 = await page.title();
+    if (/just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(t2)) {
+      diag.search = 'blocked_unverified';
+      return { candidates: [], diagnostics: diag };
+    }
+  }
+  diag.search = 'loaded';
   const urls = await page.evaluate(() => {
     const out = [];
     document.querySelectorAll('script').forEach(s => {
@@ -416,24 +429,49 @@ async function fetchFromPexels(page, kw, opts) {
     diag.search = 'blocked_unverified';
     return { candidates: [], diagnostics: diag };
   }
+  // Cloudflare/Turnstile kontrolu (status 200 olsa bile challenge sayfasi gelebilir)
+  const pageTitle = await page.title();
+  const urlAfter = page.url();
+  diag.final_url = safeUrl(urlAfter);
+  diag.page_title = pageTitle.slice(0, 120);
+  const isChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(pageTitle) ||
+                      /cf-challenge|turnstile|g-recaptcha|hcaptcha/i.test(await page.content().catch(()=>'').then(c=>c.slice(0,5000)));
+  if (isChallenge) {
+    diag.search = 'blocked_unverified';
+    return { candidates: [], diagnostics: diag };
+  }
   diag.search = 'loaded';
+  // DOM'u uzun sure bekle (lazy-load / React hydrate)
+  try { await page.waitForSelector('article, [data-testid="video-card"], .MediaCard_slug__, video, a[href*="/video/"]', { timeout: 15000 }); } catch {}
+  await page.waitForTimeout(3000);
+  // Sayfayi scrollayarak lazy-load'u tetikle
+  for (let i = 0; i < 3; i++) { await page.evaluate(()=>window.scrollBy(0,800)); await page.waitForTimeout(800); }
+  await page.waitForTimeout(1000);
   const urls = await page.evaluate(() => {
     const out = new Set();
-    [window.__NEXT_DATA__, window.__APOLLO_STATE__].forEach(obj => {
+    // 1) Global state nesneleri
+    [window.__NEXT_DATA__, window.__APOLLO_STATE__, window.__INITIAL_STATE__, window._REDUX_STATE_].forEach(obj => {
       if (!obj) return;
       const s = JSON.stringify(obj);
-      const m = s.match(/https:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
-      if (m) m.forEach(u => out.add(u.replace(/\\u0026/g,'&')));
+      const m = s.match(/https?:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
+      if (m) m.forEach(u => out.add(u.replace(/\\u0026/g,'&').replace(/\\u003D/g,'=').replace(/\\u002F/g,'/')));
     });
+    // 2) Tum script etiketleri (JSON-LD, inline JSON)
     document.querySelectorAll('script').forEach(s => {
       const t = s.textContent || '';
-      const m = t.match(/https:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
-      if (m) m.forEach(u => out.add(u.replace(/\\u0026/g,'&')));
+      // video-files / vids.pexels.com / images.pexels.com/users/videos dahil
+      const m = t.match(/https?:\/\/[^"'\\<>\s]*vids\.pexels\.com[^"'\\<>\s]*\.mp4[^"'\\<>\s]*/g);
+      if (m) m.forEach(u => out.add(u.replace(/\\u0026/g,'&').replace(/\\u003D/g,'=').replace(/\\u002F/g,'/')));
+      // video_files/ linkleri (bazen API path farkli olabilir)
+      const m2 = t.match(/https?:\/\/[^"'\\<>\s]*\/video-files\/[^"'\\<>\s]*\.mp4[^"'\\<>\s]*/g);
+      if (m2) m2.forEach(u => out.add(u.replace(/\\u0026/g,'&').replace(/\\u003D/g,'=').replace(/\\u002F/g,'/')));
     });
-    document.querySelectorAll('video, video source').forEach(s => {
-      const src = s.src || s.currentSrc;
-      if (src && src.includes('.mp4')) out.add(src);
+    // 3) DOM'daki <video>/<source>/img[data-src]
+    document.querySelectorAll('video source, video, [data-testid*="video"] source').forEach(s => {
+      const src = s.src || s.currentSrc || s.getAttribute('src');
+      if (src && /\.mp4/i.test(src)) out.add(src);
     });
+    // 4) Anchor href'lerden video sayfalarina git, sayfa icinde video url'lerini bulma (sonraki adimda)
     return [...out];
   });
   // Kabul edilebilir URL'leri kalite sirasina gore sirala:
@@ -461,8 +499,67 @@ async function fetchFromPexels(page, kw, opts) {
     })
     .filter(c => c.priority < 99)
     .sort((a,b) => a.priority - b.priority);
+  // Hic dogrudan MP4 URL'si bulunamazsa, ilk 2 video kartinin detay sayfasina git
+  if (urls.size === 0 || candidates.length === 0) {
+    diag.page_debug = 'no_direct_mp4_trying_detail_pages';
+    const anchors = await page.evaluate(() => {
+      const out = new Set();
+      document.querySelectorAll('a[href*="/video/"]').forEach(a => {
+        const h = a.href || a.getAttribute('href');
+        if (h && /\/video\/\d+\/[a-z0-9-]+\/?$/i.test(h)) out.add(h.startsWith('http') ? h : 'https://www.pexels.com'+h);
+      });
+      return [...out].slice(0, 3);
+    });
+    diag.video_card_links_found = anchors.length;
+    for (const detailUrl of anchors) {
+      try {
+        await page.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
+        await page.waitForTimeout(3000);
+        const detailUrls = await page.evaluate(() => {
+          const out = new Set();
+          [window.__NEXT_DATA__, window.__APOLLO_STATE__, window.__INITIAL_STATE__].forEach(obj => {
+            if (!obj) return;
+            const s = JSON.stringify(obj);
+            const m = s.match(/https?:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
+            if (m) m.forEach(u => out.add(u.replace(/\\u0026/g,'&')));
+          });
+          document.querySelectorAll('video source, video').forEach(s => {
+            const src = s.src || s.currentSrc || s.getAttribute('src');
+            if (src && /\.mp4/i.test(src)) out.add(src);
+          });
+          document.querySelectorAll('script').forEach(s => {
+            const t = s.textContent || '';
+            const m = t.match(/https?:\/\/[^"'\\<>\s]*vids\.pexels\.com[^"'\\<>\s]*\.mp4[^"'\\<>\s]*/g);
+            if (m) m.forEach(u => out.add(u.replace(/\\u0026/g,'&')));
+          });
+          return [...out];
+        });
+        detailUrls.forEach(u => urls.add(u));
+      } catch (e) { /* detay sayfasina gidilemedi */ }
+    }
+    // Yeniden candidate olustur
+    const more = [...urls]
+      .filter(u => !blocked.test(u))
+      .map(u => {
+        let p = 99;
+        for (const fn of priority) { const r = fn(u); if (r >= 0) { p = r; break; } }
+        return { download_url: u, priority: p, source_url: searchUrl,
+                 media_id: (u.match(/\/videos\/(\d+)\//) || u.match(/video-files\/(\d+)/) || [])[1] || '' };
+      })
+      .filter(c => c.priority < 99)
+      .sort((a,b) => a.priority - b.priority);
+    candidates.push(...more);
+  }
   diag.candidates_found = candidates.length;
-  if (candidates.length === 0) { diag.search = 'no_valid_video'; return { candidates: [], diagnostics: diag }; }
+  if (candidates.length === 0) {
+    diag.search = 'no_valid_video';
+    // Debug icin sayfa HTML'inin ilk 2KB'sini kaydet (COOKIE/SAHSI BILGI YOK — sadece yapisal ipucu)
+    try {
+      const html = await page.content();
+      diag.html_snippet = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'').replace(/cookie|session|token/gi,'').slice(0, 1500);
+    } catch {}
+    return { candidates: [], diagnostics: diag };
+  }
   diag.selected_url = safeUrl(candidates[0].download_url);
   return { candidates: candidates.slice(0, 8), diagnostics: diag };
 }
