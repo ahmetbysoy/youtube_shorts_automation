@@ -110,11 +110,13 @@ jobs:
           set +e
           node video_fetcher.js "${{ inputs.keyword }}" probe_out/pexels/video.mp4 \
             --provider pexels \
-            --min-width 1280 --min-height 720 \
+            --min-width 640 --min-height 360 \
             --min-duration ${{ inputs.min_duration }} \
             --max-duration ${{ inputs.max_duration }} \
             --max-bytes 104857600 \
             2>probe_out/pexels/stderr.log
+          echo "--- Pexels teşhis (ham log) ---"
+          cat probe_out/pexels/stderr.log
           echo "exit_code=$?" > probe_out/pexels/exit.env
           set -e
           echo "--- Pexels stderr son 20 satir (cookie/URL degerleri temiz) ---"
@@ -126,11 +128,13 @@ jobs:
           set +e
           node video_fetcher.js "${{ inputs.keyword }}" probe_out/pixabay/video.mp4 \
             --provider pixabay \
-            --min-width 1280 --min-height 720 \
+            --min-width 640 --min-height 360 \
             --min-duration ${{ inputs.min_duration }} \
             --max-duration ${{ inputs.max_duration }} \
             --max-bytes 104857600 \
             2>probe_out/pixabay/stderr.log
+          echo "--- Pixabay teşhis (ham log) ---"
+          cat probe_out/pixabay/stderr.log
           echo "exit_code=$?" > probe_out/pixabay/exit.env
           set -e
           echo "--- Pixabay stderr son 20 satir ---"
