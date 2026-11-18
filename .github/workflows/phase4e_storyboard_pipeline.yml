@@ -56,7 +56,11 @@ jobs:
         run: |
           test -f package.json || npm init -y >/dev/null 2>&1
           test -d node_modules/playwright || npm install playwright >/dev/null 2>&1
-          npx playwright install --with-deps chromium
+          # --with-deps cok fazla ek paket (font vs.) cekip 15+ dk
+          # surduruyor; onceden yuklenen ffmpeg+libass+fontlar yeterli.
+          npx playwright install chromium
+          python -m playwright install chromium
+          ls ~/.cache/ms-playwright/
           node --check video_fetcher.js
           node --check analytics_scraper.js
 
