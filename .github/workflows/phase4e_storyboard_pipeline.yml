@@ -162,9 +162,9 @@ jobs:
               "audio_duration_sec": total_dur,
               "storyboard": [
                   {"scene_id": i+1,
-                   "visual_query": kw_per_scene[i % len(kw_per_scene)],
-                   # narration icinde keyword1 gecer (tok alignment)
-                   "narration": f"{keyword1} stock video footage showing real {keyword1} scenes",
+                   "visual_query": (kw := kw_per_scene[i % len(kw_per_scene)]),
+                   # narration her zaman visual_query kelimesini ICMELI (terms alignment)
+                   "narration": f"{kw} stock video footage showing real {kw} scenes",
                    "media_type": "video"}
                   for i in range(scenes_n)
               ]
