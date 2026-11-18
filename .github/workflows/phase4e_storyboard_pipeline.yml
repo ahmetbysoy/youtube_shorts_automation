@@ -173,22 +173,30 @@ jobs:
           except Exception as exc:
               import traceback
               print(f"\n[EXC] {type(exc).__name__}: {str(exc)[:400]}")
-              rp = out_dir/"storyboard_report.json"
-              if rp.exists():
-                  try:
-                      rep = json.loads(rp.read_text("utf8"))
-                  except Exception:
-                      rep = {"status": "failed", "failure": str(exc)[:300], "scenes": []}
-              else:
+              # SceneMediaError .args[1] rapor dict'ini tasir; oradan doğrudan oku
+              rep = None
+              if exc.args and len(exc.args) >= 2 and isinstance(exc.args[1], dict):
+                  rep = exc.args[1]
+              if rep is None:
+                  rp = out_dir/"storyboard_report.json"
+                  if rp.exists():
+                      try:
+                          rep = json.loads(rp.read_text("utf8"))
+                      except Exception:
+                          rep = None
+              if rep is None:
                   rep = {"status": "failed", "failure": str(exc)[:300], "scenes": []}
+              print(f"failure: {rep.get('failure')}")
               for s in rep.get("scenes", []):
                   print(f"  scene {s.get('scene_id')}: selected_provider={s.get('selected_provider')} "
                         f"rejection_reason={s.get('rejection_reason')}")
                   for pe in s.get("provider_errors", [])[:5]:
                       print(f"    provider_error: provider={pe.get('provider')} error={pe.get('error_type')}")
-              traceback.print_exc()
-              # Raporu yaz ve exit 3 yerine diagnostic basari ile devam et (sonraki adimlar FFmpeg denemesin)
+                  for rj in s.get("rejections", [])[:3]:
+                      print(f"    rejection: {rj.get('key')} reasons={rj.get('reasons') or rj.get('rejection_reasons')}")
+              # Raporu artifact icin yaz
               (out_dir/"storyboard_report.json").write_text(json.dumps(rep, indent=2, ensure_ascii=False), "utf8")
+              traceback.print_exc()
               print("HATA: medya secimi basarisiz (yukarida diagnostics)")
               sys.exit(3)
           print("\n=== SELECT_STORYBOARD_MEDIA OZET ===")
