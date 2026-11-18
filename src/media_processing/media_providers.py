@@ -184,10 +184,18 @@ def commons_license(page: dict, info: dict) -> MediaLicense:
     attr = True if attr_raw in {"true", "1", "yes"} else False if attr_raw in {"false", "0", "no"} else None
     p = urlsplit(lic_url if lic_url.startswith("http") else "https:"+lic_url) if lic_url else None
     path = p.path.rstrip("/") if p else ""
-    cc_host = p and p.hostname in {"creativecommons.org", "www.creativecommons.org"}
+    cc_host = (p and p.scheme in {"https", "http"} and p.hostname in {"creativecommons.org", "www.creativecommons.org"}
+               and not p.username and not p.password and p.port in (None, 443 if p.scheme == "https" else 80))
+    by_name = re.fullmatch(r"cc by (2\.0|2\.5|3\.0|4\.0)(?: ([a-z-]+))?", name.lower())
+    by_path = re.fullmatch(r"/licenses/by/(2\.0|2\.5|3\.0|4\.0)(?:/([a-z-]+))?", path)
     if "by-sa" in name.lower() or "by-sa" in path:
         reason = "share_alike_downstream_policy_not_implemented"
-    elif "cc by" in name.lower() and re.fullmatch(r"/licenses/by/(?:2\.0|2\.5|3\.0|4\.0)(?:/[a-z-]+)?", path) and cc_host:
+    elif by_name and by_path and cc_host:
+        # Never reconcile contradictory license declarations by guessing which
+        # version/jurisdiction grants permission. Restricted names cannot borrow
+        # a permissive /by/ URL either; an unknown name remains unsupported.
+        if by_name[1] != by_path[1] or by_name[2] and by_name[2] != by_path[2]:
+            reason = "inconsistent_cc_by_license_declaration"
         attr = True
     elif name.lower() in {"cc0", "cc0 1.0", "cc0 1.0 universal"} and cc_host and path == "/publicdomain/zero/1.0":
         attr = False

@@ -513,3 +513,23 @@ def test_required_credit_survives_actual_uploader_pure_description_function_with
     assert credit in final['description']
     assert final['length']<=uploader_description_upper_bound(data,data['description'])<=4900
     assert r['scenes'][0]['license']['attribution_required']
+
+
+@pytest.mark.parametrize('name,url',[
+    ('CC BY 4.0','https://creativecommons.org/licenses/by/3.0/'),
+    ('CC BY-NC 4.0','https://creativecommons.org/licenses/by/4.0/'),
+    ('CC BY 4.0','https://user@creativecommons.org/licenses/by/4.0/'),
+    ('CC BY','https://creativecommons.org/licenses/by/4.0/'),
+    ('CC BY 4.0','https://creativecommons.org:8443/licenses/by/4.0/'),
+])
+def test_conflicting_unknown_or_credential_bearing_commons_license_declarations_are_not_reconciled_by_guessing(name,url):
+    ext={'Artist':{'value':'Example Author'},'LicenseShortName':{'value':name},'LicenseUrl':{'value':url},'AttributionRequired':{'value':'true'}}
+    lic=commons_license({'title':'File:Moon.jpg'},{'descriptionurl':'https://commons.wikimedia.org/wiki/File:Moon.jpg','extmetadata':ext})
+    assert not lic.verified and lic.rejection_reason
+
+
+def test_explicit_compatible_cc_by_ported_license_preserves_exact_credit_url():
+    url='https://creativecommons.org/licenses/by/2.0/fr/'
+    ext={'Artist':{'value':'Example Author'},'LicenseShortName':{'value':'CC BY 2.0 FR'},'LicenseUrl':{'value':url},'AttributionRequired':{'value':'true'}}
+    lic=commons_license({'title':'File:Moon.jpg'},{'descriptionurl':'https://commons.wikimedia.org/wiki/File:Moon.jpg','extmetadata':ext})
+    assert lic.verified and lic.attribution_required and url in lic.attribution
