@@ -55,6 +55,8 @@ prune_state.json
 prune_report.json
 .gemini_topic_ledger.json
 .gemini_topic_ledger.json.lock
+.topic_reservations.json
+.used_topics.json.lock
 text_probe_result.json
 
 # Etkileşimli giriş oturum yakalama çıktıları (çerez/HAR içerir, asla commit etme)

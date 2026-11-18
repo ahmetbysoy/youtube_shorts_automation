@@ -332,7 +332,7 @@ jobs:
           TOPIC_HISTORY_REF: main
         run: |
           if [ -f .topic_reservations.json ]; then
-            python scripts/topic_history.py finalize --commit '${{ steps.orchestrator.outcome == 'success' && 'true' || 'false' }}'
+            python -m scripts.topic_history finalize --commit '${{ steps.orchestrator.outcome == 'success' && 'true' || 'false' }}'
           else
             echo "[INFO] Bu koşuda konu rezervasyonu oluşturulmadı."
           fi
