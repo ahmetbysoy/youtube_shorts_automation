@@ -211,17 +211,32 @@ class StockTerms:
         self.cache: dict[str, MediaLicense] = {}
         self.last_http_evidence: dict = {}
 
-    def _verify_text(self, provider: str, text: str, method: str, url: str) -> MediaLicense:
+    def _verify_text(self, provider: str, text: str, method: str, url: str) -> tuple[MediaLicense, list[str], list[str]]:
         t = plain(text, 200000).lower()
-        # Her grupta en az bir ifade bulunmali
         groups = self.MARKER_GROUPS[provider]
         matched: list[str] = []
-        for grp in groups:
+        missing: list[str] = []
+        for i, grp in enumerate(groups):
             hit = next((m for m in grp if m in t), None)
             if not hit:
-                return MediaLicense(url=url, evidence_url=url, checked_at=now(),
-                                    rejection_reason="provider_terms_unavailable_or_changed")
-            matched.append(hit)
+                missing.append(f"group{i}={grp[0]}")
+            else:
+                matched.append(hit)
+        if missing:
+            return (MediaLicense(url=url, evidence_url=url, checked_at=now(),
+                                 rejection_reason="provider_terms_unavailable_or_changed"),
+                    matched, missing)
+        return (
+            MediaLicense(
+                name=self.NAMES[provider],
+                url=url, verified=True, evidence_url=url, evidence_method=method,
+                checked_at=now(), attribution_required=False,
+                evidence_sha256=hashlib.sha256(t.encode()).hexdigest(),
+                restrictions=("no_standalone_redistribution", "no_implied_endorsement",
+                              "third_party_rights_not_verified", "no_sensitive_use_of_identifiable_people"),
+            ),
+            matched, missing,
+        )
         return MediaLicense(
             name=self.NAMES[provider],
             url=url, verified=True, evidence_url=url, evidence_method=method,
@@ -260,6 +275,8 @@ class StockTerms:
         url = self.URLS[provider]
         text: str | None = None
         method = "official_provider_terms_http"
+        used_method = "none"
+        last_missing: list[str] = []
         # 1) Duz HTTP dene
         try:
             with get_public(self.session, url, SOURCE_HOSTS[provider], trace=self.last_http_evidence) as r:
@@ -268,19 +285,30 @@ class StockTerms:
             text = None
         lic: MediaLicense | None = None
         if text is not None:
-            cand = self._verify_text(provider, text, method, url)
+            cand, matched, missing = self._verify_text(provider, text, method, url)
+            last_missing = missing
             if cand.verified:
                 lic = cand
+                used_method = method
         # 2) CF/fail durumunda cookie'li tarayici ile fallback
         if lic is None:
             browser_text = self._fetch_via_browser(provider)
             if browser_text:
-                cand = self._verify_text(provider, browser_text, "official_provider_terms_browser", url)
+                cand, matched, missing = self._verify_text(provider, browser_text, "official_provider_terms_browser", url)
+                last_missing = missing
                 if cand.verified:
                     lic = cand
+                    used_method = "official_provider_terms_browser"
         if lic is None:
+            import sys
+            print(f"[stock_terms_diag] provider={provider} http_ok={text is not None} "
+                  f"browser_text_len={len(browser_text) if 'browser_text' in dir() else 0} "
+                  f"missing_markers={last_missing}", file=sys.stderr)
             lic = MediaLicense(url=url, evidence_url=url, checked_at=now(),
                                rejection_reason="provider_terms_unavailable_or_changed")
+        else:
+            import sys
+            print(f"[stock_terms_diag] provider={provider} method={used_method} verified=True", file=sys.stderr)
         self.cache[provider] = lic
         return lic
 
