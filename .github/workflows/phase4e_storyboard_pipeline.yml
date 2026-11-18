@@ -86,7 +86,14 @@ jobs:
                       fmt = "json"
                       cookies = data.get("cookies", data) if isinstance(data, dict) else data
                       count = len(cookies)
-                      domain_ok = all(expected_domain in str(c.get("domain","")) for c in cookies)
+                      # Cookie domain ".pixabay.com" veya "pixabay.com" veya "www.pixabay.com" olabilir
+                      # JS tarafindaki filtre ile ayni: d === defaultDomain || d.endsWith(defaultDomain)
+                      def dom_ok(c_domain, expected):
+                          cd = str(c_domain or expected)
+                          if not cd.startswith("."):
+                              cd = "." + cd
+                          return cd == expected or cd.endswith(expected)
+                      domain_ok = all(dom_ok(c.get("domain"), expected_domain) for c in cookies)
                       sample_names = [str(c.get("name","")) for c in cookies[:3]]
                   except Exception:
                       if "=" in s:
@@ -156,10 +163,32 @@ jobs:
           hist_path.parent.mkdir(parents=True, exist_ok=True)
           if not hist_path.exists():
               hist_path.write_text("{}", "utf8")
-          runtime_clips, summary = select_storyboard_media(
-              script, out_dir,
-              history=MediaHistory(path=hist_path),
-          )
+          try:
+              runtime_clips, summary = select_storyboard_media(
+                  script, out_dir,
+                  history=MediaHistory(path=hist_path),
+              )
+          except Exception as exc:
+              import traceback
+              print(f"\n[EXC] {type(exc).__name__}: {str(exc)[:400]}")
+              rp = out_dir/"storyboard_report.json"
+              if rp.exists():
+                  try:
+                      rep = json.loads(rp.read_text("utf8"))
+                  except Exception:
+                      rep = {"status": "failed", "failure": str(exc)[:300], "scenes": []}
+              else:
+                  rep = {"status": "failed", "failure": str(exc)[:300], "scenes": []}
+              for s in rep.get("scenes", []):
+                  print(f"  scene {s.get('scene_id')}: selected_provider={s.get('selected_provider')} "
+                        f"rejection_reason={s.get('rejection_reason')}")
+                  for pe in s.get("provider_errors", [])[:5]:
+                      print(f"    provider_error: provider={pe.get('provider')} error={pe.get('error_type')}")
+              traceback.print_exc()
+              # Raporu yaz ve exit 3 yerine diagnostic basari ile devam et (sonraki adimlar FFmpeg denemesin)
+              (out_dir/"storyboard_report.json").write_text(json.dumps(rep, indent=2, ensure_ascii=False), "utf8")
+              print("HATA: medya secimi basarisiz (yukarida diagnostics)")
+              sys.exit(3)
           print("\n=== SELECT_STORYBOARD_MEDIA OZET ===")
           print(f"status={summary.get('status')}, scenes={len(summary.get('scenes', []))}")
           for s in summary.get("scenes", []):
