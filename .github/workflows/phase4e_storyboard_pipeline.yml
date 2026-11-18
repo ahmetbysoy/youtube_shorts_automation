@@ -12,9 +12,13 @@ on:
   workflow_dispatch:
     inputs:
       keyword:
-        description: "Arama kelimesi (orn. cat, dog, uzay)"
+        description: "Birinci sahne arama kelimesi (orn. cat)"
         required: false
         default: "cat"
+      keyword2:
+        description: "Ikinci sahne arama kelimesi (orn. dog) — duplicate_onle"
+        required: false
+        default: "dog"
       scenes:
         description: "Kac sahne (1-3)"
         required: false
@@ -27,7 +31,7 @@ permissions:
 jobs:
   storyboard-cookie-probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -143,21 +147,24 @@ jobs:
           from src.media_processing.scene_media import select_storyboard_media
           from src.media_processing.media_history import MediaHistory
 
-          keyword = "${{ inputs.keyword }}"
+          keyword1 = "${{ inputs.keyword }}"
+          keyword2 = "${{ inputs.keyword2 }}"
           scenes_n = int("${{ inputs.scenes }}")
-          # Test storyboard: birden fazla sahne, her biri gercek arama kelimesiyle
+          # Her sahne icin farkli anahtar kelime kullan (ayni kelime tekrarinda
+          # Pexels/Pixabay ayni videolari dondurdugunde duplicate_in_video eler)
+          kw_per_scene = [keyword1, keyword2, f"{keyword1} nature",
+                          f"{keyword1} close up", f"{keyword2} close up"]
           scene_duration = 6.0
           total_dur = scene_duration * scenes_n
           script = {
               "generation_id": "phase4e_probe_" + os.urandom(4).hex(),
-              "title": f"Faz4E Test - {keyword}",
+              "title": f"Faz4E Test - {keyword1}+{keyword2}",
               "audio_duration_sec": total_dur,
               "storyboard": [
-                  # visual_query ile narration ortak terim (keyword) iceriyor olmali (terms() alignment)
-                  # narration icine keyword'u gecir (tokenizer >2 harfli kelimeleri alir)
                   {"scene_id": i+1,
-                   "visual_query": keyword,
-                   "narration": f"{keyword} stock video footage showing real {keyword} scenes",
+                   "visual_query": kw_per_scene[i % len(kw_per_scene)],
+                   # narration icinde keyword1 gecer (tok alignment)
+                   "narration": f"{keyword1} stock video footage showing real {keyword1} scenes",
                    "media_type": "video"}
                   for i in range(scenes_n)
               ]
