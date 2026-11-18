@@ -12,9 +12,7 @@ import subprocess
 import uuid
 from pathlib import Path
 
-from dotenv import dotenv_values
-from io import StringIO
-
+from scripts.media_probe_security import consume_provider_configuration
 from scripts.validate_script_json import validate_payload
 from src.media_processing.media_history import MediaHistory, atomic_json
 from src.media_processing.media_processor import assemble_video_ffmpeg, convert_srt_to_ass, validate_output
@@ -40,14 +38,10 @@ def input_script(provider: str) -> dict:
             "srt_file": "test.srt", "audio_duration_sec": 6.0, "visual_keywords": [s["visual_query"] for s in board], "word_timestamps": [], "storyboard": board}
 
 
-def optional_keys_from_existing_secret() -> None:
-    # Parse dotenv as DATA, never shell source/eval it; only two allowed names
-    # enter this process. Do not write ENV_FILE or unrelated secrets to disk.
-    text = os.environ.pop("PHASE4_PROVIDER_ENV", "")
-    if text:
-        parsed = dotenv_values(stream=StringIO(text), interpolate=False)
-        for key in ("PEXELS_API_KEY", "PIXABAY_API_KEY"):
-            if not os.environ.get(key) and parsed.get(key): os.environ[key] = parsed[key]
+def optional_keys_from_existing_secret():
+    # Kept for this historical probe CLI; Faz4B uses the same data-only parser.
+    # Keys are no longer exported into os.environ or inherited by browsers.
+    return consume_provider_configuration()
 
 
 def render_smoke(scenes: list[dict], script: dict, output: Path) -> dict:
@@ -78,7 +72,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=Path("output/phase4_probe"))
     parser.add_argument("--render", action="store_true")
     args = parser.parse_args()
-    optional_keys_from_existing_secret()
+    config = optional_keys_from_existing_secret()
     args.output.mkdir(parents=True, exist_ok=True)
     evidence = {"version": 1, "started_at": now(), "github_run_id": os.environ.get("GITHUB_RUN_ID"), "github_sha": os.environ.get("GITHUB_SHA"),
                 "live_provider_calls": True, "mock_provider_calls": False, "publishing": False, "production_history_modified": False,
@@ -90,10 +84,10 @@ def main() -> int:
         configured = True
         if name == "wikimedia": providers = [WikimediaProvider()]
         else:
-            key_present = bool(os.environ.get("PEXELS_API_KEY" if name == "pexels" else "PIXABAY_API_KEY"))
+            key_present = config.presence["providers"][name]["api_key_present"]
             cookie_present = any(Path(p).exists() for p in ("cookies.json", "storage_state.json"))
             configured = key_present or cookie_present
-            providers = [PexelsProvider(terms=terms) if name == "pexels" else PixabayProvider(terms=terms), BrowserStockProvider(name, terms=terms)]
+            providers = [PexelsProvider(config.key_for(name), terms=terms) if name == "pexels" else PixabayProvider(config.key_for(name), terms=terms), BrowserStockProvider(name, terms=terms)]
         item = {"configured": configured, "api_key_present": None if name == "wikimedia" else key_present,
                 "media_cookie_file_present": None if name == "wikimedia" else cookie_present,
                 "live_selection": "not_run", "selected_scenes": 0, "catalog_transports": []}

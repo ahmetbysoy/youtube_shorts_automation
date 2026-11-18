@@ -1,0 +1,147 @@
+"""Security-only helpers for publication-free media probes, never production setup.
+
+ENV_FILE is dotenv DATA, with interpolation disabled. Only the two exact runtime
+stock-key names may leave the parser, in memory and addressed to one provider.
+No sourcing, eval, secret mutation, alias guessing or cookie refresh is allowed.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+from dataclasses import dataclass, field
+from io import StringIO
+from pathlib import Path
+from urllib.parse import urlsplit
+
+from dotenv import dotenv_values
+
+STOCK_KEYS = {"pexels": "PEXELS_API_KEY", "pixabay": "PIXABAY_API_KEY"}
+STOCK_DOMAINS = {"pexels.com", "www.pexels.com", "pixabay.com", "www.pixabay.com"}
+SECRET_PATTERN = re.compile(rb"(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]{20,}|AIza[0-9A-Za-z_-]{30,}")
+
+
+@dataclass
+class ProviderConfiguration:
+    presence: dict
+    _keys: dict[str, str] = field(repr=False)
+
+    def key_for(self, provider: str) -> str:
+        return self._keys[provider]
+
+
+def consume_provider_configuration(environ=None) -> ProviderConfiguration:
+    environ = os.environ if environ is None else environ
+    raw = environ.pop("PHASE4_PROVIDER_ENV", "")
+    parsed = dotenv_values(stream=StringIO(raw), interpolate=False) if raw else {}
+    keys, presence = {}, {"env_file_supplied": bool(raw), "interpolation_enabled": False, "providers": {}}
+    for provider, name in STOCK_KEYS.items():
+        direct = environ.pop(name, "") or ""
+        from_file = parsed.get(name) or ""
+        effective = (direct or from_file).strip()
+        placeholder = any(marker in effective.lower() for marker in ("your_", "senin_gercek"))
+        keys[provider] = effective if effective and not placeholder else ""
+        # Only booleans: never the key, its length, prefix, suffix or hash.
+        presence["providers"][provider] = {
+            "direct_name_supplied": bool(direct), "allowlisted_env_name_present": bool(from_file),
+            "placeholder_detected": placeholder, "api_key_present": bool(keys[provider]),
+        }
+    return ProviderConfiguration(presence, keys)
+
+
+def prepare_media_cookies(path: Path, raw: str) -> dict:
+    if path.exists():
+        raise ValueError("probe_refuses_to_overwrite_existing_cookie_file")
+    if not raw:
+        return {"secret_supplied": False, "stock_cookie_file_created": False}
+    data = json.loads(raw)
+    data = data.get("cookies", []) if isinstance(data, dict) else data
+    if not isinstance(data, list):
+        raise ValueError("media_cookie_payload_invalid")
+    allowed_fields = {"name", "value", "domain", "path", "expires", "httpOnly", "secure", "sameSite"}
+    cookies = [{k: v for k, v in c.items() if k in allowed_fields} for c in data if isinstance(c, dict)
+               and str(c.get("domain", "")).lstrip(".").lower() in STOCK_DOMAINS]
+    if cookies:
+        # Exclusive creation + mode 0600; no Google/YouTube sessions are written.
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w") as handle:
+            json.dump(cookies, handle)
+    return {"secret_supplied": True, "stock_cookie_file_created": bool(cookies)}
+
+
+def _audit_values(environ) -> list[bytes]:
+    """Compare available secret material IN MEMORY, with no value output."""
+    values = []
+    for name in ("PHASE4_PROVIDER_ENV", "AUDIT_PROVIDER_ENV"):
+        raw = environ.get(name, "")
+        if raw:
+            for key, value in dotenv_values(stream=StringIO(raw), interpolate=False).items():
+                if value and re.search(r"key|token|password|cookie|secret", key, re.I):
+                    values.append(value)
+    for name in (*STOCK_KEYS.values(), "GITHUB_TOKEN", "GH_TOKEN"):
+        if environ.get(name): values.append(environ[name])
+    raw = environ.get("MEDIA_COOKIES_JSON", "")
+    if raw:
+        data = json.loads(raw)
+        data = data.get("cookies", []) if isinstance(data, dict) else data
+        values.extend(str(c.get("value", "")) for c in data if isinstance(c, dict))
+    return [value.encode() for value in values if len(value) >= 8]
+
+
+def _check_urls(value):
+    if isinstance(value, dict):
+        for item in value.values(): _check_urls(item)
+    elif isinstance(value, list):
+        for item in value: _check_urls(item)
+    elif isinstance(value, str):
+        # Credits/descriptions can embed a URL inside prose as well as in a URL
+        # field. Signed parameters must not escape through those text fields.
+        for url in re.findall(r'https?://[^\s<>"\)]+', value):
+            p = urlsplit(url.rstrip(";,."))
+            if p.query or p.fragment or p.username or p.password:
+                raise ValueError("artifact_contains_query_or_credential_bearing_url")
+
+
+def audit_artifacts(root: Path, environ=None) -> dict:
+    values = _audit_values(os.environ if environ is None else environ)
+    files = sorted(path for path in root.rglob("*") if path.is_file())
+    if not files:
+        raise ValueError("no_probe_evidence_to_audit")
+    records = []
+    for path in files:
+        if path.is_symlink() or path.suffix not in {".json", ".mp4", ".jpg"} or any(x in path.name.lower() for x in ("cookie", ".env", "storage_state")):
+            raise ValueError("artifact_file_not_allowlisted")
+        raw = path.read_bytes()
+        if SECRET_PATTERN.search(raw) or any(value in raw for value in values):
+            raise ValueError("artifact_secret_audit_failed")
+        if path.suffix == ".json": _check_urls(json.loads(raw))
+        records.append({"path": str(path.relative_to(root)), "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()})
+    return {"status": "passed", "known_secret_matches": 0, "credential_pattern_matches": 0,
+            "url_query_or_credentials_matches": 0, "files": records}
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("operation", choices=["cookies", "audit"])
+    ap.add_argument("--path", type=Path, required=True)
+    args = ap.parse_args()
+    try:
+        if args.operation == "cookies":
+            result = prepare_media_cookies(args.path, os.environ.pop("MEDIA_COOKIES_JSON", ""))
+            print("MEDIA_COOKIE_CONFIGURATION="+json.dumps(result))
+        else:
+            result = audit_artifacts(args.path)
+            # Audit report contains only file hashes/counts, never secret hashes.
+            (args.path/"artifact_audit.json").write_text(json.dumps(result, indent=2)+"\n")
+            audit_artifacts(args.path)
+            print("Evidence credential audit passed.")
+    except Exception as exc:
+        print("PROBE_SECURITY_FAILURE="+type(exc).__name__)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -37,7 +37,7 @@ async function main(args) {
   const query = args[0]; const provider = args[args.indexOf('--provider') + 1];
   if (!query || query.length > 180 || !['pexels', 'pixabay'].includes(provider)) throw new Error('invalid_catalog_arguments');
   const storagePath = path.join(ROOT, 'storage_state.json'); const cookiesPath = path.join(ROOT, 'cookies.json');
-  const domains = /(^|\.)(pexels|pixabay)\.com$/i;
+  const domains = provider === 'pexels' ? /(^|\.)pexels\.com$/i : /(^|\.)pixabay\.com$/i;
   // Do not bring YouTube/Google sessions into stock-catalog browser contexts.
   let cookies = [];
   if (fs.existsSync(storagePath)) cookies.push(...(JSON.parse(fs.readFileSync(storagePath, 'utf8')).cookies || []));
@@ -52,6 +52,12 @@ async function main(args) {
     const search = provider === 'pexels' ? `${base}/search/videos/${encodeURIComponent(query)}/` : `${base}/videos/search/${encodeURIComponent(query)}/`;
     const response = await page.goto(search, { waitUntil: 'domcontentloaded', timeout: 20000 });
     const diagnostics = { search_http_status: response?.status() || null, source_links: 0, source_pages_parsed: 0, license_links_observed: 0 };
+    // Stop at HTTP denial. No challenge handling, bypass, source navigation or
+    // request/body/cookie logging. Python emits only a hashed query identifier.
+    if (diagnostics.search_http_status !== 200) {
+      console.log(JSON.stringify({ provider, candidates: [], diagnostics: { search_http_status: diagnostics.search_http_status } }));
+      return;
+    }
     const links = await page.locator('a[href]').evaluateAll((elements, data) => [...new Set(elements.map(a => a.href)
       .filter(href => { try { const u = new URL(href); return u.origin === data.base && (data.provider === 'pexels' ? /^\/video\/.+-\d+\/$/.test(u.pathname) : /^\/videos\/.+-\d+\/$/.test(u.pathname)); } catch { return false; } }))].slice(0, 3), { base, provider });
     diagnostics.source_links = links.length;

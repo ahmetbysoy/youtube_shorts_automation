@@ -64,8 +64,12 @@ class MediaHistory:
             if r.status_code != 200:
                 raise RuntimeError("media_history_read_failed_closed")
             try:
-                body = r.json(); data = json.loads(base64.b64decode(body["content"], validate=False))
-                return validate_history(data), str(body["sha"])
+                body = r.json()
+                if not isinstance(body.get("sha"), str) or not body["sha"]:
+                    raise ValueError("missing_blob_sha")
+                encoded = "".join(body["content"].split())
+                data = json.loads(base64.b64decode(encoded, validate=True))
+                return validate_history(data), body["sha"]
             except Exception:
                 raise ValueError("media_history_remote_payload_invalid_fail_closed") from None
         try:
@@ -85,7 +89,13 @@ class MediaHistory:
                 for attempt in range(6):
                     current, sha = self._get()
                     existing = {(e["key"], e["generation_id"]) for e in current["entries"]}
-                    merged = {"version": 1, "entries": (current["entries"]+[e for e in entries if (e["key"], e["generation_id"]) not in existing])[-200:]}
+                    additions = []
+                    for entry in entries:
+                        identity = (entry["key"], entry["generation_id"])
+                        if identity not in existing:
+                            additions.append(entry)
+                            existing.add(identity)
+                    merged = {"version": 1, "entries": (current["entries"]+additions)[-200:]}
                     if self.url:
                         payload = {"message": "chore: atomic media selection history", "branch": self.ref,
                                    "content": base64.b64encode((json.dumps(merged, ensure_ascii=False, indent=2)+"\n").encode()).decode()}

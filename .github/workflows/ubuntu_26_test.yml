@@ -20,7 +20,11 @@ on:
       - 'video_fetcher.js'
       - 'scripts/stock_media_catalog.cjs'
       - 'scripts/phase4_media_probe.py'
+      - 'scripts/phase4b_*.py'
+      - 'scripts/media_probe_security.py'
+      - 'scripts/uploader_metadata_probe.cjs'
       - '.github/workflows/phase4_media_probe.yml'
+      - '.github/workflows/phase4b_history_probe.yml'
       - 'main.py'
       - 'scripts/validate_script_json.py'
       - 'scripts/gemini_web_text_probe.py'
@@ -115,11 +119,18 @@ jobs:
 
       - name: "Faz 4: provider/scene regressions and CLI smoke (mock catalogs; no publishing)"
         run: |
-          env -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN python -m pytest -q tests/test_phase4_media.py
+          env -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN python -m pytest -q tests/test_phase4_media.py tests/test_phase4b_media.py
           python -m scripts.phase4_media_probe --help
-          node --test tests/stock_media_catalog.test.cjs
+          python -m scripts.phase4b_media_probe --help
+          python -m scripts.phase4b_history_probe --help
+          python -m compileall -q src/media_processing scripts/phase4_media_probe.py scripts/phase4b_media_probe.py scripts/phase4b_consumer_chain.py scripts/phase4b_history_probe.py scripts/phase4b_live_evidence.py scripts/media_probe_security.py
+          node --test tests/stock_media_catalog.test.cjs tests/uploader_metadata_probe.test.cjs
           node --check video_fetcher.js
           node --check scripts/stock_media_catalog.cjs
+          node --check scripts/uploader_metadata_probe.cjs
+
+      - name: "Faz 4B actual fixture producer-consumer, pre/post schema, cover and UTF-16 credit contract"
+        run: env -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN python -m pytest -q tests/test_phase4b_consumers.py
 
       - name: "Faz 3 Probe Özeti"
         run: |

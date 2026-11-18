@@ -1,0 +1,74 @@
+name: Phase 4B Isolated Media History Proof (no publishing)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'write=run1; verify=distinct run2 plus mandatory cleanup; cleanup=isolated recovery only'
+        required: true
+        type: choice
+        options: [write, verify, cleanup]
+      probe_id:
+        description: 'Unique p4b-... ID; never a production branch/path'
+        required: true
+        type: string
+      writer_run_id:
+        description: 'Actual run1 Actions ID, required for verify'
+        required: false
+        default: ''
+        type: string
+
+permissions: {}
+
+# Only this dedicated, manual, isolated-history job gets contents:write.
+# It has no provider, Gemini, Google or YouTube secrets and no actions:write.
+jobs:
+  isolated-history-proof:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    env:
+      PROBE_ID: ${{ inputs.probe_id }}
+      PROBE_MODE: ${{ inputs.mode }}
+      WRITER_RUN_ID: ${{ inputs.writer_run_id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Minimal isolated-proof dependencies
+        run: python -m pip install requests==2.34.2 python-dotenv==1.2.4
+      - name: Actual Contents HTTP write or distinct-run read and cleanup
+        id: proof
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python -m scripts.phase4b_history_probe "$PROBE_MODE" --probe-id "$PROBE_ID" --writer-run-id "$WRITER_RUN_ID"
+      - name: Isolated cleanup after failed or cancelled proof
+        if: ${{ (failure() || cancelled()) && steps.proof.outcome != 'skipped' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python -m scripts.phase4b_history_probe cleanup --probe-id "$PROBE_ID" --output output/phase4b_history_recovery
+      - name: Stage safe result only (no local caches or lock files)
+        if: always()
+        run: |
+          mkdir -p output/phase4b_history_evidence
+          test ! -f output/phase4b_history/result.json || cp output/phase4b_history/result.json output/phase4b_history_evidence/result.json
+          test ! -f output/phase4b_history_recovery/result.json || cp output/phase4b_history_recovery/result.json output/phase4b_history_evidence/recovery.json
+      - name: Secret-pattern audit before upload
+        id: audit
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m scripts.media_probe_security audit --path output/phase4b_history_evidence
+      - name: Audited history evidence only
+        if: ${{ always() && steps.audit.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase4b-history-${{ inputs.mode }}-${{ github.run_id }}
+          path: output/phase4b_history_evidence/
+          retention-days: 14

@@ -5,6 +5,7 @@ narration-weighted durations, explicit still/contain framing, and an auditable m
 """
 from __future__ import annotations
 
+import hashlib
 import math
 import re
 import unicodedata
@@ -30,6 +31,8 @@ ALIASES = {
     "eyfel": "eiffel", "kulesi": "tower", "kulesinin": "tower", "pariste": "paris",
     "okyanus": "ocean", "okyanusta": "ocean", "balina": "whale", "deniz": "sea",
     "kaplumbaga": "turtle", "krater": "crater", "kraterler": "crater", "craters": "crater",
+    "dalga": "wave", "dalgalar": "wave", "dalgalari": "wave", "sahil": "beach", "sahilde": "beach",
+    "selale": "waterfall", "selalede": "waterfall", "selalenin": "waterfall", "akan": "flowing", "su": "water", "suyun": "water",
     "apollo": "apollo", "gunes": "sun", "gunesin": "sun", "gezegen": "planet",
     "agac": "tree", "agaclar": "tree", "orman": "forest", "ormanlar": "forest",
     "saturnun": "saturn", "saturn": "saturn", "jupiterin": "jupiter", "marsin": "mars",
@@ -170,8 +173,36 @@ def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[st
             "framing": "contain_letterbox"}
 
 
+def provider_issue(provider, query: str, exc: Exception | None = None) -> dict:
+    """Never serialize arbitrary diagnostics/exception text from a transport.
+
+    A browser 403 is restricted to provider, status, query ID and a safe class.
+    The raw (non-secret) fixture queries remain separately in queries_tried.
+    """
+    diagnostics = getattr(provider, "last_diagnostics", {})
+    diagnostics = diagnostics if isinstance(diagnostics, dict) else {}
+    status = diagnostics.get("search_http_status")
+    status = status if type(status) is int and 100 <= status <= 599 else None
+    error = "NoCatalogCandidates"
+    if status and status != 200:
+        error = "BrowserHTTPBlocked" if status == 403 else "BrowserHTTPError"
+    elif diagnostics.get("status") in {"api_key_not_configured_or_placeholder", "media_cookie_configuration_absent"}:
+        error = diagnostics["status"]
+    if exc is not None:
+        message = str(exc)
+        match = re.fullmatch(r"(pexels|pixabay|commons)_catalog_http_([0-9]{3})", message)
+        if match:
+            status, error = int(match[2]), message
+        else:
+            error = "browser_catalog_failed" if message == "browser_catalog_failed" else type(exc).__name__
+    return {"provider": provider.name, "http_status": status,
+            "query_id": "q-"+hashlib.sha256(query.encode()).hexdigest()[:12], "error_type": error}
+
+
 def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, history: MediaHistory | None = None,
-                            downloader=download_candidate, prober=probe_media, report_path: Path | None = None) -> tuple[list[dict], dict]:
+                            downloader=None, prober=None, report_path: Path | None = None) -> tuple[list[dict], dict]:
+    downloader = download_candidate if downloader is None else downloader
+    prober = probe_media if prober is None else prober
     providers = default_providers() if providers is None else providers
     history = history if history is not None else MediaHistory.from_environment()
     report = {"version": 1, "status": "blocked", "method": METHOD, "created_at": now(),
@@ -187,6 +218,7 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
         for scene in plan:
             record = {"scene_id": scene["scene_id"], "narration": scene["narration"], "planned_duration": scene["duration"],
                       "timing_basis": report["timing_basis"], "queries_tried": [], "provider_errors": [], "rejections": [],
+                      "measured_candidates": [], "ranking_scope": "at_most_four_downloads_per_scene_measured_rerank",
                       "selected_provider": None, "selected_media_id": None, "source_url": None, "license": None,
                       "attribution": None, "duration": None, "resolution": None, "aspect_ratio": None,
                       "selection_score": None, "rejection_reason": "not_selected", "fallback_used": False}
@@ -199,8 +231,7 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                     try:
                         candidates = provider.search(query)[:8]
                         if not candidates:
-                            record["provider_errors"].append({"provider": provider.name, "query": query,
-                                                            "error_type": "NoCatalogCandidates", "diagnostics": getattr(provider, "last_diagnostics", {})})
+                            record["provider_errors"].append(provider_issue(provider, query))
                         for candidate in candidates:
                             verdict = evaluate(candidate, scene, query, used=used, recent=recent)
                             if verdict["eligible"]:
@@ -208,10 +239,15 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                             else:
                                 record["rejections"].append({"key": candidate.key, "query": query, "source_url": public_url(candidate.source_url), "reasons": verdict["rejection_reasons"]})
                     except Exception as exc:
-                        code = str(exc) if re.fullmatch(r"(?:pexels_catalog_http_[0-9]{3}|pixabay_catalog_http_[0-9]{3}|commons_catalog_http_[0-9]{3}|browser_catalog_failed)", str(exc)) else type(exc).__name__
-                        record["provider_errors"].append({"provider": provider.name, "query": query, "error_type": type(exc).__name__, "error_code": code})
+                        record["provider_errors"].append(provider_issue(provider, query, exc))
                 ranked.sort(key=lambda x: (-x[1]["score"], x[2], x[0].key))
+                measured_pool = []
+                catalog_seen = set()
                 for candidate, _pre, pi in ranked:
+                    identities = {candidate.key, public_url(candidate.source_url), public_url(candidate.download_url)}
+                    if identities & catalog_seen:
+                        continue
+                    catalog_seen.update(identities)
                     if downloads >= 4:
                         break
                     downloads += 1
@@ -228,26 +264,38 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                         if verdict["rejection_reasons"]:
                             record["rejections"].append({"key": candidate.key, "query": query, "reasons": verdict["rejection_reasons"]})
                             path.unlink(missing_ok=True); continue
-                        if any(x.get("sha256") == probe["sha256"] for x in recent) and not verdict["components"]["recent_use_penalty"]:
+                        hash_hit = any(x.get("sha256") == probe["sha256"] for x in recent)
+                        if hash_hit and not verdict["components"]["recent_use_penalty"]:
                             verdict["components"]["recent_use_penalty"] = -25
                             verdict["score"] = max(0, verdict["score"]-25)
-                        record.update({"selected_provider": measured.provider, "selected_media_id": measured.media_id,
-                                       "source_url": public_url(measured.source_url), "license": measured.record()["license"], "attribution": measured.license.attribution,
-                                       "duration": measured.duration, "resolution": {"width": measured.width, "height": measured.height},
-                                       "aspect_ratio": round(measured.width/measured.height, 6), "selection_score": verdict["score"],
-                                       "rejection_reason": None, "fallback_used": qi > 0 or pi > 0,
-                                       "selected_query": query, "assessment": verdict, "media": measured.record(), "file_probe": probe,
-                                       "media_type": measured.media_type, "fit_mode": "contain", "download_status": "downloaded_and_decoded"})
-                        selected = {"path": path, "duration": scene["duration"], "media_kind": measured.media_type,
-                                    "provider": measured.provider, "credit": measured.license.attribution, "scene_id": scene["scene_id"],
-                                    "fit_mode": "contain", "loop_allowed": False}
-                        used.update({candidate.key, public_url(candidate.source_url), public_url(candidate.download_url), probe["sha256"]})
-                        history_entries.append({"key": candidate.key, "source_url": public_url(candidate.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
-                        break
+                        evidence = {"media": measured.record(), "file_probe": probe, "assessment": verdict,
+                                    "recent_hash_match": hash_hit, "decision": "not_selected_lower_measured_rank"}
+                        record["measured_candidates"].append(evidence)
+                        measured_pool.append((measured, verdict, pi, path, probe, evidence))
                     except Exception as exc:
                         path.unlink(missing_ok=True)
                         record["rejections"].append({"key": candidate.key, "query": query, "reasons": ["download_or_decode_failed"], "error_type": type(exc).__name__})
-                if selected:
+                # Measure a bounded pool, THEN choose. A new URL/ID may hide a
+                # recent byte hash, and advertised dimensions may be wrong. A
+                # post-download penalty without reranking does not avoid reuse.
+                measured_pool.sort(key=lambda x: (-x[1]["score"], x[2], x[0].key))
+                if measured_pool:
+                    measured, verdict, pi, path, probe, evidence = measured_pool[0]
+                    evidence["decision"] = "selected_highest_measured_rank"
+                    for losing in measured_pool[1:]:
+                        losing[3].unlink(missing_ok=True)
+                    record.update({"selected_provider": measured.provider, "selected_media_id": measured.media_id,
+                                   "source_url": public_url(measured.source_url), "license": measured.record()["license"], "attribution": measured.license.attribution,
+                                   "duration": measured.duration, "resolution": {"width": measured.width, "height": measured.height},
+                                   "aspect_ratio": round(measured.width/measured.height, 6), "selection_score": verdict["score"],
+                                   "rejection_reason": None, "fallback_used": qi > 0 or pi > 0,
+                                   "selected_query": query, "assessment": verdict, "media": measured.record(), "file_probe": probe,
+                                   "media_type": measured.media_type, "fit_mode": "contain", "download_status": "downloaded_and_decoded"})
+                    selected = {"path": path, "duration": scene["duration"], "media_kind": measured.media_type,
+                                "provider": measured.provider, "credit": measured.license.attribution, "scene_id": scene["scene_id"],
+                                "fit_mode": "contain", "loop_allowed": False}
+                    used.update({measured.key, public_url(measured.source_url), public_url(measured.download_url), probe["sha256"]})
+                    history_entries.append({"key": measured.key, "source_url": public_url(measured.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
                     break
             if selected is None:
                 record["rejection_reason"] = "no_acceptable_media_after_bounded_queries"

@@ -62,12 +62,32 @@ def public_url(url: str) -> str:
         return ""
 
 
+class _PublicOnlyAuth(requests.auth.AuthBase):
+    """Run AFTER requests merges session headers/cookies/netrc authentication.
+
+    Passing only a User-Agent to Session.get does not remove an existing session
+    Authorization or Cookie header. Strip the prepared request instead, on EVERY
+    bounded hop. Authenticated catalog calls never use this transport.
+    """
+    def __call__(self, request):
+        request.headers.clear()
+        request.headers.update({"User-Agent": USER_AGENT, "Accept": "*/*"})
+        request._cookies = requests.cookies.RequestsCookieJar()
+        return request
+
+
+_PUBLIC_ONLY_AUTH = _PublicOnlyAuth()
+
+
 def get_public(session, url: str, hosts: set[str], **kwargs):
-    """Allowlisted HTTPS, bounded redirects; never forwards credentials/cookies."""
+    """Allowlisted HTTPS, bounded redirects; no session/API/cookie credentials."""
+    if {"headers", "auth", "cookies", "allow_redirects"} & kwargs.keys():
+        raise ValueError("public_transport_credentials_not_allowed")
     for _ in range(4):
         if not valid_url(url, hosts):
             raise ValueError("untrusted_media_host")
-        r = session.get(url, headers={"User-Agent": USER_AGENT}, timeout=(5, 25), allow_redirects=False, **kwargs)
+        r = session.get(url, headers={"User-Agent": USER_AGENT}, auth=_PUBLIC_ONLY_AUTH,
+                        cookies={}, timeout=(5, 25), allow_redirects=False, **kwargs)
         if r.status_code in (301, 302, 303, 307, 308):
             nxt = urljoin(url, r.headers.get("Location", ""))
             r.close()
@@ -182,10 +202,15 @@ def commons_license(page: dict, info: dict) -> MediaLicense:
     reason = None
     attr_raw = val("AttributionRequired").lower()
     attr = True if attr_raw in {"true", "1", "yes"} else False if attr_raw in {"false", "0", "no"} else None
-    p = urlsplit(lic_url if lic_url.startswith("http") else "https:"+lic_url) if lic_url else None
-    path = p.path.rstrip("/") if p else ""
-    cc_host = (p and p.scheme in {"https", "http"} and p.hostname in {"creativecommons.org", "www.creativecommons.org"}
-               and not p.username and not p.password and p.port in (None, 443 if p.scheme == "https" else 80))
+    try:
+        p = urlsplit(lic_url if lic_url.startswith("http") else "https:"+lic_url) if lic_url else None
+        path = p.path.rstrip("/") if p else ""
+        cc_host = (p and p.scheme in {"https", "http"} and p.hostname in {"creativecommons.org", "www.creativecommons.org"}
+                   and not p.username and not p.password and not p.query and not p.fragment
+                   and p.port in (None, 443 if p.scheme == "https" else 80))
+    except ValueError:
+        # A malformed port/IPv6 URL is a rejected declaration, not permission.
+        p, path, cc_host = None, "", False
     by_name = re.fullmatch(r"cc by (2\.0|2\.5|3\.0|4\.0)(?: ([a-z-]+))?", name.lower())
     by_path = re.fullmatch(r"/licenses/by/(2\.0|2\.5|3\.0|4\.0)(?:/([a-z-]+))?", path)
     if "by-sa" in name.lower() or "by-sa" in path:
@@ -194,7 +219,7 @@ def commons_license(page: dict, info: dict) -> MediaLicense:
         # Never reconcile contradictory license declarations by guessing which
         # version/jurisdiction grants permission. Restricted names cannot borrow
         # a permissive /by/ URL either; an unknown name remains unsupported.
-        if by_name[1] != by_path[1] or by_name[2] and by_name[2] != by_path[2]:
+        if by_name[1] != by_path[1] or by_name[2] and by_name[2] != by_path[2] or attr is False:
             reason = "inconsistent_cc_by_license_declaration"
         attr = True
     elif name.lower() in {"cc0", "cc0 1.0", "cc0 1.0 universal"} and cc_host and path == "/publicdomain/zero/1.0":
@@ -312,7 +337,14 @@ class WikimediaProvider:
                 w = info.get("thumbwidth") or info.get("width") if image else info.get("width")
                 h = info.get("thumbheight") or info.get("height") if image else info.get("height")
                 metadata = {item.get("name"): item.get("value") for item in info.get("metadata", [])}
-                length = metadata.get("length")
+                # Commons GETID3 reports playtime_seconds for real WebM files.
+                # An absent/invalid field stays unknown; acceptance still probes
+                # and fully decodes the downloaded file independently.
+                length = metadata.get("length") or metadata.get("playtime_seconds")
+                try:
+                    length = float(length) if length is not None else None
+                except (TypeError, ValueError):
+                    length = None
                 ext = info.get("extmetadata") or {}
                 results.append(MediaCandidate(self.name, str(page["pageid"]), info.get("descriptionurl", ""), link,
                                               "image" if image else "video", int(w) if w else None, int(h) if h else None,
@@ -334,12 +366,21 @@ class BrowserStockProvider:
         if not any((ROOT/p).exists() for p in ("cookies.json", "storage_state.json")):
             self.last_diagnostics = {"status": "media_cookie_configuration_absent"}
             return []
+        # A stock browser needs PATH/HOME/display, not API keys, the dotenv
+        # secret, GitHub credentials or Gemini sessions from its parent process.
+        safe_names = {"PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "LC_CTYPE", "DISPLAY",
+                      "TMPDIR", "TMP", "TEMP", "XDG_RUNTIME_DIR", "PLAYWRIGHT_BROWSERS_PATH"}
         result = subprocess.run(["node", str(ROOT/"video_fetcher.js"), query, "--metadata", "--provider", self.provider],
-                                cwd=ROOT, capture_output=True, text=True, timeout=85)
+                                cwd=ROOT, capture_output=True, text=True, timeout=85,
+                                env={key: value for key, value in os.environ.items() if key in safe_names})
         if result.returncode != 0:
             raise RuntimeError("browser_catalog_failed")
         raw = json.loads(result.stdout)
-        self.last_diagnostics = raw.get("diagnostics", {})
+        diagnostics = raw.get("diagnostics") or {}
+        status = diagnostics.get("search_http_status")
+        self.last_diagnostics = {"search_http_status": status if type(status) is int and 100 <= status <= 599 else None}
+        if status != 200 or not raw.get("candidates"):
+            return []
         lic = self.terms.check(self.provider)
         out = []
         for row in raw.get("candidates", [])[:6]:
