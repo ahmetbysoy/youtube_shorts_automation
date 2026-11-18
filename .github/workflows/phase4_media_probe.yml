@@ -21,14 +21,37 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '20'
-      - name: Media-only dependencies
+      - name: Python probe dependencies (before optional system downloads)
+        timeout-minutes: 4
+        run: python -m pip install requests==2.34.2 beautifulsoup4==4.15.0 python-dotenv==1.2.4 Pillow==11.3.0 'jsonschema>=4.23,<5'
+      - name: Media system dependencies (bounded official Ubuntu mirror)
+        timeout-minutes: 5
         run: |
           set -euo pipefail
+          # Probe-only ephemeral runner. The first 4B attempt spent >16 minutes
+          # downloading from its regional Ubuntu mirror, before any provider ran.
+          # Use the official mirror already observed working in the Ubuntu CI;
+          # never change provider hosts, access restrictions or production setup.
+          sudo python3 - <<'PY'
+          from pathlib import Path
+          import re
+          paths = [Path('/etc/apt/sources.list'), *Path('/etc/apt/sources.list.d').glob('*.sources'), *Path('/etc/apt/sources.list.d').glob('*.list')]
+          for path in paths:
+              if path.is_file():
+                  text = path.read_text()
+                  updated = re.sub(r'https?://(?:[a-z0-9.-]*archive\.ubuntu\.com|security\.ubuntu\.com)/ubuntu/?|mirror\+file:/etc/apt/apt-mirrors\.txt', 'https://azure.archive.ubuntu.com/ubuntu/', text)
+                  if updated != text:
+                      path.write_text(updated)
+          Path('/etc/apt/apt.conf.d/99-phase4b-probe-timeouts').write_text('Acquire::Retries "2";\nAcquire::http::Timeout "25";\nAcquire::https::Timeout "25";\n')
+          PY
           sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core
-          python -m pip install requests==2.34.2 beautifulsoup4==4.15.0 python-dotenv==1.2.4 Pillow==11.3.0 'jsonschema>=4.23,<5'
-          npm ci
-          npx playwright install --with-deps chromium
+          sudo apt-get install -y --no-install-recommends ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core
+      - name: Node probe dependencies
+        timeout-minutes: 4
+        run: npm ci
+      - name: Chromium probe dependencies
+        timeout-minutes: 5
+        run: npx playwright install --with-deps chromium
       - name: Existing stock cookies only (no Google or YouTube sessions)
         env:
           MEDIA_COOKIES_JSON: ${{ secrets.MEDIA_COOKIES_JSON }}
@@ -48,6 +71,11 @@ jobs:
           import json,os
           from pathlib import Path
           p=Path('output/phase4b_evidence/evidence.json')
+          if not p.exists():
+              p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_text(json.dumps({'phase':'4B','github_run_id':os.environ.get('GITHUB_RUN_ID'),
+                  'github_sha':os.environ.get('GITHUB_SHA'),'providers':{},'live_provider_calls':False,
+                  'overall':'not_run_infrastructure_or_setup_failure','full_acceptance':False},indent=2)+'\n')
           if p.exists():
               d=json.loads(p.read_text())
               with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
