@@ -72,3 +72,8 @@ session_capture_login1/
 session_capture*/
 backfill_output/
 jeton/
+package.json
+package-lock.json
+node_modules/
+package.json
+package-lock.json

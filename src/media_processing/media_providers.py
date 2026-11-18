@@ -383,48 +383,79 @@ class WikimediaProvider:
 
 
 class BrowserStockProvider:
-    """Strict metadata mode uses the existing cookie configuration, never legacy guessed URLs."""
+    """Strict metadata mode uses the existing cookie configuration, never legacy guessed URLs.
+
+    Phase 4D — cookie-only, domain-izoleli:
+      - PEXELS_COOK ve PIXABAY_COOK env secret'lari uzerinden calisir.
+      - YouTube cookies.json / storage_state.json medya context'ine YUKLENMEZ.
+      - video_fetcher.js --metadata modu JSON olarak aday listesi + diagnostics döndürür;
+        bu sağlayıcı HİÇBİR dosya indirmez, yalnız arama/katalog sonucu döndürür.
+      - Cookie yoksa ya da yanlış domain'deyse boş liste + açık diagnostics döner (hata fırlatmaz).
+      - Değerler (cookie/URL) hiçbir zaman loglanmaz.
+    """
 
     def __init__(self, provider: str, *, terms: StockTerms | None = None):
         if provider not in {"pexels", "pixabay"}:
             raise ValueError("unsupported_browser_provider")
         self.provider, self.name, self.terms = provider, f"{provider}-browser", terms or StockTerms()
+        self.last_diagnostics = {"status": "not_started"}
 
     def search(self, query: str) -> list[MediaCandidate]:
-        if not any((ROOT/p).exists() for p in ("cookies.json", "storage_state.json")):
-            self.last_diagnostics = {"status": "media_cookie_configuration_absent"}
+        env_name = "PEXELS_COOK" if self.provider == "pexels" else "PIXABAY_COOK"
+        cookie_raw = os.environ.get(env_name, "")
+        if not cookie_raw or not cookie_raw.strip():
+            self.last_diagnostics = {"status": "cookie_missing", "cookie_env_present": False}
             return []
-        self.last_diagnostics = {"status": "browser_catalog_started", "search_http_status": None}
-        # A stock browser needs PATH/HOME/display, not API keys, the dotenv
-        # secret, GitHub credentials or Gemini sessions from its parent process.
+        # Tarayici child prosesine yalnizca gerekli env degiskenlerini gec;
+        # YOUTUBE/GEMINI/GITHUB cookie/token/keyleri ASLA gecme.
         safe_names = {"PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "LC_CTYPE", "DISPLAY",
-                      "TMPDIR", "TMP", "TEMP", "XDG_RUNTIME_DIR", "PLAYWRIGHT_BROWSERS_PATH"}
-        result = subprocess.run(["node", str(ROOT/"video_fetcher.js"), query, "--metadata", "--provider", self.provider],
-                                cwd=ROOT, capture_output=True, text=True, timeout=85,
-                                env={key: value for key, value in os.environ.items() if key in safe_names})
-        if result.returncode != 0:
-            raise RuntimeError("browser_catalog_failed")
-        raw = json.loads(result.stdout)
-        diagnostics = raw.get("diagnostics") or {}
-        status = diagnostics.get("search_http_status")
-        self.last_diagnostics = {"search_http_status": status if type(status) is int and 100 <= status <= 599 else None}
-        if status != 200:
+                      "TMPDIR", "TMP", "TEMP", "XDG_RUNTIME_DIR", "PLAYWRIGHT_BROWSERS_PATH",
+                      env_name}
+        child_env = {k: v for k, v in os.environ.items() if k in safe_names}
+        try:
+            result = subprocess.run(
+                ["node", str(ROOT/"video_fetcher.js"), query, "--metadata", "--provider", self.provider],
+                cwd=ROOT, capture_output=True, text=True, timeout=90, env=child_env,
+            )
+        except subprocess.TimeoutExpired:
+            self.last_diagnostics = {"status": "browser_timeout"}
             return []
-        sources = diagnostics.get("source_http_statuses", [])
-        self.last_diagnostics["source_http_statuses"] = [s for s in sources[:3] if type(s) is int and 100 <= s <= 599] if isinstance(sources, list) else []
-        if not raw.get("candidates"):
+        if result.returncode != 0:
+            # stderr son satirini al (guvenli, cookie'siz hata sinifi)
+            err_tail = (result.stderr or "").strip().splitlines()[-1][:200] if result.stderr else ""
+            self.last_diagnostics = {"status": "browser_catalog_failed", "error_class": err_tail}
+            return []
+        try:
+            raw = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            self.last_diagnostics = {"status": "metadata_json_parse_failed"}
+            return []
+        diag = (raw.get("diagnostics") or {}).get(self.provider) or {}
+        self.last_diagnostics = {
+            "status": diag.get("search") or "unknown",
+            "cookie_present": diag.get("cookie_present"),
+            "cookie_count": diag.get("cookie_count"),
+            "cookie_domain_ok": diag.get("cookie_domain_ok"),
+            "browser_access": diag.get("browser_access"),
+            "candidates_found": diag.get("candidates_found"),
+            "error": diag.get("error"),
+        }
+        if diag.get("error") or not diag.get("candidates_found"):
             return []
         lic = self.terms.check(self.provider)
-        license_trace = getattr(self.terms, "last_http_evidence", {})
-        if isinstance(license_trace, dict):
-            self.last_diagnostics["license_http_status"] = license_trace.get("http_status")
         out = []
-        for row in raw.get("candidates", [])[:6]:
-            if row.get("provider") != self.provider or not row.get("license_link_observed"):
+        for row in (raw.get("candidates") or [])[:6]:
+            if row.get("provider") != self.provider or not row.get("download_url"):
                 continue
-            out.append(MediaCandidate(self.provider, str(row["media_id"]), row["source_url"], row["download_url"], "video",
-                                      row.get("width"), row.get("height"), row.get("duration"), title=plain(row.get("title")),
-                                      description=plain(row.get("description")), license=lic, catalog_transport="playwright"))
+            if not valid_url(row["download_url"], DOWNLOAD_HOSTS[self.provider]):
+                continue
+            out.append(MediaCandidate(
+                self.provider, str(row.get("media_id") or ""),
+                row.get("source_url") or "", row["download_url"], "video",
+                None, None, None,  # genislik/yukseklik/sure indirme sonrası ffprobe ile doldurulur
+                title=plain(row.get("title") or query),
+                license=lic, catalog_transport="playwright",
+            ))
         return out
 
 

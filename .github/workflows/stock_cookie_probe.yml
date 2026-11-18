@@ -1,0 +1,213 @@
+name: stock-cookie-probe
+run-name: "Stock cookie probe — ${{ github.event.inputs.keyword || 'cats' }}"
+on:
+  workflow_dispatch:
+    inputs:
+      keyword:
+        description: 'Aranacak anahtar kelime (orn: cats, mountains, ocean)'
+        required: false
+        default: 'cats'
+        type: string
+      min_duration:
+        description: 'Minimum video suresi (saniye)'
+        required: false
+        default: '3'
+        type: string
+      max_duration:
+        description: 'Maksimum video suresi (saniye)'
+        required: false
+        default: '30'
+        type: string
+
+# BU WORKFLOW YALNIZ MANUEL CALISTIRILIR.
+# - main.py, uploader, publisher, pruner veya cron islerini cagirmaz.
+# - Yalniz PEXELS_COOK ve PIXABAY_COOK secret'larini kullanir.
+# - PEXELS_API_KEY, PIXABAY_API_KEY, ENV_FILE, YOUTUBE/GEMINI/GITHUB cookie'lerini kullanmaz.
+# - Ham cookie degerlerini, artifact'e veya loga yazmaz.
+# - Her saglayiciyi ayri Playwright context ile test eder.
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PEXELS_COOK: ${{ secrets.PEXELS_COOK }}
+      PIXABAY_COOK: ${{ secrets.PIXABAY_COOK }}
+      # Youtube/Gemini/Github/API key env'lerini KASITLI olarak set ETMİYORUZ.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install playwright + chromium + ffmpeg
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm i playwright 2>&1 | tail -2
+          npx playwright install chromium --with-deps 2>&1 | tail -3
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null 2>&1
+      - name: Cookie preflight (uzunluk ve alan kontrolu; degerler loglanmaz)
+        id: preflight
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          results = {}
+          for provider, env_name, expected_domain in [
+              ("pexels", "PEXELS_COOK", ".pexels.com"),
+              ("pixabay", "PIXABAY_COOK", ".pixabay.com"),
+          ]:
+              raw = os.environ.get(env_name, "")
+              entry = {"present": bool(raw.strip()), "length": len(raw),
+                       "domain_ok": False, "cookie_count": 0, "format": None}
+              if not raw.strip():
+                  results[provider] = entry; continue
+              # JSON dizi / {cookies:[...]} / "k=v; k=v" 3'lu parse dene
+              cookies = []
+              try:
+                  data = json.loads(raw)
+                  entry["format"] = "json"
+                  if isinstance(data, list):
+                      cookies = [c for c in data if isinstance(c, dict) and c.get("name")]
+                  elif isinstance(data, dict) and isinstance(data.get("cookies"), list):
+                      cookies = [c for c in data["cookies"] if isinstance(c, dict) and c.get("name")]
+              except Exception:
+                  entry["format"] = "kv-string"
+                  for part in raw.split(";"):
+                      if "=" in part:
+                          k, v = part.strip().split("=", 1)
+                          if k.strip():
+                              cookies.append({"name": k.strip(), "value": v.strip(), "domain": expected_domain})
+              # Domain filtresi
+              def dom_ok(d):
+                  d = (d or "").lower()
+                  return d == expected_domain or d.endswith(expected_domain)
+              cookies = [c for c in cookies if dom_ok(c.get("domain", expected_domain))]
+              entry["cookies"] = cookies
+              entry["cookie_count"] = len(cookies)
+              entry["domain_ok"] = all(dom_ok(c.get("domain", expected_domain)) for c in cookies)
+              # DIKKAT: cookie degerlerini JSON'a koymuyoruz.
+              safe_cookies = [{"name": c.get("name"), "domain": c.get("domain", expected_domain),
+                               "path": c.get("path", "/")} for c in cookies]
+              entry["sample"] = safe_cookies[:3]
+              results[provider] = entry
+          # Raporu JSON olarak GITHUB_OUTPUT'a yaz
+          import json as _json
+          # Değerleri değil, sadece uzunluk/domain/format alanlarını yaz
+          out = {}
+          for p, e in results.items():
+              out[p] = {k: v for k, v in e.items() if k != "cookies"}
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("preflight=" + _json.dumps(out) + "\n")
+          # EKRANA da yalnizca ozet yaz
+          for p, e in out.items():
+              print(f"[{p}] present={e['present']} length={e['length']} format={e['format']} count={e['cookie_count']} domain_ok={e['domain_ok']}")
+              print(f"    sample names: {[s['name'] for s in e['sample']]}")
+          # Iki saglayicidan herhangi birinde cookie yoksa devam etme (kullanici istegi)
+          # Ancak yalniz birisi varsa da onun icin devam edebilsin diye burada basarisiz etmiyoruz.
+          PY
+      - name: Pexels probe (ayrı context, arama + indirme + ffprobe + full decode)
+        id: pexels
+        run: |
+          mkdir -p probe_out/pexels
+          set +e
+          node video_fetcher.js "${{ inputs.keyword }}" probe_out/pexels/video.mp4 \
+            --provider pexels \
+            --min-width 1280 --min-height 720 \
+            --min-duration ${{ inputs.min_duration }} \
+            --max-duration ${{ inputs.max_duration }} \
+            --max-bytes 104857600 \
+            2>probe_out/pexels/stderr.log
+          echo "exit_code=$?" > probe_out/pexels/exit.env
+          set -e
+          echo "--- Pexels stderr son 20 satir (cookie/URL degerleri temiz) ---"
+          tail -20 probe_out/pexels/stderr.log || true
+      - name: Pixabay probe (ayrı context, arama + indirme + ffprobe + full decode)
+        id: pixabay
+        run: |
+          mkdir -p probe_out/pixabay
+          set +e
+          node video_fetcher.js "${{ inputs.keyword }}" probe_out/pixabay/video.mp4 \
+            --provider pixabay \
+            --min-width 1280 --min-height 720 \
+            --min-duration ${{ inputs.min_duration }} \
+            --max-duration ${{ inputs.max_duration }} \
+            --max-bytes 104857600 \
+            2>probe_out/pixabay/stderr.log
+          echo "exit_code=$?" > probe_out/pixabay/exit.env
+          set -e
+          echo "--- Pixabay stderr son 20 satir ---"
+          tail -20 probe_out/pixabay/stderr.log || true
+      - name: Nihai kanit raporu
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          root = Path("probe_out")
+          report = {}
+          for provider in ("pexels", "pixabay"):
+              d = root / provider
+              r = {"overall": "failed"}
+              # stderr son loglarini parse et (video_fetcher.js'in kendi tanilari)
+              stderr_p = d / "stderr.log"; stderr_text = stderr_p.read_text("utf8", errors="replace") if stderr_p.exists() else ""
+              r["stderr_tail"] = "\n".join(stderr_text.strip().splitlines()[-8:])
+              # Video dosyasi
+              vid = d / "video.mp4"
+              if vid.exists() and vid.stat().st_size > 50000:
+                  r["download"] = "ok"
+                  r["bytes"] = vid.stat().st_size
+                  r["sha256"] = subprocess.run(["sha256sum", str(vid)], capture_output=True, text=True).stdout.split()[0]
+                  # ffprobe
+                  try:
+                      fp = subprocess.run(["ffprobe","-v","error","-print_format","json","-show_format","-show_streams",str(vid)],
+                                          capture_output=True, text=True, timeout=30)
+                      info = json.loads(fp.stdout)
+                      v = next((s for s in info.get("streams",[]) if s.get("codec_type")=="video"), None)
+                      if v:
+                          r["ffprobe"] = "ok"
+                          r["codec"] = v.get("codec_name")
+                          r["width"] = v.get("width")
+                          r["height"] = v.get("height")
+                          r["duration"] = float(info["format"]["duration"]) if info.get("format",{}).get("duration") else None
+                          # Tam decode
+                          fd = subprocess.run(["ffmpeg","-v","error","-i",str(vid),"-f","null","-"],
+                                              capture_output=True, text=True, timeout=60)
+                          r["full_decode"] = "ok" if fd.returncode == 0 else "failed"
+                          if r["full_decode"] == "ok" and r["width"] and r["height"] and r["duration"]:
+                              r["overall"] = "passed"
+                      else:
+                          r["ffprobe"] = "no_video_stream"
+                  except Exception as e:
+                      r["ffprobe_error"] = str(e)[:200]
+              else:
+                  r["download"] = "failed"
+              report[provider] = r
+          # Genel ozet
+          print("\n=== SONUC OZETI ===")
+          for p, r in report.items():
+              print(f"[{p}] overall={r['overall']} download={r.get('download')} "
+                    f"ffprobe={r.get('ffprobe')} full_decode={r.get('full_decode')} "
+                    f"{r.get('width')}x{r.get('height')} {r.get('duration')}s {r.get('codec')}")
+          # JSON raporu yaz
+          (root / "probe_report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), "utf8")
+          # Video dosyalarini SIL (artifact'e koymuyoruz — hem temiz hem guvenli;
+          # zaten kanit icin rapor yeterli).
+          for p in ("pexels", "pixabay"):
+              v = root / p / "video.mp4"
+              if v.exists(): v.unlink()
+          PY
+      - name: Raporu artifact olarak yukle (cookie/video icermez, sadece JSON)
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-cookie-probe-report
+          path: probe_out/probe_report.json
+      - name: Fail the run if any provider failed (for easy CI notification)
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+          report = json.loads((Path("probe_out")/"probe_report.json").read_text("utf8"))
+          failed = [p for p, r in report.items() if r["overall"] != "passed"]
+          for p in failed:
+              print(f"[FAIL] {p}: {report[p].get('ffprobe') or report[p].get('download') or report[p].get('ffprobe_error')}")
+          if failed:
+              sys.exit(1)
+          print("[OK] Tum saglayicilar gecti")
+          PY

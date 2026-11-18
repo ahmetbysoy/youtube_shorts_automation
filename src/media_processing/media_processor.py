@@ -267,43 +267,65 @@ def fetch_wikimedia_media(keyword: str, duration_needed: float, used_urls: set[s
     return None
 
 
-def fetch_video_playwright(keyword: str, duration_needed: float, out_path: Path) -> Dict[str, Any] | None:
-    """
-    API key gerektirmeyen Playwright tabanlı video çekici.
-    Pixabay/Pexels oturumunu (cookies.json) kullanarak video indirir.
-    video_fetcher.js scriptini çağırır.
+def fetch_video_playwright(keyword: str, duration_needed: float, out_path: Path, *, portrait: bool = False) -> Dict[str, Any] | None:
+    """Phase 4D — Cookie-only, domain-izoleli, ffprobe+decode doğrulamalı Playwright video çekici.
+
+    Pexels/Pixabay icin YALNIZCA PEXELS_COOK / PIXABAY_COOK ortam degiskenlerindeki cookie'leri
+    kullanir. YouTube cookies.json / storage_state.json / ENV_FILE bu browser context'ine YUKLENMEZ.
+    video_fetcher.js kendi içinde:
+        - domain filtreleme,
+        - host/redirect/timeout/content-type kontrolu,
+        - SHA256,
+        - ffprobe (codec,cozunurluk,sure),
+        - tam FFmpeg decode
+    asamalarini yapar; yalnız tamamen gecerli bir video buldugunda exit 0 doner.
     """
     fetcher_js = BASE_DIR / "video_fetcher.js"
     if not fetcher_js.exists():
         print(f"[UYARI] video_fetcher.js bulunamadı: {fetcher_js}", file=sys.stderr)
         return None
 
+    # video_fetcher.js child'ina YALNIZCA güvenli env + medya cookie'lerini ver
+    safe_env_names = {"PATH","HOME","USER","LOGNAME","LANG","LC_ALL","LC_CTYPE","DISPLAY",
+                      "TMPDIR","TMP","TEMP","XDG_RUNTIME_DIR","PLAYWRIGHT_BROWSERS_PATH",
+                      "PEXELS_COOK","PIXABAY_COOK"}
+    child_env = {k: v for k, v in os.environ.items() if k in safe_env_names}
+
+    args = ["node", str(fetcher_js), keyword, str(out_path),
+            "--provider", "all",
+            "--min-width", "854", "--min-height", "480",
+            "--min-duration", str(max(2.0, duration_needed * 0.5)),
+            "--max-duration", str(max(10.0, duration_needed * 1.5 + 10)),
+            "--max-bytes", str(100 * 1024 * 1024)]
+    if portrait:
+        args.append("--portrait")
+
     try:
-        result = subprocess.run(
-            ["node", str(fetcher_js), keyword, str(out_path)],
-            capture_output=True, text=True, timeout=75,
-            cwd=str(BASE_DIR)
-        )
-        # stdout'un son satırı indirilen dosya yolu
+        result = subprocess.run(args, capture_output=True, text=True, timeout=120,
+                                cwd=str(BASE_DIR), env=child_env)
         out_lines = [l.strip() for l in result.stdout.strip().splitlines() if l.strip()]
         downloaded = out_lines[-1] if out_lines else ""
 
         if result.returncode == 0 and downloaded and Path(downloaded).exists():
             size = Path(downloaded).stat().st_size
             if size > 50_000:
-                print(f"[INFO] Playwright video indirildi: {downloaded} ({size//1024//1024}MB)", flush=True)
+                print(f"[INFO] Playwright video indirildi ve dogrulandi: {downloaded} ({size//1024//1024}MB)", flush=True)
+                # video_fetcher.js stderr son satiri "w x h, duration sn, MB, codec=" bilgisi icerir
                 return {
                     "url": downloaded,
                     "duration": duration_needed,
-                    "provider": "playwright-pixabay",
+                    "provider": "playwright-stock",
                     "media_kind": "video",
                     "local_path": downloaded,
                 }
-        print(f"[UYARI] video_fetcher.js başarısız (exit {result.returncode}): {result.stderr[-200:]}", file=sys.stderr)
+        # Hata sinifini guvenli sekilde logla (cookie/URL sorgu icermez)
+        err_lines = [l for l in (result.stderr or "").splitlines() if l.strip()]
+        err_tail = err_lines[-1][:240] if err_lines else "(no stderr)"
+        print(f"[UYARI] video_fetcher.js başarısız (exit {result.returncode}): {err_tail}", file=sys.stderr)
     except subprocess.TimeoutExpired:
         print(f"[UYARI] video_fetcher.js timeout ({keyword})", file=sys.stderr)
     except Exception as exc:
-        print(f"[UYARI] Playwright video hatası ({keyword}): {exc}", file=sys.stderr)
+        print(f"[UYARI] Playwright video hatası ({keyword}): {str(exc)[:200]}", file=sys.stderr)
     return None
 
 

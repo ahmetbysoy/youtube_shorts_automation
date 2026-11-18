@@ -70,7 +70,17 @@ chmod 600 .env cookies.json storage_state.json
 
 Üretim içerik hattı `GEMINI_COOK` JSON cookie değerini ortam değişkeninden kullanır. Bu değer Git'e, loglara veya artifact'lere yazılmamalıdır. Cookie eksik/geçersiz ya da Gemini yanıtı uygunsuzsa metin sağlayıcısı olarak ücretli API çağrılmaz; içerik motoru mevcut fallback havuzuna döner.
 
-**Stok video cookie'leri:** `video_fetcher.js` Pexels ve Pixabay'den video aramak/indirmek için `PEXELS_COOK` ve `PIXABAY_COOK` ortam değişkenlerini (veya geriye dönük uyumluluk için kökteki `cookies.json` / `storage_state.json` dosyalarını) kullanır. Cookie formatı üç seçenekten biri olabilir: Playwright storage_state içindeki `cookies` JSON dizisi, `[{name,value,domain,...}]` Netscape JSON dizisi, ya da `"name=value; name2=value2"` düz string. Playwright Chromium headless modda Cloudflare "Just a moment..." doğrulamasını gerçek tarayıcı gibi otomatik geçer; `curl` ile aynı deneme yapılırsa TLS parmak izi nedeniyle 403 döner. Cookie geçersizse veya arama başarısız olursa video kaynağı otomatik olarak Wikimedia Commons fallback'ine düşer.
+**Stok video cookie'leri (Faz 4D):** `video_fetcher.js` Pexels ve Pixabay'den video aramak/indirmek için `PEXELS_COOK` ve `PIXABAY_COOK` ortam değişkenlerini kullanır.
+
+- **Domain izolasyonu:** `PEXELS_COOK` içinden yalnız `.pexels.com` domain'li; `PIXABAY_COOK` içinden yalnız `.pixabay.com` domain'li cookie'ler kabul edilir. YouTube/Google cookie'leri medya Playwright context'ine HİÇBİR koşulda yüklenmez; `storage_state.json` ve `cookies.json` YALNIZ YouTube oturumu içindir, medya tarafında kullanılmaz.
+- **Desteklenen formatlar:** Playwright storage_state içindeki `cookies` JSON dizisi, `[{name,value,domain,...}]` Netscape JSON dizisi, ya da `"name=value; name2=value2"` düz string.
+- **Her sağlayıcı için AYRI Playwright browser context** açılır; çapraz oturum/çerez sızıntısı yoktur.
+- **Video doğrulama:** indirme sonrası HTTP durum kodu, redirect zinciri/son host, Content-Type, gerçek byte sayısı, SHA256, ffprobe (codec/çözünürlük/süre) ve tam FFmpeg decode kontrolü yapılır. Yalnız bütün kontrolleri geçen dosya başarılı sayılır; aksi halde sonraki sağlayıcıya geçilir.
+- **Kalite tercihleri:** Pexels'te öncelik `video-files/...hd_1920_1080` > `uhd_2560_1440` > `-hd_*` > diğer `video-files/`; AI UGC (`aigc-bundle`) son çaredir. Pixabay'de `_large.mp4` önce, `_medium.mp4` sonra; `_tiny.mp4` HİÇBİR koşulda kullanılmaz.
+- **Güvenlik:** En fazla 4 redirect hop'u, yalnızca izinli HTTPS medya CDN hostları, maksimum 100 MB dosya, HTML yanıtı/bozuk video/403/CAPTCHA durumları ayrı sınıflandırılır; meydan okuma (challenge bypass) denenmez, `blocked_unverified` olarak raporlanır. Cookie değerleri, hash/prefix/suffix dahil HİÇBİR log ve artifact'e yazılmaz.
+- Playwright Chromium headless modda Cloudflare "Just a moment..." doğrulamasını gerçek tarayıcı gibi otomatik geçer; `curl` ile aynı deneme yapılırsa TLS parmak izi nedeniyle 403 döner.
+- Cookie geçersiz/eksik veya arama başarısız olursa video kaynağı bir sonraki sağlayıcıya, sonra Wikimedia Commons fallback'ine düşer.
+- **Test:** `.github/workflows/stock_cookie_probe.yml` manuel dispatch ile çalışır; her sağlayıcı için `cookie_preflight` / `browser_access` / `search` / `download` / `ffprobe` / `full_decode` / `overall` aşamalarını ayrı raporlar, ham video veya cookie artifact olarak yüklemez.
 
 ### 3. Uçtan Uca Üretim ve `PUBLIC` Yayın
 

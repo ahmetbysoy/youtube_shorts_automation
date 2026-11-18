@@ -1,405 +1,640 @@
 /**
- * video_fetcher.js  —  Cookie-tabanlı Playwright Video Çekici
+ * video_fetcher.js  —  Cookie-tabanlı, domain-izoleli Playwright Video Çekici
  *
- * API key gerektirmez. Pixabay/Pexels oturumu üzerinden stok video arar ve indirir.
+ * Pexels ve Pixabay icin TARAYICI OTURUMLU (cookie) arama + indirme.
+ * API anahtari KULLANMAZ.
  *
- * Cookie kaynakları (öncelik sırasıyla):
- *   1. PEXELS_COOK / PIXABAY_COOK ortam değişkenleri (GitHub Secrets için).
- *      İçerik şu formatlardan biri olabilir:
- *        - Playwright storage_state.json içindeki "cookies" JSON dizisi
- *        - Netscape/Mozilla cookie-jar JSON dizisi (name,value,domain,...)
- *        - "name=value; name2=value2" string formatı
- *   2. storage_state.json (tam Playwright context durumu)
- *   3. cookies.json (yalnızca cookie dizisi)
+ *   KRİTİK GÜVENLİK:
+ *   - Her saglayici kendi cookie seti ve ayri Playwright browser context'i ile calisir.
+ *   - YouTube/Google/Genel cookies.json oturumu medya context'ine YUKLENMEZ.
+ *   - PEXELS_COOK yalniz .pexels.com domain'li cookie'leri kabul eder.
+ *   - PIXABAY_COOK yalniz .pixabay.com domain'li cookie'leri kabul eder.
+ *   - Cookie degerleri HICBIR logda, hata mesajinda veya artifact'te gorunmez.
+ *   - Yalniz izinli HTTPS hostlarina redirect yapilir (max 4 hop).
+ *   - 403 / CAPTCHA / Cloudflare gecilmeye calisilmaz; blocked_unverified raporlanir.
  *
- * Kullanım:
- *   node video_fetcher.js <keyword> <output_path> [--portrait]
+ * Cookie kaynakları (oncelik sirasi):
+ *   1) PEXELS_COOK / PIXABAY_COOK ortam degiskenleri (GitHub Secrets)
+ *      - Playwright storage_state "cookies" JSON dizisi
+ *      - [{name,value,domain,...}] Netscape JSON dizisi
+ *      - "name=value; name2=value2" ham cookie string
+ *   2) Komut satirindan --cookies-file ile verilen JSON dosyasi (yalnizca ilgili domain filtrelenir)
  *
- * Çıktı: 0 = başarılı, 1 = hata
- * stdout son satır: indirilen dosyanın tam yolu
+ * Kullanim:
+ *   node video_fetcher.js <keyword> <output_path>
+ *       [--provider pexels|pixabay|all]
+ *       [--portrait]                  # dikey (9:16) videolari tercih et
+ *       [--metadata]                  # indirme YAPMA, JSON olarak candidate listesi + diagnostics yaz
+ *       [--min-duration <sn>]         # minimum video suresi (varsayilan 2.0)
+ *       [--max-duration <sn>]         # maksimum video suresi (varsayilan 60.0)
+ *       [--min-width <px>]            # minimum genislik (varsayilan 854)
+ *       [--min-height <px>]           # minimum yukseklik (varsayilan 480)
+ *       [--max-bytes <bayt>]          # maksimum dosya boyutu (varsayilan 100MB)
+ *       [--cookies-file <path>]       # JSON cookie dosyasi (env cookie'leri ile birlestirilir,
+ *                                     # yalnizca ilgili provider domainleri filtrelenir)
+ *
+ * Çıktı:
+ *   - Normal mod: exit 0 + stdout son satırda indirilen dosyanın tam yolu
+ *   - --metadata modu: stdout'a JSON yazar, dosya indirmez
+ *       { "provider":"pexels"|"pixabay", "candidates":[...], "diagnostics":{...} }
+ *   - Hata: exit 1, stderr'de guvenli (cookie-degersiz) hata mesaji
  */
 
 'use strict';
 const { chromium } = require('playwright');
 const fs   = require('fs');
 const path = require('path');
-const https = require('https');
-const http  = require('http');
-const url   = require('url');
+const { execFileSync } = require('child_process');
 
-const BASE_DIR       = __dirname;
-const COOKIES_PATH   = path.join(BASE_DIR, 'cookies.json');
-const STORAGE_PATH   = path.join(BASE_DIR, 'storage_state.json');
-const TIMEOUT_MS     = 25000;
-const DOWNLOAD_TIMEOUT = 60000;
+const BASE_DIR = __dirname;
+const TIMEOUT_MS = 30000;
+const DOWNLOAD_TIMEOUT_MS = 90000;
+const MAX_REDIRECT_HOPS = 4;
+const MAX_FILE_BYTES_DEFAULT = 100 * 1024 * 1024; // 100 MB
+const ALLOWED_DOWNLOAD_HOSTS = {
+  pexels:  new Set(['videos.pexels.com', 'images.pexels.com', 'player.vimeo.com']),
+  pixabay: new Set(['cdn.pixabay.com']),
+};
+const ALLOWED_SOURCE_HOSTS = {
+  pexels:  new Set(['www.pexels.com', 'pexels.com']),
+  pixabay: new Set(['www.pixabay.com', 'pixabay.com']),
+};
 
-// ── Cookie çözümleme ──────────────────────────────────────────
-function normalizeCookie(c, defaultDomain) {
-  if (!c || !c.name || !c.value) return null;
+// ── CLI ────────────────────────────────────────────────────────
+function parseArgs(argv) {
+  const opts = {
+    keyword: null,
+    outPath: null,
+    provider: 'all',
+    portrait: false,
+    metadata: false,
+    minDuration: 2.0,
+    maxDuration: 60.0,
+    minWidth: 854,
+    minHeight: 480,
+    maxBytes: MAX_FILE_BYTES_DEFAULT,
+    cookiesFile: null,
+  };
+  const positional = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    switch (a) {
+      case '--provider':   opts.provider = argv[++i]; break;
+      case '--portrait':   opts.portrait = true; break;
+      case '--metadata':   opts.metadata = true; break;
+      case '--cookies-file': opts.cookiesFile = argv[++i]; break;
+      case '--min-duration': opts.minDuration = parseFloat(argv[++i]); break;
+      case '--max-duration': opts.maxDuration = parseFloat(argv[++i]); break;
+      case '--min-width':  opts.minWidth = parseInt(argv[++i], 10); break;
+      case '--min-height': opts.minHeight = parseInt(argv[++i], 10); break;
+      case '--max-bytes':  opts.maxBytes = parseInt(argv[++i], 10); break;
+      default: positional.push(a);
+    }
+  }
+  opts.keyword = positional[0] || null;
+  opts.outPath = positional[1] || null;
+  return opts;
+}
+
+// ── Log (cookie degerlerini maskeleyerek) ─────────────────────
+function log(msg) { console.error('[video_fetcher] ' + msg); }
+// Hata mesajlarina cookie degeri / URL query stringi sizdirmamak icin
+// URL'leri yalnizca host + path olarak yazdir.
+function safeUrl(u) {
+  try {
+    const url = new URL(u);
+    return url.host + url.pathname;
+  } catch { return '(invalid url)'; }
+}
+
+// ── Cookie çözümleme & domain filtreleme ─────────────────────
+const COOKIE_FIELDS = ['name','value','domain','path','secure','httpOnly','sameSite','expires'];
+
+function normalizeCookie(raw, defaultDomain) {
+  if (!raw || typeof raw.name !== 'string' || !raw.name || typeof raw.value !== 'string') return null;
+  const domain = (typeof raw.domain === 'string' && raw.domain) ? raw.domain : defaultDomain;
+  let sameSite = raw.sameSite;
+  if (!['Strict','Lax','None'].includes(sameSite)) sameSite = 'Lax';
+  let expires = raw.expires;
+  if (typeof expires !== 'number' || expires <= 0) expires = -1;
   return {
-    name: String(c.name),
-    value: String(c.value),
-    domain: c.domain || defaultDomain,
-    path: c.path || '/',
-    secure: !!c.secure,
-    httpOnly: !!c.httpOnly,
-    sameSite: (c.sameSite && ['Strict', 'Lax', 'None'].includes(c.sameSite)) ? c.sameSite : 'Lax',
-    expires: typeof c.expires === 'number' && c.expires > 0 ? c.expires : -1,
+    name: raw.name,
+    value: raw.value,
+    domain: domain.startsWith('.') ? domain : ('.' + domain),
+    path: (typeof raw.path === 'string' && raw.path.startsWith('/')) ? raw.path : '/',
+    secure: !!raw.secure,
+    httpOnly: !!raw.httpOnly,
+    sameSite,
+    expires,
   };
 }
 
 function parseCookieString(raw, defaultDomain) {
+  // "k=v; k2=v2"
   const out = [];
-  // Ham "k=v; k2=v2" formatı
-  for (const part of String(raw).split(';')) {
+  if (typeof raw !== 'string') return out;
+  for (const part of raw.split(';')) {
     const i = part.indexOf('=');
-    if (i > 0) {
-      const n = normalizeCookie({
-        name: part.slice(0, i).trim(),
-        value: part.slice(i + 1).trim(),
-        domain: defaultDomain, path: '/'
-      }, defaultDomain);
-      if (n) out.push(n);
+    if (i <= 0) continue;
+    const n = normalizeCookie({
+      name: part.slice(0, i).trim(),
+      value: part.slice(i + 1).trim(),
+      domain: defaultDomain, path: '/'
+    }, defaultDomain);
+    if (n) out.push(n);
+  }
+  return out;
+}
+
+function parseCookiesFromJson(raw, defaultDomain) {
+  const out = [];
+  let data;
+  try { data = JSON.parse(raw); } catch { return out; }
+  if (Array.isArray(data)) {
+    for (const c of data) { const n = normalizeCookie(c, defaultDomain); if (n) out.push(n); }
+  } else if (data && typeof data === 'object') {
+    // storage_state {"cookies":[...]} veya {"cookies":{...}} ya da dict {name:value}
+    if (Array.isArray(data.cookies)) {
+      for (const c of data.cookies) { const n = normalizeCookie(c, defaultDomain); if (n) out.push(n); }
+    } else {
+      for (const [name, value] of Object.entries(data)) {
+        if (typeof value !== 'string') continue;
+        const n = normalizeCookie({ name, value, domain: defaultDomain, path: '/' }, defaultDomain);
+        if (n) out.push(n);
+      }
     }
   }
   return out;
 }
 
-function loadCookiesFromEnv(envName, defaultDomain) {
-  const raw = process.env[envName];
-  if (!raw) return [];
-  try {
-    const data = JSON.parse(raw);
-    if (Array.isArray(data)) {
-      return data.map(c => normalizeCookie(c, defaultDomain)).filter(Boolean);
-    }
-    if (typeof data === 'object' && data !== null) {
-      // storage_state -> {cookies:[...], origins:[...]}
-      if (Array.isArray(data.cookies)) {
-        return data.cookies.map(c => normalizeCookie(c, defaultDomain)).filter(Boolean);
-      }
-      // {name:value,...} dict
-      return Object.entries(data).map(([name, value]) =>
-        normalizeCookie({ name, value, domain: defaultDomain, path: '/' }, defaultDomain)
-      ).filter(Boolean);
-    }
-  } catch (_) { /* JSON değil, string formatını dene */ }
-  return parseCookieString(raw, defaultDomain);
-}
-
-function loadCookiesFromFile(filePath, defaultDomain) {
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    if (Array.isArray(data)) {
-      return data.map(c => normalizeCookie(c, defaultDomain)).filter(Boolean);
-    }
-    if (data && Array.isArray(data.cookies)) {
-      return data.cookies.map(c => normalizeCookie(c, defaultDomain)).filter(Boolean);
-    }
-  } catch (e) {
-    console.error(`[Cookie] ${filePath} okunamadi: ${e.message}`);
+function loadCookies(source, defaultDomain) {
+  // source: string (env) veya dosya yolu
+  let raw = source;
+  if (source && fs.existsSync(source)) {
+    try { raw = fs.readFileSync(source, 'utf8'); } catch { return []; }
   }
-  return [];
-}
-
-// ── CLI ────────────────────────────────────────────────────────
-const args    = process.argv.slice(2);
-const keyword = args[0] || 'nature cinematic';
-const outPath = args[1] || path.join(BASE_DIR, 'output', 'fetched_video.mp4');
-const PORTRAIT = args.includes('--portrait');
-
-// ── Yardımcı: dosya indir ──────────────────────────────────────
-function downloadFile(fileUrl, destPath) {
-  return new Promise((resolve, reject) => {
-    const parsed  = url.parse(fileUrl);
-    const proto   = parsed.protocol === 'https:' ? https : http;
-    const timeout = setTimeout(() => reject(new Error('Download timeout')), DOWNLOAD_TIMEOUT);
-
-    const req = proto.get(fileUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36' }
-    }, res => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        clearTimeout(timeout);
-        return downloadFile(res.headers.location, destPath).then(resolve).catch(reject);
-      }
-      if (res.statusCode !== 200) {
-        clearTimeout(timeout);
-        return reject(new Error(`HTTP ${res.statusCode} for ${fileUrl}`));
-      }
-      const file = fs.createWriteStream(destPath);
-      res.pipe(file);
-      file.on('finish', () => { clearTimeout(timeout); file.close(); resolve(destPath); });
-      file.on('error', err => { clearTimeout(timeout); reject(err); });
-    });
-    req.on('error', err => { clearTimeout(timeout); reject(err); });
+  if (!raw || typeof raw !== 'string') return [];
+  const trimmed = raw.trim();
+  if (!trimmed) return [];
+  let cookies = trimmed.startsWith('[') || trimmed.startsWith('{')
+    ? parseCookiesFromJson(trimmed, defaultDomain)
+    : parseCookieString(trimmed, defaultDomain);
+  // YALNIZ defaultDomain ve alt domain'lerine ait cookie'leri filtrele.
+  const suffix = defaultDomain; // ".pexels.com" veya ".pixabay.com"
+  const bare = defaultDomain.replace(/^\./, '');
+  cookies = cookies.filter(c => {
+    const d = (c.domain || '').toLowerCase();
+    return d === suffix || d === bare || d.endsWith(suffix);
   });
+  // (name,domain,path) ile tekillestir (son gecerli olan kazansin)
+  const seen = new Map();
+  for (const c of cookies) {
+    const key = `${c.name}|${c.domain}|${c.path}`;
+    seen.set(key, c);
+  }
+  return [...seen.values()];
 }
 
-// ── Pixabay scraper ────────────────────────────────────────────
-async function fetchFromPixabay(page, kw) {
-  const searchUrl = `https://pixabay.com/videos/search/${encodeURIComponent(kw)}/?order=popular`;
-  console.error(`[Pixabay] Arama: ${searchUrl}`);
-  
-  await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
-  await page.waitForTimeout(3000);
-
-  const tinyUrls = await page.evaluate(() => {
-    const urls = new Set();
-    document.querySelectorAll('script').forEach(s => {
-      const text = s.textContent || '';
-      const m = text.match(/https:\/\/cdn\.pixabay\.com\/video\/[^"'\\]+_tiny\.mp4/g);
-      if (m) m.forEach(u => urls.add(u));
-    });
-    return [...urls];
-  });
-
-  if (tinyUrls.length === 0) {
-    console.error(`[Pixabay] "${kw}" için tiny URL bulunamadı`);
-    return null;
-  }
-
-  // İlk geçerli _large URL'yi bul
-  for (const tiny of tinyUrls) {
-    const largeUrl = tiny.replace('_tiny.mp4', '_large.mp4');
-    // HEAD isteği ile varlığını doğrula
-    try {
-      const ok = await page.evaluate(async (u) => {
-        const r = await fetch(u, { method: 'HEAD' });
-        return r.ok;
-      }, largeUrl);
-      if (ok) {
-        console.error(`[Pixabay] ✅ large URL: ${largeUrl.substring(0,80)}`);
-        return largeUrl;
-      }
-    } catch(e) { /* devam */ }
-  }
-  
-  // _large yoksa _medium dene
-  for (const tiny of tinyUrls) {
-    const medUrl = tiny.replace('_tiny.mp4', '_medium.mp4');
-    try {
-      const ok = await page.evaluate(async (u) => {
-        const r = await fetch(u, { method: 'HEAD' });
-        return r.ok;
-      }, medUrl);
-      if (ok) {
-        console.error(`[Pixabay] ✅ medium URL: ${medUrl.substring(0,80)}`);
-        return medUrl;
-      }
-    } catch(e) { /* devam */ }
-  }
-
-  // Fallback: tiny kullan
-  console.error(`[Pixabay] ⚠️  Yalnızca tiny mevcut: ${tinyUrls[0].substring(0,80)}`);
-  return tinyUrls[0];
-}
-
-// ── Pexels scraper ─────────────────────────────────────────────
-async function fetchFromPexels(page, kw) {
-  const searchUrl = `https://www.pexels.com/search/videos/${encodeURIComponent(kw)}/`;
-  console.error(`[Pexels] Arama: ${searchUrl}`);
-
-  try {
-    // Cloudflare ve Next.js hydration icin networkidle + ekstra bekleme
-    await page.goto(searchUrl, { waitUntil: 'networkidle', timeout: Math.max(60000, TIMEOUT_MS * 2) });
-    await page.waitForTimeout(3000);
-  } catch(e) {
-    console.error('[Pexels] Sayfa yükleme hatasi, domcontentloaded ile tekrar deneniyor: ' + e.message);
-    try {
-      await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
-      await page.waitForTimeout(5000);
-    } catch(e2) {
-      console.error('[Pexels] Ikinci yükleme de basarisiz: ' + e2.message);
-      return null;
-    }
-  }
-
-  // __NEXT_DATA__ / __APOLLO_STATE__ / <script> ve <video> taglerinden mp4 cikar
-  const pexelsUrls = await page.evaluate(() => {
-    const urls = new Set();
-    // window uzerindeki data objeleri
-    [window.__NEXT_DATA__, window.__APOLLO_STATE__].forEach(obj => {
-      if (!obj) return;
-      const str = JSON.stringify(obj);
-      const m = str.match(/https:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
-      if (m) m.forEach(u => urls.add(u));
-    });
-    // Tum <script> bloklari (Next.js statik props, __NEXT_DATA__ satirici)
-    document.querySelectorAll('script').forEach(s => {
-      const t = s.textContent || '';
-      const m = t.match(/https:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
-      if (m) m.forEach(u => urls.add(u));
-    });
-    // Video elementleri
-    document.querySelectorAll('video, video source').forEach(s => {
-      const src = s.src || s.currentSrc;
-      if (src && src.includes('.mp4')) urls.add(src);
-    });
-    return [...urls];
-  });
-  console.error(`[Pexels] ${pexelsUrls.length} adet mp4 URL bulundu`);
-
-  if (pexelsUrls.length > 0) {
-    // Tercih sirasi:
-    // 1) Gercek kullanici videolari: vids.pexels.com/video-files/...-hd_1920_1080_*.mp4 (tam HD landscape)
-    // 2) vids.pexels.com/video-files/...-uhd_2560_1440_*.mp4 (4K)
-    // 3) video-files icinde -hd_ (dikey HD dahil)
-    // 4) Diger vids.pexels.com (AI UGC degil)
-    // 5) AI UGC (aigc-bundle) — ancak hicbiri yoksa son care
-    // Kucuk preview/thumb/tiny her zaman elenir.
-    const byPriority = [
-      urls => urls.find(u => /video-files\/.*hd_1920_1080/i.test(u)),
-      urls => urls.find(u => /video-files\/.*uhd_2560_1440/i.test(u)),
-      urls => urls.find(u => /video-files\/.*-hd_/i.test(u)),
-      urls => urls.find(u => /vids\.pexels\.com\/video-files\//i.test(u)),
-      urls => urls.find(u => /vids\.pexels\.com/i.test(u) && !/aigc|preview|thumb|tiny/i.test(u)),
-      urls => urls.find(u => !/preview|thumb|tiny/i.test(u)),
-      urls => urls[0],
-    ];
-    let hd = null;
-    for (const pick of byPriority) { hd = pick(pexelsUrls); if (hd) break; }
-    console.error(`[Pexels] ✅ URL: ${hd.substring(0,120)}`);
-    return hd;
-  }
-
-  // Video ID üzerinden deneme
-  const videoIds = await page.evaluate(() => {
-    const ids = [];
-    document.querySelectorAll('article[class*="video"]').forEach(el => {
-      const a = el.querySelector('a[href*="/video/"]');
-      if (a) {
-        const m = a.href.match(/\/video\/(\d+)\//);
-        if (m) ids.push(m[1]);
-      }
-    });
-    // data-id attribute
-    document.querySelectorAll('[data-video-id], [data-id]').forEach(el => {
-      const id = el.getAttribute('data-video-id') || el.getAttribute('data-id');
-      if (id && /^\d{6,}$/.test(id)) ids.push(id);
-    });
-    return [...new Set(ids)].slice(0,3);
-  });
-
-  for (const id of videoIds) {
-    try {
-      const resp = await page.goto(
-        `https://www.pexels.com/video/${id}/download/`,
-        { waitUntil: 'domcontentloaded', timeout: 15000 }
-      );
-      const dlUrl = page.url();
-      if (dlUrl.includes('.mp4') || dlUrl.includes('pexels.com/video')) {
-        console.error(`[Pexels] ✅ Download URL: ${dlUrl.substring(0,80)}`);
-        return dlUrl;
-      }
-    } catch(e) { /* devam */ }
-  }
-
-  console.error('[Pexels] Video URL bulunamadı');
-  return null;
-}
-
-// ── Ana fonksiyon ──────────────────────────────────────────────
-async function main() {
-  // Cookie'leri env > dosya önceliğiyle topla
-  const envCookies = [
-    ...loadCookiesFromEnv('PEXELS_COOK', '.pexels.com'),
-    ...loadCookiesFromEnv('PIXABAY_COOK', '.pixabay.com'),
-  ];
-  const fileCookies = [
-    ...loadCookiesFromFile(COOKIES_PATH, '.pexels.com'),
-  ];
-  const storageStateExists = fs.existsSync(STORAGE_PATH);
-  const hasAnyCookie = envCookies.length > 0 || fileCookies.length > 0 || storageStateExists;
-
-  if (!hasAnyCookie) {
-    console.error('HATA: PEXELS_COOK/PIXABAY_COOK env yok ve cookies.json/storage_state.json da bulunamadi!');
-    process.exit(1);
-  }
-  if (envCookies.length > 0) {
-    console.error(`[Cookie] Ortam degiskenlerinden ${envCookies.length} adet cookie yuklendi` +
-      (process.env.PEXELS_COOK ? ' (PEXELS_COOK)' : '') +
-      (process.env.PIXABAY_COOK ? ' (PIXABAY_COOK)' : ''));
-  }
-  if (fileCookies.length > 0) {
-    console.error(`[Cookie] cookies.json'dan ${fileCookies.length} adet cookie yuklendi`);
-  }
-
+// ── Browser context ──────────────────────────────────────────
+async function launchContext(cookies, provider) {
   const browser = await chromium.launch({
     headless: true,
     args: ['--no-sandbox','--disable-dev-shm-usage','--disable-blink-features=AutomationControlled']
   });
-
-  const ctxOpts = {
+  const ctx = await browser.newContext({
     viewport: { width: 1280, height: 800 },
-    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
-  };
-  if (storageStateExists && envCookies.length === 0) {
-    // storage_state.json yalnizca env cookie yoksa kullan (env cookie'leri daha guncel)
-    ctxOpts.storageState = STORAGE_PATH;
-  }
-
-  const context = await browser.newContext(ctxOpts);
-  await context.addInitScript(() => {
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    // Youtube/Google storage_state KESİNLİKLE yuklenmez.
+  });
+  await ctx.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
   });
-
-  // Env + dosya cookie'lerini context'e ekle (zaten normalize edildi)
-  const allCookies = [...envCookies, ...fileCookies];
-  // Aynı (domain,path,name) için tekilleştir (env öncelikli)
-  const seen = new Set();
-  const deduped = [];
-  for (const c of allCookies) {
-    const key = `${c.domain}|${c.path}|${c.name}`;
-    if (!seen.has(key)) { seen.add(key); deduped.push(c); }
+  if (cookies.length > 0) {
+    try { await ctx.addCookies(cookies); }
+    catch (e) {
+      await browser.close();
+      throw new Error(`${provider}_cookie_invalid: ${e.message.split('\n')[0].slice(0,120)}`);
+    }
   }
-  if (deduped.length > 0) {
-    await context.addCookies(deduped);
-    console.error(`[Cookie] Context'e ${deduped.length} adet cookie yuklendi`);
-  }
+  return { browser, ctx };
+}
 
-  const page = await context.newPage();
-  let videoUrl = null;
-
-  // 1. Pixabay dene (daha güvenilir)
-  videoUrl = await fetchFromPixabay(page, keyword);
-
-  // 2. Başarısız → Pexels dene
-  if (!videoUrl) {
-    videoUrl = await fetchFromPexels(page, keyword);
-  }
-
-  // 3. Her ikisi de başarısız
-  if (!videoUrl) {
-    console.error(`[HATA] "${keyword}" için hiçbir siteden video URL alınamadı`);
-    await browser.close();
-    process.exit(1);
-  }
-
-  // İndir
-  console.error(`[İndirme] ${videoUrl.substring(0,80)}...`);
-  fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  
+// ── URL güvenliği ────────────────────────────────────────────
+function validHttpsUrl(u, hosts) {
   try {
-    await downloadFile(videoUrl, outPath);
-    const size = fs.statSync(outPath).size;
-    if (size < 50000) throw new Error(`Dosya çok küçük: ${size} bytes`);
-    console.error(`[✅] İndirildi: ${outPath} (${(size/1024/1024).toFixed(1)} MB)`);
-    console.log(outPath); // Ana çıktı — Python tarafından okunur
-  } catch(e) {
-    console.error(`[HATA] İndirme başarısız: ${e.message}`);
-    await browser.close();
-    process.exit(1);
+    const p = new URL(u);
+    const hostSet = hosts instanceof Set ? hosts : new Set(Array.isArray(hosts) ? hosts : [hosts]);
+    return p.protocol === 'https:' && hostSet.has(p.hostname) && !p.username && !p.password && (!p.port || p.port === '443');
+  } catch { return false; }
+}
+
+// ── ffprobe doğrulama ───────────────────────────────────────
+function ffprobe(filePath) {
+  // ffprobe ile stream bilgisini al; tam decode denemesini de yap.
+  let probeOut = '';
+  try {
+    probeOut = execFileSync('ffprobe', [
+      '-v','error','-print_format','json','-show_format','-show_streams', filePath
+    ], { stdio: ['ignore','pipe','pipe'], timeout: 30000 }).toString('utf8');
+  } catch (e) {
+    return { ok: false, error: 'ffprobe_failed', detail: (e.stderr||'').toString().slice(0,300) };
+  }
+  let info;
+  try { info = JSON.parse(probeOut); } catch { return { ok: false, error: 'ffprobe_json_parse' }; }
+  const v = (info.streams||[]).find(s => s.codec_type === 'video');
+  if (!v) return { ok: false, error: 'no_video_stream' };
+  const dur = info.format && info.format.duration ? parseFloat(info.format.duration) : null;
+  const width = parseInt(v.width, 10);
+  const height = parseInt(v.height, 10);
+  if (!width || !height) return { ok: false, error: 'invalid_dimensions' };
+  // Tam decode: bir frame cikarmayi dene (hizli), son saniyeyi de kontrol et
+  try {
+    execFileSync('ffmpeg', [
+      '-v','error','-i',filePath,'-f','null','-'
+    ], { stdio: ['ignore','pipe','pipe'], timeout: 60000 });
+  } catch (e) {
+    return { ok: false, error: 'full_decode_failed', detail: (e.stderr||'').toString().slice(0,300),
+             width, height, duration: dur, codec: v.codec_name };
+  }
+  return { ok: true, width, height, duration: dur, codec: v.codec_name,
+           r_frame_rate: v.r_frame_rate, format_name: info.format && info.format.format_name };
+}
+
+// ── İndirme (page.request üzerinden, yönlendirme ve boyut kontrolü)
+async function downloadWithChecks(page, url, destPath, allowedHosts, maxBytes) {
+  const trace = { hops: [], finalHost: null, httpStatus: null, contentType: null, bytes: 0, sha256hex: null };
+  let currentUrl = url;
+  for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
+    const u = new URL(currentUrl);
+    trace.finalHost = u.hostname;
+    if (!allowedHosts.has(u.hostname)) {
+      trace.error = 'redirect_to_untrusted_host';
+      return { ok: false, trace };
+    }
+    let resp;
+    try {
+      resp = await page.request.get(currentUrl, {
+        headers: { 'Referer': `https://${u.hostname}/`, 'User-Agent': 'Mozilla/5.0' },
+        timeout: DOWNLOAD_TIMEOUT_MS,
+        maxRedirects: 0,
+      });
+    } catch (e) {
+      trace.error = 'download_network_error';
+      return { ok: false, trace };
+    }
+    trace.httpStatus = resp.status();
+    trace.hops.push({ host: u.hostname, status: resp.status() });
+    if ([301,302,303,307,308].includes(resp.status())) {
+      const loc = resp.headers()['location'];
+      if (!loc) { trace.error = 'redirect_without_location'; return { ok: false, trace }; }
+      currentUrl = new URL(loc, currentUrl).toString();
+      continue;
+    }
+    if (resp.status() !== 200) {
+      trace.error = `http_${resp.status()}`;
+      return { ok: false, trace };
+    }
+    const ct = (resp.headers()['content-type'] || '').toLowerCase();
+    trace.contentType = ct;
+    if (!ct.startsWith('video/') && !ct.startsWith('application/octet-stream') && !ct.startsWith('binary/')) {
+      trace.error = 'unexpected_content_type';
+      return { ok: false, trace };
+    }
+    const buf = await resp.body();
+    trace.bytes = buf.length;
+    if (buf.length < 50000) { trace.error = 'file_too_small'; return { ok: false, trace }; }
+    if (buf.length > maxBytes) { trace.error = 'file_too_large'; return { ok: false, trace }; }
+    // HTML gelmesin (Cloudflare challenge sayfasi vs.)
+    const head = buf.slice(0, 200).toString('utf8','utf8').toLowerCase();
+    if (head.includes('<!doctype html') || head.includes('<html')) {
+      trace.error = 'html_response_not_media';
+      return { ok: false, trace };
+    }
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    fs.writeFileSync(destPath, buf);
+    // SHA256
+    const crypto = require('crypto');
+    trace.sha256hex = crypto.createHash('sha256').update(buf).digest('hex');
+    return { ok: true, trace };
+  }
+  trace.error = 'redirect_limit_exceeded';
+  return { ok: false, trace };
+}
+
+// ── Pixabay scraper ──────────────────────────────────────────
+async function fetchFromPixabay(page, kw, opts) {
+  const searchUrl = `https://pixabay.com/videos/search/${encodeURIComponent(kw)}/?order=popular`;
+  const diag = { cookie_present: false, browser_access: null, search: null,
+                 candidates_found: 0, source_url: null, selected_url: null };
+  try {
+    const resp = await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
+    diag.browser_access = resp ? resp.status() : null;
+    await page.waitForTimeout(3000);
+    diag.search = 'loaded';
+  } catch (e) {
+    diag.browser_access = 'timeout_or_navigation_error';
+    diag.search = 'failed';
+    return { candidates: [], diagnostics: diag };
+  }
+  if (diag.browser_access === 403 || diag.browser_access === 429) {
+    diag.search = 'blocked_unverified';
+    return { candidates: [], diagnostics: diag };
+  }
+  const urls = await page.evaluate(() => {
+    const out = [];
+    document.querySelectorAll('script').forEach(s => {
+      const text = s.textContent || '';
+      const tinyRe = /https:\/\/cdn\.pixabay\.com\/video\/[^"'\\]+_tiny\.mp4/g;
+      const m = text.match(tinyRe); if (m) m.forEach(u => out.push(u));
+    });
+    return [...new Set(out)];
+  });
+  // Kabul edilebilir kalite seviyeleri: large > medium (tiny KESINLIKLE yok)
+  const candidates = [];
+  for (const tiny of urls) {
+    for (const suffix of ['_large.mp4','_medium.mp4']) {
+      const u = tiny.replace('_tiny.mp4', suffix);
+      try {
+        const ok = await page.evaluate(async (url) => {
+          const r = await fetch(url, { method: 'HEAD' });
+          return r.ok;
+        }, u);
+        if (ok) {
+          candidates.push({
+            download_url: u,
+            quality: suffix === '_large.mp4' ? 'large' : 'medium',
+            source_url: searchUrl,
+            media_id: (u.match(/video\/(\d{4}\/\d{2}\/\d{2}\/)?(\d+)/) || [])[2] || '',
+          });
+          break;
+        }
+      } catch { /* devam */ }
+    }
+  }
+  diag.candidates_found = candidates.length;
+  if (candidates.length === 0) { diag.search = 'no_valid_video'; return { candidates: [], diagnostics: diag }; }
+  // large once
+  candidates.sort((a,b) => (a.quality === 'large' ? 0 : 1) - (b.quality === 'large' ? 0 : 1));
+  diag.selected_url = safeUrl(candidates[0].download_url);
+  return { candidates, diagnostics: diag };
+}
+
+// ── Pexels scraper ───────────────────────────────────────────
+async function fetchFromPexels(page, kw, opts) {
+  const searchUrl = `https://www.pexels.com/search/videos/${encodeURIComponent(kw)}/`;
+  const diag = { cookie_present: false, browser_access: null, search: null,
+                 candidates_found: 0, source_url: null, selected_url: null };
+  try {
+    const resp = await page.goto(searchUrl, { waitUntil: 'networkidle', timeout: Math.max(60000, TIMEOUT_MS*2) });
+    diag.browser_access = resp ? resp.status() : null;
+    await page.waitForTimeout(2000);
+  } catch (e) {
+    try {
+      const resp = await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
+      diag.browser_access = resp ? resp.status() : null;
+      await page.waitForTimeout(4000);
+    } catch (e2) {
+      diag.browser_access = 'timeout_or_navigation_error';
+      diag.search = 'failed';
+      return { candidates: [], diagnostics: diag };
+    }
+  }
+  if (diag.browser_access === 403 || diag.browser_access === 429) {
+    diag.search = 'blocked_unverified';
+    return { candidates: [], diagnostics: diag };
+  }
+  diag.search = 'loaded';
+  const urls = await page.evaluate(() => {
+    const out = new Set();
+    [window.__NEXT_DATA__, window.__APOLLO_STATE__].forEach(obj => {
+      if (!obj) return;
+      const s = JSON.stringify(obj);
+      const m = s.match(/https:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
+      if (m) m.forEach(u => out.add(u.replace(/\\u0026/g,'&')));
+    });
+    document.querySelectorAll('script').forEach(s => {
+      const t = s.textContent || '';
+      const m = t.match(/https:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
+      if (m) m.forEach(u => out.add(u.replace(/\\u0026/g,'&')));
+    });
+    document.querySelectorAll('video, video source').forEach(s => {
+      const src = s.src || s.currentSrc;
+      if (src && src.includes('.mp4')) out.add(src);
+    });
+    return [...out];
+  });
+  // Kabul edilebilir URL'leri kalite sirasina gore sirala:
+  //   1) video-files/...hd_1920_1080.mp4  (HD landscape)
+  //   2) video-files/...uhd_2560_1440.mp4 (UHD)
+  //   3) video-files/...-hd_*.mp4         (dikey HD dahil)
+  //   4) diger vids.pexels.com/video-files/ (standart SD)
+  //   5) vids.pexels.com (AI UGC / aigc-bundle) — son care
+  // Preview/thumb/tiny her zaman ELENIR.
+  const blocked = /tiny|preview|thumb/i;
+  const priority = [
+    u => /video-files\/.*hd_1920_1080/i.test(u) ? 0 : -1,
+    u => /video-files\/.*uhd_2560_1440/i.test(u) ? 1 : -1,
+    u => /video-files\/.*-hd_/i.test(u) ? 2 : -1,
+    u => /vids\.pexels\.com\/video-files\//i.test(u) ? 3 : -1,
+    u => /vids\.pexels\.com/i.test(u) ? 4 : -1,
+  ];
+  const candidates = urls
+    .filter(u => !blocked.test(u))
+    .map(u => {
+      let p = 99;
+      for (const fn of priority) { const r = fn(u); if (r >= 0) { p = r; break; } }
+      return { download_url: u, priority: p, source_url: searchUrl,
+               media_id: (u.match(/\/videos\/(\d+)\//) || u.match(/video-files\/(\d+)/) || [])[1] || '' };
+    })
+    .filter(c => c.priority < 99)
+    .sort((a,b) => a.priority - b.priority);
+  diag.candidates_found = candidates.length;
+  if (candidates.length === 0) { diag.search = 'no_valid_video'; return { candidates: [], diagnostics: diag }; }
+  diag.selected_url = safeUrl(candidates[0].download_url);
+  return { candidates: candidates.slice(0, 8), diagnostics: diag };
+}
+
+// ── Provider runner ──────────────────────────────────────────
+async function runProvider(provider, opts) {
+  const envName = provider === 'pexels' ? 'PEXELS_COOK' : 'PIXABAY_COOK';
+  const defaultDomain = provider === 'pexels' ? '.pexels.com' : '.pixabay.com';
+  const diag = {
+    provider,
+    cookie_present: false,
+    cookie_count: 0,
+    cookie_domain_ok: false,
+    browser_access: null,
+    search: null,
+    source_url: null,
+    download: null,
+    download_url_host: null,
+    http_status: null,
+    content_type: null,
+    bytes: null,
+    sha256: null,
+    ffprobe: null,
+    full_decode: null,
+    width: null,
+    height: null,
+    duration: null,
+    codec: null,
+    error: null,
+  };
+
+  // Cookie yukle: once env, sonra --cookies-file. Domain filtrele.
+  let cookies = [];
+  const envRaw = process.env[envName];
+  if (envRaw && envRaw.trim()) cookies.push(...loadCookies(envRaw, defaultDomain));
+  if (opts.cookiesFile && fs.existsSync(opts.cookiesFile)) {
+    cookies.push(...loadCookies(opts.cookiesFile, defaultDomain));
+  }
+  // Tekillestir
+  const seen = new Map();
+  for (const c of cookies) { seen.set(`${c.name}|${c.domain}|${c.path}`, c); }
+  cookies = [...seen.values()];
+
+  diag.cookie_present = cookies.length > 0;
+  diag.cookie_count = cookies.length;
+  if (cookies.length === 0) {
+    diag.error = 'cookie_missing_or_wrong_domain';
+    return { candidates: [], diagnostics: diag, provider };
+  }
+  // Butun cookie'lerin dogru domain'de oldugunu teyit et
+  diag.cookie_domain_ok = cookies.every(c => {
+    const d = c.domain;
+    return d === defaultDomain || d.endsWith(defaultDomain);
+  });
+  if (!diag.cookie_domain_ok) {
+    diag.error = 'cookie_wrong_domain';
+    return { candidates: [], diagnostics: diag, provider };
   }
 
-  await browser.close();
+  const { browser, ctx } = await launchContext(cookies, provider);
+  try {
+    const page = await ctx.newPage();
+    const fetcher = provider === 'pexels' ? fetchFromPexels : fetchFromPixabay;
+    const { candidates, diagnostics: fd } = await fetcher(page, opts.keyword, opts);
+    Object.assign(diag, fd);
+    if (!candidates || candidates.length === 0) {
+      await browser.close();
+      return { candidates: [], diagnostics: diag, provider };
+    }
+    // metadata modu: indirme YAPMA, sadece candidate listesi don
+    if (opts.metadata) {
+      await browser.close();
+      return { candidates: candidates.map(c => ({
+        provider, media_id: c.media_id, source_url: c.source_url,
+        download_url: c.download_url, quality: c.quality, priority: c.priority,
+      })), diagnostics: diag, provider };
+    }
+    // Ilk uygun adayi sec + quality/cozunurluk/sure filtreleri (ffprobe sonrası)
+    let chosen = null, probe = null;
+    for (const c of candidates.slice(0, 6)) {
+      // Indirme
+      fs.mkdirSync(path.dirname(opts.outPath), { recursive: true });
+      const tmpPath = opts.outPath + '.part';
+      if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+      const dl = await downloadWithChecks(page, c.download_url, tmpPath,
+                                          ALLOWED_DOWNLOAD_HOSTS[provider], opts.maxBytes);
+      diag.download = dl.ok ? 'ok' : (dl.trace && dl.trace.error);
+      diag.download_url_host = dl.trace && dl.trace.finalHost;
+      diag.http_status = dl.trace && dl.trace.httpStatus;
+      diag.content_type = dl.trace && dl.trace.contentType;
+      diag.bytes = dl.trace && dl.trace.bytes;
+      diag.sha256 = dl.trace && dl.trace.sha256hex;
+      if (!dl.ok) {
+        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+        continue;
+      }
+      // ffprobe
+      const fp = ffprobe(tmpPath);
+      diag.ffprobe = fp.ok ? 'ok' : fp.error;
+      diag.full_decode = fp.ok ? 'ok' : (fp.error === 'full_decode_failed' ? 'failed' : 'n/a');
+      diag.width = fp.width; diag.height = fp.height; diag.duration = fp.duration; diag.codec = fp.codec;
+      if (!fp.ok) {
+        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+        if (fp.error === 'full_decode_failed') continue; // sonraki adayi dene
+        continue;
+      }
+      // Kalite esikleri
+      if (fp.width < opts.minWidth || fp.height < opts.minHeight) {
+        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+        continue;
+      }
+      if (opts.portrait) {
+        // dikey video: height > width
+        if (fp.height <= fp.width) { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); continue; }
+      }
+      if (fp.duration && (fp.duration < opts.minDuration || fp.duration > opts.maxDuration)) {
+        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+        continue;
+      }
+      // Basarili
+      fs.renameSync(tmpPath, opts.outPath);
+      chosen = { path: opts.outPath, info: fp, download_url: c.download_url };
+      break;
+    }
+    await browser.close();
+    return { chosen, diagnostics: diag, provider };
+  } catch (e) {
+    diag.error = 'browser_exception';
+    try { await browser.close(); } catch {}
+    return { chosen: null, diagnostics: diag, provider };
+  }
 }
 
-if (args.includes('--metadata')) {
-  // Strict scene mode is a catalog only. Legacy download CLI below is unchanged.
-  require('./scripts/stock_media_catalog.cjs').main(args).catch(() => {
-    console.error('STOCK_CATALOG_FAILED'); process.exitCode = 1;
-  });
-} else {
-  main().catch(e => { console.error('KRİTİK HATA:', e.message); process.exit(1); });
+// ── Ana ──────────────────────────────────────────────────────
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+  if (!opts.keyword) {
+    console.error('Kullanim: node video_fetcher.js <keyword> <output_path> [--provider pexels|pixabay|all] [--metadata] [--portrait] ...');
+    process.exit(2);
+  }
+  const providers = opts.provider === 'all' ? ['pixabay','pexels'] : [opts.provider];
+  if (providers.some(p => !['pexels','pixabay'].includes(p))) {
+    console.error('gecersiz_provider');
+    process.exit(2);
+  }
+
+  if (opts.metadata) {
+    // metadata modu: butun saglayicilari tara, JSON cik
+    const allCandidates = [];
+    const allDiag = {};
+    for (const p of providers) {
+      const r = await runProvider(p, opts);
+      allCandidates.push(...(r.candidates || []));
+      allDiag[p] = r.diagnostics;
+    }
+    const out = { candidates: allCandidates, diagnostics: allDiag };
+    process.stdout.write(JSON.stringify(out));
+    // Hic aday yoksa exit 1
+    const allFailed = Object.values(allDiag).every(d => d.error || (d.candidates_found === 0));
+    process.exit(allFailed ? 1 : 0);
+  }
+
+  if (!opts.outPath) {
+    console.error('outPath gerekli'); process.exit(2);
+  }
+  // Indirme modu: siralamayi dene, ilk basarili olani don
+  const diagLog = {};
+  for (const p of providers) {
+    const r = await runProvider(p, opts);
+    diagLog[p] = r.diagnostics;
+    if (r.chosen) {
+      console.error(`[${p}] ✅ Video indirildi ve dogrulandi: ${r.chosen.path} ` +
+        `(${r.chosen.info.width}x${r.chosen.info.height}, ${r.chosen.info.duration?.toFixed(1)}s, ` +
+        `${(r.diagnostics.bytes/1024/1024).toFixed(1)}MB, codec=${r.chosen.info.codec})`);
+      console.log(r.chosen.path);
+      process.exit(0);
+    }
+    const err = r.diagnostics.error || r.diagnostics.search || 'download_failed';
+    console.error(`[${p}] ✗ Basarisiz: ${err}`);
+  }
+  console.error('[HATA] hicbir saglayicidan gecerli video bulunamadi');
+  process.exit(1);
 }
+
+main().catch(e => {
+  console.error('[KRITIK] ' + (e.message || String(e)).slice(0,300));
+  process.exit(1);
+});
