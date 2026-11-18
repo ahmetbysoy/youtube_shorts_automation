@@ -185,9 +185,24 @@ class StockTerms:
     No claim that metadata proves model/property/privacy/brand clearances.
     """
     URLS = {"pexels": "https://www.pexels.com/license/", "pixabay": "https://pixabay.com/service/terms/"}
-    MARKERS = {
-        "pexels": ("free to use", "attribution is not required", "modify", "don't sell unaltered", "don't imply endorsement"),
-        "pixabay": ("content license", "royalty-free", "commercial or non-commercial", "standalone", "prohibited uses"),
+    # Her marker kumesindeki HERHANGI BIR ifade yeterli (OR) — her bir kategori
+    # icin en az bir tane eslesmesi lazim (izin, attribution, degistirme,
+    # yeniden dagitim siniri, endorseman siniri).
+    MARKER_GROUPS = {
+        "pexels": [
+            ("free to use", "free use", "can use", "all photos and videos", "free for commercial"),
+            ("attribution is not required", "no attribution required", "attribution not required", "without asking permission", "not required to give credit"),
+            ("modify", "edit", "altered", "modified"),
+            ("don't sell unaltered", "dont sell unaltered", "redistribute", "standalone file", "unaltered copies"),
+            ("don't imply endorsement", "dont imply endorsement", "endorsement", "misleading"),
+        ],
+        "pixabay": [
+            ("content license", "pixabay content license", "license agreement", "royalty-free", "royalty free"),
+            ("commercial use", "commercial or non-commercial", "non-commercial", "free of charge", "for free"),
+            ("modify", "adapt", "edit", "modified"),
+            ("standalone", "redistribute", "no standalone", "unaltered"),
+            ("prohibited uses", "prohibited", "restrictions", "not allowed"),
+        ],
     }
     NAMES = {"pexels": "Pexels License", "pixabay": "Pixabay Content License"}
 
@@ -198,10 +213,15 @@ class StockTerms:
 
     def _verify_text(self, provider: str, text: str, method: str, url: str) -> MediaLicense:
         t = plain(text, 200000).lower()
-        markers = self.MARKERS[provider]
-        if not all(marker in t for marker in markers):
-            return MediaLicense(url=url, evidence_url=url, checked_at=now(),
-                                rejection_reason="provider_terms_unavailable_or_changed")
+        # Her grupta en az bir ifade bulunmali
+        groups = self.MARKER_GROUPS[provider]
+        matched: list[str] = []
+        for grp in groups:
+            hit = next((m for m in grp if m in t), None)
+            if not hit:
+                return MediaLicense(url=url, evidence_url=url, checked_at=now(),
+                                    rejection_reason="provider_terms_unavailable_or_changed")
+            matched.append(hit)
         return MediaLicense(
             name=self.NAMES[provider],
             url=url, verified=True, evidence_url=url, evidence_method=method,
