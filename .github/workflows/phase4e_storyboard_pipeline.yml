@@ -151,9 +151,14 @@ jobs:
               ]
           }
           out_dir = Path("phase4e_out")
-          scenes_report, summary = select_storyboard_media(
+          # Local atomic history — remote GitHub Contents API kullanmiyoruz (yayinsiz test)
+          hist_path = out_dir/"history"/".media_history.json"
+          hist_path.parent.mkdir(parents=True, exist_ok=True)
+          if not hist_path.exists():
+              hist_path.write_text("{}", "utf8")
+          runtime_clips, summary = select_storyboard_media(
               script, out_dir,
-              history=MediaHistory(backend="atomic", root=out_dir/"history", url=None),
+              history=MediaHistory(path=hist_path),
           )
           print("\n=== SELECT_STORYBOARD_MEDIA OZET ===")
           print(f"status={summary.get('status')}, scenes={len(summary.get('scenes', []))}")
