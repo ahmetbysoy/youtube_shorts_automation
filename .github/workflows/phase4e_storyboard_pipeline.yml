@@ -34,7 +34,7 @@ jobs:
       - name: Sistem kurulumu (ffmpeg + fonts)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-liberation fonts-dejavu-core libass9 >/dev/null 2>&1
+          sudo apt-get install -y -qq ffmpeg fonts-liberation fonts-dejavu-core libass9
           ffmpeg -version | head -1
 
       - uses: actions/setup-python@v5
