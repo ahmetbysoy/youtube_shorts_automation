@@ -1,0 +1,362 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-11-18T09:52:38.517557+00:00",
+  "repository": "ahmetbysoy/youtube_shorts_automation",
+  "code_sha": "0dee88e18e05269e7d4f7360614123eb890f4e80",
+  "probe_id": "phase3-20261118",
+  "publishing_workflows_dispatched": false,
+  "deletion_workflows_dispatched": false,
+  "acceptance": "passed_ci_and_two_run_persistence",
+  "ci_run": {
+    "id": 44279794329,
+    "name": "Ubuntu 26.04 Gecis Testi (Gecis Oncesi Deneme)",
+    "event": "push",
+    "head_sha": "0dee88e18e05269e7d4f7360614123eb890f4e80",
+    "head_branch": "main",
+    "status": "completed",
+    "conclusion": "success",
+    "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44279794329",
+    "created_at": "2026-11-18T09:51:11Z",
+    "run_started_at": "2026-11-18T09:51:11Z",
+    "updated_at": "2026-11-18T09:52:36Z",
+    "run_attempt": 1,
+    "jobs": [
+      {
+        "id": 134717136040,
+        "name": "ubuntu-26-probe",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Depoyu Çek (Checkout)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Sistem Bilgisi",
+            "conclusion": "success"
+          },
+          {
+            "name": "FFmpeg + Font + Xvfb Kurulumu (26.04)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Python + Node Kurulumu (Node 24 major'lar)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Node Kurulumu",
+            "conclusion": "success"
+          },
+          {
+            "name": "Uploader JavaScript Syntax Check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Python Bagimliliklari",
+            "conclusion": "success"
+          },
+          {
+            "name": "Faz 3 CLI Import Smoke Test (yayın yok)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Playwright + Chromium (--with-deps)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Altyazi Montaj Testi (libass9 + FontSize=56 + MarginV=250)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Faz 3: Semantik + Atomik Geçmiş Testleri (mock HTTP/API; yayın yok)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Birim Testleri",
+            "conclusion": "success"
+          },
+          {
+            "name": "Faz 3 Probe Özeti",
+            "conclusion": "success"
+          },
+          {
+            "name": "Probe Ozeti",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Node Kurulumu",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Python + Node Kurulumu (Node 24 major'lar)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Depoyu Çek (Checkout)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ],
+        "runner_id": 1000005648,
+        "runner_name": "GitHub Actions 1000005648",
+        "labels": [
+          "ubuntu-26.04"
+        ],
+        "started_at": "2026-11-18T09:51:14Z",
+        "completed_at": "2026-11-18T09:52:35Z"
+      }
+    ],
+    "selected_log_lines": [
+      "2026-11-18T09:52:21.4338510Z 35 passed in 0.84s",
+      "2026-11-18T09:52:31.5915927Z 171 passed, 16 subtests passed in 9.80s"
+    ]
+  },
+  "history_before": {
+    "observed_at_utc": "2026-11-18T09:52:39.502941+00:00",
+    "blob_sha": "163221d96e7c9cbbf35e444637d67e8d961369dc",
+    "version": 1,
+    "used_title_count": 25,
+    "used_titles_sha256": "7eca291fbb7b1f462b92210afce9c0c328971d78ef98413a45a3e0644184176d",
+    "used_record_count": 0,
+    "pending_count": 0,
+    "probe_pending_count": 0,
+    "probe_pending": [],
+    "probe_in_used_history": false
+  },
+  "reserve_run": {
+    "id": 44280024395,
+    "name": "Topic History Persistence Probe (no publishing)",
+    "event": "workflow_dispatch",
+    "head_sha": "0dee88e18e05269e7d4f7360614123eb890f4e80",
+    "head_branch": "main",
+    "status": "completed",
+    "conclusion": "success",
+    "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280024395",
+    "created_at": "2026-11-18T09:52:41Z",
+    "run_started_at": "2026-11-18T09:52:41Z",
+    "updated_at": "2026-11-18T09:52:59Z",
+    "run_attempt": 1,
+    "jobs": [
+      {
+        "id": 134717940809,
+        "name": "persistence-proof",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Checkout main",
+            "conclusion": "success"
+          },
+          {
+            "name": "Python setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install probe dependency",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reserve or verify across Actions runs",
+            "conclusion": "success"
+          },
+          {
+            "name": "Evidence summary",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Python setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Checkout main",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ],
+        "runner_id": 1000005649,
+        "runner_name": "GitHub Actions 1000005649",
+        "labels": [
+          "ubuntu-26.04"
+        ],
+        "started_at": "2026-11-18T09:52:45Z",
+        "completed_at": "2026-11-18T09:52:58Z"
+      }
+    ],
+    "selected_log_lines": [
+      "2026-11-18T09:52:54.7918799Z [OK] reservation persisted; id=phase3-probe-phase3-20261118; run this probe with phase=verify and the same probe_id"
+    ]
+  },
+  "history_reserved": {
+    "observed_at_utc": "2026-11-18T09:53:13.074428+00:00",
+    "blob_sha": "9e1425b241f97e0245d35b0fb083df0ba98afc24",
+    "version": 2,
+    "used_title_count": 25,
+    "used_titles_sha256": "7eca291fbb7b1f462b92210afce9c0c328971d78ef98413a45a3e0644184176d",
+    "used_record_count": 25,
+    "pending_count": 1,
+    "probe_pending_count": 1,
+    "probe_pending": [
+      {
+        "reservation_id": "phase3-probe-phase3-20261118",
+        "run_id": "probe:phase3-20261118",
+        "created_at": "2026-11-18T09:52:53.347647+00:00",
+        "title": "__PHASE3_PERSISTENCE_PROBE__ phase3-20261118"
+      }
+    ],
+    "probe_in_used_history": false
+  },
+  "verify_run": {
+    "id": 44280111635,
+    "name": "Topic History Persistence Probe (no publishing)",
+    "event": "workflow_dispatch",
+    "head_sha": "c421f2b5bbd653479ee73673b3c0aa185b2b6258",
+    "head_branch": "main",
+    "status": "completed",
+    "conclusion": "success",
+    "html_url": "https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280111635",
+    "created_at": "2026-11-18T09:53:14Z",
+    "run_started_at": "2026-11-18T09:53:14Z",
+    "updated_at": "2026-11-18T09:53:27Z",
+    "run_attempt": 1,
+    "jobs": [
+      {
+        "id": 134718243366,
+        "name": "persistence-proof",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Checkout main",
+            "conclusion": "success"
+          },
+          {
+            "name": "Python setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install probe dependency",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reserve or verify across Actions runs",
+            "conclusion": "success"
+          },
+          {
+            "name": "Evidence summary",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Python setup",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Checkout main",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ],
+        "runner_id": 1000005650,
+        "runner_name": "GitHub Actions 1000005650",
+        "labels": [
+          "ubuntu-26.04"
+        ],
+        "started_at": "2026-11-18T09:53:18Z",
+        "completed_at": "2026-11-18T09:53:27Z"
+      }
+    ],
+    "selected_log_lines": [
+      "2026-11-18T09:53:24.5350849Z [OK] second Actions run observed and released reservation phase3-probe-phase3-20261118; cross-run CAS persistence confirmed"
+    ]
+  },
+  "history_released": {
+    "observed_at_utc": "2026-11-18T09:53:31.373439+00:00",
+    "blob_sha": "e5a987fccba23d6d37f1aed76e560cd0647e8f26",
+    "version": 2,
+    "used_title_count": 25,
+    "used_titles_sha256": "7eca291fbb7b1f462b92210afce9c0c328971d78ef98413a45a3e0644184176d",
+    "used_record_count": 25,
+    "pending_count": 0,
+    "probe_pending_count": 0,
+    "probe_pending": [],
+    "probe_in_used_history": false
+  },
+  "used_history_unchanged": true,
+  "verify_vs_ci_changed_files": [
+    ".used_topics.json"
+  ],
+  "verify_uses_same_code_as_ci": true,
+  "completed_at_utc": "2026-11-18T09:53:33.719061+00:00",
+  "security_review": {
+    "checked_runs": [
+      {
+        "run_id": 44279794329,
+        "supplied_credential_value_found": false,
+        "unmasked_credential_pattern_matches": 0,
+        "artifact_count": 0
+      },
+      {
+        "run_id": 44280024395,
+        "supplied_credential_value_found": false,
+        "unmasked_credential_pattern_matches": 0,
+        "artifact_count": 0
+      },
+      {
+        "run_id": 44280111635,
+        "supplied_credential_value_found": false,
+        "unmasked_credential_pattern_matches": 0,
+        "artifact_count": 0
+      }
+    ],
+    "credential_values_emitted": false,
+    "credential_absent_from_git_config": true,
+    "credential_file_ignored": true,
+    "credential_file_untracked": true
+  },
+  "preceding_failed_attempts": [
+    {
+      "run_id": 44276350403,
+      "reason": "CI unit tests inherited GITHUB_REPOSITORY without credentials; remote history correctly failed closed."
+    },
+    {
+      "run_id": 44276864442,
+      "reason": "A workflow env mapping cannot clear GitHub reserved GITHUB_* defaults; fixed using env -u in the test child process."
+    },
+    {
+      "run_id": 44278929807,
+      "reason": "Direct script invocation could not import the scripts package; failed before a reservation was created. Replaced by module entrypoints and added explicit requests installation."
+    }
+  ],
+  "separate_probe_runners_confirmed": true,
+  "post_probe_local_validation": {
+    "python_tests_passed": 171,
+    "python_subtests_passed": 16,
+    "python_warnings": 1,
+    "node_tests_passed": 7,
+    "node_syntax": "passed",
+    "yaml_and_bash_syntax": "passed",
+    "broken_local_documentation_links": 0,
+    "tracked_history_test_side_effect_restored": true,
+    "restored_history_version": 2,
+    "restored_used_titles": 25,
+    "restored_used_records": 25,
+    "restored_pending": 0
+  }
+}

@@ -2,7 +2,7 @@
 
 ## Sınır
 
-Bu not yalnızca çalışma ağacındaki kod, sandbox HTTP kontrolü ve yerel testler içindir. **GitHub Actions CI veya Actions koşuları arası kalıcılık kanıtı değildir.** Kod henüz commit/push edilmedi. `daily_shorts.yml`, `hourly_pruner.yml`, `draft_publisher.yml` ve YouTube yayın hattı tetiklenmedi.
+Bu not ilk yerel uygulama anındaki kod, sandbox HTTP kontrolü ve yerel testleri kaydeder; o sırada kod henüz commit/push edilmemişti. **Bu belge GitHub Actions veya koşular arası kalıcılık kanıtı değildir.** Sonradan push ve Actions kabulü tamamlandı; ayrı [Actions kanıt raporuna](PHASE3_ACTIONS_EVIDENCE_2026-11-18.md) bakın. Yerel kontrol sırasında üretim/publisher/pruner/YouTube yayın hattı tetiklenmedi.
 
 ## Kurulum ve yerel testler
 
@@ -26,9 +26,15 @@ Kapsam: exact quote, semantik ilişki var/yok, sayı/tarih/birim uyuşmazlığı
 
 Ayrı bir canlı HTTP + önceden kaydedilmiş fixture denemesinde fixture'ın exact evidence quote'u güncel Wikipedia summary'sinde bulunmadı; validator doğru olarak `quote_not_found` ile reddetti. Eski Gemini Web başarılı run'ı **44262444017** korunur ve yeni Faz 3 code path'e canlı kanıt sayılmaz.
 
-## Kalan kabul kapısı
+## İlk yerel rapor hazırlanırken açık olan kabul kapısı (tarihsel)
 
 1. Push sonrası `.github/workflows/ubuntu_26_test.yml` success.
 2. `.github/workflows/topic_history_persistence_probe.yml` için iki ayrı Actions run: önce `reserve`, sonra aynı `probe_id` ile `verify`; ikinci koşu ilk koşunun pending reservation'ını görüp güvenli biçimde release etmeli.
 
-Her iki Actions kanıtı bağlanana kadar Faz 3 **kabul edilmedi**.
+Bu ilk yerel aşamada Faz 3 kabul edilmemişti. Sonraki yeni-kod Ubuntu 26 CI ve iki ayrı Actions run’ı başarılı oldu; kabul sonucu ve sınırları [ayrı raporda](PHASE3_ACTIONS_EVIDENCE_2026-11-18.md) kayıtlıdır. Bu yerel kayıt tek başına Actions kanıtı diye sunulmaz.
+
+## Son yerel regresyon tekrarı (2026-11-18)
+
+Actions ortamı/import sorunlarına karşı 6 test eklendikten sonra tam suite **171 passed + 16 subtests**, aynı mevcut asyncio deprecation uyarısıyla başarılı; Node **7 passed**, Node syntax, YAML/bash syntax ve diff kontrolleri başarılı. Reserved GitHub env değerleri tanımlı bir üst process altında, workflow’un gerçek `env -u` komutuyla da tam suite geçti. Sıfırdan venv’de yalnız `requests==2.34.2` kurularak iki Phase 3 module CLI `--help` komutu başarılı oldu; credential/API erişimi gerekmedi.
+
+Gerçek iki-run probe sonrasında GitHub’dan v2 geçmiş fast-forward edildiğinde de tam suite tekrar **171 passed + 16 subtests** (13.12 sn), Node **7 passed** ve syntax kontrolleri başarılı oldu. Testlerin tracked history yan etkisi geri alındı: son v2 dosyada 25 başlık/25 record/0 pending ve orijinal title-list hash’i korundu. Güncellenen yedi Markdown belgesinde yerel dosya bağlantıları kontrol edildi; kırık bağlantı yok.

@@ -1,10 +1,12 @@
-> **GÜNCEL DEVİR NOTU — 2026-11-18 (öncelikli):** Faz 3 kodu çalışma ağacında uygulanıyor; son bilinen başlangıç HEAD `bacc967751836502021d513a0c58b92c163689d1`. Değişen kod henüz CI/Actions üzerinde doğrulanmadı; commit/push henüz yapılmadı. Local Phase 3 targeted suite **35 passed**, content fallback + Phase 3 suite **40 passed**; gerçek Wikipedia HTTP request `Venus` için HTTP 200 ve canonical page match verdi. Ancak new Ubuntu 26 CI ve **iki ayrı Actions run** arası pending reservation gözlemi/release kanıtı yok; Faz 3 kabul kapısı açık. Yerel test/HTTP kanıtı: [PHASE3_LOCAL_EVIDENCE_2026-11-18.md](docs/evidence/PHASE3_LOCAL_EVIDENCE_2026-11-18.md).
+> **GÜNCEL DEVİR NOTU — 2026-11-18 (öncelikli):** **Gemini Faz 3 yayınsız kabul kapısı geçti.** Feature `c2729cc`, CI ortam düzeltmeleri `28e1d6e` / `0dee88e` main’e push edildi. Doğrulanmış kaynak commit’i `0dee88e18e05269e7d4f7360614123eb890f4e80`; Ubuntu 26 CI [44279794329](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44279794329) **success**, **171 passed + 16 subtests**, ayrı hedefli suite **35 passed**. Sonraki iki bot commit’i yalnız `.used_topics.json` kalıcı durumunu güncelledi (`c421f2b` reserve, `a86ab5c` release); sonraki belge commit’i kodu değiştirmez. Güncel HEAD için `git log -1` kullan.
 >
-> Korunacak mevcut gerçek Gemini Web kanıtı: [44262444017](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44262444017), SHA `57166f8`, 58 kelime/5 sahne/3 claim, `draft_only=true`, `publish=false`; bu önceki successful run yeni Faz 3 code'u çalıştırmadı. Eski CI [44263321930](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44263321930) da prior HEAD success. Cookie-only Gemini Web, `GEMINI_COOK`, `GEMINI_API_KEY`, local fallback ve user-approved `partial` publication behavior korunur; secrets asla loglama/artifact'e koyma.
+> İki ayrı Actions koşusu [44280024395](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280024395) (`reserve`) ve [44280111635](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280111635) (`verify`) başarılı: aynı `probe_id=phase3-20261118` rezervasyonu ikinci koşuda GitHub Contents API’den okunup release edildi. `pending` **0 → 1 → 0**, legacy **25 başlık korundu**, test başlığı `used_titles` / `used_records` içine yazılmadı. [Actions kanıtı](docs/evidence/PHASE3_ACTIONS_EVIDENCE_2026-11-18.md) ve [makine okunur kayıt](docs/evidence/PHASE3_ACTIONS_EVIDENCE_2026-11-18.json). Gerçek CAS race/conflict yalnız mock testlidir; canlı kanıt iki sıralı koşunun kalıcılığıdır.
 >
-> Hemen sonraki adımlar: tests/syntax/YAML review + `git diff --check`; push sonrası yalnız publish-free `.github/workflows/ubuntu_26_test.yml` run'ını doğrula; sonra `.github/workflows/topic_history_persistence_probe.yml` iki ayrı dispatch ile `reserve` ve aynı `probe_id` üzerinde `verify` yapıp pending entry'nin ikinci run'da görüldüğünü ve release edildiğini kanıtla. **`daily_shorts.yml`, `hourly_pruner.yml`, `draft_publisher.yml` tetikleme.** Gerçek CI + two-run proof olmadıkça Faz 3 kabul edildi deme. Yeni HTTP canonical-page probe bu oturumda başarılı; HTTP probe Gemini model run'ı değildir.
+> Korunacak eski gerçek Gemini Web kanıtı: [44262444017](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44262444017), SHA `57166f8`, 58 kelime/5 sahne/3 claim, `draft_only=true`, `publish=false`, fact check `partial`. Yeni Faz 3 koduyla canlı model/YouTube yayın testi değildir. Cookie-only Gemini Web, mevcut fallback, `GEMINI_COOK`, `GEMINI_API_KEY` ve kullanıcı onaylı `partial` publication behavior korunur; `partial`, `verified` diye yeniden etiketlenmez.
 >
-> Secret güvenliği: Secret değerlerini asla görüntüleme, loglama veya artifact'e yazma. Credential path `/home/user/repo_review/jeton/github_erisim.json` gizlidir, repoya ekleme. `hourly_pruner.yml` videoları silebilir, `draft_publisher.yml` PUBLIC yapabilir.
+> Sıradaki iş: Faz 4 sahne-medya adaptörleri/lisans/uygunluk ve timing/media QC; TODO’daki açık Faz 1 tüketici taraması/entegrasyon işleri de açık. **`daily_shorts.yml`, `hourly_pruner.yml`, `draft_publisher.yml` bu kabul için tetiklenmedi; test amacıyla tetikleme.** Gerçek üretim adımının başarılı/başarısız finalization yolu uçtan uca denenmedi; CLI import/komutları ve CAS/release davranışları test edildi. Yeni Gemini model çalışması veya yayın izni çıkarma.
+>
+> Güvenlik: Kullanıcının belirttiği ignore edilmiş `/home/user/repo_review/jeton/github_erisim.json` dosyasındaki geçerli credential kullanıldı; dosya adı JSON olsa da iç biçimin geçerli JSON olduğu varsayılmamalı. Değeri asla yazdırma/loglama/stage etme; token’ı remote URL veya `.git/config` içine koyma. Başarılı üç run log taraması temiz; artifact sayısı 0. Repository Secret’lar değiştirilmedi. `hourly_pruner.yml` gerçek video silebilir, `draft_publisher.yml` PUBLIC yapabilir.
 > **Faz 15:** [Canlı plan ve TODO](docs/FAZ15_TAM_OTONOM_KANAL_VE_KAPAK_TODO.md). 08:39 UTC HAR Studio envanterinde 58 PUBLIC + 3 taslak; PUBLIC kapaklar ve örnek kareler, taslak önizlemeleri incelendi. Baştan sona video/ses ve iddia doğrulaması yapılmadı. Gerçek #123 yükleme işi PUBLIC başarılı, workflow geneli cron-kick iptal; günlük özel kapak kotası dolu ve hiçbir mevcut kapak değiştirilmedi. Gemini kare eşleşmesi canlı örnekte yanlış pozitif olduğundan otomatik kabul varsayılan kapalı, test amaçlı istisna dışında yerel temsili karta düşülür. Kullanıcı kota doluyken YouTube otomatik kapağıyla yayını seçti; ücretli API açma. 58 PUBLIC ID için yüklenmemiş temsili adaylar var; iki final short konusu yalnız otomatik altyazıdan alındı, ses doğrulaması gerekir. `41996283537` tek olumsuz gerçek örnekte ret success; otomatik kare kabulünü tek teste bakarak açma.
 
 > **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı önceki silme isteğini değiştirerek tüm taslakların PUBLIC yayınını seçti. 26 mevcut video Studio’da aynı ID üzerinden PUBLIC doğrulandı; silme yapılmadı. [Kanıt listesi](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; içerik tekrarı, görsel uyumu ve açıklamalar çözülmedi. Aktif otomasyon/pruner değiştirilmedi. Önceki bloklar tarihsel kanıttır.
@@ -13,7 +15,7 @@
 
 > **Faz 14:** Kullanıcı ücretli AI görsel API kullanımını reddetti; [plan](docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md). Google API key GitHub Secrets içinde; değerini asla gösterme. Şu an ücretsiz proje olduğu Studio UI üzerinden gözlendi; API görüntü üretimi ücretsiz değildir.
 
-> **Son Güncelleme:** `2026-11-18` (Faz 3 local implementation + tests; CI/two-run persistence proof pending; acceptance gate açık)
+> **Son Güncelleme:** `2026-11-18` (Faz 3: yeni-kod Ubuntu 26 CI + iki ayrı Actions kalıcılık/release kanıtı başarılı; yayınsız kabul tamamlandı)
 > **Hedef Kitle:** Bu projeyi devralacak bir sonraki Yapay Zeka Ajanı (Arena Agent, Claude Code, Cursor, Codex vb.) veya Geliştirici.
 
 Bu belge, projeyi devralan bir yapay zekanın **sıfır tahmin, sıfır deneme-yanılma ve sıfır güvenlik ihlali** ile 30 saniye içinde sistemi anlayıp geliştirmeye devam edebilmesi için hazırlanmıştır.
@@ -28,7 +30,7 @@ Proje; Türkçe YouTube Shorts içeriklerini **senaryo -> seslendirme (`edge-tts
 | :--- | :---: | :--- |
 | **GitHub Deposu** | ✅ Aktif | `https://github.com/ahmetbysoy/youtube_shorts_automation` (`main` dalı) |
 | **YouTube Kanalı** | ✅ Aktif | `@mentansiytas` — `https://studio.youtube.com/channel/UCBZVbwc7s7TeUCcOaN58oHQ` |
-| **Birim Testleri** | ✅ `22/22` | `python -m unittest discover -s tests -p "test_*.py"` |
+| **Birim Testleri** | ✅ `171 + 16 subtests` | Güncel tam Python suite Ubuntu 26 CI’da geçti; yerel Node suite `7/7`, Node syntax kontrolleri başarılı |
 | **Faz 1–4 (Motorlar)** | ✅ Tamamlandı | İçerik/TTS (`content_engine.py`), Montaj (`src/media_processing/media_processor.py`), OAuth/API yedek modülü (`src/youtube_upload/`) |
 | **Faz 5 (Studio Backdoor)** | ✅ Tamamlandı | `youtube_studio_uploader.js` (Playwright Chromium + kalıcı çerez/storageState oturumu) |
 | **Faz 6 (Orkestratör & CI)** | ✅ Tamamlandı | `main.py` uçtan uca orkestrasyon + GitHub Actions bulut otomasyonu |
@@ -124,12 +126,14 @@ chmod 600 .env cookies.json storage_state.json
 
 # 3. Bağımlılıkları kur (Python sanal ortamı + Node/Playwright)
 python3 -m venv .venv
-.venv/bin/pip install --no-cache-dir -r requirements.txt
+.venv/bin/pip install --no-cache-dir -r requirements.txt -r requirements-test.txt
 npm install
 npx playwright install --with-deps chromium
 
-# 4. Birim testlerini doğrula (22/22 OK olmalı)
-.venv/bin/python -m unittest discover -s tests -p "test_*.py" -v
+# 4. Tam test suite (171 test + 16 subtest; remote history credentials child process’ten kaldırılır)
+env -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN .venv/bin/python -m pytest -q tests
+npm test
+npm run test:syntax
 
 # 5. Tam üretim hattını çalıştır (Senaryo + Ses + Altyazı + 1080x1920 Video + PUBLIC Yayın)
 xvfb-run -a --server-args="-screen 0 1366x900x24" .venv/bin/python main.py
@@ -147,15 +151,14 @@ curl -X POST \
 
 ---
 
-## 6. Sıradaki Güvenli Adımlar (Faz 3 kabulünü tamamla)
+## 6. Sıradaki Güvenli Adımlar (Faz 3 kabulü tamamlandı)
 
-1. Working tree diff'i code-review et, targeted tests (`tests/test_phase3_fact_checks.py`, `tests/test_topic_history.py`, `tests/test_gemini_web_story.py`, `tests/test_script_json_schema.py`) ve `git diff --check` çalıştır.
-2. Yalnız publish-free Ubuntu 26 validation workflow'u push/CI ile doğrula; run URL/SHA ve sonucu TODO/README/ARCHITECTURE'a ekle.
-3. `topic_history_persistence_probe.yml`'i iki ayrı Actions run olarak dispatch et: önce `phase=reserve`, sonra aynı `probe_id` ile `phase=verify`. İkinci run pending blob'u GitHub Contents API'den okur, release eder; `.used_topics.json` used history'ye test başlığı eklenmemelidir. İki run linkini ve outcome'u kaydet.
-4. CI veya two-run proof başarısız/eksikse Faz 3 gate open bırak. Yalnız ikisi de başarılıysa acceptance review yap; prod workflow still not to trigger.
-5. Faz 3 acceptance sonrasında Faz 4 sahne-medya semantik uygunluğu ve timing/media QC planlanabilir.
+1. Kanıtları koru: CI [44279794329](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44279794329) (`0dee88e`), reserve [44280024395](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280024395), verify [44280111635](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280111635); [kanıt raporu](docs/evidence/PHASE3_ACTIONS_EVIDENCE_2026-11-18.md). İki Actions run farklı kimliktedir; verify checkout’u CI kodundan yalnız `.used_topics.json` bakımından farklıdır.
+2. Yeni değişiklik yapmadan `git status`, `git log -1` ve TODO’yu incele. Testler tracked `.used_topics.json` dosyasını değiştirebilir; test yan etkisini remote state’e commit etme. Runtime `.topic_reservations.json` / `.used_topics.json.lock` ignore edilir.
+3. Phase 3 entrypoint’lerini modül olarak çalıştır; probe `requests` bağımlılığını kendi kurar. Unit-test process’i `env -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN` ile local-history moduna alınır; üretimde fail-closed konfigürasyonu gevşetilmez.
+4. Sonraki geliştirme Faz 4: sahne başına medya adayları, uygunluk/lisans/atıf ve alakasız klibi reddeden testler. Açık Faz 1 genel tüketici/gerçek entegrasyon işleri otomatik kapanmış sayılmaz.
+5. Bu kabul için gerçek YouTube üretim/yayın, pruner veya publisher kullanılmadı. Gerçek daily pipeline finalization, yeni Gemini model testi veya kanal geneli tarihsel tekrar taraması için kanıt çıkarma; kapsam/izin ayrı değerlendirilir.
 
-Gemini Web cookie dry-run `44262444017` önceki başarılı kanıttır; sırf bu Faz 3 değişikliği için tekrar tetiklenmesi şart değildir. Gerçek YouTube üretim/yayın, pruner veya publisher workflow'u kullanılmaz.
 ---
 
 ## 7. Faz 10 — Otonom "Ölü Ağırlık" Temizleyici (Auto-Pruner) Operasyon Protokolü
