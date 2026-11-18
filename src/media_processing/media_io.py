@@ -32,15 +32,16 @@ def io_evidence() -> dict:
 def _playwright_download(candidate: MediaCandidate, path: Path, evidence: dict) -> Path | None:
     """Faz 4E: `catalog_transport == "playwright"` olan adaylar cookie ile
     video_fetcher.js uzerinden indirilir. Public HTTP fallback YOK.
-    Donen dosya zaten SHA256 + ffprobe + full-decode dogrulamasindan gecmistir;
-    burada tekrar probe bilgilerini evidence'e doldururuz.
+
+    ÖNEMLİ: metadata modunda donen download_url sansurlenir (query/auth
+    parametreleri silinir). Gercek indirme video_fetcher.js tarafindan YENIDEN
+    arama + secim yapilarak (keyword=title) gerceklestirilir; dogrudan URL
+    kullanilmaz.
+    Donen dosya zaten SHA256 + ffprobe + full-decode dogrulamasindan gecmistir.
     """
-    from .media_processor import probe_media as _probe
-    import sys
     fetcher = Path(__file__).resolve().parents[2] / "video_fetcher.js"
     if not fetcher.exists():
         raise MediaIOError("video_fetcher.js not found", "missing_fetcher", evidence)
-    # Tarayici child'a YALNIZCA guvenli env + ilgili cookie
     provider_env = {"pexels": "PEXELS_COOK", "pixabay": "PIXABAY_COOK"}.get(candidate.provider)
     safe_env_names = {"PATH","HOME","USER","LOGNAME","LANG","LC_ALL","LC_CTYPE","DISPLAY",
                       "TMPDIR","TMP","TEMP","XDG_RUNTIME_DIR","PLAYWRIGHT_BROWSERS_PATH"}
@@ -48,8 +49,9 @@ def _playwright_download(candidate: MediaCandidate, path: Path, evidence: dict) 
         safe_env_names.add(provider_env)
     child_env = {k: v for k, v in os.environ.items() if k in safe_env_names}
     path.parent.mkdir(parents=True, exist_ok=True)
-    # video_fetcher.js indirme+dogrulama yapip cikti dosyasini path'e yazar
-    args = ["node", str(fetcher), str(candidate.title or candidate.provider), str(path),
+    # Arama kelimesi olarak candidate.title kullan (metadata modunda atandi)
+    keyword = str(candidate.title or candidate.provider)[:80]
+    args = ["node", str(fetcher), keyword, str(path),
             "--provider", candidate.provider,
             "--min-width", "640", "--min-height", "360",
             "--min-duration", "2", "--max-duration", "300",

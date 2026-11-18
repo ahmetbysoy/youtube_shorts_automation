@@ -163,10 +163,12 @@ jobs:
           hist_path.parent.mkdir(parents=True, exist_ok=True)
           if not hist_path.exists():
               hist_path.write_text("{}", "utf8")
+          report_file = out_dir/"storyboard_report.json"
           try:
               runtime_clips, summary = select_storyboard_media(
                   script, out_dir,
                   history=MediaHistory(path=hist_path),
+                  report_path=report_file,
               )
           except Exception as exc:
               import traceback
