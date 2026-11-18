@@ -45,6 +45,25 @@ def terms(text: str) -> set[str]:
     return {t for t in mapped if len(t) > 2 and t not in STOP}
 
 
+def uploader_description_upper_bound(script: dict, description: str) -> int:
+    """Conservative UTF-16 budget for the UNCHANGED Studio description builder.
+
+    buildFinalDescription can prepend affiliate/CTA blocks and append hashtags
+    before JS .slice(0, 4900). Reserve them even if already present: occasional
+    over-rejection is safer than silently cutting a mandatory source credit.
+    This is not an upload and must never import/execute the uploader entrypoint.
+    """
+    field = lambda key: str(script.get(key) or "").strip()
+    affiliate = field("affiliate_hook") or field("affiliate_cta")
+    if not affiliate and field("affiliate_link"):
+        affiliate = "İncele: "+field("affiliate_link")
+    top = "\n\n".join(v for v in (affiliate, field("cta_line")) if v)
+    hashtags = " ".join(str(h).strip() for h in script.get("viral_hashtags", []) if str(h).strip())
+    # Count all hashtags (not just the builder's first three) conservatively.
+    upper = "\n\n".join(v for v in (top, description, hashtags) if v)
+    return len(upper.encode("utf-16-le", errors="surrogatepass"))//2
+
+
 class SceneMediaError(RuntimeError):
     def __init__(self, reason: str, report: dict):
         super().__init__(reason)
@@ -239,8 +258,10 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
         description = str(script.get("description") or "").strip()
         missing = [credit for credit in credits if credit not in description]
         merged = (description+"\n\n"+"\n".join(missing)).strip()
-        if len(merged) > 4900:
+        if len(merged.encode("utf-16-le", errors="surrogatepass"))//2 > 4900:
             raise ValueError("description_cannot_preserve_required_attribution")
+        if any(r["license"]["attribution_required"] for r in report["scenes"]) and uploader_description_upper_bound(script, merged) > 4900:
+            raise ValueError("uploader_description_budget_cannot_preserve_required_attribution")
         history.remember(history_entries)
         script["description"] = merged
         script["media_credits"] = list(dict.fromkeys([*script.get("media_credits", []), *credits]))

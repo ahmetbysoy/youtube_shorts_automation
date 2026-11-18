@@ -461,3 +461,55 @@ def test_safe_api_error_code_is_retained_but_not_request_url(tmp_path):
     with pytest.raises(SceneMediaError) as e:select(script(),tmp_path,[p])
     data=json.dumps(e.value.report)
     assert 'pixabay_catalog_http_403' in data and 'private-fixture-key' not in data
+
+
+def test_uploader_cta_budget_is_checked_before_history_or_render(tmp_path):
+    data=script();credit='MANDATORY AUTHOR AND LICENSE CREDIT'
+    data['description']='x'*(4900-len(credit)-2)
+    data['cta_line']='Existing uploader prepends this CTA'
+    with pytest.raises(SceneMediaError) as e:
+        select(data,tmp_path,[Provider([candidate(license=license_ok(credit))])])
+    assert e.value.report['failure']=='uploader_description_budget_cannot_preserve_required_attribution'
+    assert not (tmp_path/'history.json').exists()
+    assert 'scene_media' not in data
+
+
+def test_js_utf16_length_not_python_codepoint_length_protects_emoji_credit(tmp_path):
+    data=script();data['description']='x'*3000+'🌙'*1000
+    assert len(data['description'])<4900
+    with pytest.raises(SceneMediaError) as e:
+        select(data,tmp_path,[Provider([candidate(license=license_ok('Required credit'))])])
+    assert e.value.report['failure']=='description_cannot_preserve_required_attribution'
+
+
+@pytest.mark.parametrize('affiliate',[
+    {'affiliate_hook':'Abone ol: https://example.org','affiliate_cta':'ignored CTA'},
+    {'affiliate_cta':'Existing affiliate CTA'},
+    {'affiliate_link':'https://example.org/offer'},
+])
+def test_required_credit_survives_actual_uploader_pure_description_function_without_running_uploader(tmp_path,affiliate):
+    import shutil
+    if not shutil.which('node'):pytest.skip('node required for existing JS consumer contract')
+    # Extract ONLY the two existing pure metadata functions. The uploader file
+    # has an unconditional network/publishing entrypoint: DO NOT require/import it.
+    # VM has no require, process, timers or browser; no uploader/YouTube execution.
+    program=r'''
+    const fs=require('fs'),vm=require('vm');
+    const source=fs.readFileSync('youtube_studio_uploader.js','utf8');
+    const begin=source.indexOf('function readScenarioField(');
+    const end=source.indexOf('/** pollinations.ai',begin);
+    if (begin<0 || end<0) throw new Error('pure metadata boundaries changed');
+    const data=JSON.parse(fs.readFileSync(0,'utf8'));
+    const context=vm.createContext({data});
+    const result=vm.runInContext(source.slice(begin,end)+'\nbuildFinalDescription(data)',context,{timeout:500});
+    process.stdout.write(JSON.stringify({description:result,length:result.length}));
+    '''
+    data=script();data.update(affiliate,cta_line='Original CTA',viral_hashtags=['#moon','#science','#shorts'])
+    credit='Ay 🌙 — Example Author — CC BY 4.0; https://creativecommons.org/licenses/by/4.0/'
+    _,r=select(data,tmp_path,[Provider([candidate(license=license_ok(credit))])])
+    result=subprocess.run(['node','-e',program],input=json.dumps(data),capture_output=True,text=True,check=True,timeout=15)
+    final=json.loads(result.stdout)
+    from src.media_processing.scene_media import uploader_description_upper_bound
+    assert credit in final['description']
+    assert final['length']<=uploader_description_upper_bound(data,data['description'])<=4900
+    assert r['scenes'][0]['license']['attribution_required']
