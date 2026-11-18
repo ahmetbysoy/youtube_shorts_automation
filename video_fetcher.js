@@ -52,7 +52,7 @@ const DOWNLOAD_TIMEOUT_MS = 90000;
 const MAX_REDIRECT_HOPS = 4;
 const MAX_FILE_BYTES_DEFAULT = 100 * 1024 * 1024; // 100 MB
 const ALLOWED_DOWNLOAD_HOSTS = {
-  pexels:  new Set(['videos.pexels.com', 'images.pexels.com', 'player.vimeo.com']),
+  pexels:  new Set(['videos.pexels.com', 'images.pexels.com', 'vids.pexels.com', 'player.vimeo.com']),
   pixabay: new Set(['cdn.pixabay.com']),
 };
 const ALLOWED_SOURCE_HOSTS = {
@@ -355,12 +355,15 @@ async function fetchFromPixabay(page, kw, opts) {
   // Cloudflare/Turnstile kontrolu (status 200 olsa bile challenge sayfasi gelebilir)
   const pageTitle = await page.title();
   diag.page_title = pageTitle.slice(0, 120);
-  const isChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(pageTitle);
+  let isChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(pageTitle) ||
+                    !!(await page.$('#cf-challenge, #turnstile-wrapper, iframe[src*="challenges.cloudflare"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"]').catch(()=>null));
   if (isChallenge) {
     // Bir kez daha bekle — Cloudflare bazen otomatik geciyor
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(5000);
     const t2 = await page.title();
-    if (/just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(t2)) {
+    isChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(t2) ||
+                  !!(await page.$('#cf-challenge, #turnstile-wrapper, iframe[src*="challenges.cloudflare"]').catch(()=>null));
+    if (isChallenge) {
       diag.search = 'blocked_unverified';
       return { candidates: [], diagnostics: diag };
     }
@@ -411,19 +414,13 @@ async function fetchFromPexels(page, kw, opts) {
   const diag = { cookie_present: false, browser_access: null, search: null,
                  candidates_found: 0, source_url: null, selected_url: null };
   try {
-    const resp = await page.goto(searchUrl, { waitUntil: 'networkidle', timeout: Math.max(60000, TIMEOUT_MS*2) });
+    const resp = await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
     diag.browser_access = resp ? resp.status() : null;
     await page.waitForTimeout(2000);
   } catch (e) {
-    try {
-      const resp = await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
-      diag.browser_access = resp ? resp.status() : null;
-      await page.waitForTimeout(4000);
-    } catch (e2) {
-      diag.browser_access = 'timeout_or_navigation_error';
-      diag.search = 'failed';
-      return { candidates: [], diagnostics: diag };
-    }
+    diag.browser_access = 'timeout_or_navigation_error';
+    diag.search = 'failed';
+    return { candidates: [], diagnostics: diag };
   }
   if (diag.browser_access === 403 || diag.browser_access === 429) {
     diag.search = 'blocked_unverified';
@@ -435,18 +432,18 @@ async function fetchFromPexels(page, kw, opts) {
   diag.final_url = safeUrl(urlAfter);
   diag.page_title = pageTitle.slice(0, 120);
   const isChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(pageTitle) ||
-                      /cf-challenge|turnstile|g-recaptcha|hcaptcha/i.test(await page.content().catch(()=>'').then(c=>c.slice(0,5000)));
+                      !!(await page.$('#cf-challenge, #turnstile-wrapper, iframe[src*="challenges.cloudflare"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"]').catch(()=>null));
   if (isChallenge) {
     diag.search = 'blocked_unverified';
     return { candidates: [], diagnostics: diag };
   }
   diag.search = 'loaded';
-  // DOM'u uzun sure bekle (lazy-load / React hydrate)
-  try { await page.waitForSelector('article, [data-testid="video-card"], .MediaCard_slug__, video, a[href*="/video/"]', { timeout: 15000 }); } catch {}
-  await page.waitForTimeout(3000);
+  // DOM'u bekle (lazy-load / React hydrate)
+  try { await page.waitForSelector('article, [data-testid="video-card"], [class*="MediaCard"], video, a[href*="/video/"]', { timeout: 8000 }); } catch {}
+  await page.waitForTimeout(1500);
   // Sayfayi scrollayarak lazy-load'u tetikle
-  for (let i = 0; i < 3; i++) { await page.evaluate(()=>window.scrollBy(0,800)); await page.waitForTimeout(800); }
-  await page.waitForTimeout(1000);
+  for (let i = 0; i < 2; i++) { await page.evaluate(()=>window.scrollBy(0,600)); await page.waitForTimeout(500); }
+  await page.waitForTimeout(500);
   const urls = await page.evaluate(() => {
     const out = new Set();
     // 1) Global state nesneleri
@@ -508,13 +505,13 @@ async function fetchFromPexels(page, kw, opts) {
         const h = a.href || a.getAttribute('href');
         if (h && /\/video\/\d+\/[a-z0-9-]+\/?$/i.test(h)) out.add(h.startsWith('http') ? h : 'https://www.pexels.com'+h);
       });
-      return [...out].slice(0, 3);
+      return [...out].slice(0, 2);
     });
     diag.video_card_links_found = anchors.length;
     for (const detailUrl of anchors) {
       try {
-        await page.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
-        await page.waitForTimeout(3000);
+        await page.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForTimeout(2000);
         const detailUrls = await page.evaluate(() => {
           const out = new Set();
           [window.__NEXT_DATA__, window.__APOLLO_STATE__, window.__INITIAL_STATE__].forEach(obj => {
@@ -640,9 +637,9 @@ async function runProvider(provider, opts) {
     // Ilk uygun adayi sec + quality/cozunurluk/sure filtreleri (ffprobe sonrası)
     let chosen = null, probe = null;
     const attempts = [];
-    console.error(`[${provider}] ${candidates.length} aday bulundu, ilk ${Math.min(10,candidates.length)} denenecek...`);
+    console.error(`[${provider}] ${candidates.length} aday bulundu, ilk ${Math.min(6,candidates.length)} denenecek...`);
     console.error(`[${provider}] Aday ornekleri:`, candidates.slice(0,3).map(c => ({u:safeUrl(c.download_url),p:c.priority})));
-    for (const c of candidates.slice(0, 10)) {
+    for (const c of candidates.slice(0, 6)) {
       // Indirme
       fs.mkdirSync(path.dirname(opts.outPath), { recursive: true });
       const tmpPath = opts.outPath + '.part';
