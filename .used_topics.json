@@ -25,7 +25,8 @@
     "Bir Kardan Adam Güneşin Altında Daha Yavaş Erir! #Shorts",
     "Galaksimiz Saniyede 600 Kilometre Hareket Ediyor! #Shorts",
     "600 Yıldır Kimsenin Okuyamadığı Gizemli Kitap: Voynich! #Shorts",
-    "Bambu Bitkisi Tek Bir Günde 90 Santimetre Uzayabilir! #Shorts"
+    "Bambu Bitkisi Tek Bir Günde 90 Santimetre Uzayabilir! #Shorts",
+    "Dünya'nın En Derin Sondajı 12 Kilometrede Neden Durduruldu? #Shorts"
   ],
   "used_records": [
     {
@@ -667,9 +668,7 @@
         "uzayabilir"
       ],
       "created_at": "2026-11-18T09:52:53.655276+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Dünya'nın En Derin Sondajı 12 Kilometrede Neden Durduruldu? #Shorts",
       "topic": "Bilim",
@@ -728,9 +727,8 @@
         "year",
         "yerin"
       ],
-      "created_at": "2026-11-18T13:00:58.586790+00:00",
-      "reservation_id": "d124ccc0-13a8-4154-9506-39ae8a02bba8",
-      "run_id": "44309121732:1"
+      "created_at": "2026-11-18T13:00:58.586790+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
