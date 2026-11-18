@@ -187,6 +187,10 @@ jobs:
           # Gemini Web cookie yalnız main.py → content_engine → Gemini Web metin adaptöründe kullanılır.
           # Değer loglanmaz, dosyaya/artifact'e yazılmaz; web oturumu başarısızsa ücretli API'ye geçilmez.
           GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+          # Stok video (Pexels/Pixabay) cookie'leri. Playwright storage_state cookies JSON dizisi
+          # veya "k=v; k=v" string formati kabul edilir; video_fetcher.js otomatik normalize eder.
+          PEXELS_COOK: ${{ secrets.PEXELS_COOK }}
+          PIXABAY_COOK: ${{ secrets.PIXABAY_COOK }}
           # Only repository contents access for atomic topic reservations; never logged.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}

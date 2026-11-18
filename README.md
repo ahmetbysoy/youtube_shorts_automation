@@ -70,6 +70,8 @@ chmod 600 .env cookies.json storage_state.json
 
 Üretim içerik hattı `GEMINI_COOK` JSON cookie değerini ortam değişkeninden kullanır. Bu değer Git'e, loglara veya artifact'lere yazılmamalıdır. Cookie eksik/geçersiz ya da Gemini yanıtı uygunsuzsa metin sağlayıcısı olarak ücretli API çağrılmaz; içerik motoru mevcut fallback havuzuna döner.
 
+**Stok video cookie'leri:** `video_fetcher.js` Pexels ve Pixabay'den video aramak/indirmek için `PEXELS_COOK` ve `PIXABAY_COOK` ortam değişkenlerini (veya geriye dönük uyumluluk için kökteki `cookies.json` / `storage_state.json` dosyalarını) kullanır. Cookie formatı üç seçenekten biri olabilir: Playwright storage_state içindeki `cookies` JSON dizisi, `[{name,value,domain,...}]` Netscape JSON dizisi, ya da `"name=value; name2=value2"` düz string. Playwright Chromium headless modda Cloudflare "Just a moment..." doğrulamasını gerçek tarayıcı gibi otomatik geçer; `curl` ile aynı deneme yapılırsa TLS parmak izi nedeniyle 403 döner. Cookie geçersizse veya arama başarısız olursa video kaynağı otomatik olarak Wikimedia Commons fallback'ine düşer.
+
 ### 3. Uçtan Uca Üretim ve `PUBLIC` Yayın
 
 ```bash

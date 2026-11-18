@@ -1,8 +1,16 @@
 /**
  * video_fetcher.js  —  Cookie-tabanlı Playwright Video Çekici
  *
- * API key gerektirmez. Mevcut Pixabay/Pexels oturumu (cookies.json /
- * storage_state.json) üzerinden çalışır.
+ * API key gerektirmez. Pixabay/Pexels oturumu üzerinden stok video arar ve indirir.
+ *
+ * Cookie kaynakları (öncelik sırasıyla):
+ *   1. PEXELS_COOK / PIXABAY_COOK ortam değişkenleri (GitHub Secrets için).
+ *      İçerik şu formatlardan biri olabilir:
+ *        - Playwright storage_state.json içindeki "cookies" JSON dizisi
+ *        - Netscape/Mozilla cookie-jar JSON dizisi (name,value,domain,...)
+ *        - "name=value; name2=value2" string formatı
+ *   2. storage_state.json (tam Playwright context durumu)
+ *   3. cookies.json (yalnızca cookie dizisi)
  *
  * Kullanım:
  *   node video_fetcher.js <keyword> <output_path> [--portrait]
@@ -24,6 +32,76 @@ const COOKIES_PATH   = path.join(BASE_DIR, 'cookies.json');
 const STORAGE_PATH   = path.join(BASE_DIR, 'storage_state.json');
 const TIMEOUT_MS     = 25000;
 const DOWNLOAD_TIMEOUT = 60000;
+
+// ── Cookie çözümleme ──────────────────────────────────────────
+function normalizeCookie(c, defaultDomain) {
+  if (!c || !c.name || !c.value) return null;
+  return {
+    name: String(c.name),
+    value: String(c.value),
+    domain: c.domain || defaultDomain,
+    path: c.path || '/',
+    secure: !!c.secure,
+    httpOnly: !!c.httpOnly,
+    sameSite: (c.sameSite && ['Strict', 'Lax', 'None'].includes(c.sameSite)) ? c.sameSite : 'Lax',
+    expires: typeof c.expires === 'number' && c.expires > 0 ? c.expires : -1,
+  };
+}
+
+function parseCookieString(raw, defaultDomain) {
+  const out = [];
+  // Ham "k=v; k2=v2" formatı
+  for (const part of String(raw).split(';')) {
+    const i = part.indexOf('=');
+    if (i > 0) {
+      const n = normalizeCookie({
+        name: part.slice(0, i).trim(),
+        value: part.slice(i + 1).trim(),
+        domain: defaultDomain, path: '/'
+      }, defaultDomain);
+      if (n) out.push(n);
+    }
+  }
+  return out;
+}
+
+function loadCookiesFromEnv(envName, defaultDomain) {
+  const raw = process.env[envName];
+  if (!raw) return [];
+  try {
+    const data = JSON.parse(raw);
+    if (Array.isArray(data)) {
+      return data.map(c => normalizeCookie(c, defaultDomain)).filter(Boolean);
+    }
+    if (typeof data === 'object' && data !== null) {
+      // storage_state -> {cookies:[...], origins:[...]}
+      if (Array.isArray(data.cookies)) {
+        return data.cookies.map(c => normalizeCookie(c, defaultDomain)).filter(Boolean);
+      }
+      // {name:value,...} dict
+      return Object.entries(data).map(([name, value]) =>
+        normalizeCookie({ name, value, domain: defaultDomain, path: '/' }, defaultDomain)
+      ).filter(Boolean);
+    }
+  } catch (_) { /* JSON değil, string formatını dene */ }
+  return parseCookieString(raw, defaultDomain);
+}
+
+function loadCookiesFromFile(filePath, defaultDomain) {
+  if (!fs.existsSync(filePath)) return [];
+  try {
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (Array.isArray(data)) {
+      return data.map(c => normalizeCookie(c, defaultDomain)).filter(Boolean);
+    }
+    if (data && Array.isArray(data.cookies)) {
+      return data.cookies.map(c => normalizeCookie(c, defaultDomain)).filter(Boolean);
+    }
+  } catch (e) {
+    console.error(`[Cookie] ${filePath} okunamadi: ${e.message}`);
+  }
+  return [];
+}
 
 // ── CLI ────────────────────────────────────────────────────────
 const args    = process.argv.slice(2);
@@ -123,32 +201,52 @@ async function fetchFromPexels(page, kw) {
   console.error(`[Pexels] Arama: ${searchUrl}`);
 
   try {
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
-    await page.waitForTimeout(4000);
+    // Cloudflare ve Next.js hydration icin networkidle + ekstra bekleme
+    await page.goto(searchUrl, { waitUntil: 'networkidle', timeout: Math.max(60000, TIMEOUT_MS * 2) });
+    await page.waitForTimeout(3000);
   } catch(e) {
-    console.error('[Pexels] Sayfa yükleme timeout, alternatif deneniyor...');
-    return null;
+    console.error('[Pexels] Sayfa yükleme hatasi, domcontentloaded ile tekrar deneniyor: ' + e.message);
+    try {
+      await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS });
+      await page.waitForTimeout(5000);
+    } catch(e2) {
+      console.error('[Pexels] Ikinci yükleme de basarisiz: ' + e2.message);
+      return null;
+    }
   }
 
-  // __NEXT_DATA__ veya vids.pexels.com URL'leri
+  // __NEXT_DATA__ / __APOLLO_STATE__ / <script> ve <video> taglerinden mp4 cikar
   const pexelsUrls = await page.evaluate(() => {
-    const urls = [];
-    if (window.__NEXT_DATA__) {
-      const str = JSON.stringify(window.__NEXT_DATA__);
-      const m = str.match(/https:\/\/[^"\\]+vids\.pexels\.com[^"\\]+\.mp4[^"\\]*/g);
-      if (m) urls.push(...m);
-    }
-    // Video elementleri
-    document.querySelectorAll('video source').forEach(s => {
-      if (s.src && s.src.includes('.mp4')) urls.push(s.src);
+    const urls = new Set();
+    // window uzerindeki data objeleri
+    [window.__NEXT_DATA__, window.__APOLLO_STATE__].forEach(obj => {
+      if (!obj) return;
+      const str = JSON.stringify(obj);
+      const m = str.match(/https:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
+      if (m) m.forEach(u => urls.add(u));
     });
-    return [...new Set(urls)].slice(0, 5);
+    // Tum <script> bloklari (Next.js statik props, __NEXT_DATA__ satirici)
+    document.querySelectorAll('script').forEach(s => {
+      const t = s.textContent || '';
+      const m = t.match(/https:\/\/[^"'\\]+vids\.pexels\.com[^"'\\]+\.mp4[^"'\\]*/g);
+      if (m) m.forEach(u => urls.add(u));
+    });
+    // Video elementleri
+    document.querySelectorAll('video, video source').forEach(s => {
+      const src = s.src || s.currentSrc;
+      if (src && src.includes('.mp4')) urls.add(src);
+    });
+    return [...urls];
   });
+  console.error(`[Pexels] ${pexelsUrls.length} adet mp4 URL bulundu`);
 
   if (pexelsUrls.length > 0) {
-    // SD (640p) yerine HD tercih et
-    const hd = pexelsUrls.find(u => u.includes('hd')) || pexelsUrls[0];
-    console.error(`[Pexels] ✅ URL: ${hd.substring(0,80)}`);
+    // HD (1920x1080) tercih et, sonraki secim sd -> ilk
+    const hd = pexelsUrls.find(u => /\/hd\//i.test(u) || /-hd\./i.test(u))
+            || pexelsUrls.find(u => /\/uhd\//i.test(u))
+            || pexelsUrls.find(u => !/tiny|preview|thumb/i.test(u))
+            || pexelsUrls[0];
+    console.error(`[Pexels] ✅ URL: ${hd.substring(0,100)}`);
     return hd;
   }
 
@@ -190,9 +288,28 @@ async function fetchFromPexels(page, kw) {
 
 // ── Ana fonksiyon ──────────────────────────────────────────────
 async function main() {
-  if (!fs.existsSync(COOKIES_PATH) && !fs.existsSync(STORAGE_PATH)) {
-    console.error('HATA: cookies.json veya storage_state.json bulunamadı!');
+  // Cookie'leri env > dosya önceliğiyle topla
+  const envCookies = [
+    ...loadCookiesFromEnv('PEXELS_COOK', '.pexels.com'),
+    ...loadCookiesFromEnv('PIXABAY_COOK', '.pixabay.com'),
+  ];
+  const fileCookies = [
+    ...loadCookiesFromFile(COOKIES_PATH, '.pexels.com'),
+  ];
+  const storageStateExists = fs.existsSync(STORAGE_PATH);
+  const hasAnyCookie = envCookies.length > 0 || fileCookies.length > 0 || storageStateExists;
+
+  if (!hasAnyCookie) {
+    console.error('HATA: PEXELS_COOK/PIXABAY_COOK env yok ve cookies.json/storage_state.json da bulunamadi!');
     process.exit(1);
+  }
+  if (envCookies.length > 0) {
+    console.error(`[Cookie] Ortam degiskenlerinden ${envCookies.length} adet cookie yuklendi` +
+      (process.env.PEXELS_COOK ? ' (PEXELS_COOK)' : '') +
+      (process.env.PIXABAY_COOK ? ' (PIXABAY_COOK)' : ''));
+  }
+  if (fileCookies.length > 0) {
+    console.error(`[Cookie] cookies.json'dan ${fileCookies.length} adet cookie yuklendi`);
   }
 
   const browser = await chromium.launch({
@@ -200,20 +317,32 @@ async function main() {
     args: ['--no-sandbox','--disable-dev-shm-usage','--disable-blink-features=AutomationControlled']
   });
 
-  let ctxOpts = {
+  const ctxOpts = {
     viewport: { width: 1280, height: 800 },
     userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
   };
-  if (fs.existsSync(STORAGE_PATH)) ctxOpts.storageState = STORAGE_PATH;
-  
+  if (storageStateExists && envCookies.length === 0) {
+    // storage_state.json yalnizca env cookie yoksa kullan (env cookie'leri daha guncel)
+    ctxOpts.storageState = STORAGE_PATH;
+  }
+
   const context = await browser.newContext(ctxOpts);
   await context.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
   });
 
-  if (fs.existsSync(COOKIES_PATH)) {
-    const cookies = JSON.parse(fs.readFileSync(COOKIES_PATH, 'utf8'));
-    if (Array.isArray(cookies) && cookies.length > 0) await context.addCookies(cookies);
+  // Env + dosya cookie'lerini context'e ekle (zaten normalize edildi)
+  const allCookies = [...envCookies, ...fileCookies];
+  // Aynı (domain,path,name) için tekilleştir (env öncelikli)
+  const seen = new Set();
+  const deduped = [];
+  for (const c of allCookies) {
+    const key = `${c.domain}|${c.path}|${c.name}`;
+    if (!seen.has(key)) { seen.add(key); deduped.push(c); }
+  }
+  if (deduped.length > 0) {
+    await context.addCookies(deduped);
+    console.error(`[Cookie] Context'e ${deduped.length} adet cookie yuklendi`);
   }
 
   const page = await context.newPage();
