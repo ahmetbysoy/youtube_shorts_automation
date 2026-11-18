@@ -241,12 +241,25 @@ async function fetchFromPexels(page, kw) {
   console.error(`[Pexels] ${pexelsUrls.length} adet mp4 URL bulundu`);
 
   if (pexelsUrls.length > 0) {
-    // HD (1920x1080) tercih et, sonraki secim sd -> ilk
-    const hd = pexelsUrls.find(u => /\/hd\//i.test(u) || /-hd\./i.test(u))
-            || pexelsUrls.find(u => /\/uhd\//i.test(u))
-            || pexelsUrls.find(u => !/tiny|preview|thumb/i.test(u))
-            || pexelsUrls[0];
-    console.error(`[Pexels] ✅ URL: ${hd.substring(0,100)}`);
+    // Tercih sirasi:
+    // 1) Gercek kullanici videolari: vids.pexels.com/video-files/...-hd_1920_1080_*.mp4 (tam HD landscape)
+    // 2) vids.pexels.com/video-files/...-uhd_2560_1440_*.mp4 (4K)
+    // 3) video-files icinde -hd_ (dikey HD dahil)
+    // 4) Diger vids.pexels.com (AI UGC degil)
+    // 5) AI UGC (aigc-bundle) — ancak hicbiri yoksa son care
+    // Kucuk preview/thumb/tiny her zaman elenir.
+    const byPriority = [
+      urls => urls.find(u => /video-files\/.*hd_1920_1080/i.test(u)),
+      urls => urls.find(u => /video-files\/.*uhd_2560_1440/i.test(u)),
+      urls => urls.find(u => /video-files\/.*-hd_/i.test(u)),
+      urls => urls.find(u => /vids\.pexels\.com\/video-files\//i.test(u)),
+      urls => urls.find(u => /vids\.pexels\.com/i.test(u) && !/aigc|preview|thumb|tiny/i.test(u)),
+      urls => urls.find(u => !/preview|thumb|tiny/i.test(u)),
+      urls => urls[0],
+    ];
+    let hd = null;
+    for (const pick of byPriority) { hd = pick(pexelsUrls); if (hd) break; }
+    console.error(`[Pexels] ✅ URL: ${hd.substring(0,120)}`);
     return hd;
   }
 
