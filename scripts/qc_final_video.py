@@ -108,10 +108,17 @@ def measure_black_frames(path: Path, timeout=120, start_s: float | None = None, 
 def list_scene_files(work_dir: Path):
     """work_dir icindeki scene_*_pw.mp4 dosyalarini indeks sirasiyla dondur."""
     scenes = sorted(work_dir.glob("scene_*_pw.mp4"))
-    # Fallback: baska isimler (playwright, stock vb.)
     if not scenes:
         scenes = sorted(work_dir.glob("scene_*.mp4"))
     return scenes
+
+
+def find_work_dir(output_dir: Path):
+    """En son yazilan work_*/work__* dizinini dondur."""
+    dirs = [p for p in output_dir.iterdir() if p.is_dir() and p.name.startswith("work")]
+    if not dirs:
+        return None
+    return sorted(dirs, key=lambda p: p.stat().st_mtime, reverse=True)[0]
 
 
 def _parse_ass_time(t: str) -> float:
@@ -142,18 +149,31 @@ def validate_ass(ass_path: Path, duration_s: float, report: dict, check) -> None
     resx = int(rx.group(1)) if rx else 0
     resy = int(ry.group(1)) if ry else 0
     check("ass_playres", resx == TARGET_W and resy == TARGET_H, f"{resx}x{resy}")
-    # MarginV guvenli alan
-    mv_m = re.search(r"Style:\s*Default,[^,]*,(\d+),.*?,.*?,.*?,.*?,.*?,.*?,.*?,.*?,.*?,.*?,.*?,(\d+),(\d+),(\d+)", raw)
-    if mv_m:
-        font_size = int(mv_m.group(1))
-        margin_l = int(mv_m.group(2))
-        margin_r = int(mv_m.group(3))
-        margin_v = int(mv_m.group(4))
-        ok_margin = margin_v >= 180 and margin_v < TARGET_H - 200
-        check("ass_safe_margin", ok_margin,
-              f"FontSize={font_size} MarginV={margin_v} L/R={margin_l}/{margin_r}")
-    else:
+    # MarginV guvenli alan (Style: Name,Font,Size,C1,C2,C3,C4,B,I,U,S,SX,SY,Sp,A,BS,O,Sh,Al,ML,MR,MV,Enc)
+    # Hook stili once yazili olabilir; "Default" adli stili sec.
+    mv_m = None
+    for line in raw.splitlines():
+        if not line.startswith("Style:"): continue
+        name_part = line.split(",", 1)[0].strip().split()[-1]
+        if name_part.lower() == "default":
+            parts = line.split(",")
+            if len(parts) >= 23:
+                mv_m = parts
+            break
+    if mv_m is None:
         check("ass_safe_margin", False, "Default stil cozumlenemedi")
+    else:
+        try:
+            font_size = int(mv_m[2])
+            alignment = int(mv_m[18]) if mv_m[18].lstrip('-').isdigit() else 0
+            margin_l = int(mv_m[19])
+            margin_r = int(mv_m[20])
+            margin_v = int(mv_m[21])
+            ok_margin = margin_v >= 180 and margin_v < TARGET_H - 200 and font_size <= 72 and alignment in (2, 5, 8)
+            check("ass_safe_margin", ok_margin,
+                  f"FontSize={font_size} Align={alignment} MarginV={margin_v} L/R={margin_l}/{margin_r}")
+        except (ValueError, IndexError) as e:
+            check("ass_safe_margin", False, f"stil alanlari okunamadi: {e}")
     # Diyaloglar
     dialogues = []
     for line in raw.splitlines():
@@ -323,7 +343,9 @@ def main():
         acodec = a.get("codec_name", "?")
         check("audio_codec", acodec == "aac", acodec)
         adur = float(a.get("duration", duration))
-        check("sample_rate_44k_48k", a.get("sample_rate", "?") in ("44100", "48000"), a.get("sample_rate", "?"))
+        sr = int(a.get("sample_rate", 0) or 0)
+        # 22050/24000/44100/48000 kabul (gTTS fallback 24kHz uretir)
+        check("audio_sample_rate", sr in (22050, 24000, 44100, 48000), f"{sr} Hz")
         check("channels", int(a.get("channels", 0)) >= 1, f"{a.get('channels','?')} kanal")
     check("av_sync", abs(adur - vdur) < AV_SYNC_TOLERANCE_S,
           f"v={vdur:.2f}s a={adur:.2f}s (fark={abs(adur-vdur):.2f}s)")
@@ -356,14 +378,14 @@ def main():
     except Exception as e:
         check("head_clean", False, f"bas/son blackdetect: {e}", warning=True)
 
-    # 6) Sahne medyalari
-    # Birden fazla work__* dizini olabilir; en guncelini sec
-    work_dirs = sorted([p for p in OUT.glob("work__*") if p.is_dir()], key=lambda p: p.stat().st_mtime, reverse=True)
+    # 6) Sahne medyalari (work_* veya work__* dizini)
+    work_dir = find_work_dir(OUT)
     expected_scenes = 4
-    if work_dirs:
-        validate_scenes(work_dirs[0], duration, expected_scenes, check)
+    if work_dir:
+        check("scenes_workdir", True, str(work_dir.name))
+        validate_scenes(work_dir, duration, expected_scenes, check)
     else:
-        check("scenes_workdir", False, "work__* dizini bulunamadi", warning=True)
+        check("scenes_workdir", False, "work_* dizini bulunamadi", warning=True)
 
     # 7) Cover
     cover = OUT / "cover.jpg"
