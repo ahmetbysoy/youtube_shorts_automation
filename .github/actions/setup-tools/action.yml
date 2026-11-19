@@ -69,10 +69,10 @@ inputs:
 
 outputs:
   apt_cache_hit:
-    description: "apt .deb önbelleği bulundu mu"
+    description: "apt .deb önbelleği bulundu mu (string 'true'/'false'; step çalışmadıysa boş)"
     value: ${{ steps.apt-cache.outputs.cache-hit }}
   pip_cache_hit:
-    description: "pip önbelleği bulundu mu"
+    description: "pip önbelleği bulundu mu (string 'true'/'false'; step çalışmadıysa 'false')"
     value: ${{ steps.pip-cache-info.outputs.hit }}
   node_modules_cache_hit:
     description: "node_modules önbelleği bulundu mu"
