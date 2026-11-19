@@ -3113,11 +3113,30 @@ def generate_scenario(
                 f"[TOLERANS] Gemini Web başarısız ({type(exc).__name__}); mevcut fallback kullanılacak.",
                 file=sys.stderr,
             )
-            scenario = pick_fallback_scenario(
-                recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
-            )
-            save_recent_title(scenario["title"], scenario)
-            return scenario
+            # Fallback'e geçmeden ÖNCE recent_titles'i GitHub store'dan yenile. Aksi
+            # halde Gemini içindeki reserve_topic (ayrı ledger) sonrasi ya da eşzamanlı
+            # yazarlardan dolayı filtre havuzu GitHub gerçek durumuyla çakışabilir ve
+            # reserve_candidate "exact_title" ile hata verebilir.
+            try:
+                recent_titles = load_recent_titles(HISTORY_FILE)
+            except Exception:
+                pass
+            # En fazla 3 kez fallback dene; duplicate/benzer başlık gelirse bir sonrakine geç.
+            last_err: Exception | None = None
+            for _attempt in range(3):
+                scenario = pick_fallback_scenario(
+                    recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
+                )
+                try:
+                    save_recent_title(scenario["title"], scenario)
+                    return scenario
+                except ValueError as dup_exc:
+                    last_err = dup_exc
+                    print(f"[TOLERANS] Fallback başlığı rezerve edilemedi ({dup_exc}); yeni seçim deneniyor.",
+                          file=sys.stderr)
+                    recent_titles.append(scenario["title"])
+                    continue
+            raise RuntimeError(f"Fallback senaryo seçimi 3 denemede başarısız oldu: {last_err}")
 
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
     gemini_key = (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or "").strip()
