@@ -20,7 +20,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write  # topic_history store için GITHUB_TOKEN gerekli (GitHub Contents API üzerinden recent_titles.json yazar)
 
 # Bu workflow yalnizca video uretir; hicbir sekilde YouTube'a yuklemez.
 concurrency:
@@ -33,8 +33,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
+        # persist-credentials=true ile GITHUB_TOKEN checkout sonrası da erişilebilir
+        # (topic_history GitHub Contents API ile recent_titles.json okur/yazar)
 
       - name: "Uretim Kapisi (skip-upload kipini dogrula)"
         run: |
@@ -105,6 +105,9 @@ jobs:
           SKIP_UPLOAD: "1"
           FORCE_LOCAL_THUMBNAIL: "1"
           SKIP_THUMBNAIL: "0"
+          # Topic history GitHub Contents API
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           # Medya cookie'leri
           PEXELS_COOK: ${{ secrets.PEXELS_COOK }}
           PIXABAY_COOK: ${{ secrets.PIXABAY_COOK }}
