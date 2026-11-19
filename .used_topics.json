@@ -25,7 +25,8 @@
     "Mide Asidiniz Jileti Eritir Ama Midenizi Neden Eritmez? #Shorts",
     "Dünya'nın İç Çekirdeği Güneş Yüzeyi Kadar Sıcak! #Shorts",
     "Mimar Sinan Süleymaniye'de Devekuşu Yumurtasını Neden Kullandı? #Shorts",
-    "Tarihin En Kısa Savaşı Sadece 38 Dakika Sürdü! #Shorts"
+    "Tarihin En Kısa Savaşı Sadece 38 Dakika Sürdü! #Shorts",
+    "1349'da Altın Değerinde Tutulan Baharat: Karabiber! #Shorts"
   ],
   "used_records": [
     {
@@ -672,9 +673,7 @@
         "tarihin"
       ],
       "created_at": "2026-11-19T20:49:43.338518+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "1349'da Altın Değerinde Tutulan Baharat: Karabiber! #Shorts",
       "topic": "Tarih",
@@ -741,9 +740,8 @@
         "yerin",
         "yolu"
       ],
-      "created_at": "2026-11-19T20:57:12.141584+00:00",
-      "reservation_id": "641eeffa-8a41-427a-86c4-13599f17354d",
-      "run_id": "44613624529:1"
+      "created_at": "2026-11-19T20:57:12.141584+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
