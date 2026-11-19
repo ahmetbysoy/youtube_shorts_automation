@@ -320,26 +320,7 @@ jobs:
           echo "Pexels ve Pixabay saglayicilari cookie-only olarak cagrildi; API endpoint'leri hic cagrilmadi." >> "$GITHUB_STEP_SUMMARY"
           ls -la phase4e_out/
           echo "---" >> "$GITHUB_STEP_SUMMARY"
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          r = json.loads(Path("phase4e_out/storyboard_report.json").read_text("utf8"))
-          print("```json")
-          # ozet cikti
-          ozet = {
-            "status": r.get("status"),
-            "visual_verification": r.get("visual_verification"),
-            "scenes": [
-              {"scene_id": s["scene_id"], "provider": s["selected_provider"], "media_id": s["selected_media_id"],
-               "license": s.get("license"), "attribution": bool(s.get("attribution")),
-               "duration": s.get("duration"), "resolution": s.get("resolution"),
-               "source_url": s.get("source_url")}
-              for s in r["scenes"]
-            ]
-          }
-          print(json.dumps(ozet, indent=2, ensure_ascii=False))
-          print("```")
-          PY >> "$GITHUB_STEP_SUMMARY"
+          python3 scripts/phase4e_summary.py phase4e_out/storyboard_report.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Artifact (sansurlu JSON + stderr; video YOK, cookie YOK)
         uses: actions/upload-artifact@v4
