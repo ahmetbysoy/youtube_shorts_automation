@@ -409,7 +409,9 @@
         "evidence_method": {
           "enum": [
             "commons_per_file_extmetadata",
-            "official_provider_terms_http"
+            "official_provider_terms_http",
+            "official_provider_terms_browser",
+            "canonical_license_snapshot"
           ]
         },
         "checked_at": {
