@@ -381,3 +381,23 @@ Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olama
 - Cleanup sırasında `daily_shorts.yml` geçici durduruldu; run #96 iptal edildi ve workflow tekrar etkinleştirildi. Studio 25 taslak/0 başka kayıt seçimine rağmen kimlik doğrulaması istedi; hiçbiri silinmedi.
 - Run #97 (`41948576364`): build-and-upload başarılı, `7DULxjp6PsQ` Studio PUBLIC doğrulandı ve girişsiz player OK. Cron-kick yeni 01:45 UTC zincirini tetiklerken run geneli cancelled.
 - Tarihsel 13.4/kalite bulgusu: canlı videodaki uçak, yan dönmüş kıyı ve alakasız yazılı grafik Zanzibar savaşına uymuyordu; kalite başarısızdı. `WKYwF96hQzg` aynı başlığın başka PUBLIC videosu. Sonraki Gemini Faz 3 kodu tekrar korumasını ekledi; topic-history gerçek cross-Actions proof 44280024395→44280111635 ile tamamlandı. Bu eski video kalite başarısızlığı giderildi veya yeni Faz 4 medya-history persistence kanıtlandı demek değildir.
+
+## Faz 4J — Cookie-first medya entegrasyonu (19 Kasım 2026)
+
+### Tamamlanan
+- `_synthesize_storyboard()` greedy keyword ataması: zor sahnelere öncelik veriyor, rebalancing swap yapıyor
+- ALIASES 1092 TR→EN eşleşme (vücut/hayvan/bilim/tarih/doğa/sayı/renk/fiil)
+- scene_plan overlap koşulu primary+alternatifleri kapsıyor
+- Content QC: sahne sayısı dinamik, 8 içerik kontrolü + metadata-only disclaimarı
+- Tüm 383 Python testi geçiyor, 17 Node testi geçiyor, 126/126 fallback senaryosu scene_plan'dan geçiyor
+
+### Kalan (canlı CI gerektirir)
+- GitHub Actions `phase4g_e2e_no_upload.yml` tetiklenmeli (PEXELS_COOK/PIXABAY_COOK ile)
+- Cookie diagnostics gerçeği yansıtmalı
+- Tam no-upload uçtan uca kanıt
+- Kod commit: `fbca2e3` + faz4j devam commitleri
+- Detaylı rapor: `docs/evidence/PHASE4J_ACCEPTANCE.md`
+
+### Bilinen sınırlamalar
+- GitHub remote/push bu workspace'te yapılandırılmadı; commitler yerel
+- Canlı cookie search+download CI'da doğrulanmalı

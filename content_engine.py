@@ -2935,6 +2935,17 @@ def _synthesize_storyboard(
     clean_keywords = [str(k).strip() for k in (keywords or []) if str(k).strip()][:6]
     if not clean_keywords:
         clean_keywords = ["cinematic history", "nature documentary", "science visualization", "dramatic landscape"]
+    # Ensure we have at least target_scenes (4) keywords by padding with generic
+    # fallback keywords. Required for greedy assignment that picks one kw per scene.
+    DEFAULT_KEYWORDS = ["cinematic history", "nature documentary", "science visualization",
+                        "dramatic landscape", "closeup detail", "archival footage"]
+    while len(clean_keywords) < 4:
+        for dk in DEFAULT_KEYWORDS:
+            if dk not in clean_keywords:
+                clean_keywords.append(dk)
+                break
+        else:
+            clean_keywords.append(f"documentary scene {len(clean_keywords)+1}")
 
     # Merge sentences into exactly 4 scenes by length balance.
     target_scenes = 4
@@ -2968,49 +2979,131 @@ def _synthesize_storyboard(
         bins[current_bin].append(sent)
         bin_words[current_bin] += wc
 
-    # Topic booster words (English) for better stock search
+    # Topic booster words (English) for better stock search. Keys are
+    # ASCII-folded Turkish (same normalization as scene_media.terms()) so that
+    # "İlginç" (dotted I) matches "ilginç".
+    import unicodedata as _u
+    def _fold(s):
+        s = str(s).replace("ı", "i").replace("İ", "i").casefold()
+        return "".join(c for c in _u.normalize("NFKD", s) if not _u.combining(c))
     topic_en = {
-        "bilim": "science", "tarih": "history", "doğa": "nature", "uzay": "space",
-        "teknoloji": "technology", "ilginç bilgiler": "documentary",
+        "bilim": "science", "tarih": "history", "tari̇h": "history", "doga": "nature",
+        "doğa": "nature", "uzay": "space", "teknoloji": "technology",
+        "ilginc bilgiler": "documentary", "ilginç bilgiler": "documentary",
+        "ilginç": "curiosity", "hayvanlar": "animal", "hayvan": "animal",
+        "dunya": "earth", "dünya": "earth", "insan": "people", "insanlar": "people",
+        "yemek": "food", "sanat": "art", "muzik": "music", "müzik": "music",
+        "spor": "sports", "savas": "war", "savaş": "war", "deniz": "ocean",
+        "gokyuzu": "sky", "gökyüzü": "sky", "gezegen": "planet",
     }
-    topic_kw = topic_en.get(topic.casefold(), topic.lower().split()[0] if topic else "documentary")
+    topic_folded = _fold(topic)
+    topic_kw = topic_en.get(topic_folded)
+    if topic_kw is None:
+        # Try each word of the topic
+        for w in topic_folded.split():
+            if w in topic_en:
+                topic_kw = topic_en[w]
+                break
+    if topic_kw is None:
+        topic_kw = "documentary"
 
     # Assign keywords to scenes by best narration-term overlap (Faz 4J).
     # Terms go through bilingual ALIASES so English stock-video keywords
     # can match Turkish narration words ("savaş" ↔ "war", "gemi" ↔ "ship").
-    # Import here to avoid module-load cycles.
+    # Hard-to-match scenes (with few overlapping keywords) get priority so
+    # they aren't left with only zero-overlap options.
     from src.media_processing.scene_media import terms as _scene_terms
-    # Pre-compute narration term sets for each bin
     bin_terms: list[set[str]] = []
     for idx in range(target_scenes):
         narration = " ".join(bins[idx]).strip() or script_text[:120]
         bin_terms.append(_scene_terms(narration))
-    # Score each keyword for each scene by overlap
-    assigned: list[str] = []
-    used_kw: set[str] = set()
-    remaining_keywords = list(clean_keywords)
-    for idx in range(target_scenes):
-        best_kw = None
-        best_score = -1
-        for kw in remaining_keywords:
-            if kw in used_kw:
-                continue
-            kw_terms = _scene_terms(kw)
-            overlap = len(kw_terms & bin_terms[idx])
-            if overlap > best_score:
-                best_score = overlap
-                best_kw = kw
-        if best_kw is None or best_score == 0:
-            # No keyword matches this scene: pick by round-robin, add a topic
-            # booster query that will at least match topic-level narration.
-            for kw in remaining_keywords:
-                if kw not in used_kw:
-                    best_kw = kw
-                    break
-            if best_kw is None:
-                best_kw = clean_keywords[idx % len(clean_keywords)]
-        assigned.append(best_kw)
-        used_kw.add(best_kw)
+    # Pre-score every (scene, keyword) pair by overlap
+    overlap_scores: dict[tuple[int,int], int] = {}
+    kw_terms_list = [_scene_terms(kw) for kw in clean_keywords]
+    for si in range(target_scenes):
+        for ki, kw in enumerate(clean_keywords):
+            overlap_scores[(si,ki)] = len(kw_terms_list[ki] & bin_terms[si])
+    # Assign greedily: at each step, pick the scene with the fewest remaining
+    # nonzero-overlap keywords and give it its best available keyword. This
+    # avoids the common failure where easy scenes steal all matching keywords
+    # and hard scenes get stuck with zero overlap.
+    assigned: dict[int, int] = {}  # scene_idx -> kw_idx
+    used_kw: set[int] = set()
+    remaining_scenes = set(range(target_scenes))
+    while remaining_scenes:
+        # Find the scene with the fewest available non-zero-overlap keywords
+        best_scene = None
+        best_scene_options = 999
+        best_scene_best_score = -1
+        for si in remaining_scenes:
+            nonzero = [(ki, overlap_scores[(si,ki)])
+                       for ki in range(len(clean_keywords))
+                       if ki not in used_kw and overlap_scores[(si,ki)] > 0]
+            options = len(nonzero) if nonzero else len([ki for ki in range(len(clean_keywords)) if ki not in used_kw])
+            best_score = max([s for _,s in nonzero], default=0)
+            if (options < best_scene_options or
+                (options == best_scene_options and best_score < best_scene_best_score)):
+                best_scene = si
+                best_scene_options = options
+                best_scene_best_score = best_score
+        # Assign best available keyword to best_scene
+        available_kws = [ki for ki in range(len(clean_keywords)) if ki not in used_kw]
+        # Pick highest overlap, tie-break by keyword order
+        best_ki = max(available_kws, key=lambda ki: (overlap_scores[(best_scene,ki)], -ki))
+        assigned[best_scene] = best_ki
+        used_kw.add(best_ki)
+        remaining_scenes.remove(best_scene)
+    assigned_list = [clean_keywords[assigned[i]] for i in range(target_scenes)]
+    remaining_keywords_str = [kw for i, kw in enumerate(clean_keywords) if i not in used_kw]
+    used_kw_str = {assigned_list[i] for i in range(target_scenes)}
+
+    # Rebalancing pass: if any scene still has 0 overlap with its assigned
+    # keyword, try to steal a keyword from a scene that has multiple overlapping
+    # keywords (so that scene still has ≥1 overlap after the swap). This ensures
+    # all scenes have a primary query that matches narration.
+    def _scene_kw_overlap(si, ki):
+        return len(kw_terms_list[ki] & bin_terms[si])
+    for _retry in range(target_scenes):
+        zero_scenes = [si for si in range(target_scenes)
+                       if _scene_kw_overlap(si, assigned[si]) == 0]
+        if not zero_scenes:
+            break
+        progress = False
+        for zero_si in zero_scenes:
+            # Find a donor scene that has ≥2 nonzero keywords currently assigned
+            # and where swapping would leave donor with another overlapping keyword
+            best_donor = None
+            best_new_kw_for_zero = None
+            best_donor_remaining_overlap = -1
+            for donor_si in range(target_scenes):
+                if donor_si == zero_si:
+                    continue
+                donor_ki = assigned[donor_si]
+                donor_overlap = _scene_kw_overlap(donor_si, donor_ki)
+                if donor_overlap < 1:
+                    continue
+                # Try giving donor's keyword to zero_si
+                zero_new_overlap = _scene_kw_overlap(zero_si, donor_ki)
+                if zero_new_overlap == 0:
+                    continue
+                # After swap, donor would get zero_si's current keyword.
+                # Check if donor still has overlap with that.
+                donor_new_ki = assigned[zero_si]
+                donor_new_overlap = _scene_kw_overlap(donor_si, donor_new_ki)
+                if donor_new_overlap >= 1 and donor_new_overlap > best_donor_remaining_overlap:
+                    best_donor = donor_si
+                    best_new_kw_for_zero = donor_ki
+                    best_donor_remaining_overlap = donor_new_overlap
+            if best_donor is not None:
+                # Swap keywords between zero_si and best_donor
+                zero_ki = assigned[zero_si]
+                assigned[zero_si] = assigned[best_donor]
+                assigned[best_donor] = zero_ki
+                assigned_list[zero_si] = clean_keywords[assigned[zero_si]]
+                assigned_list[best_donor] = clean_keywords[assigned[best_donor]]
+                progress = True
+        if not progress:
+            break
 
     # Extend ALIASES at runtime with common Turkish→English stock terms
     # so that scene_plan terms() and evaluate() can cross-match.
@@ -3027,32 +3120,110 @@ def _synthesize_storyboard(
         narration = " ".join(bins[idx]).strip()
         if not narration:
             narration = script_text[:120]
-        primary = assigned[idx]
+        primary = assigned_list[idx]
         n_terms = bin_terms_check[idx]
         # If the assigned primary query has zero term overlap with narration,
         # prepend a topic-level generic query that does overlap with narration.
         primary_terms = _scene_terms(primary)
         if not (primary_terms & n_terms):
-            # Build a generic query from topic_kw + a word from narration
-            # that ALIASES maps to English. This guarantees overlap.
-            topic_query = f"{topic_kw} documentary"
-            t_terms = _scene_terms(topic_query)
-            if t_terms & n_terms:
-                # Keep primary as alternative, use topic_query as primary
-                alts_primary = primary
-                primary = topic_query[:160]
-            else:
-                # Last resort: pick any narration English-mapped word + topic
-                overlap_word = next((w for w in n_terms if len(w) > 3 and w.isascii()), topic_kw)
-                primary = f"{topic_kw} {overlap_word}"[:160]
-                alts_primary = assigned[idx]
+            # Build a generic query from topic_kw + an ENGLISH word from narration
+            # (ALIASES-mapped or from keyword pool). This guarantees overlap AND
+            # produces a query Pexels/Pixabay can actually return footage for.
+            from src.media_processing.scene_media import ALIASES as _ALIASES
+            # Determine which narration terms are canonical English (ALIASES
+            # values or ASCII words that look English rather than Turkish).
+            alias_values = set(_ALIASES.values())
+            kw_term_pool: set[str] = set()
+            for kw in clean_keywords:
+                kw_term_pool |= _scene_terms(kw)
+            # English stopwords/letters that identify English words. Turkish
+            # words have distinctive suffixes (-dir,-lar,-ler,-dan,-den,-in-,-nin)
+            # we use to reject them from becoming query words.
+            TURKISH_SUFFIX_MARK = ("lar", "ler", "dan", "den", "dir", "dır", "dur",
+                                  "dur", "tir", "tır", "tur", "tür", "nin", "nın",
+                                  "nun", "nün", "yin", "yın", "si", "sı", "su",
+                                  "sü", "yi", "yı", "yu", "yü", "ya", "ye",
+                                  "erek", "arak", "ince", "ınca", "unca", "ünce",
+                                  "lik", "lık", "luk", "lük", "mak", "mek",
+                                  "msi", "msı", "msu", "msü", "sal", "sel",
+                                  "sul", "sül", "ci", "cı", "cu", "cü",
+                                  "tan", "ten", "ile", "sah", "sahip",
+                                  "acak", "ecek", "miş", "mış", "muş", "müş",
+                                  "yor", "malar", "meler")
+            def _is_english_word(w):
+                if len(w) <= 2:
+                    return False
+                if not w.isascii() or not w.isalpha():
+                    return False
+                # Must be an ALIASES value or a known keyword term
+                if w in alias_values or w in kw_term_pool:
+                    return True
+                # Reject words that end with Turkish suffixes
+                for suf in TURKISH_SUFFIX_MARK:
+                    if w.endswith(suf) and len(w) > len(suf) + 1:
+                        return False
+                # If the word appears in common English concept list, accept
+                return False
+            GENERIC_CONCEPTS = [
+                "nature", "forest", "tree", "animal", "water", "ocean", "sky",
+                "city", "people", "history", "war", "space", "science", "book",
+                "light", "fire", "mountain", "river", "street", "building",
+                "documentary", "landscape", "wildlife", "ancient", "sea",
+                "fish", "horse", "star", "sun", "moon", "cell", "battle",
+                "ship", "palace", "castle", "ruins", "cannon", "soldier",
+                "planet", "galaxy", "rocket", "human", "insect", "plant",
+            ]
+            overlap_word = None
+            # 1) Prefer a narration term that is English AND in keyword pool
+            for w in n_terms:
+                if _is_english_word(w) and w in kw_term_pool and w != topic_kw:
+                    overlap_word = w
+                    break
+            # 2) Any English-mapped term from narration (ALIASES value)
+            if overlap_word is None:
+                for w in n_terms:
+                    if w in alias_values and len(w) > 2 and w != topic_kw:
+                        overlap_word = w
+                        break
+            # 3) English word in narration (not topic_kw itself)
+            if overlap_word is None:
+                for w in n_terms:
+                    if _is_english_word(w) and w != topic_kw:
+                        overlap_word = w
+                        break
+            # 4) A generic concept present in narration
+            if overlap_word is None:
+                for w in GENERIC_CONCEPTS:
+                    if w in n_terms and w != topic_kw:
+                        overlap_word = w
+                        break
+            # 5) Borrow a visual keyword term from an unused alternative kw
+            if overlap_word is None:
+                for kw in remaining_keywords_str:
+                    for w in _scene_terms(kw):
+                        if len(w) > 3 and w.isascii() and w.isalpha() and w not in (topic_kw, "documentary"):
+                            overlap_word = w
+                            break
+                    if overlap_word:
+                        break
+            # 6) Fallback: use a generic visual concept different from topic_kw
+            if overlap_word is None:
+                for w in GENERIC_CONCEPTS:
+                    if w != topic_kw and w != "documentary":
+                        overlap_word = w
+                        break
+            # If we had to fall back to guarantee-query, save the originally
+            # assigned keyword (which may have zero overlap) as an alternative
+            # so media search has more chances.
+            alts_primary = assigned_list[idx]
+            primary = f"{topic_kw} {overlap_word}"[:160]
         else:
             alts_primary = None
         # Build alternatives from unused keywords + topic-specific fallback
         alts = []
-        if alts_primary and alts_primary not in alts:
+        if alts_primary and alts_primary != primary and alts_primary not in alts:
             alts.append(alts_primary[:160])
-        for kw in remaining_keywords:
+        for kw in remaining_keywords_str:
             if kw != primary and kw not in alts and len(alts) < 2:
                 alts.append(kw[:160])
         topic_alt = f"{topic_kw} {primary.split()[0]}"
