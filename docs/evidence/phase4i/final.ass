@@ -1,0 +1,35 @@
+[Script Info]
+Title: Shorts Dynamic Subtitles
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Montserrat-Bold,56,&H0000FFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,1.5,0,1,5,3,2,70,70,250,1
+Style: Hook,Montserrat-Bold,62,&H0026FFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,2.0,0,1,6,4,2,70,70,250,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:02.47,Hook,,0,0,0,,{\fscx82\fscy82\bord6\t(0,90,\fscx106\fscy106)\t(90,150,\fscx100\fscy100)}İnsan midesindeki hidroklorik
+Dialogue: 0,0:00:02.47,0:00:03.39,Hook,,0,0,0,,{\fscx82\fscy82\bord6\t(0,90,\fscx106\fscy106)\t(90,150,\fscx100\fscy100)}asit o kadar
+Dialogue: 0,0:00:03.39,0:00:05.13,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}güçlüdür ki paslanmaz
+Dialogue: 0,0:00:05.13,0:00:06.42,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}çelik bir jileti
+Dialogue: 0,0:00:06.42,0:00:08.07,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}bile aşındırabilir.
+Dialogue: 0,0:00:08.07,0:00:09.08,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}pH değeri bir
+Dialogue: 0,0:00:09.08,0:00:10.09,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}buçuk ile iki
+Dialogue: 0,0:00:10.09,0:00:11.37,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}arasında olan bu
+Dialogue: 0,0:00:11.37,0:00:12.84,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}güçlü asit midenin
+Dialogue: 0,0:00:12.84,0:00:14.67,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}kendi duvarını yakmaz;
+Dialogue: 0,0:00:14.67,0:00:16.05,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}çünkü mide yüzeyi
+Dialogue: 0,0:00:16.05,0:00:18.34,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}bikarbonat açısından zengin
+Dialogue: 0,0:00:18.34,0:00:19.54,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}yoğun bir mukus
+Dialogue: 0,0:00:19.54,0:00:21.28,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}kalkanıyla kaplıdır.
+Dialogue: 0,0:00:21.28,0:00:22.38,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}Ayrıca mide iç
+Dialogue: 0,0:00:22.38,0:00:24.76,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}yüzeyindeki epitel hücreleri
+Dialogue: 0,0:00:24.76,0:00:25.50,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}her üç ila
+Dialogue: 0,0:00:25.50,0:00:26.51,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}beş günde bir
+Dialogue: 0,0:00:26.51,0:00:28.62,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}tamamen yenilenerek olası
+Dialogue: 0,0:00:28.62,0:00:30.45,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}hasarı anında kapatır.
