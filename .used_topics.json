@@ -1073,5 +1073,69 @@
       "created_at": "2026-11-19T18:00:14.571888+00:00"
     }
   ],
-  "pending": []
+  "pending": [
+    {
+      "title": "Dünya'nın İç Çekirdeği Güneş Yüzeyi Kadar Sıcak! #Shorts",
+      "topic": "Bilim",
+      "topic_subject": "Dünya'nın İç Çekirdeği Güneş Yüzeyi Kadar Sıcak! #Shorts",
+      "topic_key": "",
+      "category": "bilim",
+      "entities": [
+        "bilim",
+        "cekirdegi",
+        "dunya",
+        "gunes",
+        "kadar",
+        "sicak",
+        "yuzeyi"
+      ],
+      "claims": [],
+      "scenario_tokens": [
+        "altind",
+        "atmosphere",
+        "atom",
+        "ayaklarimizin",
+        "ayni",
+        "basinc",
+        "besler",
+        "bilim",
+        "birbir",
+        "bucuk",
+        "buharlasmas",
+        "cekirdeg",
+        "coktan",
+        "demir",
+        "derecedir",
+        "dev",
+        "donuyor",
+        "earth",
+        "gerekirken",
+        "gezegenimiz",
+        "hald",
+        "heat",
+        "ic",
+        "kalkan",
+        "kati",
+        "kenetleyerek",
+        "kilometr",
+        "koruyan",
+        "kozmik",
+        "kure",
+        "manyetik",
+        "muazzam",
+        "nin",
+        "normald",
+        "radyasyon",
+        "santigrat",
+        "sicak",
+        "sun",
+        "surface",
+        "trap",
+        "uzer"
+      ],
+      "created_at": "2026-11-19T18:59:57.494248+00:00",
+      "reservation_id": "a95f164a-e00a-4e09-8b8a-caa0fb7b0120",
+      "run_id": "44593363991:1"
+    }
+  ]
 }
