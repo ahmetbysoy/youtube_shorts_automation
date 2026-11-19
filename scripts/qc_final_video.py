@@ -508,23 +508,29 @@ def main():
             low_relevance = 0
             missing_provider = 0
             for sc in scenes_m:
-                sel = sc.get("selected")
-                if not sel:
+                # Manifest formatı: seçilen medya bilgileri düz alanlar olarak
+                # (selected_provider, selected_media_id, selection_score, vb.),
+                # iç içe "selected" nesnesi YOK.
+                provider = sc.get("selected_provider")
+                media_id_val = sc.get("selected_media_id")
+                if not provider or not media_id_val:
                     low_relevance += 1
                     continue
-                media_id = f"{sel.get('provider')}:{sel.get('id')}"
+                media_id = f"{provider}:{media_id_val}"
                 if media_id in used_media:
                     duplicates += 1
                 used_media.add(media_id)
-                if not sel.get("license"):
+                lic = sc.get("license")
+                if not lic:
                     missing_license += 1
-                if not sel.get("attribution") and sel.get("provider") not in ("pexels", "pixabay", "wikimedia"):
+                attr = sc.get("attribution")
+                if not attr and provider not in ("pexels", "pixabay", "wikimedia"):
                     # Pexels/Pixabay/Wikimedia için attribution opsiyonel
                     missing_attribution += 1
-                score = sel.get("score", 0)
+                score = sc.get("selection_score", 0) or 0
                 if score < 20:
                     low_relevance += 1
-                if not sel.get("provider"):
+                if not provider:
                     missing_provider += 1
             check("content_no_duplicate_media", duplicates == 0,
                   f"{duplicates} tekrar eden medya")
