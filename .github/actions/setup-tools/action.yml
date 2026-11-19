@@ -1,76 +1,131 @@
 name: "Araçları Kur (önbellekli)"
 description: >
-  Tüm iş akışlarının ortak araç kurulumu. Her şey önbellekten gelir, indirme yalnızca
-  önbellek boşken yapılır: apt .deb arşivi (xvfb/ffmpeg/fontlar), node_modules
-  (package-lock hash), Playwright Chromium (~/.cache/ms-playwright), pip (setup-python).
-  Playwright sistem kütüphaneleri: önbellekten gelen tarayıcı 1 kez açılış testiyle denenir;
-  açılıyorsa `playwright install-deps` (apt) hiç çalıştırılmaz.
+  Tüm iş akışlarının ortak araç kurulumu. Her şey önbellekten gelir, indirme
+  yalnızca önbellek boşken yapılır: apt .deb arşivi, pip (setup-python cache),
+  node_modules (package-lock hash), Playwright Chromium (node ve python
+  binary'leri ayrı ayrı). Playwright sistem kütüphaneleri önbellekten gelen
+  tarayıcının 1 kez açılış testiyle denenir; açılıyorsa install-deps HİÇ
+  çalıştırılmaz.
+  GÜVENLİK: Cookie/API key/token hiçbir zaman cache'e koyulmaz. Önbellek
+  anahtarları yalnızca sürüm+hash içerir; secret içermez.
 
 inputs:
   apt_packages:
     description: "Kurulacak apt paketleri (boşlukla ayrılmış). Boş = apt adımı yok."
     required: false
-    default: "xvfb"
-  node:
-    description: "Node 20 + node_modules kur (true/false)"
-    required: false
-    default: "true"
-  playwright:
-    description: "Playwright Chromium kur (true/false)"
-    required: false
-    default: "true"
+    default: ""
   python:
-    description: "Python 3.11 + requirements.txt kur (true/false)"
+    description: "Python kur (true/false)"
     required: false
     default: "false"
+  python_version:
+    description: "Python sürümü (3.11, 3.12 vb.)"
+    required: false
+    default: "3.11"
   pip_requirements:
-    description: "pip gereksinim dosyası"
+    description: "pip gereksinim dosyası (noktalı virgülle birden fazla; örn. a.txt;b.txt)"
     required: false
     default: "requirements.txt"
+  pip_extra:
+    description: "requirements.txt disinda eklenecek pip paketleri (boslukla ayrilmis; Pillow==11.3.0 vb.)"
+    required: false
+    default: ""
+  pip_cache:
+    description: "setup-python pip cache kullan (true/false)"
+    required: false
+    default: "true"
+  node:
+    description: "Node kur (true/false)"
+    required: false
+    default: "false"
+  node_version:
+    description: "Node sürümü"
+    required: false
+    default: "20"
+  node_playwright:
+    description: "npm playwright paketini kur (true/false). node=true gerekli."
+    required: false
+    default: "true"
+  playwright_chromium:
+    description: "Playwright Chromium browser binary kur (npx + python) (true/false). node=true gerekli."
+    required: false
+    default: "false"
+  playwright_with_deps:
+    description: "Chromium kurulumunda playwright install-deps (apt) daima calistir (true/false). Varsayilan: yalnizca smoke test basarisizsa calistir."
+    required: false
+    default: "false"
+  python_playwright:
+    description: "Python Playwright Chromium binary'sini de kur (true/false). python=true ve playwright_chromium=true gerekli."
+    required: false
+    default: "true"
+  node_check:
+    description: "node --check ile syntax-kontrol edilecek dosyalar (boslukla ayrilmis; bos = kontrol yok)."
+    required: false
+    default: ""
+  python_playwright_browser:
+    description: "Python playwright browser kurulumu icin browser adi"
+    required: false
+    default: "chromium"
 
 outputs:
   apt_cache_hit:
     description: "apt .deb önbelleği bulundu mu"
     value: ${{ steps.apt-cache.outputs.cache-hit }}
+  pip_cache_hit:
+    description: "pip önbelleği bulundu mu"
+    value: ${{ steps.pip-cache-info.outputs.hit }}
   node_modules_cache_hit:
     description: "node_modules önbelleği bulundu mu"
     value: ${{ steps.nm-cache.outputs.cache-hit }}
   playwright_cache_hit:
-    description: "Playwright tarayıcı önbelleği bulundu mu"
-    value: ${{ steps.pw-cache.outputs.cache-hit }}
+    description: "Playwright tarayıcı önbelleği (node) bulundu mu"
+    value: ${{ steps.pw-npm-cache.outputs.cache-hit }}
+  playwright_py_cache_hit:
+    description: "Playwright tarayıcı önbelleği (python) bulundu mu"
+    value: ${{ steps.pw-py-cache.outputs.cache-hit }}
+  setup_duration_ms:
+    description: "Setup süresi (ms)"
+    value: ${{ steps.timer.outputs.duration_ms }}
 
 runs:
   using: "composite"
   steps:
+    # Baslangic zamani (setup suresini olcmek icin)
+    - name: "Setup sayacini baslat"
+      id: t0
+      shell: bash
+      run: echo "t=$(date +%s%3N)" >> "$GITHUB_OUTPUT"
+
     # ------------------------------------------------------------------ APT
-    - name: "APT önbellek anahtarı (runner imajı + paket listesi)"
+    - name: "APT önbellek anahtarı (runner imajı + Ubuntu sürümü + paket listesi)"
       id: apt-key
       if: inputs.apt_packages != ''
       shell: bash
       env:
         PKGS: ${{ inputs.apt_packages }}
       run: |
-        # ImageVersion runner tarafından verilir (ör. 20251103.1.0); imaj değişince .deb'ler yenilenir.
         REL=$(lsb_release -rs 2>/dev/null || echo unknown)
-        H=$(printf '%s' "$PKGS" | tr -s ' ' '\n' | sort | tr '\n' ' ' | md5sum | cut -c1-10)
-        echo "key=apt-debs-${REL}-${ImageVersion:-noimg}-${H}" >> "$GITHUB_OUTPUT"
-        echo "[apt] anahtar: apt-debs-${REL}-${ImageVersion:-noimg}-${H}"
+        ARCH=$(uname -m)
+        H=$(printf '%s' "$PKGS" | tr -s ' ' '\n' | sort -u | tr '\n' ' ' | md5sum | cut -c1-10)
+        echo "key=apt-debs-${REL}-${ARCH}-${ImageVersion:-noimg}-${H}" >> "$GITHUB_OUTPUT"
+        echo "[apt] anahtar: apt-debs-${REL}-${ARCH}-${ImageVersion:-noimg}-${H}"
 
-    - name: "APT .deb arşivi önbelleği"
+    - name: "APT .deb arşivi önbelleği (kullanıcı dizininde, root izin sorunu yok)"
       id: apt-cache
       if: inputs.apt_packages != ''
       uses: actions/cache@v4
       with:
         path: ~/.apt-debs
         key: ${{ steps.apt-key.outputs.key }}
+        # restore-keys yok: farklı paket setinde eski .deb'ler karışmasın.
 
-    - name: "APT paketlerini kur (önbellekten dpkg -i; yoksa indir ve arşivle)"
+    - name: "APT paketlerini kur (önbellekteki .deb'ler önce; düşerse apt güncelle+kur)"
       if: inputs.apt_packages != ''
       shell: bash
       env:
         PKGS: ${{ inputs.apt_packages }}
       run: |
-        set -uo pipefail
+        set -euo pipefail
         MISSING=""
         for p in $PKGS; do
           dpkg -s "$p" >/dev/null 2>&1 || MISSING="$MISSING $p"
@@ -79,101 +134,229 @@ runs:
           echo "[apt ✓] Tüm paketler imajda zaten kurulu: $PKGS"
           exit 0
         fi
-        echo "[apt] Eksik:$MISSING"
+        echo "[apt] Eksik paketler:$MISSING"
+        export DEBIAN_FRONTEND=noninteractive
         DEBS="$HOME/.apt-debs"
         mkdir -p "$DEBS"
-        if ls "$DEBS"/*.deb >/dev/null 2>&1; then
-          echo "[apt ✓] Önbellekten kuruluyor ($(ls "$DEBS"/*.deb | wc -l) .deb, internet yok)..."
+        # 1) Önbellekteki .deb'lerden dpkg -i ile hızlıca kurmayı dene.
+        CACHED_DEBS=$(ls "$DEBS"/*.deb 2>/dev/null | wc -l || echo 0)
+        if [ "$CACHED_DEBS" -gt 0 ]; then
+          echo "[apt] Önbellekte $CACHED_DEBS .deb var; dpkg -i deneniyor..."
           if sudo dpkg -i "$DEBS"/*.deb >/tmp/dpkg.log 2>&1; then
             STILL=""
             for p in $MISSING; do dpkg -s "$p" >/dev/null 2>&1 || STILL="$STILL $p"; done
-            if [ -z "$STILL" ]; then echo "[apt ✓] Önbellekten kuruldu."; exit 0; fi
-            echo "[apt] Önbellek eksik kaldı:$STILL -> apt'ye düşülüyor."
+            if [ -z "$STILL" ]; then echo "[apt ✓] Tümü önbellekten kuruldu."; exit 0; fi
+            echo "[apt] Önbellek eksik kaldı:$STILL — apt-get ile tamamlanacak."
           else
             tail -5 /tmp/dpkg.log || true
-            echo "[apt] dpkg -i başarısız (imaj değişmiş olabilir) -> apt'ye düşülüyor."
+            echo "[apt] dpkg -i başarısız (bağımlılık/imaj uyumsuzluğu) — apt-get ile devam."
           fi
         fi
+        # 2) Normal apt-get yolu: önce indir, sonra kur. İndirilen .deb'leri önbellek
+        # klasörüne kopyala (apt'in kendi arşivinden) ki sonraki koşuda dpkg -i ile kullanılabilsin.
         sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
-        # Önce yalnızca indir (arşiv önbelleğe girer), sonra arşivden kur.
+        sudo apt-get install -y --no-install-recommends $MISSING
+        # 3) İndirilen .deb'leri önbelleğe taşı (kaynak: /var/cache/apt/archives)
         sudo rm -f "$DEBS"/*.deb
-        sudo apt-get install -y --no-install-recommends --download-only \
-          -o Dir::Cache::archives="$DEBS" $MISSING
-        sudo apt-get install -y --no-install-recommends \
-          -o Dir::Cache::archives="$DEBS" $MISSING
-        sudo rm -rf "$DEBS/partial" "$DEBS/lock"
+        if ls /var/cache/apt/archives/*.deb >/dev/null 2>&1; then
+          sudo cp /var/cache/apt/archives/*.deb "$DEBS"/ 2>/dev/null || true
+        fi
+        sudo rm -rf /var/cache/apt/archives/partial /var/cache/apt/archives/lock 2>/dev/null || true
         sudo chown -R "$(id -u):$(id -g)" "$DEBS"
-        echo "[apt ✓] Kuruldu ve $(ls "$DEBS"/*.deb 2>/dev/null | wc -l) .deb arşivlendi (sonraki koşular internetsiz)."
+        rm -rf "$DEBS"/partial "$DEBS"/lock 2>/dev/null || true
+        LEFT=$(ls "$DEBS"/*.deb 2>/dev/null | wc -l)
+        echo "[apt ✓] Kuruldu. Önbellekte $LEFT .deb arşivlendi (sonraki koşuda tekrar kullanılır)."
+
+    - name: "Font önbelleği (fc-cache)"
+      if: inputs.apt_packages != ''
+      shell: bash
+      run: fc-cache -f 2>/dev/null || true
 
     # ------------------------------------------------------------------ PYTHON
-    - name: "Python 3.11 (pip önbellekli)"
+    - name: "Python ${{ inputs.python_version }} (pip önbellekli)"
+      id: py-setup
       if: inputs.python == 'true'
       uses: actions/setup-python@v7
       with:
-        python-version: "3.11"
-        cache: "pip"
+        python-version: ${{ inputs.python_version }}
+        cache: ${{ inputs.pip_cache == 'true' && 'pip' || '' }}
         cache-dependency-path: ${{ inputs.pip_requirements }}
 
-    - name: "pip bağımlılıkları"
+    - name: "pip bağımlılıkları (+ ek paketler)"
+      id: pip-cache-info
       if: inputs.python == 'true'
       shell: bash
+      env:
+        REQS: ${{ inputs.pip_requirements }}
+        EXTRA: ${{ inputs.pip_extra }}
       run: |
+        set -euo pipefail
         python -m pip install --quiet --upgrade pip
-        pip install --quiet -r "${{ inputs.pip_requirements }}"
+        # Çoklu requirements dosyasi (; ya da newline ile ayrilmis)
+        while IFS= read -r line; do
+          f=$(echo "$line" | xargs)
+          if [ -n "$f" ] && [ -f "$f" ]; then
+            echo "[pip] Kuruluyor: $f"
+            pip install --quiet -r "$f"
+          fi
+        done < <(echo "$REQS" | tr ';' '\n')
+        if [ -n "$EXTRA" ]; then
+          echo "[pip] Ek paketler: $EXTRA"
+          pip install --quiet $EXTRA
+        fi
+        echo "hit=${{ steps.py-setup.outputs.cache-hit }}" >> "$GITHUB_OUTPUT"
         echo "[pip ✓] $(pip list 2>/dev/null | wc -l) paket hazır."
 
     # ------------------------------------------------------------------ NODE
-    - name: "Node.js 20"
+    - name: "Node.js ${{ inputs.node_version }}"
       if: inputs.node == 'true'
       uses: actions/setup-node@v7
       with:
-        node-version: "20"
+        node-version: ${{ inputs.node_version }}
 
-    - name: "node_modules önbelleği"
+    - name: "node_modules önbelleği (npm)"
       id: nm-cache
       if: inputs.node == 'true'
       uses: actions/cache@v4
       with:
         path: node_modules
-        key: node-modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json', 'package.json') }}
+        key: node-modules-${{ runner.os }}-node${{ inputs.node_version }}-${{ hashFiles('package-lock.json', 'package.json') }}
+        # restore-keys: paket hash degisse bile ayni node surumunde kismi hit
+        restore-keys: |
+          node-modules-${{ runner.os }}-node${{ inputs.node_version }}-
 
-    - name: "npm bağımlılıkları (önbellek yoksa)"
-      if: inputs.node == 'true' && steps.nm-cache.outputs.cache-hit != 'true'
+    - name: "npm bağımlılıkları (cache miss/bozuk ise kur; isabet ve sağlıklıysa atla)"
+      id: npm-install
+      if: inputs.node == 'true'
       shell: bash
       run: |
-        if [ -f package-lock.json ]; then npm ci --no-audit --no-fund --loglevel=error; else npm install --no-audit --no-fund --loglevel=error; fi
-        echo "[npm ✓] node_modules kuruldu (önbelleğe alınacak)."
+        set -euo pipefail
+        # node_playwright aciksa package.json+modul zorunlu kontrol
+        if [ "${{ inputs.node_playwright }}" = "true" ] && [ ! -f package.json ]; then
+          echo "::error::package.json yok; node_playwright=true için repoda package.json olmalı."
+          exit 1
+        fi
+        # Cache hit + modul saglikliysa atla
+        MODULE_OK=1
+        if [ "${{ inputs.node_playwright }}" = "true" ]; then
+          if ! node -e "require('playwright')" >/dev/null 2>&1; then MODULE_OK=0; fi
+        fi
+        if [ "${{ steps.nm-cache.outputs.cache-hit }}" = "true" ] && [ "$MODULE_OK" = "1" ]; then
+          echo "[npm ✓] node_modules önbellekten geldi ve doğrulandı."
+        else
+          if [ "${{ steps.nm-cache.outputs.cache-hit }}" = "true" ] && [ "$MODULE_OK" = "0" ]; then
+            echo "[npm !] Cache hit ama playwright modülü bozuk/eksik — yeniden kuruluyor..."
+          fi
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund --loglevel=error
+          else
+            npm install --no-audit --no-fund --loglevel=error
+          fi
+        fi
+        if [ "${{ inputs.node_playwright }}" = "true" ]; then
+          node -e "require('playwright'); console.log('[npm ✓] playwright modülü hazır')"
+        fi
 
-    - name: "npm önbellekten geldi"
-      if: inputs.node == 'true' && steps.nm-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: echo "[npm ✓] node_modules önbellekten geldi, npm install atlandı."
-
-    # ------------------------------------------------------------------ PLAYWRIGHT
-    - name: "Playwright Chromium önbelleği"
-      id: pw-cache
-      if: inputs.playwright == 'true'
+    # ------------------------------------------------------------------ PLAYWRIGHT (NODE)
+    - name: "Playwright (npm) Chromium binary önbelleği"
+      id: pw-npm-cache
+      if: inputs.node == 'true' && inputs.playwright_chromium == 'true'
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
-        key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json', 'package.json') }}
+        key: pw-chromium-npm-${{ runner.os }}-node${{ inputs.node_version }}-${{ hashFiles('package-lock.json', 'package.json') }}
+        restore-keys: |
+          pw-chromium-npm-${{ runner.os }}-node${{ inputs.node_version }}-
 
-    - name: "Playwright Chromium (önbellek yoksa indir; sistem kütüphaneleri yalnızca gerekirse)"
-      if: inputs.playwright == 'true'
+    # ------------------------------------------------------------------ PLAYWRIGHT (PYTHON) — ayri prefix/key ile cache
+    - name: "Playwright (python) Chromium binary önbelleği"
+      id: pw-py-cache
+      if: inputs.python == 'true' && inputs.playwright_chromium == 'true' && inputs.python_playwright == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: pw-chromium-py-${{ runner.os }}-py${{ inputs.python_version }}-${{ hashFiles('requirements.txt', 'requirements.lock.txt') }}
+        # path ayni oldugu icin npm cache ile restore-keys catismasin; restore-keys kullanmiyoruz.
+        # (npm ve py cache'leri ayni key prefix'i altinda, sonraki kayit ustune yazar;
+        #  pratikte ikisi de chromium binary'sini ayni klasore koydugu icin bu istenen durumdur
+        #  — birisi digerinin binary'sini kullanabilir.)
+
+    - name: "Playwright Chromium kur (npm + gerekirse python) + açılış smoke"
+      if: inputs.node == 'true' && inputs.playwright_chromium == 'true'
       shell: bash
+      env:
+        WITH_DEPS: ${{ inputs.playwright_with_deps }}
+        PY_PW: ${{ inputs.python == 'true' && inputs.python_playwright == 'true' && '1' || '0' }}
+        BROWSER: ${{ inputs.python_playwright_browser }}
       run: |
-        set -uo pipefail
-        if [ "${{ steps.pw-cache.outputs.cache-hit }}" != "true" ]; then
-          echo "[pw ↓] Chromium indiriliyor (önbellek boş)..."
-          npx playwright install chromium
+        set -euo pipefail
+        # NPM browser binary — cache hit gelse bile binary yoksa yeniden indir
+        # (kismi restore, cache bozulmasi, farkli surum gecisi halleri)
+        BINARY_OK=0
+        if ls ~/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell >/dev/null 2>&1 || \
+           ls ~/.cache/ms-playwright/chromium-*/chrome >/dev/null 2>&1; then
+          BINARY_OK=1
+        fi
+        if [ "${{ steps.pw-npm-cache.outputs.cache-hit }}" = "true" ] && [ "$BINARY_OK" = "1" ]; then
+          echo "[pw:npm ✓] Chromium binary önbellekten geldi."
         else
-          echo "[pw ✓] Chromium önbellekten geldi."
+          echo "[pw:npm ↓] Chromium binary indiriliyor (cache miss ya da binary eksik)..."
+          npx playwright install chromium
         fi
-        # Açılış testi: tarayıcı açılıyorsa apt (install-deps) HİÇ çalışmaz.
-        SMOKE='const {chromium}=require("playwright");chromium.launch({headless:true}).then(b=>b.close()).then(()=>{console.log("[pw ✓] Chromium açılış testi geçti, install-deps atlandı.");process.exit(0)}).catch(e=>{console.error("[pw] açılış testi başarısız:",String(e.message).split("\n")[0]);process.exit(1)})'
+        # Python browser binary (farkli surum olabilir; cache hit olsa bile kontrol et)
+        if [ "$PY_PW" = "1" ]; then
+          if ls ~/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell >/dev/null 2>&1 || \
+             ls ~/.cache/ms-playwright/chromium-*/chrome >/dev/null 2>&1; then
+            echo "[pw:py ✓] Python Chromium binary'si mevcut."
+          else
+            echo "[pw:py ↓] Python Chromium binary'si indiriliyor..."
+            python -m playwright install "$BROWSER"
+          fi
+        fi
+        # --with-deps istendiyse dogrudan calistir (ubuntu26 test vb.)
+        if [ "$WITH_DEPS" = "true" ]; then
+          echo "[pw ↓] install-deps zorunlu calistiriliyor (input)..."
+          npx playwright install-deps chromium
+          if [ "$PY_PW" = "1" ]; then python -m playwright install-deps "$BROWSER"; fi
+        fi
+        # Açılış testi (npm)
+        SMOKE='const {chromium}=require("playwright");chromium.launch({headless:true,args:["--no-sandbox"]}).then(b=>b.close()).then(()=>{console.log("[pw ✓] Chromium açılış smoke geçti");process.exit(0)}).catch(e=>{console.error("[pw] smoke fail:",String(e.message).split("\n")[0]);process.exit(1)})'
         if timeout 60 node -e "$SMOKE"; then
-          exit 0
+          echo "[pw ✓] Chromium çalisiyor."
+        else
+          if [ "$WITH_DEPS" != "true" ]; then
+            echo "[pw ↓] Smoke başarısız, install-deps deneniyor..."
+            npx playwright install-deps chromium
+            timeout 60 node -e "$SMOKE" || { echo "::error::install-deps sonrası Chromium açılmadı"; exit 1; }
+          else
+            echo "::error::install-deps sonrası Chromium açılmadı"; exit 1
+          fi
         fi
-        echo "[pw ↓] Sistem kütüphaneleri kuruluyor (install-deps)..."
-        npx playwright install-deps chromium
-        timeout 60 node -e "$SMOKE" || { echo "::error::Chromium install-deps sonrası da açılmadı"; exit 1; }
+        # Binary'leri listele (loglara surum bilgisini ver, icerik degil)
+        ls -d ~/.cache/ms-playwright/*/ 2>/dev/null | sed 's#.*/ms-playwright/##;s#/$##' | while read d; do echo "[pw] binary: $d"; done
+
+    # ------------------------------------------------------------------ NODE SYNTAX CHECK
+    - name: "Node syntax kontrolleri"
+      if: inputs.node_check != ''
+      shell: bash
+      env:
+        FILES: ${{ inputs.node_check }}
+      run: |
+        set -euo pipefail
+        for f in $FILES; do
+          echo "[node --check] $f"
+          node --check "$f"
+        done
+        echo "[node ✓] Syntax kontrolleri geçti."
+
+    # ------------------------------------------------------------------ SURE
+    - name: "Setup süresini hesapla"
+      id: timer
+      shell: bash
+      env:
+        T0: ${{ steps.t0.outputs.t }}
+      run: |
+        T1=$(date +%s%3N)
+        DUR=$((T1 - T0))
+        echo "duration_ms=$DUR" >> "$GITHUB_OUTPUT"
+        echo "[setup ✓] Tamamlandi, süre: ${DUR}ms ($((DUR/1000))s)"

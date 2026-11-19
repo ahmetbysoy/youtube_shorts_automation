@@ -1,0 +1,9 @@
+{
+  "name": "youtube-shorts-automation-ci",
+  "private": true,
+  "version": "1.0.0",
+  "description": "CI-only Playwright runtime for video_fetcher.js / stock_media_catalog.cjs / analytics_scraper.js / youtube_studio_uploader.js. Repo disinda kullanilmaz.",
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}

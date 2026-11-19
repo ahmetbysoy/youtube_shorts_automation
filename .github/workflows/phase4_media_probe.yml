@@ -22,38 +22,10 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-      - name: Python probe dependencies (before optional system downloads)
-        timeout-minutes: 4
-        run: python -m pip install requests==2.34.2 beautifulsoup4==4.15.0 python-dotenv==1.2.4 Pillow==11.3.0 'jsonschema>=4.23,<5'
-      - name: Cookie-only preflight BEFORE provider or system/browser setup
-        id: preflight
-        env:
-          MEDIA_COOKIES_JSON: ${{ secrets.MEDIA_COOKIES_JSON }}
-          # Presence booleans only, never API credential values in this step.
-          PEXELS_API_KEY_PRESENT: ${{ secrets.PEXELS_API_KEY != '' }}
-          PIXABAY_API_KEY_PRESENT: ${{ secrets.PIXABAY_API_KEY != '' }}
-          STOCK_ACCESS_MODE: ${{ inputs.stock_access_mode }}
+      - name: APT mirror fix (bounded azure mirror + timeouts)
+        timeout-minutes: 2
         run: |
           set -euo pipefail
-          if [ "$STOCK_ACCESS_MODE" = "cookie_only" ]; then
-            python -m scripts.media_probe_security preflight --path cookies.json --report output/phase4b_evidence/preflight.json
-          else
-            python -m scripts.media_probe_security cookies --path cookies.json
-          fi
-      - name: Media system dependencies (bounded official Ubuntu mirror)
-        timeout-minutes: 5
-        run: |
-          set -euo pipefail
-          # Probe-only ephemeral runner. The first 4B attempt spent >16 minutes
-          # downloading from its regional Ubuntu mirror, before any provider ran.
-          # Use the official mirror already observed working in the Ubuntu CI;
-          # never change provider hosts, access restrictions or production setup.
           sudo python3 - <<'PY'
           from pathlib import Path
           import re
@@ -66,14 +38,34 @@ jobs:
                       path.write_text(updated)
           Path('/etc/apt/apt.conf.d/99-phase4b-probe-timeouts').write_text('Acquire::Retries "2";\nAcquire::http::Timeout "25";\nAcquire::https::Timeout "25";\n')
           PY
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core
-      - name: Node probe dependencies
-        timeout-minutes: 4
-        run: npm ci
-      - name: Chromium probe dependencies
-        timeout-minutes: 5
-        run: npx playwright install --with-deps chromium
+      - name: Araçları Kur (Python + Node + Playwright + pip adayları)
+        uses: ./.github/actions/setup-tools
+        with:
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'requests==2.34.2 beautifulsoup4==4.15.0 python-dotenv==1.2.4 Pillow==11.3.0 jsonschema>=4.23,<5'
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          playwright_with_deps: 'true'
+          apt_packages: ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core
+          node_check: 'video_fetcher.js scripts/stock_media_catalog.cjs analytics_scraper.js'
+      - name: Cookie-only preflight BEFORE provider or system/browser setup
+        id: preflight
+        env:
+          MEDIA_COOKIES_JSON: ${{ secrets.MEDIA_COOKIES_JSON }}
+          PEXELS_API_KEY_PRESENT: ${{ secrets.PEXELS_API_KEY != '' }}
+          PIXABAY_API_KEY_PRESENT: ${{ secrets.PIXABAY_API_KEY != '' }}
+          STOCK_ACCESS_MODE: ${{ inputs.stock_access_mode }}
+        run: |
+          set -euo pipefail
+          if [ "$STOCK_ACCESS_MODE" = "cookie_only" ]; then
+            python -m scripts.media_probe_security preflight --path cookies.json --report output/phase4b_evidence/preflight.json
+          else
+            python -m scripts.media_probe_security cookies --path cookies.json
+          fi
       - name: Live providers through actual isolated producer and consumer chain
         env:
           # Parse as DATA, no interpolation/source/eval/disk copy. Only exact

@@ -36,11 +36,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v7
+      - name: Araçları Kur (Python + requests + dotenv)
+        uses: ./.github/actions/setup-tools
         with:
-          python-version: '3.11'
-      - name: Minimal isolated-proof dependencies
-        run: python -m pip install requests==2.34.2 python-dotenv==1.2.4
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'requests==2.34.2 python-dotenv==1.2.4'
       - name: Actual Contents HTTP write or distinct-run read and cleanup
         id: proof
         env:

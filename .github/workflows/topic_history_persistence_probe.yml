@@ -26,13 +26,13 @@ jobs:
         with:
           ref: main
 
-      - name: Python setup
-        uses: actions/setup-python@v7
+      - name: Araçları Kur (Python + requests)
+        uses: ./.github/actions/setup-tools
         with:
-          python-version: '3.11'
-
-      - name: Install probe dependency
-        run: python -m pip install requests==2.34.2
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'requests==2.34.2'
 
       - name: Reserve or verify across Actions runs
         env:

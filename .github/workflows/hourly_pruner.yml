@@ -126,8 +126,11 @@ jobs:
         with:
           apt_packages: xvfb
           node: 'true'
-          playwright: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
           python: 'false'
+          node_check: 'youtube_studio_uploader.js'
 
       - name: Kanal #${{ matrix.channel_id }} Kimlik Bilgilerini Enjekte Et
         if: steps.gate.outputs.proceed == 'true'

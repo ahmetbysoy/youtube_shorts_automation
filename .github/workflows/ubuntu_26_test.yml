@@ -61,57 +61,38 @@ jobs:
           echo "- Kernel: $(uname -r)" >> "$GITHUB_STEP_SUMMARY"
           echo "- Arch: $(uname -m)" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: "FFmpeg + Font + Xvfb Kurulumu (26.04)"
+      - name: "Araçları Kur (APT + Python 3.11 + Node 20 + Playwright)"
+        uses: ./.github/actions/setup-tools
+        id: setup
+        with:
+          apt_packages: ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core libass9 xvfb
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: 'requirements.txt;requirements-test.txt'
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          playwright_with_deps: 'true'
+          python_playwright: 'true'
+          node_check: 'youtube_studio_uploader.js video_fetcher.js scripts/stock_media_catalog.cjs analytics_scraper.js'
+      - name: "Setup özetini yaz"
         run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-montserrat fonts-liberation fonts-dejavu-core libass9 xvfb
+          echo "### Setup Özeti" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Süre: ${{ steps.setup.outputs.setup_duration_ms }} ms" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Pip cache: ${{ steps.setup.outputs.pip_cache_hit }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Node modules cache: ${{ steps.setup.outputs.node_modules_cache_hit }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- PW Chromium (npm): ${{ steps.setup.outputs.playwright_cache_hit }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- PW Chromium (py): ${{ steps.setup.outputs.playwright_py_cache_hit }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- APT .deb cache: ${{ steps.setup.outputs.apt_cache_hit }}" >> "$GITHUB_STEP_SUMMARY"
           echo "ffmpeg: $(ffmpeg -version | head -1)" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: "Python + Node Kurulumu (Node 24 major'lar)"
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: |
-            requirements.txt
-            requirements-test.txt
-
-      - name: "Node Kurulumu"
-        uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-
-      - name: "Uploader JavaScript Syntax Check"
-        run: node --check youtube_studio_uploader.js
-
-      - name: "Python Bagimliliklari"
-        run: pip install -r requirements.txt -r requirements-test.txt
+          npx playwright --version
+          python -m playwright --version
 
       - name: "Faz 3 CLI Import Smoke Test (yayın yok)"
         run: |
           python -m scripts.topic_history --help
           python -m scripts.topic_persistence_probe --help
-
-      - name: "Playwright + Chromium (--with-deps)"
-        run: |
-          # Depoda package.json yok; gecici npm projesi olusturup playwright'u kur.
-          # Bu sadece CI test ortami icin; repoya package.json eklenmez, node_modules .gitignore'tir.
-          test -f package.json || npm init -y >/dev/null 2>&1
-          test -d node_modules/playwright || npm install playwright >/dev/null 2>&1
-          # Hem chromium (headless_shell dahil) tam kur; headless_shell binary'si olmayan
-          # Playwright surumlerinde testler patlar.
-          # Onemli: Python Playwright surumu (1.54+) npx'ten farkli browser
-          # surumu isteyebilir (v1248 vs v1255). Python CLI ile de chromium
-          # yukleyerek Python testlerinin dogru binary'yi bulmasini sagla.
-          npx playwright install --with-deps chromium
-          python -m playwright install --with-deps chromium
-          ls -la ~/.cache/ms-playwright/ || true
-          npx playwright --version
-          python -m playwright --version
-          node --check video_fetcher.js
-          node --check scripts/stock_media_catalog.cjs
-          node --check analytics_scraper.js
 
       - name: "Altyazi Montaj Testi (libass9 + FontSize=56 + MarginV=250)"
         run: |

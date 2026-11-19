@@ -1,0 +1,121 @@
+{
+  "phase": "4F",
+  "generated_at_utc": null,
+  "repo": "ahmetbysoy/youtube_shorts_automation",
+  "examined_commits": {
+    "faz4e_success": {"sha": "8b777abaa812f3b0c9dad8d3efbdf3bad7f6f780", "note": "Faz 4E başarılı koşu commit'i"},
+    "daily_shorts_failed": {"sha": "4f55feaa96fdf47c6154d824a5e453b1ba0b4e06", "note": "Empty commit over 8b777ab; setup hatası"}
+  },
+  "examined_runs": {
+    "faz4e_success": {
+      "run_id": "44446675653",
+      "workflow": "Faz 4E — Cookie-only storyboard medya hattı kaniti",
+      "conclusion": "success",
+      "key_steps": {
+        "sistem_kurulumu": {"name": "Sistem kurulumu (ffmpeg + fonts)", "conclusion": "success"},
+        "setup_python": {"name": "Run actions/setup-python@v5", "conclusion": "success"},
+        "setup_node": {"name": "Run actions/setup-node@v4", "conclusion": "success"},
+        "python_bagimliliklari": {"name": "Python bagimliliklari", "conclusion": "success"},
+        "playwright_chromium": {"name": "Playwright + Chromium", "conclusion": "success"},
+        "cookie_preflight": {"name": "Cookie preflight (PEXELS_COOK/PIXABAY_COOK var/yok + domain)", "conclusion": "success"},
+        "storyboard_secimi": {"name": "Cookie-only storyboard medya secimi", "conclusion": "success"},
+        "consumer_ffmpeg": {"name": "Consumer FFmpeg hattini test et", "conclusion": "success"}
+      }
+    },
+    "daily_shorts_failed": {
+      "run_id": "44449610436",
+      "workflow": "15-Minute Blitzkrieg Money Printer",
+      "conclusion": "failure",
+      "failing_step": {"name": "Araclari Kur (onbellekli: apt .deb + pip + node_modules + Chromium)", "exit_code": 254},
+      "root_cause": "npm install cagrisi package.json olmayan dizinde calisti (exit 254)"
+    },
+    "draft_publisher_failed": {
+      "run_id": "44449762264",
+      "workflow": "Draft Publisher",
+      "conclusion": "failure",
+      "failing_step": {"name": "Araclari Kur (onbellekli — xvfb + node_modules + Chromium)", "exit_code": 254},
+      "root_cause": "Ayni (package.json yok -> npm install exit 254)"
+    },
+    "hourly_pruner_failed": {
+      "run_id": "44449524679",
+      "workflow": "Hourly Prune Low-View YouTube Videos",
+      "conclusion": "failure",
+      "failing_step": {"name": "Araclari Kur (onbellekli: xvfb .deb + node_modules + Chromium)", "exit_code": 254},
+      "root_cause": "Ayni (package.json yok -> npm install exit 254)"
+    }
+  },
+  "post_fix_runs": {
+    "_note": "Bu alan push sonrasi gerceklesen kosularla doldurulacaktir.",
+    "daily_shorts_setup_success": null,
+    "draft_publisher_setup_success": null,
+    "hourly_pruner_setup_success": null,
+    "cache_verification": {
+      "prime": null,
+      "hit": null,
+      "invalidation": null,
+      "corrupted_fallback": null
+    },
+    "phase4e_storyboard_after_fix": null
+  },
+  "timings_ms": {
+    "_note": "Gercek kosu loglarindan doldurulacak. TAHMIN YER ALMAZ.",
+    "first_run_miss": null,
+    "second_run_hit": null,
+    "apt_ms": null,
+    "pip_ms": null,
+    "npm_ms": null,
+    "pw_ms": null
+  },
+  "cookie_provider_results": {
+    "pexels_cookie": {"used_in_production": true, "api_key_used_in_production": false, "live_probe_run_id": "44446675653", "probe_result": "success"},
+    "pixabay_cookie": {"used_in_production": true, "api_key_used_in_production": false, "live_probe_run_id": "44446675653", "probe_result": "success"},
+    "wikimedia_commons": {"used_in_production": false, "live_probe_run_id": null, "probe_result": null}
+  },
+  "media_pipeline": {
+    "scenes_with_real_media": 2,
+    "providers_used": ["pexels-browser", "pixabay-browser"],
+    "license_verified": true,
+    "ffprobe_passed": true,
+    "ffmpeg_decode_passed": true,
+    "consumer_pipeline_passed": true,
+    "video_qc_passed": true
+  },
+  "cache": {
+    "action_path": ".github/actions/setup-tools/action.yml",
+    "layers": [
+      {"name": "apt", "path": "~/.apt-debs", "key_pattern": "apt-debs-{REL}-{ARCH}-{ImageVersion}-{pkgs-hash}"},
+      {"name": "pip", "path": "~/.cache/pip", "key_pattern": "setup-python v7 cache (py ver + requirements hash)"},
+      {"name": "node_modules", "path": "node_modules", "key_pattern": "node-modules-{OS}-node{ver}-{hash(package-lock.json, package.json)}"},
+      {"name": "pw-chromium-npm", "path": "~/.cache/ms-playwright", "key_pattern": "pw-chromium-npm-{OS}-node{ver}-{pkg-hash}"},
+      {"name": "pw-chromium-py", "path": "~/.cache/ms-playwright", "key_pattern": "pw-chromium-py-{OS}-py{ver}-{requirements-hash}"}
+    ],
+    "smoke_checks": ["require('playwright')", "chromium binary exists", "chromium.launch({headless:true})", "dpkg -s for apt packages"],
+    "secrets_in_cache_paths": false,
+    "state_in_cache_paths": false,
+    "production_videos_in_cache_paths": false,
+    "fallback_on_corruption": true
+  },
+  "tests": {
+    "unit_local": {"passed": 297, "skipped": 4, "deselected": 8, "failed": 0, "note": "ffmpeg subprocess gerektiren 3 test yerelde ffmpeg yoklugu nedeniyle haric; CI'da calisacak"},
+    "integration_live": {"status": "pending", "run_id": null, "note": "Faz 4E kaniti (run 44446675653) mevcut; cache'li kurulumda tekrar kanitlanacak"},
+    "workflow": {"status": "pending", "note": "Push sonrasi gercek kosu loglariyla kanitlanacak"}
+  },
+  "forbidden_actions_check": {
+    "youtube_upload": false,
+    "youtube_publish": false,
+    "youtube_delete": false,
+    "production_pipeline_invoked": false,
+    "secret_values_read_or_printed": false,
+    "api_key_used_in_production": false,
+    "captcha_bypass": false,
+    "production_behavior_changed": false,
+    "concurrenty_quota_policies_changed": false,
+    "gemini_api_or_paid_api_used": false
+  },
+  "open_items": [
+    "Push sonrasi gercek Actions kosularini calistir ve bu JSON'a run_id'leri ekle",
+    "cache_verification.yml 4 senaryonun sonucunu kaydet",
+    "Ilk kosu (cache miss) ve ikinci kosu (cache hit) setup surelerini gercek loglardan kaydet",
+    "Wikimedia Commons gercek indirme/decode kanitini ubuntu_26_test veya ayri bir probe koşusundan al"
+  ]
+}

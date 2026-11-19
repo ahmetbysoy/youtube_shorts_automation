@@ -35,39 +35,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Sistem kurulumu (ffmpeg + fonts)
-        run: |
-          export DEBIAN_FRONTEND=noninteractive
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends ffmpeg libass9 fonts-liberation fonts-dejavu-core
-          ffmpeg -version | head -1
-
-      - uses: actions/setup-python@v5
+      - name: Araçları Kur (FFmpeg + Python + Node + Playwright Chromium)
+        uses: ./.github/actions/setup-tools
         with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: |
+          apt_packages: ffmpeg libass9 fonts-liberation fonts-dejavu-core
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: |
             requirements.txt
             requirements-test.txt
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          playwright_with_deps: 'false'
+          python_playwright: 'true'
+          node_check: 'video_fetcher.js analytics_scraper.js'
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Python bagimliliklari
-        run: pip install -q -r requirements.txt -r requirements-test.txt
-
-      - name: Playwright + Chromium
-        run: |
-          test -f package.json || npm init -y >/dev/null 2>&1
-          test -d node_modules/playwright || npm install playwright >/dev/null 2>&1
-          # --with-deps cok fazla ek paket (font vs.) cekip 15+ dk
-          # surduruyor; onceden yuklenen ffmpeg+libass+fontlar yeterli.
-          npx playwright install chromium
-          python -m playwright install chromium
-          ls ~/.cache/ms-playwright/
-          node --check video_fetcher.js
-          node --check analytics_scraper.js
+      - name: Playwright binary teyidi
+        run: ls -la ~/.cache/ms-playwright/
 
       - name: Cookie preflight (PEXELS_COOK/PIXABAY_COOK var/yok + domain)
         id: preflight

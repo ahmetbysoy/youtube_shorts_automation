@@ -39,25 +39,19 @@ jobs:
       - name: Depoyu cek
         uses: actions/checkout@v7
 
-      - name: Node + Python kurulumu
-        uses: actions/setup-node@v7
+      - name: Araçları Kur (Node 20 + Python 3.12 + Playwright Chromium)
+        uses: ./.github/actions/setup-tools
         with:
-          node-version: "20"
-          cache: 'npm'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Bagimliliklari kur
-        run: |
-          set -euo pipefail
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
-          npx playwright install --with-deps chromium
-          pip install -q --no-cache-dir gemini_webapi httpx 2>&1 | tail -3
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          playwright_with_deps: 'true'
+          python: 'true'
+          python_version: '3.12'
+          pip_requirements: ''
+          pip_extra: 'gemini_webapi httpx'
+          node_check: 'youtube_studio_uploader.js'
 
       - name: YouTube oturumunu hazirla
         env:

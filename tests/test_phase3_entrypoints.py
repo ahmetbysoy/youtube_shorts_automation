@@ -46,10 +46,20 @@ def test_workflows_invoke_phase3_modules(workflow, module):
 
 
 def test_probe_installs_its_pinned_requests_dependency():
+    """topic_history probe'u requests paketini sabit sürümde kurmalı.
+
+    Kurulum ya inline `pip install requests==X.Y.Z` (eski yol) ya da ortak
+    setup-tools action'ının `pip_extra: 'requests==X.Y.Z'` input'u (yeni yol)
+    ile olabilir; her ikisi de aynı sürümü sabitler.
+    """
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines()
     request_pin = next(line for line in requirements if line.startswith("requests=="))
     workflow = (ROOT / ".github/workflows/topic_history_persistence_probe.yml").read_text(encoding="utf-8")
-    assert f"python -m pip install {request_pin}" in workflow
+    assert (
+        f"python -m pip install {request_pin}" in workflow
+        or f"pip_extra: '{request_pin}'" in workflow
+        or f'pip_extra: "{request_pin}"' in workflow
+    )
 
 
 def test_ci_unit_test_command_removes_remote_history_environment():

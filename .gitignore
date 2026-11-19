@@ -1,79 +1,69 @@
-# Hassas Ortam, OAuth 2.0 ve Tarayıcı Oturum Dosyaları (ASLA Git'e eklenmez!)
-.env
-.env.*
+
 !.env.example
-token.json
-*token*.json
-client_secret.json
-client_secret*.json
-credentials.json
-cookies.json
-*cookies*.json
-storage_state.json
-*storage_state*.json
-*.har
-browser_profile/
-.playwright-session/
-.oauth_state.json
-secrets/
-settings.yaml
-jeton/
-
-# Node.js Bağımlılıkları
-node_modules/
-npm-debug.log*
-
-# Loglar, Sanal Ortam ve Önbellekler
-*.log
-logs/*.log
-logs/*.log.*
-logs/*.json
-logs/*.png
-setup_reports/*.log
-__pycache__/
-*.py[cod]
-venv/
-.venv/
-.pytest_cache/
-.DS_Store
-
-# Üretim Çıktıları ve Geçici Çalışma Dosyaları
-output/*
 !output/.gitkeep
 !output/README.md
-/script.json
-/voiceover.mp3
-/voiceover.srt
-/final.ass
-/video_list.txt
-/clip_*.mp4
-/pending_approval.json
-
+# Etkileşimli giriş oturum yakalama çıktıları (çerez/HAR içerir, asla commit etme)
+# Hassas Ortam, OAuth 2.0 ve Tarayıcı Oturum Dosyaları (ASLA Git'e eklenmez!)
+# Loglar, Sanal Ortam ve Önbellekler
+# Node.js Bağımlılıkları
 # Runtime Artifact Dosyaları (CI'da üretilir, repoya commit edilmez)
-analytics_feedback.json
-prune_state.json
-prune_report.json
+# Üretim Çıktıları ve Geçici Çalışma Dosyaları
+# İndirilen sistem araçları (ffmpeg statik build - ortamda ayrı olarak sağlanmalı)
+*.har
+*.log
+*.py[cod]
+*cookies*.json
+*storage_state*.json
+*token*.json
+.DS_Store
+.env
+.env.*
 .gemini_topic_ledger.json
 .gemini_topic_ledger.json.lock
-.topic_reservations.json
-.used_topics.json.lock
 .media_history.json
 .media_history.json.lock
-text_probe_result.json
-
-# Etkileşimli giriş oturum yakalama çıktıları (çerez/HAR içerir, asla commit etme)
-session_capture/
-
-# İndirilen sistem araçları (ffmpeg statik build - ortamda ayrı olarak sağlanmalı)
+.oauth_state.json
+.playwright-session/
+.pytest_cache/
+.topic_reservations.json
+.used_topics.json.lock
+.venv/
+/clip_*.mp4
+/final.ass
+/pending_approval.json
+/script.json
+/video_list.txt
+/voiceover.mp3
+/voiceover.srt
+__pycache__/
+analytics_feedback.json
+backfill_output/
+browser_profile/
+client_secret*.json
+client_secret.json
+cookies.json
+credentials.json
 ffmpeg-*-amd64-static/
 ffmpeg-*.tar.xz
-
-session_capture_login1/
-session_capture*/
-backfill_output/
 jeton/
-package.json
-package-lock.json
+logs/*.json
+logs/*.log
+logs/*.log.*
+logs/*.png
 node_modules/
-package.json
-package-lock.json
+npm-debug.log*
+output/*
+# package.json ve package-lock.json CI cache'i icin gerekli (Playwright sürümü sabitleniyor).
+# YOKLUGUNDA npm install exit 254 ile patliyor (commit 8b777ab / 4f55feaa setup hatasi).
+prune_report.json
+prune_state.json
+secrets/
+session_capture*/
+session_capture/
+session_capture_login1/
+settings.yaml
+setup_reports/*.log
+storage_state.json
+text_probe_result.json
+token.json
+venv/

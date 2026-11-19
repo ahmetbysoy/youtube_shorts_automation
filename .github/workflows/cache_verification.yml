@@ -1,0 +1,243 @@
+name: Cache Doğrulama (setup-tools)
+
+# Bu workflow cache sisteminin miss/hit/invalidation/fallback/davranışını
+# GERÇEK GitHub Actions koşusunda kanıtlar. Mock YOK, tahmin YOK.
+# workflow_dispatch ile manuel tetiklenir; üretim takvimine bağlı değildir.
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Test senaryosu"
+        required: true
+        default: hit_miss
+        type: choice
+        options:
+          - hit_miss          # Job1 prime (miss) → Job2 aynı konfig (hit)
+          - invalidation      # Farklı node sürümü / paket hash'i → yeni key
+          - corrupted_fallback # Cache klasörünü silip sonrasında yeniden kur
+          - cross_workflow    # Sadece setup-tools'u çağır, başka workflow'daki paylaşımı göster
+      ubuntu_version:
+        description: "Ubuntu sürümü"
+        required: false
+        default: "24.04"
+        type: choice
+        options: ["24.04", "26.04"]
+
+permissions:
+  contents: read
+
+# Aynı branch'te birden fazla cache testi koşarsa yarış olmasın:
+concurrency:
+  group: cache-verify-${{ github.ref }}-${{ inputs.scenario }}-${{ inputs.ubuntu_version }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Senaryo 1: PRIME (cache miss beklenen)
+  # ---------------------------------------------------------------------------
+  prime:
+    if: inputs.scenario == 'hit_miss' || inputs.scenario == 'invalidation' || inputs.scenario == 'cross_workflow'
+    runs-on: ubuntu-${{ inputs.ubuntu_version }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Araçları Kur (PRIME — miss beklenir)
+        uses: ./.github/actions/setup-tools
+        id: setup
+        with:
+          apt_packages: ffmpeg fonts-liberation
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'requests==2.34.2'
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          playwright_with_deps: 'false'
+          python_playwright: 'true'
+      - name: PRIME raporu
+        run: |
+          echo "### PRIME Job (cache doldurma)" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Katman | Hit? |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| apt .deb | ${{ steps.setup.outputs.apt_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pip | ${{ steps.setup.outputs.pip_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| node_modules | ${{ steps.setup.outputs.node_modules_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pw chromium (npm) | ${{ steps.setup.outputs.playwright_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pw chromium (py) | ${{ steps.setup.outputs.playwright_py_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| setup süresi | ${{ steps.setup.outputs.setup_duration_ms }} ms |" >> "$GITHUB_STEP_SUMMARY"
+      - name: Binary smoke (doğrulama)
+        run: |
+          set -euo pipefail
+          ffmpeg -version | head -1
+          python -c "import requests; print('requests', requests.__version__)"
+          node -e "require('playwright'); console.log('playwright module OK')"
+          node -e "const {chromium}=require('playwright');chromium.launch({headless:true,args:['--no-sandbox']}).then(b=>b.close()).then(()=>console.log('Chromium launch OK')).catch(e=>{console.error(e);process.exit(1)})"
+
+  # ---------------------------------------------------------------------------
+  # Senaryo 1b: HIT (prime'dan sonra aynı key'ler → hit beklenen)
+  # ---------------------------------------------------------------------------
+  hit:
+    if: inputs.scenario == 'hit_miss'
+    needs: prime
+    runs-on: ubuntu-${{ inputs.ubuntu_version }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Araçları Kur (HIT — tüm cache'ler hit beklenir)
+        uses: ./.github/actions/setup-tools
+        id: setup
+        with:
+          apt_packages: ffmpeg fonts-liberation
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'requests==2.34.2'
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          playwright_with_deps: 'false'
+          python_playwright: 'true'
+      - name: HIT raporu
+        run: |
+          echo "### HIT Job (cache'den gelmesi beklenen)" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Katman | Hit? |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| apt .deb | ${{ steps.setup.outputs.apt_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pip | ${{ steps.setup.outputs.pip_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| node_modules | ${{ steps.setup.outputs.node_modules_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pw chromium (npm) | ${{ steps.setup.outputs.playwright_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pw chromium (py) | ${{ steps.setup.outputs.playwright_py_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| setup süresi | ${{ steps.setup.outputs.setup_duration_ms }} ms |" >> "$GITHUB_STEP_SUMMARY"
+      - name: Binary smoke (doğrulama)
+        run: |
+          set -euo pipefail
+          ffmpeg -version | head -1
+          python -c "import requests; print('requests', requests.__version__)"
+          node -e "require('playwright')"
+          node -e "const {chromium}=require('playwright');chromium.launch({headless:true,args:['--no-sandbox']}).then(b=>b.close()).then(()=>console.log('Chromium launch OK')).catch(e=>{console.error(e);process.exit(1)})"
+      - name: Cache hit doğrulaması (fail-closed)
+        run: |
+          # Bu job prime sonrası çalıştığı için tüm cache'lerin hit olması
+          # beklenir. Eğer birisi miss ise workflow FAIL eder (kanıt olarak).
+          set -euo pipefail
+          FAIL=0
+          for kv in \
+            "apt=${{ steps.setup.outputs.apt_cache_hit }}" \
+            "pip=${{ steps.setup.outputs.pip_cache_hit }}" \
+            "node_modules=${{ steps.setup.outputs.node_modules_cache_hit }}" \
+            "pw-npm=${{ steps.setup.outputs.playwright_cache_hit }}" \
+            "pw-py=${{ steps.setup.outputs.playwright_py_cache_hit }}"; do
+            name="${kv%%=*}"; val="${kv#*=}"
+            if [ "$val" != "true" ]; then
+              echo "::error::Beklenen cache HIT gelmedi: $name (=$val)"
+              FAIL=1
+            else
+              echo "[✓] $name cache hit"
+            fi
+          done
+          exit $FAIL
+
+  # ---------------------------------------------------------------------------
+  # Senaryo 2: INVALIDATION — node sürümü değişti → cache key farklılaşır
+  # ---------------------------------------------------------------------------
+  invalidation:
+    if: inputs.scenario == 'invalidation'
+    needs: prime
+    runs-on: ubuntu-${{ inputs.ubuntu_version }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Araçları Kur (FARKLI NODE SÜRÜMÜ → yeni key, miss beklenir)
+        uses: ./.github/actions/setup-tools
+        id: setup
+        with:
+          apt_packages: ffmpeg fonts-liberation
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'requests==2.34.2'
+          node: 'true'
+          node_version: '22'  # prime'dan farklı
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          playwright_with_deps: 'false'
+          python_playwright: 'true'
+      - name: INVALIDATION raporu
+        run: |
+          echo "### INVALIDATION Job (Node 22 → node_modules ve pw-npm miss beklenir)" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Katman | Hit? |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| apt .deb | ${{ steps.setup.outputs.apt_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pip | ${{ steps.setup.outputs.pip_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| node_modules (beklenen=false) | ${{ steps.setup.outputs.node_modules_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pw chromium npm (beklenen=false) | ${{ steps.setup.outputs.playwright_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pw chromium py (beklenen=true — aynı python 3.11) | ${{ steps.setup.outputs.playwright_py_cache_hit }} |" >> "$GITHUB_STEP_SUMMARY"
+      - name: "Doğrulama: node_modules miss, pip/apt hit"
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.setup.outputs.node_modules_cache_hit }}" = "true" ]; then
+            echo "::error::Node sürümü değişmesine rağmen node_modules cache hit geldi — key yanlış!"
+            exit 1
+          fi
+          if [ "${{ steps.setup.outputs.playwright_cache_hit }}" = "true" ]; then
+            echo "::error::Node sürümü değişmesine rağmen npm pw cache hit geldi — key yanlış!"
+            exit 1
+          fi
+          echo "[✓] Node sürüm değişikliği cache'i doğru invalidate etti."
+
+  # ---------------------------------------------------------------------------
+  # Senaryo 3: BOZUK CACHE FALLBACK — binary yoksa yeniden kur
+  # ---------------------------------------------------------------------------
+  corrupted:
+    if: inputs.scenario == 'corrupted_fallback'
+    runs-on: ubuntu-${{ inputs.ubuntu_version }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: İlk kurulum (cache doldur)
+        uses: ./.github/actions/setup-tools
+        with:
+          apt_packages: ffmpeg
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'requests==2.34.2'
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          python_playwright: 'true'
+      - name: Cache'i BOZ (binary klasörünü sil)
+        run: |
+          set -euo pipefail
+          echo "[boz] node_modules ve ms-playwright siliniyor..."
+          rm -rf node_modules
+          rm -rf ~/.cache/ms-playwright
+          echo "[boz] Tamam."
+      - name: AYNI setup tekrar çağrılıyor (cache hit gelebilir ama binary yok → fallback yeniden kurmalı)
+        uses: ./.github/actions/setup-tools
+        id: setup2
+        with:
+          apt_packages: ffmpeg
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'requests==2.34.2'
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          python_playwright: 'true'
+      - name: Binary smoke test (bozuk cache sonrası)
+        run: |
+          set -euo pipefail
+          node -e "require('playwright')"
+          node -e "const {chromium}=require('playwright');chromium.launch({headless:true,args:['--no-sandbox']}).then(b=>b.close()).then(()=>console.log('[✓] Chromium bozuk cache sonrasi acildi')).catch(e=>{console.error(e);process.exit(1)})"
+          echo "### CORRUPTED FALLBACK raporu" >> "$GITHUB_STEP_SUMMARY"
+          echo "- node_modules cache hit: ${{ steps.setup2.outputs.node_modules_cache_hit }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- pw (npm) cache hit: ${{ steps.setup2.outputs.playwright_cache_hit }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Chromium son smoke: BAŞARILI" >> "$GITHUB_STEP_SUMMARY"

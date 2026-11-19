@@ -52,8 +52,11 @@ jobs:
         with:
           apt_packages: xvfb
           node: 'true'
-          playwright: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
           python: 'false'
+          node_check: 'youtube_studio_uploader.js'
 
       # Oturum önceliği: *_DRAFT (telefon onayından geçmiş sandbox oturumu; 2026-11-07 deneyi, ana
       # secret'lara dokunulmaz) -> *_1 -> genel. Çerez yenilemesi de yalnızca *_DRAFT'a yazılır.

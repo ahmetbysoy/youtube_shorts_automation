@@ -9,11 +9,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - name: Araçları Kur (Python + Pillow)
+        uses: ./.github/actions/setup-tools
         with:
-          python-version: '3.11'
-      - name: Install image dependency
-        run: python -m pip install 'Pillow==11.3.0'
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'Pillow==11.3.0'
       - name: Fetch real public video thumbnail
         run: |
           mkdir -p probe

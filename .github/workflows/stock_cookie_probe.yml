@@ -35,15 +35,19 @@ jobs:
       # Youtube/Gemini/Github/API key env'lerini KASITLI olarak set ETMİYORUZ.
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Araçları Kur (Node + Playwright Chromium + FFmpeg)
+        uses: ./.github/actions/setup-tools
         with:
-          node-version: 20
-      - name: Install playwright + chromium + ffmpeg
-        run: |
-          npm init -y >/dev/null 2>&1
-          npm i playwright 2>&1 | tail -2
-          npx playwright install chromium --with-deps 2>&1 | tail -3
-          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null 2>&1
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          playwright_with_deps: 'true'
+          apt_packages: ffmpeg
+          # Stock probe stdlib python script'i icin python kur; pip paketi yok
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
       - name: Cookie preflight (uzunluk ve alan kontrolu; degerler loglanmaz)
         id: preflight
         run: |
