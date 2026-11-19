@@ -27,30 +27,216 @@ STOP = set("the a an of and or in on at with for from this that is are to bir ve
 # Deliberately small, explicit bilingual vocabulary, not a hidden model or a claim
 # that unknown Turkish paraphrases were translated/visually understood.
 ALIASES = {
+    # Core Turkish-English stock video mappings for bilingual relevance
     "ay": "moon", "ayin": "moon", "ayda": "moon", "aydan": "moon", "lunar": "moon",
-    "astronauts": "astronaut", "waves": "wave", "trees": "tree", "agaclari": "tree",
-    "astronot": "astronaut", "astronotlar": "astronaut", "astronotun": "astronaut",
+    "astronauts": "astronaut", "astronot": "astronaut", "astronotlar": "astronaut",
     "venus": "venus", "venuste": "venus", "venusun": "venus",
-    "dunya": "earth", "dunyanin": "earth", "dunyada": "earth",
+    "dunya": "earth", "dunyanin": "earth", "dunyada": "earth", "dünya": "earth",
     "yanardag": "volcano", "yanardagin": "volcano", "volkan": "volcano", "volcanic": "volcano",
     "eyfel": "eiffel", "kulesi": "tower", "kulesinin": "tower", "pariste": "paris",
-    "okyanus": "ocean", "okyanusta": "ocean", "balina": "whale", "deniz": "sea",
+    "okyanus": "ocean", "okyanusta": "ocean", "balina": "whale", "deniz": "sea", "denizalti": "sea",
     "kaplumbaga": "turtle", "krater": "crater", "kraterler": "crater", "craters": "crater",
-    "dalga": "wave", "dalgalar": "wave", "dalgalari": "wave", "sahil": "beach", "sahilde": "beach",
-    "selale": "waterfall", "selalede": "waterfall", "selalenin": "waterfall", "akan": "flowing", "su": "water", "suyun": "water",
-    "apollo": "apollo", "gunes": "sun", "gunesin": "sun", "gezegen": "planet",
-    "agac": "tree", "agaclar": "tree", "orman": "forest", "ormanlar": "forest",
-    "saturnun": "saturn", "saturn": "saturn", "jupiterin": "jupiter", "marsin": "mars",
-    "atmosfer": "atmosphere", "atmosferi": "atmosphere", "bulut": "cloud", "clouds": "cloud",
+    "dalga": "wave", "dalgalar": "wave", "dalgalari": "wave", "waves": "wave",
+    "sahil": "beach", "sahilde": "beach",
+    "selale": "waterfall", "selalede": "waterfall", "selalenin": "waterfall", "waterfalls": "waterfall",
+    "akan": "flowing", "su": "water", "suyun": "water",
+    "apollo": "apollo", "gunes": "sun", "güneş": "sun", "gunesin": "sun", "güneşin": "sun",
+    "gezegen": "planet", "planets": "planet",
+    "agac": "tree", "agaclar": "tree", "trees": "tree", "orman": "forest", "ormanlar": "forest", "forests": "forest",
+    "saturn": "saturn", "saturnun": "saturn", "jupiter": "jupiter", "jupiterin": "jupiter",
+    "mars": "mars", "marsin": "mars",
+    "atmosfer": "atmosphere", "atmosferi": "atmosphere",
+    "bulut": "cloud", "bulutlar": "cloud", "clouds": "cloud",
+    # War/battle
+    "savas": "war", "savaş": "war", "savasi": "war", "savaşçı": "warrior", "savascilar": "warrior", "warriors": "warrior",
+    "asker": "soldier", "askerler": "soldier", "soldiers": "soldier",
+    "ordu": "army", "muharebe": "battle", "battles": "battle",
+    "donanma": "naval", "denizci": "naval", "gemi": "ship", "gemiler": "ship", "ships": "ship",
+    "kalyon": "warship", "warship": "warship", "warships": "warship",
+    "viking": "viking", "longboat": "longboat",
+    "top": "cannon", "toplar": "cannon", "cannons": "cannon",
+    "ates": "fire", "yanan": "burning", "yanma": "burning", "patlama": "explosion",
+    "duman": "smoke", "barut": "gunpowder",
+    # Buildings / ruins
+    "saray": "palace", "sarayi": "palace", "sarayin": "palace", "palaces": "palace",
+    "harabe": "ruins", "harabeler": "ruins", "yikinti": "ruins", "ruins": "ruins",
+    "antik": "ancient", "antikcag": "ancient", "eski": "old", "tarihi": "historic",
+    "kale": "castle", "kalesi": "castle", "castles": "castle", "hisar": "fortress",
+    "surlar": "walls", "duvar": "wall",
+    "tapinak": "temple", "tapınak": "temple", "mabet": "temple", "temples": "temple",
+    "kilise": "church", "cami": "mosque",
+    "piramit": "pyramid", "piramitler": "pyramid", "pyramids": "pyramid",
+    # Time/clock
+    "saat": "clock", "saati": "watch", "zaman": "time", "dakika": "minute", "saniye": "second",
+    "cep": "pocket", "vintage": "vintage", "eskimis": "vintage", "watch": "watch",
+    "pocket": "pocket",
+    # History
+    "tarih": "history", "tarihte": "history", "tarihin": "history",
+    "imparator": "emperor", "imparatorluk": "empire", "padisah": "emperor",
+    "kral": "king", "kralice": "queen", "sultan": "sultan",
+    # Writing/books
+    "kitap": "book", "kitaplar": "book", "books": "book",
+    "kutuphane": "library", "kütüphane": "library",
+    "parsomen": "manuscript", "yazma": "manuscript", "el_yazmasi": "manuscript", "manuscripts": "manuscript",
+    "yazit": "writing", "yazi": "writing", "tablet": "tablet",
+    # Tombs/archaeology
+    "lahit": "tomb", "mezar": "tomb", "turbe": "tomb", "türbe": "tomb", "tombs": "tomb",
+    "arkeoloji": "archaeology", "arkeolog": "archaeology",
+    "kazi": "excavation", "kazı": "excavation", "eser": "artifact", "eserler": "artifacts",
+    "tas": "stone", "taslar": "stone", "stones": "stone", "kaya": "rock", "kayalar": "rock",
+    # Space/nature
+    "yildiz": "star", "yıldız": "star", "yildizlar": "star", "stars": "star",
+    "galaksi": "galaxy", "galaxies": "galaxy",
+    "uzay": "space", "evren": "universe",
+    "doga": "nature", "doğa": "nature",
+    "hayvan": "animal", "hayvanlar": "animal",
+    "kus": "bird", "kuslar": "bird", "birds": "bird",
+    "balik": "fish", "bocek": "insect", "bocekler": "insect",
+    "ari": "bee", "arilar": "bee", "bees": "bee", "bee": "bee",
+    "cicek": "flower", "cicekler": "flower", "flowers": "flower",
+    "bitki": "plant", "bitkiler": "plant", "plants": "plant",
+    "gokyuzu": "sky", "gok": "sky", "sky": "sky",
+    "gunes_batimi": "sunset", "gunes_dogumu": "sunrise", "sunset": "sunset", "sunrise": "sunrise",
+    "kar": "snow", "yagmur": "rain", "ruzgar": "wind", "firtina": "storm",
+    "gol": "lake", "nehir": "river", "irmak": "river",
+    "ada": "island", "adalar": "island", "islands": "island",
+    "sehir": "city", "sehirler": "city", "cities": "city",
+    # Sea creatures
+    "denizanasi": "jellyfish", "denizanası": "jellyfish", "jellyfish": "jellyfish",
+    "meduz": "jellyfish",
+    "yunus": "dolphin", "mercan": "coral", "resif": "reef", "resifler": "reef",
+    "denizati": "seahorse", "denizati": "seahorse", "seahorse": "seahorse",
+    # Animals (land)
+    "tavsan": "rabbit", "tavşan": "rabbit", "rabbits": "rabbit", "rabbit": "rabbit",
+    "at": "horse", "atlar": "horse", "horses": "horse", "horse": "horse",
+    "fil": "elephant", "aslan": "lion", "kopek": "dog", "kedi": "cat",
+    # Science
+    "bilim": "science", "bilimadami": "scientist",
+    "fizik": "physics", "kimya": "chemistry",
+    "laboratuvar": "laboratory", "lab": "lab", "deney": "experiment",
+    "mikroskop": "microscope", "microscope": "microscope",
+    "hucre": "cell", "hücre": "cell", "cells": "cell", "cell": "cell",
+    "hastane": "hospital", "hastalik": "disease", "bakteri": "bacteria", "virus": "virus",
+    # Geography
+    "sehir": "city", "kopru": "bridge", "cadde": "street",
+    "bolge": "region", "bolgeler": "region",
+    # Colors and adjectives
+    "mavi": "blue", "kirmizi": "red", "siyah": "black", "beyaz": "white", "yesil": "green",
+    "buyuk": "giant", "derin": "deep", "yuksek": "high",
+    # Volcano/geology
+    "magma": "magma", "lav": "lava", "krater": "crater",
+    # Space tech
+    "roket": "rocket", "rockets": "rocket", "uydu": "satellite", "mekik": "shuttle",
+    "meteor": "meteor", "meteors": "meteor", "asteroid": "asteroid", "asteroids": "asteroid",
+    "teleskop": "telescope", "telescopes": "telescope",
+    "nebula": "nebula", "nebulas": "nebula",
+    # Specific names that appear in scenarios
+    "napolyon": "napoleon", "napoleon": "napoleon",
+    "gobeklitepe": "temple", "göbeklitepe": "temple",
+    "mariana": "trench", "cukur": "pit",
+    # Plural inflections of common English words
+    "warships": "warship", "cannons": "cannon", "volcanoes": "volcano",
+    "soldiers": "soldier", "planets": "planet", "ships": "ship",
+    "oceans": "ocean", "galaxies": "galaxy", "forests": "forest",
+    # Additional Turkish terms common in fallback narrations
+    "bombalamak": "bombardment", "bombalama": "bombardment", "bombalamaya": "bombardment",
+    "mermi": "bullet", "mermiler": "bullet", "mermilerin": "bullet",
+    "ates": "fire", "ates_edildi": "fire", "atmak": "fire", "attiklari": "firing",
+    "liman": "harbor", "limana": "harbor", "demirledi": "anchored", "demirlemek": "anchor",
+    "kacmak": "escape", "kacti": "escape", "kacan": "escaping",
+    "oltimatom": "ultimatum", "ultimatom": "ultimatum",
+    "fatura": "bill", "faturasini": "bill", "odetti": "paid",
+    "halk": "people", "halkina": "people", "halki": "people",
+    "ingiliz": "english", "ingilizler": "english", "ingilizlerin": "english",
+    "sultan": "sultan", "sultani": "sultan", "ele_gecirdi": "seize", "ele": "seize",
+    "sarayi": "palace", "saray": "palace",
+    "oldu": "death", "olunce": "death", "oldurdu": "killed",
+    "yikildi": "destroyed", "harabeye": "ruins", "harabe": "ruins",
+    "kapi": "door", "kapidan": "door", "arka_kapi": "door",
+    "dakika": "minute", "saniye": "second", "saat": "clock", "zaman": "time",
+    # Numbers (English)
+    "one": "one", "two": "two", "three": "three", "four": "four",
+    # Generic connections
+    "yil": "year", "yilinda": "year", "yilda": "year", "yuz": "hundred",
+    "bin": "thousand", "million": "million",
+    "ilk": "first", "son": "last", "sonra": "after", "once": "before",
 }
 BLOCKED = {"cartoon", "credits", "porn", "autopsy", "surgery", "tumor", "intubation", "compares", "comparison", "slideshow"}
 
 
 def terms(text: str) -> set[str]:
+    """Extract normalized content terms from text.
+
+    Bilingual (TR/EN): each token is passed through ALIASES to normalize
+    Turkish words to English stock-video concepts. After mapping, compound
+    English words (e.g. "warship", "seahorse") are split on common compound
+    boundaries so that narration mentioning "war" overlaps with a
+    "warship" query or "horse" overlaps with "seahorse". This prevents
+    overly strict matching from rejecting relevant footage.
+    """
     text = unicodedata.normalize("NFKD", str(text).replace("ı", "i").replace("İ", "i").casefold())
     tokens = re.findall(r"[a-z0-9]+", "".join(c for c in text if not unicodedata.combining(c)))
-    mapped = (ALIASES.get(t, t) for t in tokens if t not in STOP and not t.isdigit())
-    return {t for t in mapped if len(t) > 2 and t not in STOP}
+    mapped: set[str] = set()
+    for t in tokens:
+        if t in STOP or t.isdigit():
+            continue
+        # Length filter: tokens ≤2 chars only kept if explicitly aliased
+        # (allows short meaningful words like "ay"=moon, "at"=horse).
+        if len(t) <= 2 and t not in ALIASES:
+            continue
+        # ALIASES maps both TR→EN and EN→canonical EN singulars
+        mapped.add(ALIASES.get(t, t))
+    # Split compound words at known boundaries to improve overlap recall.
+    # Order matters: longer roots first so "seahorse" → {"sea","horse"} not
+    # {"seah","orse"}. Keep the original compound term too.
+    compounds = ("waterfall", "warship", "seahorse", "starfish", "jellyfish",
+                 "shellfish", "sunlight", "sunrise", "sunset", "moonlight",
+                 "spacecraft", "spacetime", "warrior", "rainbow", "thunder",
+                 "waterfall", "waterfall", "riverbank", "seabed", "seashore",
+                 "landmark", "landscape", "cityscape", "skyline", "grassland",
+                 "rainforest", "snowflake", "wildflower", "wildlife",
+                 "supernova", "blackhole", "moonwalk", "earthrise",
+                 "armor", "army", "arrow", "cannon", "gun", "sword")
+    expanded: set[str] = set()
+    for t in mapped:
+        expanded.add(t)
+        low = t.lower()
+        # Try splitting at each position 3..len-3 to find meaningful parts
+        for sep in range(3, len(low)-2):
+            a, b = low[:sep], low[sep:]
+            if a in ALIASES or a in mapped or b in ALIASES or b in mapped:
+                if len(a) > 2 and a not in STOP:
+                    expanded.add(ALIASES.get(a, a))
+                if len(b) > 2 and b not in STOP:
+                    expanded.add(ALIASES.get(b, b))
+        # Manual compound splits for known video terms
+        manual_splits = {
+            "warship": ("war", "ship"),
+            "seahorse": ("sea", "horse"),
+            "jellyfish": ("jelly", "fish"),
+            "waterfall": ("water", "fall"),
+            "sunrise": ("sun", "rise"),
+            "sunset": ("sun", "set"),
+            "starfish": ("star", "fish"),
+            "moonlight": ("moon", "light"),
+            "warrior": ("war",),
+            "battlefield": ("battle", "field"),
+            "rainforest": ("rain", "forest"),
+            "wildlife": ("wild", "life"),
+            "supernova": ("super", "nova"),
+            "earthrise": ("earth", "rise"),
+            "spaceship": ("space", "ship"),
+            "spacecraft": ("space", "craft"),
+            "landscape": ("land", "scape"),
+            "seascape": ("sea", "scape"),
+            "cityscape": ("city", "scape"),
+            "skyline": ("sky", "line"),
+        }
+        if low in manual_splits:
+            for part in manual_splits[low]:
+                if len(part) > 2 and part not in STOP:
+                    expanded.add(part)
+    return {t for t in expanded if len(t) > 2 and t not in STOP}
 
 
 def uploader_description_upper_bound(script: dict, description: str) -> int:

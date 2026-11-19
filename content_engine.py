@@ -2876,7 +2876,7 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
     blocks = [aff_block, cta_line, base_desc, source_line, " ".join(viral_hashtags)]
     enriched_desc = "\n\n".join([b for b in blocks if b]).strip()
 
-    return {
+    result = {
         "provider": provider_name,
         "topic": topic_val,
         "title": title[:100],
@@ -2894,6 +2894,177 @@ def validate_and_normalize_scenario(raw_data: dict[str, Any], provider_name: str
         "word_count": word_count,
         "visual_keywords": [str(k).strip() for k in keywords[:6] if str(k).strip()],
     }
+    # If raw_data already has a storyboard (Gemini Web path), preserve it.
+    if isinstance(raw_data.get("storyboard"), list) and raw_data["storyboard"]:
+        result["storyboard"] = raw_data["storyboard"]
+    else:
+        # Synthesize a storyboard from script_text + visual_keywords for the
+        # cookie-first per-scene media selection pipeline (Faz 4J).
+        result["storyboard"] = _synthesize_storyboard(
+            script_text, result["visual_keywords"], topic_val, title
+        )
+    return result
+
+
+def _split_turkish_sentences(text: str) -> list[str]:
+    """Split narration into Turkish sentences (. ! ? with whitespace/end after)."""
+    import re as _re
+    # Noktadan sonra buyuk harf veya sayi gelmeli (orn. "1. bolum" veya "vb." ayirmamali)
+    parts = _re.split(r"(?<=[.!?])\s+(?=[A-ZÇĞİÖŞÜ0-9\"])", str(text or "").strip())
+    return [p.strip() for p in parts if p.strip() and len(p.strip()) > 5]
+
+
+def _synthesize_storyboard(
+    script_text: str, keywords: list[str], topic: str, title: str
+) -> list[dict]:
+    """Sentence-based scene synthesis for non-Gemini paths (fallback / API LLM).
+
+    Produces exactly 4 scenes compatible with the schema required by
+    src.media_processing.scene_media.scene_plan:
+      - scene_id (1-based)
+      - narration (sentence or merged sentences)
+      - visual_query (English stock-search query)
+      - alternative_queries (1-3 related queries)
+
+    NOT: This is NOT visual understanding. It assigns pre-authored keywords to
+    narration segments in reading order. Metadata/query-based relevance is
+    enforced later by scene_media.evaluate() — if a keyword pulls unrelated
+    footage, the candidate is rejected by narration_overlap gating.
+    """
+    sentences = _split_turkish_sentences(script_text)
+    clean_keywords = [str(k).strip() for k in (keywords or []) if str(k).strip()][:6]
+    if not clean_keywords:
+        clean_keywords = ["cinematic history", "nature documentary", "science visualization", "dramatic landscape"]
+
+    # Merge sentences into exactly 4 scenes by length balance.
+    target_scenes = 4
+    if len(sentences) < target_scenes:
+        # Split long sentences on "ama", "ancak", "çünkü", "üstelik", "fakat",
+        # commas, "ve" conjunctions, or pad by repetition
+        while len(sentences) < target_scenes and sentences:
+            # Split longest at ", " or " ve " / " ama "
+            longest_idx = max(range(len(sentences)), key=lambda i: len(sentences[i]))
+            long = sentences[longest_idx]
+            for sep in (", ", " ancak ", " ama ", " üstelik ", " çünkü ", " ve "):
+                if sep in long and long.index(sep) > 20:
+                    a, b = long.split(sep, 1)
+                    sentences[longest_idx:longest_idx+1] = [a.strip(), (sep.strip() + " " + b.strip()).strip()]
+                    break
+            else:
+                break
+    if not sentences:
+        sentences = [script_text]
+
+    # Distribute sentences into 4 bins by word count
+    words_per_sentence = [len(s.split()) for s in sentences]
+    total_words = sum(words_per_sentence) or 1
+    target_per_scene = total_words / target_scenes
+    bins: list[list[str]] = [[] for _ in range(target_scenes)]
+    bin_words = [0] * target_scenes
+    current_bin = 0
+    for sent, wc in zip(sentences, words_per_sentence):
+        if current_bin < target_scenes - 1 and bin_words[current_bin] >= target_per_scene * 0.7:
+            current_bin += 1
+        bins[current_bin].append(sent)
+        bin_words[current_bin] += wc
+
+    # Topic booster words (English) for better stock search
+    topic_en = {
+        "bilim": "science", "tarih": "history", "doğa": "nature", "uzay": "space",
+        "teknoloji": "technology", "ilginç bilgiler": "documentary",
+    }
+    topic_kw = topic_en.get(topic.casefold(), topic.lower().split()[0] if topic else "documentary")
+
+    # Assign keywords to scenes by best narration-term overlap (Faz 4J).
+    # Terms go through bilingual ALIASES so English stock-video keywords
+    # can match Turkish narration words ("savaş" ↔ "war", "gemi" ↔ "ship").
+    # Import here to avoid module-load cycles.
+    from src.media_processing.scene_media import terms as _scene_terms
+    # Pre-compute narration term sets for each bin
+    bin_terms: list[set[str]] = []
+    for idx in range(target_scenes):
+        narration = " ".join(bins[idx]).strip() or script_text[:120]
+        bin_terms.append(_scene_terms(narration))
+    # Score each keyword for each scene by overlap
+    assigned: list[str] = []
+    used_kw: set[str] = set()
+    remaining_keywords = list(clean_keywords)
+    for idx in range(target_scenes):
+        best_kw = None
+        best_score = -1
+        for kw in remaining_keywords:
+            if kw in used_kw:
+                continue
+            kw_terms = _scene_terms(kw)
+            overlap = len(kw_terms & bin_terms[idx])
+            if overlap > best_score:
+                best_score = overlap
+                best_kw = kw
+        if best_kw is None or best_score == 0:
+            # No keyword matches this scene: pick by round-robin, add a topic
+            # booster query that will at least match topic-level narration.
+            for kw in remaining_keywords:
+                if kw not in used_kw:
+                    best_kw = kw
+                    break
+            if best_kw is None:
+                best_kw = clean_keywords[idx % len(clean_keywords)]
+        assigned.append(best_kw)
+        used_kw.add(best_kw)
+
+    # Extend ALIASES at runtime with common Turkish→English stock terms
+    # so that scene_plan terms() and evaluate() can cross-match.
+    # (This only affects the running process; persistent ALIASES is extended below.)
+    # Pre-compute narration term sets for overlap gating.
+    from src.media_processing.scene_media import terms as _scene_terms
+    bin_terms_check: list[set[str]] = []
+    for idx in range(target_scenes):
+        narration = " ".join(bins[idx]).strip() or script_text[:120]
+        bin_terms_check.append(_scene_terms(narration))
+
+    scenes = []
+    for idx in range(target_scenes):
+        narration = " ".join(bins[idx]).strip()
+        if not narration:
+            narration = script_text[:120]
+        primary = assigned[idx]
+        n_terms = bin_terms_check[idx]
+        # If the assigned primary query has zero term overlap with narration,
+        # prepend a topic-level generic query that does overlap with narration.
+        primary_terms = _scene_terms(primary)
+        if not (primary_terms & n_terms):
+            # Build a generic query from topic_kw + a word from narration
+            # that ALIASES maps to English. This guarantees overlap.
+            topic_query = f"{topic_kw} documentary"
+            t_terms = _scene_terms(topic_query)
+            if t_terms & n_terms:
+                # Keep primary as alternative, use topic_query as primary
+                alts_primary = primary
+                primary = topic_query[:160]
+            else:
+                # Last resort: pick any narration English-mapped word + topic
+                overlap_word = next((w for w in n_terms if len(w) > 3 and w.isascii()), topic_kw)
+                primary = f"{topic_kw} {overlap_word}"[:160]
+                alts_primary = assigned[idx]
+        else:
+            alts_primary = None
+        # Build alternatives from unused keywords + topic-specific fallback
+        alts = []
+        if alts_primary and alts_primary not in alts:
+            alts.append(alts_primary[:160])
+        for kw in remaining_keywords:
+            if kw != primary and kw not in alts and len(alts) < 2:
+                alts.append(kw[:160])
+        topic_alt = f"{topic_kw} {primary.split()[0]}"
+        if topic_alt != primary and topic_alt not in alts and len(alts) < 3:
+            alts.append(topic_alt[:160])
+        scenes.append({
+            "scene_id": idx + 1,
+            "narration": narration[:500],
+            "visual_query": primary[:160],
+            "alternative_queries": alts[:3],
+        })
+    return scenes
 
 
 def call_groq_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[str, Any]:

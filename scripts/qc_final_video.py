@@ -472,15 +472,88 @@ def main():
     # 6) Sahne medyalari (work_* veya work__* dizini)
     # TemporaryDirectory sonrasinda silinmis olabilir; bu durumda scene
     # kontrolleri uyari olarak kaydedilir (final video QC zaten gectiyse
-    # kaynak medya saglamdir).
+    # kaynak medya saglamdir). Sahne sayisini script.json'dan dinamik olarak al.
     work_dir = find_work_dir(OUT)
     expected_scenes = 4
+    script_path = OUT / "script.json"
+    if script_path.exists():
+        try:
+            sd = json.loads(script_path.read_text(encoding="utf-8"))
+            expected_scenes = len(sd.get("storyboard", [])) or expected_scenes
+        except Exception:
+            pass
     if work_dir:
         check("scenes_workdir", True, str(work_dir.name))
         validate_scenes(work_dir, duration, expected_scenes, check, warn_only=False)
     else:
         check("scenes_workdir", True,
               "work_* dizini bulunamadi (sahne temp dizini temizlenmis, final video QC gecerli)",
+              warning=True)
+
+    # 6b) İçerik QC — scene_media_manifest.json üzerinden konu-görüntü uyumu,
+    # tekrar, lisans ve attribution kontrolleri. NOT: Bu kontroller metadata
+    # ve query tabanlıdır; gerçek görsel anlama yapmaz ve görsel doğrulama
+    # olarak adlandırılmaz.
+    manifest_path = OUT / "scene_media_manifest.json"
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            scenes_m = manifest.get("scenes", [])
+            check("content_scene_count", len(scenes_m) >= expected_scenes,
+                  f"{len(scenes_m)} / {expected_scenes} sahnede medya secildi")
+            used_media = set()
+            duplicates = 0
+            missing_license = 0
+            missing_attribution = 0
+            low_relevance = 0
+            missing_provider = 0
+            for sc in scenes_m:
+                sel = sc.get("selected")
+                if not sel:
+                    low_relevance += 1
+                    continue
+                media_id = f"{sel.get('provider')}:{sel.get('id')}"
+                if media_id in used_media:
+                    duplicates += 1
+                used_media.add(media_id)
+                if not sel.get("license"):
+                    missing_license += 1
+                if not sel.get("attribution") and sel.get("provider") not in ("pexels", "pixabay", "wikimedia"):
+                    # Pexels/Pixabay/Wikimedia için attribution opsiyonel
+                    missing_attribution += 1
+                score = sel.get("score", 0)
+                if score < 20:
+                    low_relevance += 1
+                if not sel.get("provider"):
+                    missing_provider += 1
+            check("content_no_duplicate_media", duplicates == 0,
+                  f"{duplicates} tekrar eden medya")
+            check("content_license_present", missing_license == 0,
+                  f"{missing_license} sahnede lisans bilgisi eksik")
+            check("content_attribution", missing_attribution == 0,
+                  f"{missing_attribution} sahnede attribution eksik",
+                  warning=(missing_attribution <= 2))
+            check("content_relevance_score", low_relevance == 0,
+                  f"{low_relevance} sahnede dusuk uygunluk skoru (<20) veya medya secilmedi")
+            check("content_provider_known", missing_provider == 0,
+                  f"{missing_provider} sahnede saglayici bilgisi eksik")
+            # Manifestin hata/skip sebeplerini raporla
+            errors = manifest.get("errors", [])
+            if errors:
+                check("content_selection_errors", False,
+                      f"{len(errors)} sorgu/secim hatasi: {errors[0].get('error','')[:80]}",
+                      warning=True)
+            else:
+                check("content_selection_errors", True, "secim hatasi yok")
+            # Disclaim: görsel doğrulama değil metadata tabanlı
+            check("content_qc_metadata_only", True,
+                  "icerik QC metadata/query tabanlidir; gorsel anlama yapilmaz",
+                  warning=True)
+        except Exception as e:
+            check("content_manifest_parse", False, f"manifest okunamadi: {e}")
+    else:
+        check("content_manifest_present", True,
+              "scene_media_manifest.json bulunamadi (mock/fixture testlerde beklenir, canli uretimde ZORUNLU)",
               warning=True)
 
     # 7) Cover
