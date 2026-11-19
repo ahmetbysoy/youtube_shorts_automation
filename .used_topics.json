@@ -31,7 +31,8 @@
     "1518'de Yüzlerce İnsanı Durmadan Dans Ettiren Salgın! #Shorts",
     "Güneş Sisteminin En Yüksek Dağı Everest'in 3 Katı: Olympus Mons! #Shorts",
     "Satürn'ün Uydusu Titan'da Su Yerine Sıvı Metan Yağmuru Yağar! #Shorts",
-    "Mide Asidiniz Jileti Eritir Ama Midenizi Neden Eritmez? #Shorts"
+    "Mide Asidiniz Jileti Eritir Ama Midenizi Neden Eritmez? #Shorts",
+    "Dünya'nın İç Çekirdeği Güneş Yüzeyi Kadar Sıcak! #Shorts"
   ],
   "used_records": [
     {
@@ -1071,9 +1072,7 @@
         "zengin"
       ],
       "created_at": "2026-11-19T18:00:14.571888+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Dünya'nın İç Çekirdeği Güneş Yüzeyi Kadar Sıcak! #Shorts",
       "topic": "Bilim",
@@ -1133,9 +1132,8 @@
         "trap",
         "uzer"
       ],
-      "created_at": "2026-11-19T18:59:57.494248+00:00",
-      "reservation_id": "a95f164a-e00a-4e09-8b8a-caa0fb7b0120",
-      "run_id": "44593363991:1"
+      "created_at": "2026-11-19T18:59:57.494248+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
