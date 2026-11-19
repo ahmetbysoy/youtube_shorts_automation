@@ -571,17 +571,36 @@ class BrowserStockProvider:
                 cwd=ROOT, capture_output=True, text=True, timeout=90, env=child_env,
             )
         except subprocess.TimeoutExpired:
-            self.last_diagnostics = {"status": "browser_timeout"}
+            self.last_diagnostics = {
+                "provider": self.provider, "status": "browser_timeout",
+                "cookie_present": True, "cookie_domain_ok": True,
+                "secret_to_refresh": env_name,
+                "action_hint": f"{provider_label} sayfasi zamaninda yuklenemedi; gecici ag sorunu.",
+            }
             return []
-        if result.returncode != 0:
-            # stderr son satirini al (guvenli, cookie'siz hata sinifi)
-            err_tail = (result.stderr or "").strip().splitlines()[-1][:200] if result.stderr else ""
-            self.last_diagnostics = {"status": "browser_catalog_failed", "error_class": err_tail}
-            return []
-        try:
-            raw = json.loads(result.stdout)
-        except json.JSONDecodeError:
-            self.last_diagnostics = {"status": "metadata_json_parse_failed"}
+        # Exit code 1 (tum saglayicilar basarisiz) olsa bile JSON stdout'a yazilir;
+        # diagnostics'i okumak ZORUNDAYIZ aksi halde cookie/CAPTCHA/403 gibi
+        # sebepleri kullaniciya bildiremeyiz.
+        raw = None
+        if result.stdout and result.stdout.strip():
+            try:
+                raw = json.loads(result.stdout)
+            except json.JSONDecodeError:
+                raw = None
+        if raw is None:
+            # JSON alinamadi: stderr son satirini guvenli hata olarak don
+            err_tail = ""
+            for line in (result.stderr or "").splitlines()[::-1]:
+                line = line.strip()
+                if line and not any(tok in line.lower() for tok in ("cookie", "token", "secret", "auth=")):
+                    err_tail = line[:200]; break
+            self.last_diagnostics = {
+                "provider": self.provider, "status": "browser_catalog_failed",
+                "error_detail": err_tail or f"exit_{result.returncode}",
+                "cookie_present": True, "secret_to_refresh": env_name,
+                "action_hint": f"{provider_label} erisimi beklenmedik sekilde basarisiz oldu; "
+                               f"gerekirse '{env_name}' secret'ini yenile.",
+            }
             return []
         diag = (raw.get("diagnostics") or {}).get(self.provider) or {}
         cookie_count = int(diag.get("cookie_count") or 0)
@@ -595,19 +614,19 @@ class BrowserStockProvider:
         search_status = diag.get("search") or diag.get("error") or "unknown"
         action_hint = ""
         if search_status in ("login_required", "auth_required"):
-            action_hint = f"{provider_label} oturumu sona erdi; GitHub Secret '{env_secret}' yenilenmeli (tarayicida {provider_label}'a giris yap, yeni cookie'yi secret'a yaz)."
+            action_hint = f"{provider_label} oturumu sona erdi; GitHub Secret '{env_name}' yenilenmeli (tarayicida {provider_label}'a giris yap, yeni cookie'yi secret'a yaz)."
         elif search_status == "access_denied":
-            action_hint = f"{provider_label} erisimi engelledi (HTTP 403); cookie gecersiz veya IP yasakli. Gerekirse '{env_secret}' secret'ini yenile."
+            action_hint = f"{provider_label} erisimi engelledi (HTTP 403); cookie gecersiz veya IP yasakli. Gerekirse '{env_name}' secret'ini yenile."
         elif search_status == "captcha_challenge":
-            action_hint = f"{provider_label} CAPTCHA/Cloudflare dogrulamasi istiyor; bypass DENENMEDI. Bir sure bekle veya '{env_secret}' cookie'sini yenile."
+            action_hint = f"{provider_label} CAPTCHA/Cloudflare dogrulamasi istiyor; bypass DENENMEDI. Bir sure bekle veya '{env_name}' cookie'sini yenile."
         elif search_status == "rate_limited":
             action_hint = f"{provider_label} istek sinirina ulasildi (HTTP 429); daha sonra tekrar dene."
         elif search_status == "browser_timeout":
             action_hint = f"{provider_label} sayfasi zamaninda yuklenemedi; ag veya site gecici olarak yavas."
         elif search_status == "cookie_missing" or not cookie_present:
-            action_hint = f"{provider_label} icin '{env_secret}' secret'inda gecerli cookie tanimli degil."
+            action_hint = f"{provider_label} icin '{env_name}' secret'inda gecerli cookie tanimli degil."
         elif search_status == "cookie_wrong_domain":
-            action_hint = f"'{env_secret}' cookie'si {provider_label} domain'i ile eslesmiyor; dogru site icin cookie al."
+            action_hint = f"'{env_name}' cookie'si {provider_label} domain'i ile eslesmiyor; dogru site icin cookie al."
         elif search_status in ("no_valid_video", "no_results"):
             action_hint = ""  # bu bir hata degil, arama sonucu donmedi
 
@@ -620,7 +639,7 @@ class BrowserStockProvider:
             "browser_access": diag.get("browser_access"),
             "candidates_found": int(diag.get("candidates_found") or 0),
             "error_detail": diag.get("error_detail"),
-            "secret_to_refresh": env_secret if action_hint else "",
+            "secret_to_refresh": env_name if action_hint else "",
             "action_hint": action_hint,
             # Sayfa basligi/url'nin cookie veya kisisel veri icerme riskine
             # karsi ilk 120 karakter ile sinirli ve guvenli temizleme
