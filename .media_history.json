@@ -112,6 +112,34 @@
       "sha256": "fd9faff5cf6d39f0454942dcd0c13244237fc1492b7a1f0cfb84f653cdd02f42",
       "selected_at": "2026-11-19T20:59:25.442310+00:00",
       "generation_id": "f44256b3-76f8-4911-b53d-c95c4e187787"
+    },
+    {
+      "key": "wikimedia:188226520",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Into_the_Light-_Artemis_II_Cabin_Views_During_Launch_Abort_System_Jettison_(art002m1200912233c).webm",
+      "sha256": "8571e91846fb6012e7e8268844061c715681eaef579216fdf0423526c8c9cace",
+      "selected_at": "2026-11-19T21:52:10.632977+00:00",
+      "generation_id": "8a3e1e02-646c-4b6b-83d1-7b6b9eda6113"
+    },
+    {
+      "key": "pexels:10409075",
+      "source_url": "https://www.pexels.com/search/videos/earth%20orbit%20view/",
+      "sha256": "c5325fc01cbe926050164b8a75a745ee43cf2fcf32c715ebefc060f8bb7187da",
+      "selected_at": "2026-11-19T21:52:47.029283+00:00",
+      "generation_id": "8a3e1e02-646c-4b6b-83d1-7b6b9eda6113"
+    },
+    {
+      "key": "wikimedia:14979187",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Skylab_2,Kerwin_in_OWS.jpg",
+      "sha256": "8a038dd1a5452b1380f03f9452f7e62c6b76cd028b4df617693b63f970f6844c",
+      "selected_at": "2026-11-19T21:53:22.378868+00:00",
+      "generation_id": "8a3e1e02-646c-4b6b-83d1-7b6b9eda6113"
+    },
+    {
+      "key": "wikimedia:84550989",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Baffled_LIGO_Scientists.jpg",
+      "sha256": "e141ee0e59602b5e6409bd411aadcfc72327b4e989a7dffecfbf1fe656fee5f1",
+      "selected_at": "2026-11-19T21:53:52.155777+00:00",
+      "generation_id": "8a3e1e02-646c-4b6b-83d1-7b6b9eda6113"
     }
   ]
 }
