@@ -545,9 +545,19 @@ class BrowserStockProvider:
 
     def search(self, query: str) -> list[MediaCandidate]:
         env_name = "PEXELS_COOK" if self.provider == "pexels" else "PIXABAY_COOK"
+        provider_label = "Pexels" if self.provider == "pexels" else "Pixabay"
         cookie_raw = os.environ.get(env_name, "")
         if not cookie_raw or not cookie_raw.strip():
-            self.last_diagnostics = {"status": "cookie_missing", "cookie_env_present": False}
+            self.last_diagnostics = {
+                "provider": self.provider,
+                "status": "cookie_missing",
+                "cookie_present": False,
+                "cookie_count": 0,
+                "cookie_domain_ok": False,
+                "secret_to_refresh": env_name,
+                "action_hint": f"{provider_label} icin '{env_name}' GitHub Secret'i tanimli degil; "
+                               f"tarayicida {provider_label}'a giris yap, cookie'yi kopyala ve secret'a yaz.",
+            }
             return []
         # Tarayici child prosesine yalnizca gerekli env degiskenlerini gec;
         # YOUTUBE/GEMINI/GITHUB cookie/token/keyleri ASLA gecme.
@@ -574,28 +584,60 @@ class BrowserStockProvider:
             self.last_diagnostics = {"status": "metadata_json_parse_failed"}
             return []
         diag = (raw.get("diagnostics") or {}).get(self.provider) or {}
-        # Faz 4E: cookie_present degeri runProvider tarafinda cookie parse+domain
-        # filtresi SONRASI atanir; fetchFromPexels/fetchFromPixabay basta false
-        # ile baslatip hic dokunmaz, bu yuzden bool() ile cast ederken cookie_count>0
-        # olmasi da cookie_present=True anlamina gelir.
         cookie_count = int(diag.get("cookie_count") or 0)
         cookie_domain_ok = bool(diag.get("cookie_domain_ok"))
         cookie_present = bool(diag.get("cookie_present")) or (cookie_count > 0 and cookie_domain_ok)
+
+        # Faz 4I: Hata durumlarini anlasilir sekilde siniflandir; kullaniciya
+        # hangi site (Pexels/Pixabay) ve hangi Secret (PEXELS_COOK/PIXABAY_COOK)
+        # yenilenmesi gerektigini soyle. Cookie DEGERLERI hicbir zaman
+        # last_diagnostics, log veya raporlara yazilmaz.
+        search_status = diag.get("search") or diag.get("error") or "unknown"
+        action_hint = ""
+        if search_status in ("login_required", "auth_required"):
+            action_hint = f"{provider_label} oturumu sona erdi; GitHub Secret '{env_secret}' yenilenmeli (tarayicida {provider_label}'a giris yap, yeni cookie'yi secret'a yaz)."
+        elif search_status == "access_denied":
+            action_hint = f"{provider_label} erisimi engelledi (HTTP 403); cookie gecersiz veya IP yasakli. Gerekirse '{env_secret}' secret'ini yenile."
+        elif search_status == "captcha_challenge":
+            action_hint = f"{provider_label} CAPTCHA/Cloudflare dogrulamasi istiyor; bypass DENENMEDI. Bir sure bekle veya '{env_secret}' cookie'sini yenile."
+        elif search_status == "rate_limited":
+            action_hint = f"{provider_label} istek sinirina ulasildi (HTTP 429); daha sonra tekrar dene."
+        elif search_status == "browser_timeout":
+            action_hint = f"{provider_label} sayfasi zamaninda yuklenemedi; ag veya site gecici olarak yavas."
+        elif search_status == "cookie_missing" or not cookie_present:
+            action_hint = f"{provider_label} icin '{env_secret}' secret'inda gecerli cookie tanimli degil."
+        elif search_status == "cookie_wrong_domain":
+            action_hint = f"'{env_secret}' cookie'si {provider_label} domain'i ile eslesmiyor; dogru site icin cookie al."
+        elif search_status in ("no_valid_video", "no_results"):
+            action_hint = ""  # bu bir hata degil, arama sonucu donmedi
+
         self.last_diagnostics = {
-            "status": diag.get("search") or diag.get("error") or "unknown",
+            "provider": self.provider,
+            "status": search_status,
             "cookie_present": cookie_present,
             "cookie_count": cookie_count,
             "cookie_domain_ok": cookie_domain_ok,
             "browser_access": diag.get("browser_access"),
             "candidates_found": int(diag.get("candidates_found") or 0),
+            "error_detail": diag.get("error_detail"),
+            "secret_to_refresh": env_secret if action_hint else "",
+            "action_hint": action_hint,
+            # Sayfa basligi/url'nin cookie veya kisisel veri icerme riskine
+            # karsi ilk 120 karakter ile sinirli ve guvenli temizleme
+            # (safeUrl zaten query/frag temizliyor).
             "page_title": diag.get("page_title"),
-            "error": diag.get("error"),
+            "final_url": diag.get("final_url"),
         }
-        # Cookie yoksa/domain yanlissa acik hata, API fallback YOK
-        if not cookie_present:
+        if not cookie_present or search_status in ("cookie_missing", "cookie_missing_or_wrong_domain", "cookie_wrong_domain"):
             self.last_diagnostics["status"] = "cookie_missing_or_wrong_domain"
             return []
-        if diag.get("error"):
+        # Hatali durum (auth/captcha/access_denied/rate_limited/timeout) — bos liste,
+        # ama diagnostics her seyi acikca raporlamis oluyor.
+        if search_status in ("login_required", "auth_required", "access_denied",
+                             "captcha_challenge", "rate_limited", "browser_timeout"):
+            import sys
+            print(f"[MEDYA] {provider_label} erisim sorunu: {search_status} — {action_hint}",
+                  file=sys.stderr)
             return []
         if not diag.get("candidates_found"):
             return []

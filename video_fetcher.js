@@ -359,26 +359,49 @@ async function fetchFromPixabay(page, kw, opts) {
     }
   } catch (e) {
     diag.browser_access = 'timeout_or_navigation_error';
-    diag.search = 'failed';
+    diag.search = 'browser_timeout';
+    diag.error_detail = 'navigasyon_zaman_asimi';
     return { candidates: [], diagnostics: diag };
   }
-  if (diag.browser_access === 403 || diag.browser_access === 429) {
-    diag.search = 'blocked_unverified';
+  // HTTP durumuna gore ayrismis hata raporlama (Faz 4I):
+  if (diag.browser_access === 401) {
+    diag.search = 'auth_required';
+    diag.error_detail = 'kimlik_dogrulama_gerekli';
     return { candidates: [], diagnostics: diag };
   }
-  // Cloudflare/Turnstile kontrolu (status 200 olsa bile challenge sayfasi gelebilir)
+  if (diag.browser_access === 403) {
+    diag.search = 'access_denied';
+    diag.error_detail = 'erisim_engellendi_403';
+    return { candidates: [], diagnostics: diag };
+  }
+  if (diag.browser_access === 429) {
+    diag.search = 'rate_limited';
+    diag.error_detail = 'istek_siniri_429';
+    return { candidates: [], diagnostics: diag };
+  }
+  // Cloudflare/Turnstile/CAPTCHA/Login kontrolu
   const pageTitle = await page.title();
   diag.page_title = pageTitle.slice(0, 120);
+  const currentUrl = await page.url().catch(()=>'');
+  const urlAfterNav = currentUrl.slice(0, 200);
+  diag.final_url = safeUrl(urlAfterNav);
+  const isLogin = /\/(login|sign-?in|log-in|giris|accounts)/i.test(urlAfterNav) ||
+                  /log\s*in|sign\s*in|giriş yap|hesap|account/i.test(pageTitle);
+  if (isLogin) {
+    diag.search = 'login_required';
+    diag.error_detail = 'oturum_sona_ermis_giris_sayfasi';
+    return { candidates: [], diagnostics: diag };
+  }
   let isChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(pageTitle) ||
                     !!(await page.$('#cf-challenge, #turnstile-wrapper, iframe[src*="challenges.cloudflare"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"]').catch(()=>null));
   if (isChallenge) {
-    // Bir kez daha bekle — Cloudflare bazen otomatik geciyor
     await page.waitForTimeout(5000);
     const t2 = await page.title();
     isChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(t2) ||
                   !!(await page.$('#cf-challenge, #turnstile-wrapper, iframe[src*="challenges.cloudflare"]').catch(()=>null));
     if (isChallenge) {
-      diag.search = 'blocked_unverified';
+      diag.search = 'captcha_challenge';
+      diag.error_detail = 'cloudflare_veya_captcha_engeli';
       return { candidates: [], diagnostics: diag };
     }
   }
@@ -434,23 +457,52 @@ async function fetchFromPexels(page, kw, opts) {
     await page.waitForTimeout(2000);
   } catch (e) {
     diag.browser_access = 'timeout_or_navigation_error';
-    diag.search = 'failed';
+    diag.search = 'browser_timeout';
+    diag.error_detail = 'navigasyon_zaman_asimi';
     return { candidates: [], diagnostics: diag };
   }
-  if (diag.browser_access === 403 || diag.browser_access === 429) {
-    diag.search = 'blocked_unverified';
+  // HTTP durumuna gore ayrismis hata raporlama (Faz 4I):
+  if (diag.browser_access === 401) {
+    diag.search = 'auth_required';
+    diag.error_detail = 'kimlik_dogrulama_gerekli';
     return { candidates: [], diagnostics: diag };
   }
-  // Cloudflare/Turnstile kontrolu (status 200 olsa bile challenge sayfasi gelebilir)
+  if (diag.browser_access === 403) {
+    diag.search = 'access_denied';
+    diag.error_detail = 'erisim_engellendi_403';
+    return { candidates: [], diagnostics: diag };
+  }
+  if (diag.browser_access === 429) {
+    diag.search = 'rate_limited';
+    diag.error_detail = 'istek_siniri_429';
+    return { candidates: [], diagnostics: diag };
+  }
+  // Cloudflare/Turnstile/CAPTCHA/Login kontrolu
   const pageTitle = await page.title();
   const urlAfter = page.url();
-  diag.final_url = safeUrl(urlAfter);
+  const urlAfterStr = (urlAfter || '').toString().slice(0, 200);
+  diag.final_url = safeUrl(urlAfterStr);
   diag.page_title = pageTitle.slice(0, 120);
+  const isLogin = /\/(login|sign-?in|log-in|giris|accounts)/i.test(urlAfterStr) ||
+                  /log\s*in|sign\s*in|giriş yap|hesap|account/i.test(pageTitle);
+  if (isLogin) {
+    diag.search = 'login_required';
+    diag.error_detail = 'oturum_sona_ermis_giris_sayfasi';
+    return { candidates: [], diagnostics: diag };
+  }
   const isChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(pageTitle) ||
                       !!(await page.$('#cf-challenge, #turnstile-wrapper, iframe[src*="challenges.cloudflare"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"]').catch(()=>null));
   if (isChallenge) {
-    diag.search = 'blocked_unverified';
-    return { candidates: [], diagnostics: diag };
+    // Bir kez daha bekle — Cloudflare bazen otomatik geciyor
+    await page.waitForTimeout(5000);
+    const t2 = await page.title();
+    const stillChallenge = /just a moment|attention required|verify you are human|cloudflare|turnstile|captcha/i.test(t2) ||
+                           !!(await page.$('#cf-challenge, #turnstile-wrapper, iframe[src*="challenges.cloudflare"]').catch(()=>null));
+    if (stillChallenge) {
+      diag.search = 'captcha_challenge';
+      diag.error_detail = 'cloudflare_veya_captcha_engeli';
+      return { candidates: [], diagnostics: diag };
+    }
   }
   diag.search = 'loaded';
   // DOM'u bekle (lazy-load / React hydrate)

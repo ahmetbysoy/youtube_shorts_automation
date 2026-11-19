@@ -218,9 +218,18 @@ class GitHubContentsStore:
             raise RuntimeError(f"Konu geçmişi GitHub yanıtı bozuk ({type(exc).__name__}); fail-closed.") from None
         return _upgrade(old), sha
 
-    def put(self, data: dict[str, Any], sha: str | None) -> bool:
+    def put(self, data: dict[str, Any], sha: str | None, *, operation: str = "update") -> bool:
         content = base64.b64encode((json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode()).decode()
-        payload: dict[str, Any] = {"message": "chore: atomic topic history reservation", "content": content, "branch": self.ref}
+        # Islem turune gore anlamli ama gizli (baslik icermeyen) commit mesaji.
+        # Kullaniciya ozel hicbir veri (cookie, token, konu basligi) commit
+        # mesajina yazilmaz.
+        commit_msg = {
+            "reserve": "chore(topic-history): reserve pending slot",
+            "commit": "chore(topic-history): commit successful reservation",
+            "release": "chore(topic-history): release failed reservation",
+            "update": "chore: atomic topic history reservation",
+        }.get(operation, "chore: atomic topic history reservation")
+        payload: dict[str, Any] = {"message": commit_msg, "content": content, "branch": self.ref}
         if sha:
             payload["sha"] = sha
         response = self.session.put(self.url, headers=self.headers, json=payload, timeout=(5, 20))
@@ -284,7 +293,7 @@ def reserve_candidate(title: str, metadata: dict[str, Any] | None = None, *, pat
                 raise ValueError(f"Konu tekrarı engellendi ({reason}); yeni konu seçilmeli.")
         entry = {**candidate, "reservation_id": reservation_id, "run_id": run_id}
         data["pending"].append(entry)
-        if store.put(data, sha):
+        if store.put(data, sha, operation="reserve"):
             _atomic_write(path, data)
             _write_marker(path, reservation_id, run_id)
             return entry
@@ -327,7 +336,8 @@ def finalize_candidate(reservation_id: str, *, commit: bool, path: Path = DEFAUL
             data["used_records"] = data["used_records"][-1000:]
             data["used_titles"].append(entry["title"])
             data["used_titles"] = data["used_titles"][-1000:]
-        if not store or store.put(data, sha):
+        op = "commit" if commit else "release"
+        if not store or store.put(data, sha, operation=op):
             _atomic_write(path, data)
             _remove_marker(path, reservation_id)
             return

@@ -109,6 +109,30 @@ def measure_black_frames(path: Path, timeout=120, start_s: float | None = None, 
     return total_black
 
 
+def measure_audio_volume(path: Path, timeout=60) -> tuple[float | None, float | None]:
+    """ffmpeg volumedetect ile ortalama (mean) ve tepe (max) ses seviyesi (dBFS).
+
+    Donus: (mean_volume_db, max_volume_db); ses yok veya olculemezse (None, None).
+    Tipik Shorts: mean -22..-14 dBFS, max -4..-1 dBFS.
+    Cok sessiz (<-30 dBFS) veya asiri yuksek (>=-4 dBFS) izleyici deneyimini bozar.
+    """
+    cmd = ["ffmpeg", "-v", "info", "-i", str(path),
+           "-af", "volumedetect", "-f", "null", "-"]
+    try:
+        rc, out, err = run(cmd, timeout=timeout)
+    except Exception:
+        return None, None
+    mean_v = max_v = None
+    for line in (out + err).splitlines():
+        m = re.search(r"mean_volume:\s*(-?\d+(?:\.\d+)?)\s*dB", line)
+        if m:
+            mean_v = float(m.group(1))
+        m2 = re.search(r"max_volume:\s*(-?\d+(?:\.\d+)?)\s*dB", line)
+        if m2:
+            max_v = float(m2.group(1))
+    return mean_v, max_v
+
+
 def list_scene_files(work_dir: Path):
     """work_dir icindeki scene_*_pw.mp4 dosyalarini indeks sirasiyla dondur."""
     scenes = sorted(work_dir.glob("scene_*_pw.mp4"))
@@ -242,6 +266,19 @@ def validate_cover(cover_path: Path, report: dict, check) -> None:
         check("cover_decode", False, str(e))
 
 
+def _file_sha256(path: Path, *, chunk: int = 1 << 20) -> str:
+    """Buyuk medya dosyalari icin akici SHA256 (tum dosya okunur)."""
+    import hashlib
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        while True:
+            b = f.read(chunk)
+            if not b:
+                break
+            h.update(b)
+    return h.hexdigest()
+
+
 def validate_scenes(work_dir: Path, duration_s: float, expected_scenes: int, check, warn_only=False) -> None:
     """Indirilen sahne medyalari uzerinde temel kontroller.
 
@@ -261,27 +298,36 @@ def validate_scenes(work_dir: Path, duration_s: float, expected_scenes: int, che
            f"{len(scenes)} sahne (beklenen >= {expected_scenes})")
     if not scenes:
         return
-    hashes = set()
+    content_hashes: dict[str, str] = {}
     total_dur = 0.0
     decode_failed = 0
+    too_small = 0
+    no_vstream = 0
     for sp in scenes:
         if sp.stat().st_size < 50_000:
+            too_small += 1
             _check(f"scene_size_{sp.name}", False, f"{sp.stat().st_size} bayt (çok küçük)")
             continue
         try:
             info = ffprobe_json(sp)
             vs = [s for s in info["streams"] if s.get("codec_type") == "video"]
             if not vs:
+                no_vstream += 1
                 _check(f"scene_vstream_{sp.name}", False, "video stream yok")
                 continue
             d = float(info.get("format", {}).get("duration", 0))
             total_dur += d
-            hashes.add(sp.resolve())
+            content_hashes[sp.name] = _file_sha256(sp)
         except Exception as e:
             decode_failed += 1
             _check(f"scene_probe_{sp.name}", False, str(e)[:80])
-    _check("scenes_unique", len(hashes) == len(scenes),
-           f"{len(scenes) - len(hashes)} tekrar dosya" if len(hashes) != len(scenes) else "tum sahneler benzersiz dosya")
+    # Gercek icerik hash'i ile ayni video dosyasinin farkli isimlerde tekrar
+    # kullanilip kullanilmadigini denetle (path bazli kontrol yetersiz).
+    unique_hashes = set(content_hashes.values())
+    duplicate_scene_count = len(content_hashes) - len(unique_hashes)
+    _check("scenes_unique", duplicate_scene_count == 0,
+           f"{duplicate_scene_count} tekrar sahne (ayni video birden fazla sahnede)"
+           if duplicate_scene_count else "tum sahneler benzersiz (SHA256)")
     _check("scenes_decode", decode_failed == 0, f"{decode_failed} sahne probe/decode basarisiz")
     if total_dur > 0:
         _check("scenes_source_duration", total_dur >= 8.0, f"toplam kaynak {total_dur:.1f}s")
@@ -364,6 +410,23 @@ def main():
     check("av_sync", abs(adur - vdur) < AV_SYNC_TOLERANCE_S,
           f"v={vdur:.2f}s a={adur:.2f}s (fark={abs(adur-vdur):.2f}s)")
 
+    # Ses yüksekliği kontrolü (Cok sessiz veya clipping seviyesinde yuksek olmamali)
+    try:
+        mean_db, max_db = measure_audio_volume(vpath, timeout=60)
+        if mean_db is None:
+            check("audio_volume", False, "ses seviyesi olculemedi", warning=True)
+        else:
+            # mean -30 dBFS altı cok sessiz; -9 dBFS ustu cok yuksek/kompresyonda bozulma riski
+            if mean_db < -30.0:
+                check("audio_volume", False, f"mean={mean_db:.1f} dBFS (cok sessiz)")
+            elif mean_db > -9.0:
+                check("audio_volume", True, f"mean={mean_db:.1f} dBFS (yuksek, bozulma riski)",
+                      warning=True)
+            else:
+                check("audio_volume", True, f"mean={mean_db:.1f} dBFS max={max_db:.1f} dBFS")
+    except Exception as e:
+        check("audio_volume", False, f"volumedetect calismadi: {e}", warning=True)
+
     # 3) FFmpeg tam decode
     rc, errs = full_decode(vpath)
     check("ffmpeg_full_decode", rc == 0 and not errs, f"rc={rc} hata_satiri={len(errs)}")
@@ -390,9 +453,9 @@ def main():
     # 5) Bas/son siyah frame kontrolu
     try:
         head_black = measure_black_frames(vpath, timeout=30, start_s=0, duration_s=HEAD_TAIL_DURATION)
-        # Baslangicta 0.5sn'den fazla siyah olmamali (kapak karesi ilk sneyi kaplar)
-        check("head_clean", head_black < 0.5,
-              f"ilk {HEAD_TAIL_DURATION}sn siyah {head_black:.2f}s")
+        # Baslangicta HEAD_TAIL_MAX_BLACK'dan fazla siyah olmamali (kapak karesi ilk sneyi kaplar)
+        check("head_clean", head_black < HEAD_TAIL_MAX_BLACK,
+              f"ilk {HEAD_TAIL_DURATION}sn siyah {head_black:.2f}s (esik {HEAD_TAIL_MAX_BLACK}s)")
         tail_start = max(0, duration - HEAD_TAIL_DURATION)
         tail_black = measure_black_frames(vpath, timeout=30, start_s=tail_start, duration_s=HEAD_TAIL_DURATION)
         # Sonda fade-out olabilir; 1sn'ye kadar uyari, tamami siyahsa hata
