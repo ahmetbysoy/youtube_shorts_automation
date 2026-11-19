@@ -139,7 +139,12 @@ runs:
         DEBS="$HOME/.apt-debs"
         mkdir -p "$DEBS"
         # 1) Önbellekteki .deb'lerden dpkg -i ile hızlıca kurmayı dene.
-        CACHED_DEBS=$(ls "$DEBS"/*.deb 2>/dev/null | wc -l || echo 0)
+        # ls ... | wc -l pipefail ile ls exit≠0 olunca echo 0 da çalışır ve 0\n0 üretir.
+        # set +e / nullglob ile saymak daha güvenilir.
+        CACHED_DEBS=0
+        if compgen -G "$DEBS"/*.deb >/dev/null; then
+          CACHED_DEBS=$(find "$DEBS" -maxdepth 1 -name '*.deb' -type f -printf '.' | wc -c)
+        fi
         if [ "$CACHED_DEBS" -gt 0 ]; then
           echo "[apt] Önbellekte $CACHED_DEBS .deb var; dpkg -i deneniyor..."
           if sudo dpkg -i "$DEBS"/*.deb >/tmp/dpkg.log 2>&1; then
@@ -154,7 +159,7 @@ runs:
         fi
         # 2) Normal apt-get yolu: önce indir, sonra kur. İndirilen .deb'leri önbellek
         # klasörüne kopyala (apt'in kendi arşivinden) ki sonraki koşuda dpkg -i ile kullanılabilsin.
-        sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -qq
+        sudo timeout 120 apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -qq || { echo "[apt] apt-get update zaman aşımı / hata"; exit 1; }
         sudo apt-get install -y --no-install-recommends $MISSING
         # 3) İndirilen .deb'leri önbelleğe taşı (kaynak: /var/cache/apt/archives)
         sudo rm -f "$DEBS"/*.deb
@@ -164,7 +169,10 @@ runs:
         sudo rm -rf /var/cache/apt/archives/partial /var/cache/apt/archives/lock 2>/dev/null || true
         sudo chown -R "$(id -u):$(id -g)" "$DEBS"
         rm -rf "$DEBS"/partial "$DEBS"/lock 2>/dev/null || true
-        LEFT=$(ls "$DEBS"/*.deb 2>/dev/null | wc -l)
+        LEFT=0
+        if compgen -G "$DEBS"/*.deb >/dev/null; then
+          LEFT=$(find "$DEBS" -maxdepth 1 -name '*.deb' -type f -printf '.' | wc -c)
+        fi
         echo "[apt ✓] Kuruldu. Önbellekte $LEFT .deb arşivlendi (sonraki koşuda tekrar kullanılır)."
 
     - name: "Font önbelleği (fc-cache)"
