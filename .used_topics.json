@@ -30,7 +30,8 @@
     "Deniz Atlarında Yavruyu Erkek Taşır! #Shorts",
     "1518'de Yüzlerce İnsanı Durmadan Dans Ettiren Salgın! #Shorts",
     "Güneş Sisteminin En Yüksek Dağı Everest'in 3 Katı: Olympus Mons! #Shorts",
-    "Satürn'ün Uydusu Titan'da Su Yerine Sıvı Metan Yağmuru Yağar! #Shorts"
+    "Satürn'ün Uydusu Titan'da Su Yerine Sıvı Metan Yağmuru Yağar! #Shorts",
+    "Mide Asidiniz Jileti Eritir Ama Midenizi Neden Eritmez? #Shorts"
   ],
   "used_records": [
     {
@@ -1004,9 +1005,7 @@
         "yogun"
       ],
       "created_at": "2026-11-19T17:19:13.956310+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Mide Asidiniz Jileti Eritir Ama Midenizi Neden Eritmez? #Shorts",
       "topic": "Bilim",
@@ -1071,9 +1070,8 @@
         "yogun",
         "zengin"
       ],
-      "created_at": "2026-11-19T18:00:14.571888+00:00",
-      "reservation_id": "7d4b63a7-0582-4f8e-8f6a-85dbc0c74c69",
-      "run_id": "44581848198:1"
+      "created_at": "2026-11-19T18:00:14.571888+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
