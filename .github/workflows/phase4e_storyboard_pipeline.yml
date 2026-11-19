@@ -232,23 +232,26 @@ jobs:
           if missing:
               print(f"HATA: sahneler secilemedi: {missing}")
               sys.exit(3)
-          # API endpoint'lerine hic istek gidilmedigini kanitla:
-          # catalog_transport="playwright" olanlar BrowserStockProvider'dir (cookie-only);
-          # "api" olanlar PexelsProvider/PixabayProvider (API key) — bunlar HIC secilmemeli.
-          # selected_provider=pexels-browser|pixabay-browser|wikimedia olmali.
-          api_provider_used = any(
-              (s.get("media") or {}).get("catalog_transport") == "api"
-              for s in summary.get("scenes", [])
-          )
-          # Ek kontrol: secilen saglayici adlari API saglayici slug'i (pexels/pixabay) olmamali
-          raw_api_slug_used = any(
-              s.get("selected_provider") in ("pexels", "pixabay")
-              for s in summary.get("scenes", [])
-          )
-          print(f"api_provider_used={api_provider_used} (catalog_transport=api)")
-          print(f"raw_api_slug_used={raw_api_slug_used} (selected_provider=pexels/pixabay)")
-          if api_provider_used or raw_api_slug_used:
-              print("HATA: API saglayicisi kullanildi (cookie-only olmasi gerekiyordu)")
+          # Cookie-only kaniti: her secilen medya icin transport/auth bilgisini kontrol et.
+          # - Pexels/Pixabay secilmis ISE catalog_transport kesinlikle "playwright" olmali
+          #   (BrowserStockProvider, cookie ile). "api" olmasi API-key'li saglayiciya
+          #   dustugunu gosterir — bu cookie-only testte KESIN HATA.
+          # - Wikimedia her zaman "api" transport kullanir (Wikimedia REST API, ucretsiz
+          #   public API, API-key gerektirmez); bu normal ve beklenen fallback'tir.
+          stock_api_used = False
+          transport_breakdown = {}
+          for s in summary.get("scenes", []):
+              prov = s.get("selected_provider")
+              ct = (s.get("media") or {}).get("catalog_transport", "unknown")
+              transport_breakdown[f"{prov}/{ct}"] = transport_breakdown.get(f"{prov}/{ct}", 0) + 1
+              if prov in ("pexels", "pixabay") and ct != "playwright":
+                  stock_api_used = True
+                  print(f"  HATA: scene {s.get('scene_id')} provider={prov} catalog_transport={ct} "
+                        f"(cookie-only testte 'playwright' olmasi gerekiyordu)")
+          print(f"transport_dagilimi={transport_breakdown}")
+          print(f"pexels_pixabay_api_kullanimi={stock_api_used}")
+          if stock_api_used:
+              print("HATA: Pexels/Pixabay API-key ile erisildi; cookie-only dogrulamasi basarisiz.")
               sys.exit(5)
           # Wikimedia kullanildi mi?
           wm = sum(1 for s in summary.get("scenes",[]) if s.get("selected_provider") == "wikimedia")

@@ -194,6 +194,29 @@ class TestGroundedGeminiStory(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "alan adının dışına"):
             fetch_topic_research("Venus", session=session)
 
+    def test_wiki_seed_topics_resolve_against_en_wikipedia(self):
+        """Faz4K: WIKI_SEED_TOPICS içindeki her slug en.wikipedia.org API'de
+        çözülebilmeli. Türkçe başlıklar (Mariana_Çukuru → Mariana_Trench gibi)
+        English Wikipedia'da 404 döndürürse Gemini Web ValueError ile düşer."""
+        import requests
+        import urllib.parse
+        from content_engine import WIKI_SEED_TOPICS
+        url_template = "https://en.wikipedia.org/api/rest_v1/page/summary/{}"
+        failed = []
+        for slug in WIKI_SEED_TOPICS:
+            url = url_template.format(urllib.parse.quote(slug.replace("_", " "), safe=""))
+            try:
+                r = requests.get(url, headers={"User-Agent": "ShortsResearchBot/1.0 (test)"},
+                                 timeout=(5, 15))
+                if r.status_code != 200:
+                    failed.append((slug, r.status_code))
+            except Exception as exc:
+                failed.append((slug, f"exc:{type(exc).__name__}"))
+        self.assertEqual(failed, [],
+                         f"Şu seed'ler en.wikipedia.org'da çözümlenemedi: {failed}")
+        self.assertGreaterEqual(len(WIKI_SEED_TOPICS), 6,
+                                "En az 6 çalışır seed konu olmalı")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -68,17 +68,17 @@ SUPPORTED_VOICES = {
 }
 
 WIKI_SEED_TOPICS = [
-    "Antikythera_düzeneği",
-    "Göbeklitepe",
-    "Tunguska_olayı",
-    "Voyager_Altın_Plağı",
-    "İskenderiye_Kütüphanesi",
-    "Mariana_Çukuru",
-    "Piri_Reis_Haritası",
-    "Rosetta_Taşı",
+    "Antikythera_mechanism",
+    "Göbekli_Tepe",
+    "Tunguska_event",
+    "Voyager_Golden_Record",
+    "Library_of_Alexandria",
+    "Mariana_Trench",
+    "Piri_Reis_map",
+    "Rosetta_Stone",
     "Pompeii",
-    "Halley_kuyruklu_yıldızı",
-    "Ölü_Deniz_Yazmaları",
+    "Halley's_Comet",
+    "Dead_Sea_Scrolls",
     "Krakatoa",
 ]
 
@@ -3450,11 +3450,21 @@ def generate_scenario(
             save_recent_title(scenario["title"], scenario)
             return scenario
         except Exception as exc:
-            # İstemci istisnaları oturum verisi taşıyabileceğinden yalnız türünü yaz.
-            print(
-                f"[TOLERANS] Gemini Web başarısız ({type(exc).__name__}); mevcut fallback kullanılacak.",
-                file=sys.stderr,
-            )
+            # ValueError'lar bizim doğrulama/fetch kodumuzdan gelir ve gizli veri
+            # içermez (statik hata mesajları); bunların mesajını yazmak teşhis
+            # için güvenlidir. Harici kütüphane (gemini_webapi) istisnaları oturum
+            # verisi taşıyabileceğinden onlar için yalnız türü yaz.
+            if isinstance(exc, ValueError):
+                detail = str(exc)[:200]
+                print(
+                    f"[TOLERANS] Gemini Web başarısız (ValueError: {detail}); mevcut fallback kullanılacak.",
+                    file=sys.stderr,
+                )
+            else:
+                print(
+                    f"[TOLERANS] Gemini Web başarısız ({type(exc).__name__}); mevcut fallback kullanılacak.",
+                    file=sys.stderr,
+                )
             # Fallback'e geçmeden ÖNCE recent_titles'i GitHub store'dan yenile. Aksi
             # halde Gemini içindeki reserve_topic (ayrı ledger) sonrasi ya da eşzamanlı
             # yazarlardan dolayı filtre havuzu GitHub gerçek durumuyla çakışabilir ve

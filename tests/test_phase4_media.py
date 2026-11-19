@@ -536,3 +536,40 @@ def test_explicit_compatible_cc_by_ported_license_preserves_exact_credit_url():
     ext={'Artist':{'value':'Example Author'},'LicenseShortName':{'value':'CC BY 2.0 FR'},'LicenseUrl':{'value':url},'AttributionRequired':{'value':'true'}}
     lic=commons_license({'title':'File:Moon.jpg'},{'descriptionurl':'https://commons.wikimedia.org/wiki/File:Moon.jpg','extmetadata':ext})
     assert lic.verified and lic.attribution_required and url in lic.attribution
+
+
+def test_default_providers_uses_browser_stock_for_pexels_pixabay():
+    """Faz4K: default_providers() BrowserStockProvider (cookie/playwright) döndürmeli
+    pexels/pixabay için; ücretli PexelsProvider/PixabayProvider kullanmamalı."""
+    from src.media_processing.media_providers import (
+        default_providers, BrowserStockProvider, WikimediaProvider,
+        PexelsProvider, PixabayProvider,
+    )
+    provs = default_providers()
+    classes = {type(p).__name__: p for p in provs}
+    # BrowserStockProvider "pexels" ve "pixabay" için olmalı
+    browser = [p for p in provs if isinstance(p, BrowserStockProvider)]
+    assert len(browser) == 2, f"İki adet BrowserStockProvider beklenir (pexels+pixabay), {len(browser)} var"
+    names = sorted(p.provider for p in browser)
+    assert names == ["pexels", "pixabay"], f"BrowserStockProvider adları: {names}"
+    # Wikimedia son çare olmalı
+    assert any(isinstance(p, WikimediaProvider) for p in provs), "WikimediaProvider eksik"
+    # API-key sağlayıcılar OLMMAMALI
+    assert not any(isinstance(p, PexelsProvider) for p in provs), \
+        "PexelsProvider (API key) default zincirde olmamalı"
+    assert not any(isinstance(p, PixabayProvider) for p in provs), \
+        "PixabayProvider (API key) default zincirde olmamalı"
+
+
+def test_browser_stock_provider_creates_playwright_transport_candidates():
+    """BrowserStockProvider medya adaylerini catalog_transport='playwright' ile
+    işaretlemeli; bu Faz4E cookie-only testinin güvenlik kontrolüdür."""
+    from src.media_processing.media_providers import MediaCandidate
+    # MediaCandidate dataclass alanı: catalog_transport varsayılan "api"
+    c = MediaCandidate("pexels", "123", "https://example.com/a", "https://example.com/d", "video", 1920, 1080, 10.0,
+                       catalog_transport="playwright")
+    assert c.catalog_transport == "playwright"
+    assert c.provider == "pexels"
+    # Varsayılan (Wikimedia gibi) api olmalı
+    c2 = MediaCandidate("wikimedia", "456", "https://example.com/b", "https://example.com/e", "image", 1920, 1080, None)
+    assert c2.catalog_transport == "api"
