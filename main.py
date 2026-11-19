@@ -139,6 +139,12 @@ def main():
         default=os.environ.get("MATRIX_CHANNEL_ID", "1"),
         help="Matrix kanal ID'si",
     )
+    parser.add_argument(
+        "--skip-upload",
+        action="store_true",
+        default=os.environ.get("SKIP_UPLOAD", "0") == "1",
+        help="FAZ 5 YouTube yüklemesini atla (yalnızca video üret, doğrula ve çık; yükleme yok).",
+    )
     args = parser.parse_args()
 
     os.environ["MATRIX_CHANNEL_ID"] = str(args.channel_id)
@@ -208,6 +214,28 @@ def main():
         env_overrides=step_env,
         timeout_seconds=600,
     )
+
+    # 2.7 Adım: Son QC (final_short.mp4 ffprobe + decode + metadata).
+    # Skip-upload kipinde yükleme öncesi doğrulamayı da yap ve sonra başarıyla çık.
+    final_video = BASE_DIR / "output" / "final_short.mp4"
+    if args.skip_upload:
+        qc_ok = run_step(
+            "FAZ 4: Son Kalite Kontrol (skip-upload kipinde)",
+            [sys.executable, str(BASE_DIR / "scripts" / "qc_final_video.py"), "--video", str(final_video)],
+            env_overrides=step_env,
+            timeout_seconds=300,
+        )
+        if not qc_ok:
+            logging.error("Son QC başarısız.")
+            write_status("error", args.channel_id, stage="final_qc")
+            sys.exit(1)
+        write_status("rendered_no_upload", args.channel_id, stage="render",
+                    video=str(final_video), note="skip-upload: video üretildi ama YouTube'a yüklenmedi")
+        logging.info("=" * 70)
+        logging.info(f" ✅ Video üretildi (skip-upload): {final_video}")
+        logging.info(" YouTube yükleme atlandı (--skip-upload / SKIP_UPLOAD=1).")
+        logging.info("=" * 70)
+        sys.exit(0)
 
     # 3. Adım: YouTube Studio PUBLIC Yükleme
     cookies_path = BASE_DIR / "cookies.json"

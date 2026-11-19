@@ -1,0 +1,138 @@
+name: Faz 4G — Uctan Uca Video Uretim Testi (yayinsiz, yuklemesiz)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_channel:
+        description: "Test edilecek kanal ID (sadece video uretimi, yukleme YOK)"
+        required: false
+        default: "1"
+        type: string
+      konu:
+        description: "Test konusu (bos = sistem secer)"
+        required: false
+        default: ""
+        type: string
+      debug:
+        description: "1 = ek log ve artifact toplar"
+        required: false
+        default: "0"
+        type: string
+
+permissions:
+  contents: read
+
+# Bu workflow yalnizca video uretir; hicbir sekilde YouTube'a yuklemez.
+concurrency:
+  group: faz4g-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-no-upload:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: "Uretim Kapisi (skip-upload kipini dogrula)"
+        run: |
+          set -euo pipefail
+          echo "### Faz 4G — Uctan Uca Video Uretim Testi (YÜKLEME YOK)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Channel: ${{ inputs.target_channel || '1' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- SKIP_UPLOAD=1 (FAZ 5 YouTube yüklemesi çalışmayacak)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Araçları Kur (cache destekli)
+        uses: ./.github/actions/setup-tools
+        id: setup
+        with:
+          apt_packages: ffmpeg xvfb fonts-montserrat fonts-liberation fonts-dejavu-core libass9
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: 'requirements.txt'
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          playwright_with_deps: 'false'
+          python_playwright: 'true'
+          node_check: 'youtube_studio_uploader.js video_fetcher.js analytics_scraper.js'
+
+      - name: Setup Özeti
+        run: |
+          echo "| Kurulum Katmanı | Hit? | Süre |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| apt .deb | ${{ steps.setup.outputs.apt_cache_hit }} | - |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pip | ${{ steps.setup.outputs.pip_cache_hit }} | - |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| node_modules | ${{ steps.setup.outputs.node_modules_cache_hit }} | - |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pw chromium (npm) | ${{ steps.setup.outputs.playwright_cache_hit }} | - |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| pw chromium (py) | ${{ steps.setup.outputs.playwright_py_cache_hit }} | - |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **setup süresi** | | **${{ steps.setup.outputs.setup_duration_ms }} ms** |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "Ortam Dosyalarını Ayarla (cookie'ler YALNIZ YouTube oturumuna ait olsa da bu workflow'ta upload YOK; medya cookie'leri env uzerinden)"
+        env:
+          CHANNEL_ENV_FILE: ${{ secrets[format('ENV_FILE_{0}', inputs.target_channel || '1')] }}
+          FALLBACK_ENV_FILE: ${{ secrets.ENV_FILE }}
+          CHANNEL_COOKIES_JSON: ${{ secrets[format('COOKIES_JSON_{0}', inputs.target_channel || '1')] }}
+          FALLBACK_COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+          CHANNEL_STORAGE_STATE_JSON: ${{ secrets[format('STORAGE_STATE_JSON_{0}', inputs.target_channel || '1')] }}
+          FALLBACK_STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+        run: |
+          set -euo pipefail
+          umask 077
+          EFFECTIVE_ENV="${CHANNEL_ENV_FILE:-$FALLBACK_ENV_FILE}"
+          EFFECTIVE_COOKIES="${CHANNEL_COOKIES_JSON:-$FALLBACK_COOKIES_JSON}"
+          if [ -z "$EFFECTIVE_ENV" ] || [ -z "$EFFECTIVE_COOKIES" ]; then
+            echo "::error::ENV_FILE_/COOKIES_JSON_ eksik!"
+            exit 1
+          fi
+          printf '%s\n' "$EFFECTIVE_ENV" > .env
+          printf '\nMATRIX_CHANNEL_ID=%s\n' "${{ inputs.target_channel || '1' }}" >> .env
+          printf '%s\n' "$EFFECTIVE_COOKIES" > cookies.json
+          echo "SKIP_UPLOAD=1" >> .env
+          if [ -n "${{ inputs.konu }}" ]; then
+            printf '\nFORCED_TOPIC=%s\n' "${{ inputs.konu }}" >> .env
+          fi
+          echo "[OK] Ortam hazir (skip-upload=1; YouTube yüklemesi YAPILMAYACAK)."
+
+      - name: Run Orchestrator (Video Üretir, Yüklemez)
+        id: orchestrator
+        timeout-minutes: 20
+        env:
+          PYTHONUNBUFFERED: "1"
+          MATRIX_CHANNEL_ID: ${{ inputs.target_channel || '1' }}
+          SKIP_UPLOAD: "1"
+          FORCE_LOCAL_THUMBNAIL: "1"
+          SKIP_THUMBNAIL: "0"
+          # Medya cookie'leri
+          PEXELS_COOK: ${{ secrets.PEXELS_COOK }}
+          PIXABAY_COOK: ${{ secrets.PIXABAY_COOK }}
+          # Gemini cookie (metin üretimi)
+          GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+        run: |
+          set -euo pipefail
+          echo "[run] python main.py --channel_id ${{ inputs.target_channel || '1' }} --skip-upload"
+          python main.py --channel_id "${{ inputs.target_channel || '1' }}" --skip-upload
+
+      - name: "Final Video QC (ffprobe + tam decode + ses/goruntu senkron + siyah frame)"
+        run: |
+          python scripts/qc_final_video.py --video output/final_short.mp4
+
+      - name: "Üretilen Video ve Logları Artifact olarak Yükle (YAYIN YOK)"
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: faz4g-e2e-video-${{ github.run_number }}
+          path: |
+            output/final_short.mp4
+            output/cover.jpg
+            output/final.ass
+            output/qc_report.json
+            script.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: "Artifact Güvenlik Denetimi (cookie/token/secret redakte)"
+        if: always()
+        run: bash scripts/sanitize_logs.sh output 2>/dev/null || true
