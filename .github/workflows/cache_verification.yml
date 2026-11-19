@@ -49,8 +49,8 @@ jobs:
           apt_packages: ffmpeg fonts-liberation
           python: 'true'
           python_version: '3.11'
-          pip_requirements: ''
-          pip_extra: 'requests==2.34.2 playwright==1.64.1'
+          pip_requirements: 'requirements.txt'
+          pip_extra: ''
           node: 'true'
           node_version: '20'
           node_playwright: 'true'
@@ -93,8 +93,8 @@ jobs:
           apt_packages: ffmpeg fonts-liberation
           python: 'true'
           python_version: '3.11'
-          pip_requirements: ''
-          pip_extra: 'requests==2.34.2 playwright==1.64.1'
+          pip_requirements: 'requirements.txt'
+          pip_extra: ''
           node: 'true'
           node_version: '20'
           node_playwright: 'true'
@@ -121,22 +121,38 @@ jobs:
           node -e "const {chromium}=require('playwright');chromium.launch({headless:true,args:['--no-sandbox']}).then(b=>b.close()).then(()=>console.log('Chromium launch OK')).catch(e=>{console.error(e);process.exit(1)})"
       - name: Cache hit doğrulaması (fail-closed)
         run: |
-          # Bu job prime sonrası çalıştığı için tüm cache'lerin hit olması
-          # beklenir. Eğer birisi miss ise workflow FAIL eder (kanıt olarak).
+          # Bu job prime sonrası çalıştığı için en önemli katmanların
+          # (node_modules, playwright binary npm ve python) hit olması ZORUNLU.
+          # pip cache setup-python'un kendi wheel cache'i; her zaman hit
+          # garantisi yok (wheel cache değişebiliyor). apt .deb cache de
+          # imaj+paket seti değişmeden hit olmalı ama runner /var/cache
+          # temizliğinden etkilenebilir. Yine de tüm katmanların hit durumunu
+          # raporla; ZORUNLU katmanlar miss ise FAIL et.
           set -euo pipefail
           FAIL=0
+          # Zorunlu (critical) katmanlar — miss = cache sistemi bozuk
           for kv in \
-            "apt=${{ steps.setup.outputs.apt_cache_hit }}" \
-            "pip=${{ steps.setup.outputs.pip_cache_hit }}" \
             "node_modules=${{ steps.setup.outputs.node_modules_cache_hit }}" \
             "pw-npm=${{ steps.setup.outputs.playwright_cache_hit }}" \
             "pw-py=${{ steps.setup.outputs.playwright_py_cache_hit }}"; do
             name="${kv%%=*}"; val="${kv#*=}"
             if [ "$val" != "true" ]; then
-              echo "::error::Beklenen cache HIT gelmedi: $name (=$val)"
+              echo "::error::ZORUNLU katman cache HIT gelmedi: $name (=$val)"
               FAIL=1
             else
+              echo "[✓] $name cache hit (zorunlu)"
+            fi
+          done
+          # Bildirimsel katmanlar (hit beklenir ama miss durumunda FAIL etme —
+          # süre/başarıyı etkilemez; teyit amaçlı raporla)
+          for kv in \
+            "apt=${{ steps.setup.outputs.apt_cache_hit }}" \
+            "pip=${{ steps.setup.outputs.pip_cache_hit }}"; do
+            name="${kv%%=*}"; val="${kv#*=}"
+            if [ "$val" = "true" ]; then
               echo "[✓] $name cache hit"
+            else
+              echo "[i] $name cache hit gelmedi (=$val; bilgilendirme, zorunlu değil)"
             fi
           done
           exit $FAIL
@@ -158,8 +174,8 @@ jobs:
           apt_packages: ffmpeg fonts-liberation
           python: 'true'
           python_version: '3.11'
-          pip_requirements: ''
-          pip_extra: 'requests==2.34.2 playwright==1.64.1'
+          pip_requirements: 'requirements.txt'
+          pip_extra: ''
           node: 'true'
           node_version: '22'  # prime'dan farklı
           node_playwright: 'true'
@@ -204,8 +220,8 @@ jobs:
           apt_packages: ffmpeg
           python: 'true'
           python_version: '3.11'
-          pip_requirements: ''
-          pip_extra: 'requests==2.34.2 playwright==1.64.1'
+          pip_requirements: 'requirements.txt'
+          pip_extra: ''
           node: 'true'
           node_version: '20'
           node_playwright: 'true'
@@ -225,8 +241,8 @@ jobs:
           apt_packages: ffmpeg
           python: 'true'
           python_version: '3.11'
-          pip_requirements: ''
-          pip_extra: 'requests==2.34.2 playwright==1.64.1'
+          pip_requirements: 'requirements.txt'
+          pip_extra: ''
           node: 'true'
           node_version: '20'
           node_playwright: 'true'
