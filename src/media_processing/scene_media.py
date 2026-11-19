@@ -1459,12 +1459,11 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                     evidence["decision"] = "selected_highest_measured_rank"
                     for losing in measured_pool[1:]:
                         losing[3].unlink(missing_ok=True)
-                    # selected_provider: catalog_transport="playwright" ise "<slug>-browser",
-                    # aksi halde provider slug'i (wikimedia, pexels-api, pixabay-api).
-                    # Bunu media.catalog_transport ile dogrudan ayirt ederiz;
-                    # workflow ayrica media.catalog_transport == "api" kontrolu yapar.
-                    _ct = getattr(measured, 'catalog_transport', None) or 'api'
-                    _sel_provider = f"{measured.provider}-browser" if _ct == "playwright" else measured.provider
+                    # selected_provider: sadece gerçek provider slug'ı (pexels/pixabay/wikimedia)
+                    # — şema enum'ı ile uyumlu olması için "-browser" suffix'i KULLANMA.
+                    # Catalog transport (playwright cookie mi API mi) bilgisi zaten
+                    # record["media"]["catalog_transport"] ve io_stages içinde mevcut.
+                    _sel_provider = measured.provider
                     record.update({"selected_provider": _sel_provider, "selected_media_id": measured.media_id,
                                    "source_url": public_url(measured.source_url), "license": measured.record()["license"], "attribution": measured.license.attribution,
                                    "duration": measured.duration, "resolution": {"width": measured.width, "height": measured.height},
