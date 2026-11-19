@@ -56,6 +56,34 @@
       "sha256": "966e7a2ff1943a107414911a0e1d2eaf561d0f085c88eb6c0a49396fcf005daf",
       "selected_at": "2026-11-19T20:43:09.721350+00:00",
       "generation_id": "7f0b15b5-0a08-46ea-b73b-66e2c5f1acdb"
+    },
+    {
+      "key": "pexels:15533293",
+      "source_url": "https://www.pexels.com/search/videos/black%20pepper%20spices/",
+      "sha256": "eb045c5bfd87e0f4eaf7ab0a1757c98dd28de92865547a8735d2cbef6711288f",
+      "selected_at": "2026-11-19T20:50:14.641088+00:00",
+      "generation_id": "f1750f41-deb0-4fa4-b35b-1c71758c6bdd"
+    },
+    {
+      "key": "wikimedia:76198945",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Active_duty_solder_FROM_Standing_Rock_speaks_out_about_police_attacks..webm",
+      "sha256": "1e8cc83978a7e8ff2bac5cbc0b54941b32caf72e26d133318980594106608fa0",
+      "selected_at": "2026-11-19T20:50:38.337920+00:00",
+      "generation_id": "f1750f41-deb0-4fa4-b35b-1c71758c6bdd"
+    },
+    {
+      "key": "wikimedia:106617600",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Army_History_issue_118.jpg",
+      "sha256": "94decffc92e21d8d2c067766f6b584a7c2cf4c6fbb36fbe3d38f46ce74a10799",
+      "selected_at": "2026-11-19T20:51:11.546928+00:00",
+      "generation_id": "f1750f41-deb0-4fa4-b35b-1c71758c6bdd"
+    },
+    {
+      "key": "wikimedia:141565401",
+      "source_url": "https://commons.wikimedia.org/wiki/File:100295_red_hot_pepper_-_blossom_PikiWiki_Israel.jpg",
+      "sha256": "e0f7853e98f14f097eeb32ca71f54718b242c87f0bfeeaa9b08ca13ab8661ba2",
+      "selected_at": "2026-11-19T20:51:28.834330+00:00",
+      "generation_id": "f1750f41-deb0-4fa4-b35b-1c71758c6bdd"
     }
   ]
 }
