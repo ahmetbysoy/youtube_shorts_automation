@@ -28,6 +28,34 @@
       "sha256": "9c67de360bab67bc5de849d7846bf1f2972ca0722b6152c48ef753fa309bc784",
       "selected_at": "2026-11-19T20:30:34.202596+00:00",
       "generation_id": "29005706-9bd9-499f-b22e-8bb3b8e57089"
+    },
+    {
+      "key": "wikimedia:193592937",
+      "source_url": "https://commons.wikimedia.org/wiki/File:S%C3%BCleymaniye_Mosque,_Istanbul,_20260606_0805_1307.jpg",
+      "sha256": "26df64530dc61e759160a1c798bdb74747632849c84f6261a4cd911d101bc2c6",
+      "selected_at": "2026-11-19T20:41:48.634587+00:00",
+      "generation_id": "7f0b15b5-0a08-46ea-b73b-66e2c5f1acdb"
+    },
+    {
+      "key": "wikimedia:96246177",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Special_Forces_Birthday_iwQWpLp92YI.webm",
+      "sha256": "9cb4bacfe72ec01ea768967c441aec0b576f3b465cafd63fc4f9247ff16243e2",
+      "selected_at": "2026-11-19T20:42:20.443568+00:00",
+      "generation_id": "7f0b15b5-0a08-46ea-b73b-66e2c5f1acdb"
+    },
+    {
+      "key": "wikimedia:54513357",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Basic_weather_forecasting_(6360758785).jpg",
+      "sha256": "f611eed6ae6226bcdd2c9e17bcfc39370f076eef8e99ac12105fa6748ea95a74",
+      "selected_at": "2026-11-19T20:42:41.704434+00:00",
+      "generation_id": "7f0b15b5-0a08-46ea-b73b-66e2c5f1acdb"
+    },
+    {
+      "key": "pexels:10587316",
+      "source_url": "https://www.pexels.com/search/videos/historic%20chandelier%20mosque/",
+      "sha256": "966e7a2ff1943a107414911a0e1d2eaf561d0f085c88eb6c0a49396fcf005daf",
+      "selected_at": "2026-11-19T20:43:09.721350+00:00",
+      "generation_id": "7f0b15b5-0a08-46ea-b73b-66e2c5f1acdb"
     }
   ]
 }
