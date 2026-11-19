@@ -173,14 +173,24 @@ runs:
       run: fc-cache -f 2>/dev/null || true
 
     # ------------------------------------------------------------------ PYTHON
-    - name: "Python ${{ inputs.python_version }} (pip önbellekli)"
+    # cache-dependency-path: inputs.pip_requirements boş olabileceği için (pip_extra
+    # ile kurulan probe workflow'ları) pip cache kurulumunu ayrı step ile dallandır.
+    # Boş path geçildiğinde setup-python cache key hash'leyemediği için exit 1 verir.
+    - name: "Python ${{ inputs.python_version }} (pip cache'li)"
       id: py-setup
-      if: inputs.python == 'true'
+      if: inputs.python == 'true' && inputs.pip_cache == 'true' && inputs.pip_requirements != ''
       uses: actions/setup-python@v7
       with:
         python-version: ${{ inputs.python_version }}
-        cache: ${{ inputs.pip_cache == 'true' && 'pip' || '' }}
+        cache: pip
         cache-dependency-path: ${{ inputs.pip_requirements }}
+
+    - name: "Python ${{ inputs.python_version }} (cache'siz — requirements boş)"
+      id: py-setup-nocache
+      if: inputs.python == 'true' && (inputs.pip_cache != 'true' || inputs.pip_requirements == '')
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python_version }}
 
     - name: "pip bağımlılıkları (+ ek paketler)"
       id: pip-cache-info
@@ -192,19 +202,26 @@ runs:
       run: |
         set -euo pipefail
         python -m pip install --quiet --upgrade pip
-        # Çoklu requirements dosyasi (; ya da newline ile ayrilmis)
+        # Çoklu requirements dosyasi (; ya da newline ile ayrilmis). Boş satırları
+        # ve mevcut olmayan dosyalari sessizce atla (pip_extra-only workflow).
+        ANY_REQ=0
         while IFS= read -r line; do
           f=$(echo "$line" | xargs)
           if [ -n "$f" ] && [ -f "$f" ]; then
             echo "[pip] Kuruluyor: $f"
             pip install --quiet -r "$f"
+            ANY_REQ=1
+          elif [ -n "$f" ]; then
+            echo "[pip] requirements dosyası bulunamadı, atlanıyor: $f"
           fi
         done < <(echo "$REQS" | tr ';' '\n')
         if [ -n "$EXTRA" ]; then
           echo "[pip] Ek paketler: $EXTRA"
           pip install --quiet $EXTRA
         fi
-        echo "hit=${{ steps.py-setup.outputs.cache-hit }}" >> "$GITHUB_OUTPUT"
+        HIT="${{ steps.py-setup.outputs.cache-hit }}"
+        [ -z "$HIT" ] && HIT="false"
+        echo "hit=$HIT" >> "$GITHUB_OUTPUT"
         echo "[pip ✓] $(pip list 2>/dev/null | wc -l) paket hazır."
 
     # ------------------------------------------------------------------ NODE
