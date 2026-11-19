@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "key": "pexels:10549374",
+      "source_url": "https://www.pexels.com/search/videos/sunny%20paris%20skyline/",
+      "sha256": "dfaea5e4e760a642f63521f40ed7cf10e511c9a726061b32be77cd8bce253288",
+      "selected_at": "2026-11-19T20:29:23.801945+00:00",
+      "generation_id": "29005706-9bd9-499f-b22e-8bb3b8e57089"
+    },
+    {
+      "key": "pexels:3185449",
+      "source_url": "https://www.pexels.com/search/videos/iron%20structure%20architecture/",
+      "sha256": "4ac9d69caf2fbee2eb9845617c4d70ec2b9fdd3400a85cda1fc16ad0eddbbf6c",
+      "selected_at": "2026-11-19T20:29:53.700453+00:00",
+      "generation_id": "29005706-9bd9-499f-b22e-8bb3b8e57089"
+    },
+    {
+      "key": "wikimedia:148026910",
+      "source_url": "https://commons.wikimedia.org/wiki/File:A_is_for_Atom_-_title_page.png",
+      "sha256": "4013faae00fa35db5cd1965d413b0b450a25b6fd3e38978fd9a4255169629de5",
+      "selected_at": "2026-11-19T20:30:14.790457+00:00",
+      "generation_id": "29005706-9bd9-499f-b22e-8bb3b8e57089"
+    },
+    {
+      "key": "wikimedia:30184966",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Louis-Emile_Durandelle,_The_Eiffel_Tower_-_State_of_the_Construction,_1888.jpg",
+      "sha256": "9c67de360bab67bc5de849d7846bf1f2972ca0722b6152c48ef753fa309bc784",
+      "selected_at": "2026-11-19T20:30:34.202596+00:00",
+      "generation_id": "29005706-9bd9-499f-b22e-8bb3b8e57089"
+    }
+  ]
+}
