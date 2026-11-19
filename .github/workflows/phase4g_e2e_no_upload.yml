@@ -139,3 +139,13 @@ jobs:
       - name: "Artifact Güvenlik Denetimi (cookie/token/secret redakte)"
         if: always()
         run: bash scripts/sanitize_logs.sh output 2>/dev/null || true
+
+      # ── FAZ 4H: Guvenlik files temizligi (cookie/.env kalintisi artifact'a kacmasin)
+      - name: "Gizli dosyalari temizle"
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          rm -f cookies.json .env storage_state.json
+          find output -maxdepth 3 \( -iname "*cookie*" -o -iname "*storage_state*" -o -iname ".env" -o -iname "*token*" -o -iname "*credential*" \) -print -delete 2>/dev/null
+          echo "[OK] Gizli calisma dosyalari temizlendi."

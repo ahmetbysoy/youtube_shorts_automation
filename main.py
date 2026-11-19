@@ -150,6 +150,31 @@ def main():
     os.environ["MATRIX_CHANNEL_ID"] = str(args.channel_id)
     step_env = {"MATRIX_CHANNEL_ID": str(args.channel_id)}
 
+    def _finalize_topic_reservations(commit: bool) -> None:
+        """Bu koşu tarafından oluşturulan tüm topic rezervasyonlarını kapat (commit/release).
+
+        MARKER_PATH (.topic_reservations.json) dosyasını okuyup bu run_id'ye ait
+        rezervasyonları finalize eder. Production ve no-upload koşularında
+        her çıkışta (başarılı/başarısız) çalıştırılmalı ki pending listesi şişmesin.
+        """
+        try:
+            import subprocess as _sp
+            env = {**os.environ, "MATRIX_CHANNEL_ID": str(args.channel_id),
+                   "PYTHONPATH": str(BASE_DIR) + os.pathsep + os.environ.get("PYTHONPATH", "")}
+            rc = _sp.run(
+                [sys.executable, str(BASE_DIR / "scripts" / "topic_history.py"),
+                 "finalize", "--commit", "true" if commit else "false"],
+                capture_output=True, text=True, timeout=60, cwd=str(BASE_DIR),
+                env=env,
+            )
+            if rc.returncode == 0:
+                for line in rc.stdout.splitlines():
+                    logging.info(f"[topic_history] {line.strip()}")
+            else:
+                logging.warning(f"[topic_history] finalize rc={rc.returncode}: {rc.stderr.strip()[:300]}")
+        except Exception as exc:
+            logging.warning(f"[topic_history] finalize atlanamadi: {exc}")
+
     logging.info("=" * 70)
     logging.info(" 🚀 YOUTUBE SHORTS OTOMASYON ORKESTRATÖRÜ BAŞLATILIYOR 🚀")
     logging.info("=" * 70)
@@ -166,6 +191,8 @@ def main():
     if not step1_ok:
         logging.error("İçerik üretimi başarısız. Orkestrasyon durduruldu.")
         write_status("error", args.channel_id, stage="content")
+        # İçerik üretimi başarısızken rezervasyon oluşmamış olabilir; marker varsa serbest bırak.
+        _finalize_topic_reservations(commit=False)
         sys.exit(1)
 
     # 1.5 Adım: script.json sözleşmesini medya işleminden önce fail-closed doğrula.
@@ -179,6 +206,9 @@ def main():
     if not schema_ok:
         logging.error("script.json şema doğrulamasından geçemedi. Medya/yayın adımları durduruldu.")
         write_status("error", args.channel_id, stage="script_schema")
+        # Rezervasyon FAZ 2 basarili ise mevcuttur; serbest birak.
+        if not args.skip_upload:
+            _finalize_topic_reservations(commit=False)
         sys.exit(1)
 
     # 2. Adım: Mobil-Optimize Medya İşleme ve Montaj (unsharp + eq + MarginV=250)
@@ -191,6 +221,8 @@ def main():
     if not step2_ok:
         logging.error("Medya işleme başarısız. Orkestrasyon durduruldu.")
         write_status("error", args.channel_id, stage="media")
+        if not args.skip_upload:
+            _finalize_topic_reservations(commit=False)
         sys.exit(1)
 
     # 2.1 Adım: Medya/lisans güncellemelerinden sonra uploader'a gidecek son JSON'u tekrar doğrula.
@@ -204,6 +236,8 @@ def main():
     if not post_media_schema_ok:
         logging.error("Medya sonrası script.json şema doğrulamasından geçemedi. Kapak/yayın adımları durduruldu.")
         write_status("error", args.channel_id, stage="post_media_script_schema")
+        if not args.skip_upload:
+            _finalize_topic_reservations(commit=False)
         sys.exit(1)
 
     # 2.5 Adım: Kapak karesini videoya göm (kalıcı kapak çözümü; ayrı kapak yüklemesi yok).
@@ -218,6 +252,7 @@ def main():
     # 2.7 Adım: Son QC (final_short.mp4 ffprobe + decode + metadata).
     # Skip-upload kipinde yükleme öncesi doğrulamayı da yap ve sonra başarıyla çık.
     final_video = BASE_DIR / "output" / "final_short.mp4"
+
     if args.skip_upload:
         qc_ok = run_step(
             "FAZ 4: Son Kalite Kontrol (skip-upload kipinde)",
@@ -228,6 +263,7 @@ def main():
         if not qc_ok:
             logging.error("Son QC başarısız.")
             write_status("error", args.channel_id, stage="final_qc")
+            _finalize_topic_reservations(commit=False)
             sys.exit(1)
         write_status("rendered_no_upload", args.channel_id, stage="render",
                     video=str(final_video), note="skip-upload: video üretildi ama YouTube'a yüklenmedi")
@@ -235,6 +271,7 @@ def main():
         logging.info(f" ✅ Video üretildi (skip-upload): {final_video}")
         logging.info(" YouTube yükleme atlandı (--skip-upload / SKIP_UPLOAD=1).")
         logging.info("=" * 70)
+        _finalize_topic_reservations(commit=True)
         sys.exit(0)
 
     # 3. Adım: YouTube Studio PUBLIC Yükleme
@@ -251,6 +288,7 @@ def main():
     if not step3_ok:
         logging.error("YouTube yükleme başarısız. Orkestrasyon durduruldu.")
         write_status("error", args.channel_id, stage="upload")
+        _finalize_topic_reservations(commit=False)
         sys.exit(1)
 
     published = _published_video_info()
@@ -266,6 +304,9 @@ def main():
     else:
         # exit code 42 = gunkluk yukleme kotasi doldu -> planli atlama
         write_status("quota_skipped", args.channel_id, stage="upload")
+
+    # Yükleme başarılıysa rezervasyonu used_records'a taşı.
+    _finalize_topic_reservations(commit=True)
 
     logging.info("=" * 70)
     logging.info(" ✅ TÜM FAZLAR BAŞARIYLA TAMAMLANDI. PARA MAKİNESİ ÇALIŞIYOR. ✅")

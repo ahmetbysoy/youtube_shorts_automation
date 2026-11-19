@@ -202,12 +202,37 @@ async function scrapeStudioAnalytics() {
             matureViews.length >= 4 ? matureViews : (withViews.length >= 6 ? withViews : [...withViews, ...zeroViews])
         ).slice(0, 15);
 
+        // ── FAZ 4H: Duplicate (aynı başlık / aynı videoId) temizle ──────────────
+        // Studio tablosunda aynı başlık birden fazla video ID ile listelenebiliyor
+        // (ör. Krakatoa). Bunlar kategori ortalamasını çift saymamalı.
+        const seenIds = new Set();
+        const seenTitleNorm = new Set();
+        const normTitle = (t) => (t || '')
+            .toLowerCase()
+            .replace(/[#!?.',"`]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        const dedupVideos = [];
+        const duplicateSkipped = [];
+        for (const v of candidateVideos) {
+            if (!v.videoId) continue;
+            const nt = normTitle(v.title);
+            if (seenIds.has(v.videoId)) { duplicateSkipped.push({reason:'videoId', v}); continue; }
+            if (seenTitleNorm.has(nt))   { duplicateSkipped.push({reason:'title', v}); continue; }
+            seenIds.add(v.videoId); seenTitleNorm.add(nt);
+            dedupVideos.push(v);
+        }
+        if (duplicateSkipped.length) {
+            console.log(`[ANALİTİK] Tekrarlayan videolar elendi (${duplicateSkipped.length}):`);
+            for (const d of duplicateSkipped) console.log(`   - [${d.reason}] ${d.v.videoId} :: ${d.v.title}`);
+        }
+
         const enrichedVideos = [];
         // En yüksek performanslı ilk 6 videonun tekil analitik sayfasından Ortalama İzleme Süresi (AVD) bilgisini de çek
-        for (let idx = 0; idx < candidateVideos.length; idx++) {
-            const v = candidateVideos[idx];
+        for (let idx = 0; idx < dedupVideos.length; idx++) {
+            const v = dedupVideos[idx];
             let views = v.tableViews || 0;
-            let avgViewDurationSec = 0;
+            let avgViewDurationSec = null;  // null = ölçülemedi (0 gerçek 0'dan farklı)
             if (v.videoId && idx < 6) {
                 await page.goto(`https://studio.youtube.com/video/${v.videoId}/analytics/tab-overview/period-default`, {
                     waitUntil: 'domcontentloaded',
@@ -232,34 +257,54 @@ async function scrapeStudioAnalytics() {
             }
 
             const niche = classifyNiche(v.title);
+            // AVD null iken composite skora dahil ETME; yalnızca views kullan.
+            // Eksik AVD verisi 0 diye şişirilmesin, 0'la bölme/yanlı skor üretilmesin.
+            const compositeScore = (avgViewDurationSec != null)
+                ? Number((views + avgViewDurationSec * 0.5).toFixed(2))
+                : Number(views.toFixed(2));
             enrichedVideos.push({
                 videoId: v.videoId,
                 title: v.title,
                 niche,
                 views,
                 avgViewDurationSec,
-                compositeScore: Number((views + avgViewDurationSec * 0.5).toFixed(2)),
+                avgViewDurationAvailable: avgViewDurationSec != null,
+                compositeScore,
             });
-            console.log(`[ANALİTİK] ${v.videoId} | Niş=${niche} | İzlenme=${views} | Ort.Süre=${avgViewDurationSec}s | ${v.title}`);
+            const avdStr = (avgViewDurationSec != null) ? `${avgViewDurationSec.toFixed(1)}s` : 'null';
+            console.log(`[ANALİTİK] ${v.videoId} | Niş=${niche} | İzlenme=${views} | Ort.Süre=${avdStr} | ${v.title}`);
         }
 
-        // Niş bazlı ortalamaları hesapla
+        // Niş bazlı ortalamaları hesapla (null AVD'yi ortalamaya DAHİL ETME)
         const nicheMap = {};
         for (const item of enrichedVideos) {
-            if (!nicheMap[item.niche]) nicheMap[item.niche] = { count: 0, totalViews: 0, totalAvd: 0, totalScore: 0 };
-            nicheMap[item.niche].count += 1;
-            nicheMap[item.niche].totalViews += item.views;
-            nicheMap[item.niche].totalAvd += item.avgViewDurationSec;
-            nicheMap[item.niche].totalScore += item.compositeScore;
+            if (!nicheMap[item.niche]) nicheMap[item.niche] = {
+                count: 0, totalViews: 0, totalAvd: 0, avdCount: 0, totalScore: 0,
+            };
+            const s = nicheMap[item.niche];
+            s.count += 1;
+            s.totalViews += item.views;
+            s.totalScore += item.compositeScore;
+            if (item.avgViewDurationSec != null) {
+                s.totalAvd += item.avgViewDurationSec;
+                s.avdCount += 1;
+            }
         }
 
-        const topicScores = Object.entries(nicheMap).map(([niche, s]) => ({
-            niche,
-            video_count: s.count,
-            avg_views: Number((s.totalViews / s.count).toFixed(2)),
-            avg_view_duration_sec: Number((s.totalAvd / s.count).toFixed(2)),
-            avg_score: Number((s.totalScore / s.count).toFixed(2)),
-        })).sort((a, b) => b.avg_score - a.avg_score);
+        const MIN_VIDEOS_FOR_BOOST = 4;
+        const topicScores = Object.entries(nicheMap).map(([niche, s]) => {
+            const avgViews = s.totalViews / s.count;
+            const avgAvd = s.avdCount > 0 ? s.totalAvd / s.avdCount : null;
+            return {
+                niche,
+                video_count: s.count,
+                avg_views: Number(avgViews.toFixed(2)),
+                avg_view_duration_sec: (avgAvd != null) ? Number(avgAvd.toFixed(2)) : null,
+                avg_view_duration_sample_size: s.avdCount,
+                avg_score: Number((s.totalScore / s.count).toFixed(2)),
+                statistically_reliable: s.count >= MIN_VIDEOS_FOR_BOOST,
+            };
+        }).sort((a, b) => b.avg_score - a.avg_score);
 
         // ── FAZ 4E: Sifir video / yetersiz veri / login hatasi durumunda eski gecerli
         // raporu KORU; "winning_topic=Uzay" sahte varsayilanini yazma.
@@ -295,38 +340,67 @@ async function scrapeStudioAnalytics() {
             return;
         }
 
-        // Gecerli veri varsa hesapla ve kazanan nişi belirle
+        // ── FAZ 4H: Kazanan nişi belirle (küçük örneklemde boost YAPMA) ───────
+        // Agresif kategori optimizasyonu yanlış sinyale yol açabiliyor
+        // (Krakatoa duplicate'i "Tarih"i yapay olarak zirveye taşıyordu gibi).
+        // Boost'u yalnızca:
+        //   - en az MIN_VIDEOS_FOR_BOOST video ile
+        //   - ikinciye göre en az %20 üstün performansla
+        //   - video_count diğer kategorilerden de düşük değilse
+        // aktif et. Aksi durumda dengeli dağılımı koru.
         const winningTopic = topicScores[0].niche;
         let boostActive = false;
         let outperformanceRatio = 1.0;
         const discardedTopics = [];
         let optimizationDirective = 'Tüm konularda dengeli yüksek dopaminli kanca (hook) üretimine devam et.';
+        let boostReason = 'baseline_balanced';
 
         if (topicScores.length >= 2) {
             const top = topicScores[0];
             const second = topicScores[1];
             const denom = second.avg_score > 0 ? second.avg_score : 1;
             outperformanceRatio = Number(((top.avg_score || 0) / denom).toFixed(2));
-            if (top.avg_score > 0 && outperformanceRatio >= 1.5) {
+            const reliable = top.statistically_reliable && second.statistically_reliable;
+            const clearWinner = outperformanceRatio >= 1.20 && top.avg_score > 0;
+            if (reliable && clearWinner && outperformanceRatio >= 1.30) {
                 boostActive = true;
-                optimizationDirective = `Önceki gün en yüksek performansı '${top.niche}' gösterdi, yeni senaryoların %80'i ${top.niche} odaklı olsun.`;
+                boostReason = `reliable+${(outperformanceRatio-1)*100|0}pc_lead`;
+                optimizationDirective = `Önceki dönem '${top.niche}' kategorisi anlamlı farkla önde (${top.avg_views} vs ${second.avg_views}, n=${top.video_count}/${second.video_count}), yeni senaryoların ağırlığı bu kategoriye kaydırılsın.`;
                 const worst = topicScores[topicScores.length - 1];
-                if (worst.niche !== top.niche && worst.avg_score * 1.5 <= top.avg_score) {
+                if (worst.statistically_reliable && worst.niche !== top.niche && worst.avg_score * 1.3 <= top.avg_score) {
                     discardedTopics.push(worst.niche);
                 }
+            } else if (!reliable) {
+                boostReason = `insufficient_sample(top=${top.video_count},second=${second.video_count})`;
+                optimizationDirective = `En yüksek skor '${top.niche}' görünse de örneklem küçük (n=${top.video_count}); agresif kategori kayması YAPILMIYOR, dengeli dağılım korunuyor.`;
+            } else {
+                boostReason = 'no_clear_lead';
+                optimizationDirective = `Kategoriler arası performans farkı ${((outperformanceRatio-1)*100|0)}% (eşik %30); boost YAPILMIYOR, dengeli dağılım korunuyor.`;
             }
         }
 
+        // AVD örneklem durumu (veri kalitesi)
+        const avdTotal = enrichedVideos.filter(v => v.avgViewDurationAvailable).length;
         const report = {
             scraped_at: new Date().toISOString(),
             channel_id: channelId,
             videos_analyzed: enrichedVideos.length,
+            duplicates_removed: duplicateSkipped.length,
             status: 'ok',
             winning_topic: winningTopic,
             boost_active: boostActive,
+            boost_reason: boostReason,
             outperformance_ratio: outperformanceRatio,
             discarded_topics: discardedTopics,
             optimization_directive: optimizationDirective,
+            data_quality: {
+                avg_view_duration_available_count: avdTotal,
+                avg_view_duration_total: enrichedVideos.length,
+                note: avdTotal === 0
+                    ? 'Ortalama izleme süresi Studio metrik kartından okunamadı (muhtemelen yeni video/erişim yok); AVD sıfır değil null olarak kaydedildi, kategori skoruna dahil edilmedi.'
+                    : `Ortalama izleme süresi ${avdTotal}/${enrichedVideos.length} videoda ölçülebildi.`,
+                min_videos_per_niche_for_boost: MIN_VIDEOS_FOR_BOOST,
+            },
             topic_scores: topicScores,
             recent_videos: enrichedVideos,
         };
