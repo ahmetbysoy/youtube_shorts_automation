@@ -1,0 +1,336 @@
+{
+  "schema_version": "2.0",
+  "generation_id": "8aec5702-2d6f-4e1c-87f1-7d874648cad5",
+  "generated_at": "2026-11-19T17:06:28.308127+00:00",
+  "llm_provider": "local-fallback-matrix-1",
+  "tts_engine": "gtts:tr-fallback",
+  "topic": "Bilim",
+  "title": "Güneş Sisteminin En Yüksek Dağı Everest'in 3 Katı: Olympus Mons! #Shorts",
+  "description": "Benzer videolar için abone ol: https://www.youtube.com/@mentansiytas?sub_confirmation=1\n\nBunu bilen var mı? Abone ol, birlikte şaşıralım!\n\nMars'taki 21,9 kilometrelik dev kalkan yanardağı Olympus Mons\n\nKaynak: NASA — https://science.nasa.gov/mars/facts/\n\n#sisteminin #yüksek #everest\n\nGörsel/Video Atfı (Wikimedia Commons): Solar System Song.webm — Hazel Browne — CC BY 3.0",
+  "affiliate_link": "https://www.youtube.com/@mentansiytas?sub_confirmation=1",
+  "affiliate_cta": "Benzer videolar için abone ol: https://www.youtube.com/@mentansiytas?sub_confirmation=1",
+  "cta_line": "Bunu bilen var mı? Abone ol, birlikte şaşıralım!",
+  "thumbnail_prompt": "Cinematic vertical 9:16 shot of mars planet surface, volcano crater space, hyper-realistic, dramatic lighting, high contrast, vivid saturated colors, ultra detailed, 8k, bilim documentary style, the single main subject fills the frame, large, bright and instantly recognizable, no text, no watermark, no logo, no end card, no split screen",
+  "viral_hashtags": [
+    "#sisteminin",
+    "#yüksek",
+    "#everest"
+  ],
+  "hook": "Mars yüzeyinde yükselen Olympus Mons yanardağı o kadar büyüktür ki zirvesi gezegenin atmosferinin dışına taşar.",
+  "script_text": "Mars yüzeyinde yükselen Olympus Mons yanardağı o kadar büyüktür ki zirvesi gezegenin atmosferinin dışına taşar. Yirmi bir virgül dokuz kilometre yüksekliğe ulaşan bu dev kalkan yanardağı Everest Dağı'nın neredeyse üç katıdır ve taban alanı tüm Fransa topraklarını kaplayacak genişliktedir. Mars'ta Dünya'daki gibi hareketli tektonik plakalar olmadığı için lavlar milyarlarca yıl boyunca hep aynı noktadan üst üste birikerek bu devi oluşturdu.",
+  "word_count": 60,
+  "audio_file": "voiceover.mp3",
+  "srt_file": "voiceover.srt",
+  "audio_duration_sec": 33.936,
+  "visual_keywords": [
+    "mars planet surface",
+    "volcano crater space",
+    "red planet landscape",
+    "space probe orbit"
+  ],
+  "word_timestamps": [
+    {
+      "word": "Mars",
+      "start_ms": 0.0,
+      "end_ms": 354.4
+    },
+    {
+      "word": "yüzeyinde",
+      "start_ms": 354.4,
+      "end_ms": 1151.9
+    },
+    {
+      "word": "yükselen",
+      "start_ms": 1151.9,
+      "end_ms": 1860.7
+    },
+    {
+      "word": "Olympus",
+      "start_ms": 1860.7,
+      "end_ms": 2481.0
+    },
+    {
+      "word": "Mons",
+      "start_ms": 2481.0,
+      "end_ms": 2835.4
+    },
+    {
+      "word": "yanardağı",
+      "start_ms": 2835.4,
+      "end_ms": 3632.8
+    },
+    {
+      "word": "o",
+      "start_ms": 3632.8,
+      "end_ms": 3721.4
+    },
+    {
+      "word": "kadar",
+      "start_ms": 3721.4,
+      "end_ms": 4164.5
+    },
+    {
+      "word": "büyüktür",
+      "start_ms": 4164.5,
+      "end_ms": 4873.3
+    },
+    {
+      "word": "ki",
+      "start_ms": 4873.3,
+      "end_ms": 5050.5
+    },
+    {
+      "word": "zirvesi",
+      "start_ms": 5050.5,
+      "end_ms": 5670.8
+    },
+    {
+      "word": "gezegenin",
+      "start_ms": 5670.8,
+      "end_ms": 6468.2
+    },
+    {
+      "word": "atmosferinin",
+      "start_ms": 6468.2,
+      "end_ms": 7531.5
+    },
+    {
+      "word": "dışına",
+      "start_ms": 7531.5,
+      "end_ms": 8063.1
+    },
+    {
+      "word": "taşar.",
+      "start_ms": 8063.1,
+      "end_ms": 8594.8
+    },
+    {
+      "word": "Yirmi",
+      "start_ms": 8594.8,
+      "end_ms": 9037.8
+    },
+    {
+      "word": "bir",
+      "start_ms": 9037.8,
+      "end_ms": 9303.6
+    },
+    {
+      "word": "virgül",
+      "start_ms": 9303.6,
+      "end_ms": 9835.2
+    },
+    {
+      "word": "dokuz",
+      "start_ms": 9835.2,
+      "end_ms": 10278.3
+    },
+    {
+      "word": "kilometre",
+      "start_ms": 10278.3,
+      "end_ms": 11075.7
+    },
+    {
+      "word": "yüksekliğe",
+      "start_ms": 11075.7,
+      "end_ms": 11961.8
+    },
+    {
+      "word": "ulaşan",
+      "start_ms": 11961.8,
+      "end_ms": 12493.4
+    },
+    {
+      "word": "bu",
+      "start_ms": 12493.4,
+      "end_ms": 12670.6
+    },
+    {
+      "word": "dev",
+      "start_ms": 12670.6,
+      "end_ms": 12936.4
+    },
+    {
+      "word": "kalkan",
+      "start_ms": 12936.4,
+      "end_ms": 13468.1
+    },
+    {
+      "word": "yanardağı",
+      "start_ms": 13468.1,
+      "end_ms": 14265.5
+    },
+    {
+      "word": "Everest",
+      "start_ms": 14265.5,
+      "end_ms": 14885.8
+    },
+    {
+      "word": "Dağı'nın",
+      "start_ms": 14885.8,
+      "end_ms": 15594.6
+    },
+    {
+      "word": "neredeyse",
+      "start_ms": 15594.6,
+      "end_ms": 16392.1
+    },
+    {
+      "word": "üç",
+      "start_ms": 16392.1,
+      "end_ms": 16569.3
+    },
+    {
+      "word": "katıdır",
+      "start_ms": 16569.3,
+      "end_ms": 17189.5
+    },
+    {
+      "word": "ve",
+      "start_ms": 17189.5,
+      "end_ms": 17366.7
+    },
+    {
+      "word": "taban",
+      "start_ms": 17366.7,
+      "end_ms": 17809.8
+    },
+    {
+      "word": "alanı",
+      "start_ms": 17809.8,
+      "end_ms": 18252.8
+    },
+    {
+      "word": "tüm",
+      "start_ms": 18252.8,
+      "end_ms": 18518.6
+    },
+    {
+      "word": "Fransa",
+      "start_ms": 18518.6,
+      "end_ms": 19050.2
+    },
+    {
+      "word": "topraklarını",
+      "start_ms": 19050.2,
+      "end_ms": 20113.5
+    },
+    {
+      "word": "kaplayacak",
+      "start_ms": 20113.5,
+      "end_ms": 20999.6
+    },
+    {
+      "word": "genişliktedir.",
+      "start_ms": 20999.6,
+      "end_ms": 22240.0
+    },
+    {
+      "word": "Mars'ta",
+      "start_ms": 22240.0,
+      "end_ms": 22860.3
+    },
+    {
+      "word": "Dünya'daki",
+      "start_ms": 22860.3,
+      "end_ms": 23746.3
+    },
+    {
+      "word": "gibi",
+      "start_ms": 23746.3,
+      "end_ms": 24100.8
+    },
+    {
+      "word": "hareketli",
+      "start_ms": 24100.8,
+      "end_ms": 24898.2
+    },
+    {
+      "word": "tektonik",
+      "start_ms": 24898.2,
+      "end_ms": 25607.1
+    },
+    {
+      "word": "plakalar",
+      "start_ms": 25607.1,
+      "end_ms": 26315.9
+    },
+    {
+      "word": "olmadığı",
+      "start_ms": 26315.9,
+      "end_ms": 27024.8
+    },
+    {
+      "word": "için",
+      "start_ms": 27024.8,
+      "end_ms": 27379.2
+    },
+    {
+      "word": "lavlar",
+      "start_ms": 27379.2,
+      "end_ms": 27910.8
+    },
+    {
+      "word": "milyarlarca",
+      "start_ms": 27910.8,
+      "end_ms": 28885.5
+    },
+    {
+      "word": "yıl",
+      "start_ms": 28885.5,
+      "end_ms": 29151.3
+    },
+    {
+      "word": "boyunca",
+      "start_ms": 29151.3,
+      "end_ms": 29771.5
+    },
+    {
+      "word": "hep",
+      "start_ms": 29771.5,
+      "end_ms": 30037.3
+    },
+    {
+      "word": "aynı",
+      "start_ms": 30037.3,
+      "end_ms": 30391.8
+    },
+    {
+      "word": "noktadan",
+      "start_ms": 30391.8,
+      "end_ms": 31100.6
+    },
+    {
+      "word": "üst",
+      "start_ms": 31100.6,
+      "end_ms": 31366.4
+    },
+    {
+      "word": "üste",
+      "start_ms": 31366.4,
+      "end_ms": 31720.9
+    },
+    {
+      "word": "birikerek",
+      "start_ms": 31720.9,
+      "end_ms": 32518.3
+    },
+    {
+      "word": "bu",
+      "start_ms": 32518.3,
+      "end_ms": 32695.5
+    },
+    {
+      "word": "devi",
+      "start_ms": 32695.5,
+      "end_ms": 33049.9
+    },
+    {
+      "word": "oluşturdu.",
+      "start_ms": 33049.9,
+      "end_ms": 33936.0
+    }
+  ],
+  "media_credits": [
+    "Görsel/Video Atfı (Wikimedia Commons): Solar System Song.webm — Hazel Browne — CC BY 3.0"
+  ]
+}

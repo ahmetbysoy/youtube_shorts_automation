@@ -1,0 +1,156 @@
+{
+  "video": "output/final_short.mp4",
+  "checks": {
+    "file_exists": {
+      "ok": true,
+      "detail": "output/final_short.mp4",
+      "warning": false
+    },
+    "file_size": {
+      "ok": true,
+      "detail": "18.08 MB",
+      "warning": false
+    },
+    "video_stream": {
+      "ok": true,
+      "detail": "1 video stream",
+      "warning": false
+    },
+    "audio_stream": {
+      "ok": true,
+      "detail": "1 audio stream",
+      "warning": false
+    },
+    "video_codec": {
+      "ok": true,
+      "detail": "h264",
+      "warning": false
+    },
+    "resolution_9:16": {
+      "ok": true,
+      "detail": "1080x1920",
+      "warning": false
+    },
+    "fps_30": {
+      "ok": true,
+      "detail": "30.00 fps",
+      "warning": false
+    },
+    "pix_fmt_yuv420p": {
+      "ok": true,
+      "detail": "yuv420p",
+      "warning": false
+    },
+    "duration_shorts": {
+      "ok": true,
+      "detail": "33.97 sn (Shorts 15-60sn)",
+      "warning": false
+    },
+    "audio_codec": {
+      "ok": true,
+      "detail": "aac",
+      "warning": false
+    },
+    "audio_sample_rate": {
+      "ok": true,
+      "detail": "24000 Hz",
+      "warning": false
+    },
+    "channels": {
+      "ok": true,
+      "detail": "1 kanal",
+      "warning": false
+    },
+    "av_sync": {
+      "ok": true,
+      "detail": "v=33.97s a=33.87s (fark=0.10s)",
+      "warning": false
+    },
+    "ffmpeg_full_decode": {
+      "ok": true,
+      "detail": "rc=0 hata_satiri=0",
+      "warning": false
+    },
+    "black_frames": {
+      "ok": true,
+      "detail": "toplam siyah 0.00s (%0.0)",
+      "warning": false
+    },
+    "head_clean": {
+      "ok": false,
+      "detail": "bas/son blackdetect: name 'HEAD_TAIL_DURATION' is not defined",
+      "warning": true
+    },
+    "scenes_workdir": {
+      "ok": true,
+      "detail": "work_* dizini bulunamadi (sahne temp dizini temizlenmis, final video QC gecerli)",
+      "warning": true
+    },
+    "cover_size": {
+      "ok": true,
+      "detail": "284.8 KB",
+      "warning": false
+    },
+    "cover_vstream": {
+      "ok": true,
+      "detail": "mjpeg",
+      "warning": false
+    },
+    "cover_resolution": {
+      "ok": true,
+      "detail": "1080x1920",
+      "warning": false
+    },
+    "ass_parse": {
+      "ok": true,
+      "detail": "3039 bayt",
+      "warning": false
+    },
+    "ass_sections": {
+      "ok": true,
+      "detail": "info=True styles=True events=True",
+      "warning": false
+    },
+    "ass_playres": {
+      "ok": true,
+      "detail": "1080x1920",
+      "warning": false
+    },
+    "ass_safe_margin": {
+      "ok": true,
+      "detail": "FontSize=56 Align=2 MarginV=250 L/R=70/70",
+      "warning": false
+    },
+    "ass_dialogues": {
+      "ok": true,
+      "detail": "20 diyalog satiri",
+      "warning": false
+    },
+    "ass_line_length": {
+      "ok": true,
+      "detail": "tum satirlar kisa",
+      "warning": false
+    },
+    "ass_min_duration": {
+      "ok": true,
+      "detail": "tumu okunabilir surede",
+      "warning": false
+    },
+    "ass_time_range": {
+      "ok": true,
+      "detail": "ilk=0.00s son=33.93s (video=33.97s)",
+      "warning": false
+    },
+    "ass_no_garbage": {
+      "ok": true,
+      "detail": "0 satirda bozuk karakter",
+      "warning": false
+    }
+  },
+  "errors": [],
+  "warnings": [
+    "head_clean: bas/son blackdetect: name 'HEAD_TAIL_DURATION' is not defined"
+  ],
+  "passed": true,
+  "warning_count": 1
+}
