@@ -247,13 +247,21 @@ jobs:
               print(f"HATA: sahneler secilemedi: {missing}")
               sys.exit(3)
           # API endpoint'lerine hic istek gidilmedigini kanitla:
-          # BrowserStockProvider name "<provider>-browser"; API saglayicilar "<provider>" (pexels/pixabay)
+          # catalog_transport="playwright" olanlar BrowserStockProvider'dir (cookie-only);
+          # "api" olanlar PexelsProvider/PixabayProvider (API key) — bunlar HIC secilmemeli.
+          # selected_provider=pexels-browser|pixabay-browser|wikimedia olmali.
           api_provider_used = any(
+              (s.get("media") or {}).get("catalog_transport") == "api"
+              for s in summary.get("scenes", [])
+          )
+          # Ek kontrol: secilen saglayici adlari API saglayici slug'i (pexels/pixabay) olmamali
+          raw_api_slug_used = any(
               s.get("selected_provider") in ("pexels", "pixabay")
               for s in summary.get("scenes", [])
           )
-          print(f"api_provider_used={api_provider_used}")
-          if api_provider_used:
+          print(f"api_provider_used={api_provider_used} (catalog_transport=api)")
+          print(f"raw_api_slug_used={raw_api_slug_used} (selected_provider=pexels/pixabay)")
+          if api_provider_used or raw_api_slug_used:
               print("HATA: API saglayicisi kullanildi (cookie-only olmasi gerekiyordu)")
               sys.exit(5)
           # Wikimedia kullanildi mi?
