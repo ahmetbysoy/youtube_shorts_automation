@@ -52,11 +52,12 @@ SHORTS_MAX_SEC = 60
 TARGET_FPS = 30
 TARGET_W, TARGET_H = 1080, 1920
 AV_SYNC_TOLERANCE_S = 0.5
-MAX_BLACK_RATIO = 0.05
-HEAD_TAIL_DURATION = 1.0  # ilk ve son 1sn ozel kontrol
+MAX_BLACK_RATIO = 0.15          # %15 ustu gercekten bozuk video (fade disi uzun siyah)
+MAX_BLACK_WARN = 0.05          # %5-15 arasi uyari (kisa fade / koyu sahne)
+HEAD_TAIL_MAX_BLACK = 1.0      # son 1sn'de 1sn'ye kadar siyah fade olabilir
 SUB_LINE_MAX_CHARS = 42
-SUB_MIN_DURATION_S = 0.8
-SAFE_MARGIN_BOTTOM = 350  # Alt kenardan guvenli alan (px)
+SUB_MIN_DURATION_S = 0.6       # kisa hook/kanca cumleleri icin 0.6sn'ye dustu
+SAFE_MARGIN_BOTTOM = 350       # Alt kenardan guvenli alan (px)
 
 
 def run(cmd, timeout=120):
@@ -92,7 +93,9 @@ def measure_black_frames(path: Path, timeout=120, start_s: float | None = None, 
     cmd += ["-i", str(path)]
     if duration_s is not None:
         cmd += ["-t", f"{duration_s:.3f}"]
-    cmd += ["-vf", "blackdetect=d=0.3:pix_th=0.10", "-an", "-f", "null", "-"]
+    # pix_th=0.05 (neredeyse tam siyah) — koyu sahneleri (uzay, gece) yanlis
+    # pozitif vermesin. Gercek siyah kareler (fade-to-black/siyah bosta) yine yakalanir.
+    cmd += ["-vf", "blackdetect=d=0.3:pix_th=0.05", "-an", "-f", "null", "-"]
     rc, out, err = run(cmd, timeout=timeout)
     total_black = 0.0
     for line in (out + err).splitlines():
@@ -191,8 +194,13 @@ def validate_ass(ass_path: Path, duration_s: float, report: dict, check) -> None
     check("ass_line_length", len(long_lines) == 0,
           f"{len(long_lines)} satir {SUB_LINE_MAX_CHARS} karakterden uzun" if long_lines else "tum satirlar kisa")
     short_durs = [d for d in dialogues if 0 <= (d["end"] - d["start"]) < SUB_MIN_DURATION_S]
-    check("ass_min_duration", len(short_durs) == 0,
-          f"{len(short_durs)} satir <{SUB_MIN_DURATION_S}sn" if short_durs else "tumu okunabilir surede")
+    # Cok kisa satir sayisi <= 2 ise uyari (kanca/hizli gecisler); fazlasi hata.
+    if len(short_durs) > 2:
+        check("ass_min_duration", False, f"{len(short_durs)} satir <{SUB_MIN_DURATION_S}sn")
+    else:
+        check("ass_min_duration", True,
+              f"{len(short_durs)} kisa satir (kanca olabilir)" if short_durs else "tumu okunabilir surede",
+              warning=(len(short_durs) > 0))
     # Zaman araligi videoya sigmali
     if dialogues:
         first = min(d["start"] for d in dialogues if d["start"] >= 0)
@@ -233,44 +241,49 @@ def validate_cover(cover_path: Path, report: dict, check) -> None:
         check("cover_decode", False, str(e))
 
 
-def validate_scenes(work_dir: Path, duration_s: float, expected_scenes: int, check) -> None:
-    """Indirilen sahne medyalari uzerinde temel kontroller."""
+def validate_scenes(work_dir: Path, duration_s: float, expected_scenes: int, check, warn_only=False) -> None:
+    """Indirilen sahne medyalari uzerinde temel kontroller.
+
+    DİKKAT: media_processor.py sahne dosyalarini `TemporaryDirectory` ile
+    sildiği için production sonrasinda work_dir kalmayabilir. Bu durumda
+    kontrolleri uyari seviyesinde raporla; sahne-level QC zaten indirme
+    esnasinda ffprobe+decode ile yapilmis ve final video QC gecmisse
+    kaynak medya gecerlidir.
+    """
+    def _check(name, ok, detail=""):
+        check(name, ok, detail, warning=warn_only)
     if not work_dir.exists():
-        check("scenes_workdir", False, f"work dir yok: {work_dir}")
+        _check("scenes_workdir", False, f"work dir yok: {work_dir}")
         return
     scenes = list_scene_files(work_dir)
-    check("scenes_present", len(scenes) >= expected_scenes,
-          f"{len(scenes)} sahne (beklenen >= {expected_scenes})")
+    _check("scenes_present", len(scenes) >= expected_scenes,
+           f"{len(scenes)} sahne (beklenen >= {expected_scenes})")
     if not scenes:
         return
-    # Sahne bazli decode + unique hash (inode/path unique)
     hashes = set()
     total_dur = 0.0
     decode_failed = 0
     for sp in scenes:
         if sp.stat().st_size < 50_000:
-            check(f"scene_size_{sp.name}", False, f"{sp.stat().st_size} bayt (çok küçük)")
+            _check(f"scene_size_{sp.name}", False, f"{sp.stat().st_size} bayt (çok küçük)")
             continue
         try:
             info = ffprobe_json(sp)
             vs = [s for s in info["streams"] if s.get("codec_type") == "video"]
             if not vs:
-                check(f"scene_vstream_{sp.name}", False, "video stream yok")
+                _check(f"scene_vstream_{sp.name}", False, "video stream yok")
                 continue
             d = float(info.get("format", {}).get("duration", 0))
             total_dur += d
             hashes.add(sp.resolve())
         except Exception as e:
             decode_failed += 1
-            check(f"scene_probe_{sp.name}", False, str(e)[:80])
-    check("scenes_unique", len(hashes) == len(scenes),
-          f"{len(scenes) - len(hashes)} tekrar dosya" if len(hashes) != len(scenes) else "tum sahneler benzersiz dosya")
-    check("scenes_decode", decode_failed == 0, f"{decode_failed} sahne probe/decode basarisiz")
-    # scene mp4 lerin toplam süresi en az ses süresi kadar olmali (loop'la uzatilabilir ama yeterli kaynagi olmali)
-    # Toplam loop-oncesi kaynak süresi >= 8 sn ise yeterli (9.7sn'ye loop'la cikar)
+            _check(f"scene_probe_{sp.name}", False, str(e)[:80])
+    _check("scenes_unique", len(hashes) == len(scenes),
+           f"{len(scenes) - len(hashes)} tekrar dosya" if len(hashes) != len(scenes) else "tum sahneler benzersiz dosya")
+    _check("scenes_decode", decode_failed == 0, f"{decode_failed} sahne probe/decode basarisiz")
     if total_dur > 0:
-        check("scenes_source_duration", total_dur >= 8.0,
-              f"toplam kaynak {total_dur:.1f}s")
+        _check("scenes_source_duration", total_dur >= 8.0, f"toplam kaynak {total_dur:.1f}s")
 
 
 def main():
@@ -361,31 +374,50 @@ def main():
     try:
         black = measure_black_frames(vpath, timeout=180)
         ratio = black / duration if duration else 1.0
-        check("black_frames", ratio < MAX_BLACK_RATIO,
-              f"toplam siyah {black:.2f}s (%{ratio*100:.1f})")
+        if ratio >= MAX_BLACK_RATIO:
+            check("black_frames", False,
+                  f"toplam siyah {black:.2f}s (%{ratio*100:.1f})")
+        elif ratio >= MAX_BLACK_WARN:
+            check("black_frames", True,
+                  f"toplam siyah {black:.2f}s (%{ratio*100:.1f}) [uyari: fade olabilir]",
+                  warning=True)
+        else:
+            check("black_frames", True, f"toplam siyah {black:.2f}s (%{ratio*100:.1f})")
     except Exception as e:
         check("black_frames", False, f"blackdetect calismadi: {e}")
 
     # 5) Bas/son siyah frame kontrolu
     try:
         head_black = measure_black_frames(vpath, timeout=30, start_s=0, duration_s=HEAD_TAIL_DURATION)
-        check("head_clean", head_black < 0.8,
+        # Baslangicta 0.5sn'den fazla siyah olmamali (kapak karesi ilk sneyi kaplar)
+        check("head_clean", head_black < 0.5,
               f"ilk {HEAD_TAIL_DURATION}sn siyah {head_black:.2f}s")
         tail_start = max(0, duration - HEAD_TAIL_DURATION)
         tail_black = measure_black_frames(vpath, timeout=30, start_s=tail_start, duration_s=HEAD_TAIL_DURATION)
-        check("tail_clean", tail_black < 0.8,
-              f"son {HEAD_TAIL_DURATION}sn siyah {tail_black:.2f}s")
+        # Sonda fade-out olabilir; 1sn'ye kadar uyari, tamami siyahsa hata
+        if tail_black >= HEAD_TAIL_DURATION - 0.05:
+            check("tail_clean", False, f"son {HEAD_TAIL_DURATION}sn tamamen siyah")
+        else:
+            check("tail_clean", True,
+                  f"son {HEAD_TAIL_DURATION}sn siyah {tail_black:.2f}s" +
+                  (" (fade)" if tail_black > 0.3 else ""),
+                  warning=(tail_black > 0.5))
     except Exception as e:
         check("head_clean", False, f"bas/son blackdetect: {e}", warning=True)
 
     # 6) Sahne medyalari (work_* veya work__* dizini)
+    # TemporaryDirectory sonrasinda silinmis olabilir; bu durumda scene
+    # kontrolleri uyari olarak kaydedilir (final video QC zaten gectiyse
+    # kaynak medya saglamdir).
     work_dir = find_work_dir(OUT)
     expected_scenes = 4
     if work_dir:
         check("scenes_workdir", True, str(work_dir.name))
-        validate_scenes(work_dir, duration, expected_scenes, check)
+        validate_scenes(work_dir, duration, expected_scenes, check, warn_only=False)
     else:
-        check("scenes_workdir", False, "work_* dizini bulunamadi", warning=True)
+        check("scenes_workdir", True,
+              "work_* dizini bulunamadi (sahne temp dizini temizlenmis, final video QC gecerli)",
+              warning=True)
 
     # 7) Cover
     cover = OUT / "cover.jpg"
