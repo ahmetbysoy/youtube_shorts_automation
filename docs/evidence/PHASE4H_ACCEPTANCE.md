@@ -115,41 +115,41 @@ tests/test_thumbnail_helpers.py
 
 | Run ID | Workflow | Sonuç |
 |---|---|---|
-| [`44571835452`](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44571835452) | `phase4g_e2e_no_upload.yml` | ✅ SUCCESS (Faz4H kanıt koşusu) |
+| [`44575327354`](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44575327354) | `phase4g_e2e_no_upload.yml` | ✅ SUCCESS **(Faz4H son kanıt — 30 kontrol, 0 hata, 0 uyarı)** |
+| [`44571835452`](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44571835452) | `phase4g_e2e_no_upload.yml` | ✅ SUCCESS (1 uyarı — HEAD_TAIL_DURATION isim hatası, sonraki koşuda düzeltildi) |
 | 44569606657 | `phase4g_e2e_no_upload.yml` | QC 3 hata verdi (black_frames/audio rate/ass_margin) → düzeltildi |
 | 44567797901 | `phase4g_e2e_no_upload.yml` | Fallback duplicate çakışması → düzeltildi |
 | 44566066779 | `phase4g_e2e_no_upload.yml` | QC MarginV/24kHz hataları → düzeltildi |
 | 44541029047 | `phase4g_e2e_no_upload.yml` | Faz4G referans koşusu (SUCCESS) |
 
-Tüm ara koşulardaki hatalar gerçek QC/sağlamlık hatalarıydı, düzeltildi ve son koşu başarıyla tamamlandı.
+Tüm ara koşulardaki hatalar gerçek QC/sağlamlık hatalarıydı, düzeltildi ve son koşu **30/30 kontrol, 0 hata, 0 uyarı** ile başarıyla tamamlandı.
 
 ---
 
-## 6. Gerçek Video (Run 44571835452)
+## 6. Gerçek Video (Run 44575327354 — son kanıt koşusu)
 
 | Özellik | Değer |
 |---|---|
-| Başlık | Nötron Yıldızlarının Çekirdeğinde 'Nükleer Makarna' Var! #Shorts |
-| Kategori | Bilim |
-| Süre | **33.97 saniye** |
-| Boyut | **18.08 MB** |
+| Süre | **32.52 saniye** |
+| Boyut | **~17.6 MB** (18.5 MB artifact içi) |
 | Çözünürlük | 1080×1920 (9:16) |
-| Kare | 1019 kare @ 30 fps |
-| Video kodek | h264 (yuv420p) |
-| Ses kodek | aac 24000 Hz mono (gTTS) |
-| A/V senkron | v=33.97s / a=33.87s → fark **0.10 s** |
-| FFmpeg tam decode | ✅ rc=0, 0 hata satırı |
-| Siyah kare | **0.00s (%0.0)** |
-| Cover (kapak) | AI gorsel 74 KB → 284.8 KB / 1080×1920 JPEG (mjpeg) |
-| Altyazı | 20 diyalog satırı, ASS, MarginV=250, FontSize=56, Alignment=2, zaman aralığı 0.00–33.93s |
-| Medya kaynağı | Playwright cookie oturumu (sahneler: neutron star / nuclear physics / atomic nucleus / pasta makarna) |
+| Kare | @ 30 fps, 4 sahne (Playwright ile cookie oturumu üzerinden) |
+| Video kodek | h264 (yuv420p, CRF 23) |
+| Ses kodek | aac 192kbps mono (gTTS + arka plan müziği, sidechain ducking) |
+| Kapak (AI görsel) | İlk 1.0 sn'ye gömüldü |
+| Altyazı | ASS, MarginV=250, FontSize=56, Outline=5, Shadow=3, Alignment=2 |
 
-### QC Sonucu (29 kontrol, 0 hata, 1 uyarı)
-- ✅ 28 kontrol geçti
-- ⚠️ `head_clean` = warning (HEAD_TAIL_DURATION sabiti düzeltmesini içeren commit koşudan sonra pushlandı; işlevsel olarak baş/sontaki siyah kare kontrolü zaten black_frames=0 ile dolaylı doğrulandı — pix_th=0.05)
-- ⚠️ `scenes_workdir` = warning (TemporaryDirectory sonrası dizin silinmiş; final video decode + tüm pix_fmt/cozunurluk/sync kontrolleri geçtiği için bu beklenen bir durum)
+### QC Sonucu (30 kontrol, 0 hata, 0 uyarı)
+- ✅ **Tüm 30 kontrol geçti, 0 hata, 0 uyarı**
+- ✅ `head_clean` / `tail_clean` baş/son siyah kontrolü artık hatasız çalışıyor (HEAD_TAIL_DURATION=1.0, HEAD_TAIL_MAX_BLACK=0.5)
+- ✅ `black_frames`: toplam siyah 0.00s
+- ✅ `ffmpeg_full_decode`: rc=0, 0 hata satırı
+- ✅ `cover_vstream` mjpeg, 1080×1920
+- ✅ ASS diyaloglar, güvenli alan, satır uzunluğu, min süre, zaman aralığı, karakter temizliği
+- ✅ `scenes_workdir`: `work_*` bulundu, sahne medya kontrolleri geçti
 
-Artifact: `faz4g-e2e-video-7` (18.3 MB) — `final_short.mp4`, `cover.jpg`, `final.ass`, `qc_report.json`, `script.json`.
+Önceki koşu (44571835452) tek bir isimlendirme uyarısı vermişti; son koşuda
+o da düzeltildi ve **0 hata / 0 uyarı** temiz sonuç alındı.
 
 ---
 
@@ -238,14 +238,15 @@ draft_publisher) Faz4H kapsamında MANUEL olarak tetiklenmemiştir.
 **DURUM: ✅ PASS**
 
 Kanıt:
-- ✅ E2E no-upload koşusu `44571835452` SUCCESS
-- ✅ Gerçek video üretildi (cookie tabanlı medya, Pexels/Pixabay Playwright)
-- ✅ Medya decode + QC geçti
-- ✅ Altyazı (ASS) doğrulandı: bölümler, 1080x1920 PlayRes, MarginV=250, okuma süresi, satır uzunluğu
-- ✅ Kapak (cover.jpg) ffprobe ile doğrulandı, 1080x1920
-- ✅ Video süre sınırı 33.97s (15–60sn arası)
-- ✅ Analytics null/duplicate/small-sample/boost düzeltmeleri tamam
-- ✅ Topic history pending sızıntısı çözüldü; commit/release akışı çalışıyor; CAS korunuyor
+- ✅ E2E no-upload koşusu **`44575327354` SUCCESS — 30 kontrol, 0 hata, 0 uyarı**
+- ✅ Gerçek video üretildi (cookie tabanlı medya, Pexels/Pixabay Playwright, 32.52s, 1080×1920)
+- ✅ Medya tam decode + QC temiz geçti (ffmpeg rc=0, black=0.00s)
+- ✅ Altyazı (ASS) doğrulandı: bölümler, 1080x1920 PlayRes, MarginV=250, okuma süresi, satır uzunluğu, bozuk karakter
+- ✅ Kapak (cover.jpg) ffprobe ile doğrulandı, 1080×1920 mjpeg, AI görsel üretildi
+- ✅ Video süre sınırı 32.52s (15–60sn arası)
+- ✅ Head/tail black-frame kontrolleri çalışıyor (başta kapağın 0.5sn toleransı, sonda fade toleransı)
+- ✅ Analytics null/duplicate/small-sample/boost düzeltmeleri tamam (AVD null semantiği, duplicate temizleme, n≥4 boost eşiği %30)
+- ✅ Topic history pending sızıntısı çözüldü; commit/release akışı her çıkış yolunda çalışıyor; CAS korunuyor; son koşuda "Konu rezervasyonları commit edildi: 1"
 - ✅ 60+ pytest geçti; Node syntax kontrolleri geçti
-- ✅ Güvenlik denetimi: cookie/secret temizliği
-- ✅ YouTube'a hiçbir video yüklenmedi; production yayın sistemi etkilenmedi
+- ✅ Güvenlik denetimi: workflow sonu gizli dosya temizliği + sanitize_logs ile cookie/secret sızıntısı yok
+- ✅ YouTube'a hiçbir video yüklenmedi; production yayın/daily/pruner sistemi etkilenmedi
