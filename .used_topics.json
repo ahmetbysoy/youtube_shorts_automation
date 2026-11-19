@@ -29,7 +29,8 @@
     "Dünya'nın En Derin Sondajı 12 Kilometrede Neden Durduruldu? #Shorts",
     "Deniz Atlarında Yavruyu Erkek Taşır! #Shorts",
     "1518'de Yüzlerce İnsanı Durmadan Dans Ettiren Salgın! #Shorts",
-    "Güneş Sisteminin En Yüksek Dağı Everest'in 3 Katı: Olympus Mons! #Shorts"
+    "Güneş Sisteminin En Yüksek Dağı Everest'in 3 Katı: Olympus Mons! #Shorts",
+    "Satürn'ün Uydusu Titan'da Su Yerine Sıvı Metan Yağmuru Yağar! #Shorts"
   ],
   "used_records": [
     {
@@ -935,9 +936,7 @@
         "zirves"
       ],
       "created_at": "2026-11-19T17:06:25.293889+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Satürn'ün Uydusu Titan'da Su Yerine Sıvı Metan Yağmuru Yağar! #Shorts",
       "topic": "Bilim",
@@ -1004,9 +1003,8 @@
         "yerin",
         "yogun"
       ],
-      "created_at": "2026-11-19T17:19:13.956310+00:00",
-      "reservation_id": "b34e2b62-f3d6-47d5-ba59-74a285f38497",
-      "run_id": "44575327354:1"
+      "created_at": "2026-11-19T17:19:13.956310+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
