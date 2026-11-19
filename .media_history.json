@@ -84,6 +84,34 @@
       "sha256": "e0f7853e98f14f097eeb32ca71f54718b242c87f0bfeeaa9b08ca13ab8661ba2",
       "selected_at": "2026-11-19T20:51:28.834330+00:00",
       "generation_id": "f1750f41-deb0-4fa4-b35b-1c71758c6bdd"
+    },
+    {
+      "key": "pexels:15533293",
+      "source_url": "https://www.pexels.com/search/videos/black%20pepper%20spices/",
+      "sha256": "eb045c5bfd87e0f4eaf7ab0a1757c98dd28de92865547a8735d2cbef6711288f",
+      "selected_at": "2026-11-19T20:57:45.977245+00:00",
+      "generation_id": "f44256b3-76f8-4911-b53d-c95c4e187787"
+    },
+    {
+      "key": "wikimedia:76198945",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Active_duty_solder_FROM_Standing_Rock_speaks_out_about_police_attacks..webm",
+      "sha256": "1e8cc83978a7e8ff2bac5cbc0b54941b32caf72e26d133318980594106608fa0",
+      "selected_at": "2026-11-19T20:58:10.372709+00:00",
+      "generation_id": "f44256b3-76f8-4911-b53d-c95c4e187787"
+    },
+    {
+      "key": "wikimedia:195837036",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Army_engineer_history_in_concrete_(956607).webm",
+      "sha256": "c46115c91526511c2649e8d8cefb6084a176b8bc6cea21f999da2f7bac22878d",
+      "selected_at": "2026-11-19T20:58:58.236312+00:00",
+      "generation_id": "f44256b3-76f8-4911-b53d-c95c4e187787"
+    },
+    {
+      "key": "pexels:10039764",
+      "source_url": "https://www.pexels.com/search/videos/history%20pepper/",
+      "sha256": "fd9faff5cf6d39f0454942dcd0c13244237fc1492b7a1f0cfb84f653cdd02f42",
+      "selected_at": "2026-11-19T20:59:25.442310+00:00",
+      "generation_id": "f44256b3-76f8-4911-b53d-c95c4e187787"
     }
   ]
 }
