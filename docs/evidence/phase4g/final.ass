@@ -1,0 +1,38 @@
+[Script Info]
+Title: Shorts Dynamic Subtitles
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Montserrat-Bold,56,&H0000FFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,1.5,0,1,5,3,2,70,70,250,1
+Style: Hook,Montserrat-Bold,62,&H0026FFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,2.0,0,1,6,4,2,70,70,250,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:01.79,Hook,,0,0,0,,{\fscx82\fscy82\bord6\t(0,90,\fscx106\fscy106)\t(90,150,\fscx100\fscy100)}1518 yazında Strazburg
+Dialogue: 0,0:00:01.79,0:00:03.57,Hook,,0,0,0,,{\fscx82\fscy82\bord6\t(0,90,\fscx106\fscy106)\t(90,150,\fscx100\fscy100)}sokaklarında bir kadın
+Dialogue: 0,0:00:03.57,0:00:05.01,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}aniden dans etmeye
+Dialogue: 0,0:00:05.01,0:00:06.53,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}başladı ve günlerce
+Dialogue: 0,0:00:06.53,0:00:07.33,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}duramadı.
+Dialogue: 0,0:00:07.33,0:00:08.59,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}Bir hafta içinde
+Dialogue: 0,0:00:08.59,0:00:09.75,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}otuz dört kişi,
+Dialogue: 0,0:00:09.75,0:00:10.73,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}bir ay içinde
+Dialogue: 0,0:00:10.73,0:00:12.07,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}ise yaklaşık dört
+Dialogue: 0,0:00:12.07,0:00:12.88,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}yüz kişi bu
+Dialogue: 0,0:00:12.88,0:00:14.76,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}tuhaf harekete katıldı.
+Dialogue: 0,0:00:14.76,0:00:16.91,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}İnsanlar ayakları kanayana
+Dialogue: 0,0:00:16.91,0:00:18.52,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}ve yorgunluktan yere
+Dialogue: 0,0:00:18.52,0:00:20.75,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}yığılana kadar kontrolsüzce
+Dialogue: 0,0:00:20.75,0:00:21.74,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}zıplıyordu.
+Dialogue: 0,0:00:21.74,0:00:23.71,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}Dönemin belediye meclisi
+Dialogue: 0,0:00:23.71,0:00:25.23,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}ve hekimleri çavdar
+Dialogue: 0,0:00:25.23,0:00:26.93,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}küfü zehirlenmesi ile
+Dialogue: 0,0:00:26.93,0:00:29.25,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}kitlesel psikojenik hastalık
+Dialogue: 0,0:00:29.25,0:00:30.60,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}arasında kalan bu
+Dialogue: 0,0:00:30.60,0:00:32.30,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}olayı ancak müzikleri
+Dialogue: 0,0:00:32.30,0:00:34.89,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}yasaklayıp hastaları şifahaneye
+Dialogue: 0,0:00:34.89,0:00:36.86,Default,,0,0,0,,{\fscx88\fscy88\t(0,85,\fscx100\fscy100)}taşıyarak durdurabildi.

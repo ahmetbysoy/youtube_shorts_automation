@@ -1,0 +1,63 @@
+{
+  "video": "output/final_short.mp4",
+  "checks": {
+    "file_exists": {
+      "ok": true,
+      "detail": "output/final_short.mp4"
+    },
+    "file_size": {
+      "ok": true,
+      "detail": "21.58 MB"
+    },
+    "video_stream": {
+      "ok": true,
+      "detail": "1 video stream"
+    },
+    "audio_stream": {
+      "ok": true,
+      "detail": "1 audio stream"
+    },
+    "video_codec": {
+      "ok": true,
+      "detail": "h264"
+    },
+    "resolution_9:16": {
+      "ok": true,
+      "detail": "1080x1920"
+    },
+    "fps_30": {
+      "ok": true,
+      "detail": "30.00 fps"
+    },
+    "duration_shorts": {
+      "ok": true,
+      "detail": "36.87 sn (Shorts 15-60sn)"
+    },
+    "audio_codec": {
+      "ok": true,
+      "detail": "aac"
+    },
+    "av_sync": {
+      "ok": true,
+      "detail": "v=36.87s a=36.77s (fark=0.10s)"
+    },
+    "ffmpeg_full_decode": {
+      "ok": true,
+      "detail": "rc=0 hata_satiri=0"
+    },
+    "black_frames": {
+      "ok": true,
+      "detail": "toplam siyah 0.00s (%0.0)"
+    },
+    "cover_exists": {
+      "ok": true,
+      "detail": "/home/runner/work/youtube_shorts_automation/youtube_shorts_automation/output/cover.jpg"
+    },
+    "ass_subtitles": {
+      "ok": true,
+      "detail": "/home/runner/work/youtube_shorts_automation/youtube_shorts_automation/output/final.ass"
+    }
+  },
+  "errors": [],
+  "passed": true
+}

@@ -1,0 +1,353 @@
+{
+  "schema_version": "2.0",
+  "generation_id": "76674242-f4ea-476e-a59d-a71173429615",
+  "generated_at": "2026-11-19T14:12:59.872883+00:00",
+  "llm_provider": "local-fallback-matrix-1",
+  "tts_engine": "gtts:tr-fallback",
+  "topic": "Tarih",
+  "title": "1518'de Yüzlerce İnsanı Durmadan Dans Ettiren Salgın! #Shorts",
+  "description": "Benzer videolar için abone ol: https://www.youtube.com/@mentansiytas?sub_confirmation=1\n\nDaha fazlası için abone olmayı unutma!\n\nStrazburg'da 1518 yılında yaşanan gizemli dans vebası\n\nKaynak: Wikipedia (tr) — https://tr.wikipedia.org/wiki/1518_Dans_Salgını\n\n#yüzlerce #insanı #durmadan",
+  "affiliate_link": "https://www.youtube.com/@mentansiytas?sub_confirmation=1",
+  "affiliate_cta": "Benzer videolar için abone ol: https://www.youtube.com/@mentansiytas?sub_confirmation=1",
+  "cta_line": "Daha fazlası için abone olmayı unutma!",
+  "thumbnail_prompt": "Cinematic vertical 9:16 shot of strasbourg medieval street, historical crowd dancing, hyper-realistic, dramatic lighting, high contrast, vivid saturated colors, ultra detailed, 8k, tarih documentary style, the single main subject fills the frame, large, bright and instantly recognizable, no text, no watermark, no logo, no end card, no split screen",
+  "viral_hashtags": [
+    "#yüzlerce",
+    "#insanı",
+    "#durmadan"
+  ],
+  "hook": "1518 yazında Strazburg sokaklarında bir kadın aniden dans etmeye başladı ve günlerce duramadı.",
+  "script_text": "1518 yazında Strazburg sokaklarında bir kadın aniden dans etmeye başladı ve günlerce duramadı. Bir hafta içinde otuz dört kişi, bir ay içinde ise yaklaşık dört yüz kişi bu tuhaf harekete katıldı. İnsanlar ayakları kanayana ve yorgunluktan yere yığılana kadar kontrolsüzce zıplıyordu. Dönemin belediye meclisi ve hekimleri çavdar küfü zehirlenmesi ile kitlesel psikojenik hastalık arasında kalan bu olayı ancak müzikleri yasaklayıp hastaları şifahaneye taşıyarak durdurabildi.",
+  "word_count": 64,
+  "audio_file": "voiceover.mp3",
+  "srt_file": "voiceover.srt",
+  "audio_duration_sec": 36.864,
+  "visual_keywords": [
+    "strasbourg medieval street",
+    "historical crowd dancing",
+    "old european town",
+    "medieval manuscript art"
+  ],
+  "word_timestamps": [
+    {
+      "word": "1518",
+      "start_ms": 0.0,
+      "end_ms": 357.9
+    },
+    {
+      "word": "yazında",
+      "start_ms": 357.9,
+      "end_ms": 984.2
+    },
+    {
+      "word": "Strazburg",
+      "start_ms": 984.2,
+      "end_ms": 1789.5
+    },
+    {
+      "word": "sokaklarında",
+      "start_ms": 1789.5,
+      "end_ms": 2863.2
+    },
+    {
+      "word": "bir",
+      "start_ms": 2863.2,
+      "end_ms": 3131.7
+    },
+    {
+      "word": "kadın",
+      "start_ms": 3131.7,
+      "end_ms": 3579.0
+    },
+    {
+      "word": "aniden",
+      "start_ms": 3579.0,
+      "end_ms": 4115.9
+    },
+    {
+      "word": "dans",
+      "start_ms": 4115.9,
+      "end_ms": 4473.8
+    },
+    {
+      "word": "etmeye",
+      "start_ms": 4473.8,
+      "end_ms": 5010.6
+    },
+    {
+      "word": "başladı",
+      "start_ms": 5010.6,
+      "end_ms": 5637.0
+    },
+    {
+      "word": "ve",
+      "start_ms": 5637.0,
+      "end_ms": 5815.9
+    },
+    {
+      "word": "günlerce",
+      "start_ms": 5815.9,
+      "end_ms": 6531.7
+    },
+    {
+      "word": "duramadı.",
+      "start_ms": 6531.7,
+      "end_ms": 7337.0
+    },
+    {
+      "word": "Bir",
+      "start_ms": 7337.0,
+      "end_ms": 7605.4
+    },
+    {
+      "word": "hafta",
+      "start_ms": 7605.4,
+      "end_ms": 8052.8
+    },
+    {
+      "word": "içinde",
+      "start_ms": 8052.8,
+      "end_ms": 8589.7
+    },
+    {
+      "word": "otuz",
+      "start_ms": 8589.7,
+      "end_ms": 8947.6
+    },
+    {
+      "word": "dört",
+      "start_ms": 8947.6,
+      "end_ms": 9305.5
+    },
+    {
+      "word": "kişi,",
+      "start_ms": 9305.5,
+      "end_ms": 9752.9
+    },
+    {
+      "word": "bir",
+      "start_ms": 9752.9,
+      "end_ms": 10021.3
+    },
+    {
+      "word": "ay",
+      "start_ms": 10021.3,
+      "end_ms": 10200.2
+    },
+    {
+      "word": "içinde",
+      "start_ms": 10200.2,
+      "end_ms": 10737.1
+    },
+    {
+      "word": "ise",
+      "start_ms": 10737.1,
+      "end_ms": 11005.5
+    },
+    {
+      "word": "yaklaşık",
+      "start_ms": 11005.5,
+      "end_ms": 11721.3
+    },
+    {
+      "word": "dört",
+      "start_ms": 11721.3,
+      "end_ms": 12079.2
+    },
+    {
+      "word": "yüz",
+      "start_ms": 12079.2,
+      "end_ms": 12347.7
+    },
+    {
+      "word": "kişi",
+      "start_ms": 12347.7,
+      "end_ms": 12705.6
+    },
+    {
+      "word": "bu",
+      "start_ms": 12705.6,
+      "end_ms": 12884.5
+    },
+    {
+      "word": "tuhaf",
+      "start_ms": 12884.5,
+      "end_ms": 13331.9
+    },
+    {
+      "word": "harekete",
+      "start_ms": 13331.9,
+      "end_ms": 14047.7
+    },
+    {
+      "word": "katıldı.",
+      "start_ms": 14047.7,
+      "end_ms": 14763.5
+    },
+    {
+      "word": "İnsanlar",
+      "start_ms": 14763.5,
+      "end_ms": 15479.3
+    },
+    {
+      "word": "ayakları",
+      "start_ms": 15479.3,
+      "end_ms": 16195.1
+    },
+    {
+      "word": "kanayana",
+      "start_ms": 16195.1,
+      "end_ms": 16910.9
+    },
+    {
+      "word": "ve",
+      "start_ms": 16910.9,
+      "end_ms": 17089.9
+    },
+    {
+      "word": "yorgunluktan",
+      "start_ms": 17089.9,
+      "end_ms": 18163.6
+    },
+    {
+      "word": "yere",
+      "start_ms": 18163.6,
+      "end_ms": 18521.5
+    },
+    {
+      "word": "yığılana",
+      "start_ms": 18521.5,
+      "end_ms": 19237.3
+    },
+    {
+      "word": "kadar",
+      "start_ms": 19237.3,
+      "end_ms": 19684.7
+    },
+    {
+      "word": "kontrolsüzce",
+      "start_ms": 19684.7,
+      "end_ms": 20758.4
+    },
+    {
+      "word": "zıplıyordu.",
+      "start_ms": 20758.4,
+      "end_ms": 21742.6
+    },
+    {
+      "word": "Dönemin",
+      "start_ms": 21742.6,
+      "end_ms": 22368.9
+    },
+    {
+      "word": "belediye",
+      "start_ms": 22368.9,
+      "end_ms": 23084.7
+    },
+    {
+      "word": "meclisi",
+      "start_ms": 23084.7,
+      "end_ms": 23711.1
+    },
+    {
+      "word": "ve",
+      "start_ms": 23711.1,
+      "end_ms": 23890.0
+    },
+    {
+      "word": "hekimleri",
+      "start_ms": 23890.0,
+      "end_ms": 24695.3
+    },
+    {
+      "word": "çavdar",
+      "start_ms": 24695.3,
+      "end_ms": 25232.2
+    },
+    {
+      "word": "küfü",
+      "start_ms": 25232.2,
+      "end_ms": 25590.1
+    },
+    {
+      "word": "zehirlenmesi",
+      "start_ms": 25590.1,
+      "end_ms": 26663.8
+    },
+    {
+      "word": "ile",
+      "start_ms": 26663.8,
+      "end_ms": 26932.2
+    },
+    {
+      "word": "kitlesel",
+      "start_ms": 26932.2,
+      "end_ms": 27648.0
+    },
+    {
+      "word": "psikojenik",
+      "start_ms": 27648.0,
+      "end_ms": 28542.8
+    },
+    {
+      "word": "hastalık",
+      "start_ms": 28542.8,
+      "end_ms": 29258.6
+    },
+    {
+      "word": "arasında",
+      "start_ms": 29258.6,
+      "end_ms": 29974.4
+    },
+    {
+      "word": "kalan",
+      "start_ms": 29974.4,
+      "end_ms": 30421.7
+    },
+    {
+      "word": "bu",
+      "start_ms": 30421.7,
+      "end_ms": 30600.7
+    },
+    {
+      "word": "olayı",
+      "start_ms": 30600.7,
+      "end_ms": 31048.1
+    },
+    {
+      "word": "ancak",
+      "start_ms": 31048.1,
+      "end_ms": 31495.5
+    },
+    {
+      "word": "müzikleri",
+      "start_ms": 31495.5,
+      "end_ms": 32300.7
+    },
+    {
+      "word": "yasaklayıp",
+      "start_ms": 32300.7,
+      "end_ms": 33195.5
+    },
+    {
+      "word": "hastaları",
+      "start_ms": 33195.5,
+      "end_ms": 34000.8
+    },
+    {
+      "word": "şifahaneye",
+      "start_ms": 34000.8,
+      "end_ms": 34895.5
+    },
+    {
+      "word": "taşıyarak",
+      "start_ms": 34895.5,
+      "end_ms": 35700.8
+    },
+    {
+      "word": "durdurabildi.",
+      "start_ms": 35700.8,
+      "end_ms": 36864.0
+    }
+  ]
+}
