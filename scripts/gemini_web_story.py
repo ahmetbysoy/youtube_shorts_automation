@@ -250,10 +250,16 @@ def select_researched_topic(
     *,
     recent_titles: list[str] | None = None,
     session: Any = requests,
+    exclude_slugs: set[str] | None = None,
 ) -> tuple[str, str, dict[str, Any]]:
-    """Try unused source seeds, excluding durable recent title history."""
+    """Try unused source seeds, excluding durable recent title history.
+    exclude_slugs: bu denemede tamamen atlanacak slug'lar (validate hatasi
+    sonrasi ayni konunun tekrar secilmemesi icin).
+    """
     titles = recent_titles or []
-    slugs = [slug for slug in WIKI_SEED_TOPICS if not _topic_appears_in_recent_titles(slug, titles)]
+    excl = exclude_slugs or set()
+    slugs = [slug for slug in WIKI_SEED_TOPICS
+             if not _topic_appears_in_recent_titles(slug, titles) and slug not in excl]
     attempted: list[str] = []
     while slugs:
         slug, reservation_id = reserve_topic(slugs, ledger_path)
