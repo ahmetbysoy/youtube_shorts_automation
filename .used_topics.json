@@ -28,7 +28,8 @@
     "Venüs'te Bir Gün, Bir Yıldan Daha Uzundur! #Shorts",
     "Posta Pulları Balın Yapışkanlığını Kullanırdı! #Shorts",
     "İlk Uçuş Sadece 12 Saniye Sürdü! #Shorts",
-    "Piri Reis Haritası 1513'te Güney Amerika'yı Nasıl Çizdi? #Shorts"
+    "Piri Reis Haritası 1513'te Güney Amerika'yı Nasıl Çizdi? #Shorts",
+    "Işık Yavaşlayabilir, Sıfır Hıza Bile Düşebilir! #Shorts"
   ],
   "used_records": [
     {
@@ -865,9 +866,7 @@
         "yi"
       ],
       "created_at": "2026-11-20T08:16:08.927076+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Işık Yavaşlayabilir, Sıfır Hıza Bile Düşebilir! #Shorts",
       "topic": "Bilim",
@@ -935,9 +934,8 @@
         "yerind",
         "yogusmas"
       ],
-      "created_at": "2026-11-20T21:24:41.298664+00:00",
-      "reservation_id": "20d993bc-55f3-4210-8173-c75fbb57f8bb",
-      "run_id": "44819615866:1"
+      "created_at": "2026-11-20T21:24:41.298664+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
