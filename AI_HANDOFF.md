@@ -24,7 +24,7 @@
 
 > **Faz 14:** Kullanıcı ücretli AI görsel API kullanımını reddetti; [plan](docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md). Google API key GitHub Secrets içinde; değerini asla gösterme. Şu an ücretsiz proje olduğu Studio UI üzerinden gözlendi; API görüntü üretimi ücretsiz değildir.
 
-> **Son Güncelleme:** `2026-11-20` (Faz4K kök neden onarımı — Faz4G run 44670492824 SUCCESS; Wikimedia CC0/NoRestrictions lisans kabulü, gsrlimit=30, iiurlwidth=1920, video min 2s loop, jenerik Wikimedia fallback, loop_allowed=True, cookie probe cache ve consecutive_empty cache; 39/39 QC GEÇTİ; scene_media_manifest artifact'e eklendi; [PHASE4K_ACCEPTANCE.md](docs/evidence/PHASE4K_ACCEPTANCE.md))
+> **Son Güncelleme:** `2026-11-20` (Faz 4K kabul edildi — Faz4G nihai koşusu [44700976069](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44700976069) @ `f8a53b9` SUCCESS — Piri Reis konusu, 39/39 QC, 0 hata, 6.91 MB 38.57s; Wikimedia CC0/NoRestrictions lisans kabulü, gsrlimit=30, iiurlwidth=1920, video min 2s loop, image=crop/video=contain (black frame fix), cookie probe cache, 120+ TR→EN alias, kategori fallbacks (uzay/tarih/bilim/doğa/tıp/hayvan/çöl/fizik), LLM garbage query ("science named" vb.) toleransı, en-son-çare relaxed medya seçimi; [PHASE4K_ACCEPTANCE.md](docs/evidence/PHASE4K_ACCEPTANCE.md))
 > **Hedef Kitle:** Bu projeyi devralacak bir sonraki Yapay Zeka Ajanı (Arena Agent, Claude Code, Cursor, Codex vb.) veya Geliştirici.
 
 Bu belge, projeyi devralan bir yapay zekanın **sıfır tahmin, sıfır deneme-yanılma ve sıfır güvenlik ihlali** ile 30 saniye içinde sistemi anlayıp geliştirmeye devam edebilmesi için hazırlanmıştır.
