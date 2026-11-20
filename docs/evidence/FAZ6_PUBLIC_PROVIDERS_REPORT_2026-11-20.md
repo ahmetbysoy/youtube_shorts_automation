@@ -135,3 +135,48 @@ Sandbox'ta gercek HTTP cagrilari ile end-to-end test edildi:
 - [x] CAPTCHA/Cloudflare bypass YOK (bu kaynaklar bot korumasi kullanmiyor).
 - [x] Hicbir secret kullanmiyor (public_providers_probe workflow).
 - [x] Yukleme/yayinlama/veri silme YOK.
+
+## 8. CI kanıtı (run #2, commit 7b7bea5, 2026-11-20)
+
+**Workflow:** `public_providers_probe.yml` run #2, id=44785843955
+**Sonuç:** ✅ IKI SAGLAYICI DA GECTI
+
+### NASA (solar flare)
+- Aday: 15
+- Secilen: `GSFC_20170403_Trio_m12563_SolarFlares~mobile.mp4`
+- URL: https://images-assets.nasa.gov/video/GSFC_20170403_Trio_m12563_SolarFlares/GSFC_20170403_Trio_m12563_SolarFlares~mobile.mp4
+- 3,428,132 bytes (3.3 MB), Content-Type: video/mp4
+- ffprobe: h264, 320×180, 82.53 s, format=mov/mp4, bitrate 332 kb/s
+- full decode: OK
+- SHA256: `6656b16a5848013ff0ca2277d1fe4a6f61042692abef30cb8c5803aa582d6e0f`
+- License: verified (NASA Public Domain)
+
+### Internet Archive (solar flare)
+- Aday: 4 (publicdomain + prelinger/nasa/usgovfilms filtresi)
+- Secilen: `flare_soh_2003301.mp4` (Massive Solar Flare: Image of the Day)
+- URL: https://archive.org/download/flare_soh_2003301/flare_soh_2003301.mp4
+- 467,228 bytes (456 KB), Content-Type: video/mp4
+- ffprobe: h264, 480×480, 5.2 s, format=mov/mp4, bitrate 719 kb/s
+- full decode: OK
+- SHA256: `b96e42527fff4ea739f807055eb03dc89d13f5eeaf208097777e02b7583cccbb`
+- License: per-item pending (search filter applied; post-download verification TODO)
+
+### Zincir tamamlama (her iki saglayici icin)
+- [x] search (HTTP JSON, status 200)
+- [x] candidate metadata + title + source URL
+- [x] NASA: manifest HEAD ile en kucuk MP4 secimi (<64MB)
+- [x] IA: MP4 derive HEAD + 512kb fallback
+- [x] Host allowlist dogrulamasi
+- [x] HTTP GET stream (Content-Type=video/mp4)
+- [x] Byte siniri (64 MB) asilmadi
+- [x] SHA256
+- [x] ffprobe (codec, w, h, duration)
+- [x] ffmpeg -f null - tam decode (returncode 0)
+- [x] Hicbir secret/api-key kullanilmadi
+- [x] CAPTCHA/Cloudflare bypass yapilmadi
+- [x] Yukleme/yayinlama/veri silme yok
+
+Not: NASA secilen video 320×180 (180p) dusuk cozunurlukte — mevcut
+`min_height=360` filtresi montaj asamasinda bunu muhtemelen reddedecek ve
+daha yuksek cozunurluklu adaylara (ornegin ~small.mp4 720p) veya diger
+saglayicilara yonelecek. Bu SECICI KALITESI — beklenen davranis.
