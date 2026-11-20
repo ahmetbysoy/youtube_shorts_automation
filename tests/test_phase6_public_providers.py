@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from types import SimpleNamespace
 
 from src.media_processing.media_providers import (
-    NasaProvider, InternetArchiveProvider, StockTerms, default_providers,
+    NasaProvider, InternetArchiveProvider, MixkitProvider, StockTerms, default_providers,
     DOWNLOAD_HOSTS, SOURCE_HOSTS, valid_url,
 )
 
@@ -22,11 +22,13 @@ from src.media_processing.media_providers import (
 # ---------- Helpers ----------
 
 class FakeResp:
-    def __init__(self, status=200, json_data=None, headers=None, text=""):
+    def __init__(self, status=200, json_data=None, headers=None, text="", url=None):
         self.status_code = status
         self._json = json_data or {}
         self.headers = headers or {"content-type": "video/mp4", "content-length": "1048576"}
         self.text = text
+        self.url = url or ""
+        self.content = text.encode("utf-8") if text else b""
 
     def json(self):
         return self._json
@@ -55,25 +57,35 @@ class FakeSession:
 
     def _match(self, url, table):
         if url in table:
-            return table[url]
+            r = table[url]
+            if r.url == "":
+                r.url = url
+            return r
         for prefix, resp in table.items():
             if url.startswith(prefix):
+                if resp.url == "":
+                    resp.url = url
                 return resp
-        # Icinde gecen
         for needle, resp in table.items():
             if needle in url:
+                if resp.url == "":
+                    resp.url = url
                 return resp
         return None
 
     def get(self, url, **kw):
         self.calls.append(("get", url, kw))
         r = self._match(url, self.get_map)
-        return r if r is not None else FakeResp(404)
+        if r is None:
+            return FakeResp(404, url=url)
+        return r
 
     def head(self, url, **kw):
         self.calls.append(("head", url, kw))
         r = self._match(url, self.head_map)
-        return r if r is not None else FakeResp(404)
+        if r is None:
+            return FakeResp(404, url=url)
+        return r
 
 
 # ---------- Host allowlist ----------
@@ -102,12 +114,18 @@ def test_archiveorg_hosts():
 
 # ---------- Default provider wiring ----------
 
-def test_default_providers_includes_nasa_and_ia():
+def test_default_providers_includes_nasa_ia_mixkit():
     names = [p.name for p in default_providers()]
     assert "nasa" in names
     assert "archiveorg" in names
-    # Sira: pexels, pixabay, nasa, archiveorg, wikimedia
+    assert "mixkit" in names
+    assert "pexels-browser" in names
+    assert "pixabay-browser" in names
+    # Sira: pexels-browser, pixabay-browser, mixkit, nasa, archiveorg, wikimedia
+    assert names.index("pixabay-browser") < names.index("mixkit")
+    assert names.index("mixkit") < names.index("nasa")
     assert names.index("nasa") < names.index("archiveorg")
+    assert names.index("archiveorg") < names.index("wikimedia")
     assert names.index("archiveorg") < names.index("wikimedia")
 
 
@@ -230,6 +248,86 @@ def test_ia_search_head_filters_mp4_under_64mb():
     assert c.download_url.endswith("Felix_BoldKingCole.mp4")
     # IA lisans per-item pending
     assert c.license.verified is False
+
+
+# ---------- Mixkit tests ----------
+
+def test_mixkit_hosts():
+    assert "assets.mixkit.co" in DOWNLOAD_HOSTS["mixkit"]
+    assert "mixkit.co" in SOURCE_HOSTS["mixkit"]
+    assert not valid_url("https://evil.com/v.mp4", DOWNLOAD_HOSTS["mixkit"])
+    assert valid_url(
+        "https://assets.mixkit.co/videos/9949/9949-720.mp4",
+        DOWNLOAD_HOSTS["mixkit"],
+    )
+
+
+def test_stock_terms_mixkit_verified_free_license():
+    terms = StockTerms(session=FakeSession())
+    lic = terms.check("mixkit")
+    assert lic.verified is True
+    assert "Mixkit" in lic.name
+    assert lic.attribution_required is False
+    assert "no_standalone_redistribution" in lic.restrictions
+
+
+def test_mixkit_slug():
+    mk = MixkitProvider(session=FakeSession())
+    assert mk._slug("Solar Flare!") == "solar-flare"
+    assert mk._slug("cats & dogs") == "cats-dogs"
+    assert mk._slug("OCEAN") == "ocean"
+
+
+def test_mixkit_parse_category_page_picks_highest_resolution():
+    html = '''
+    <html><body>
+      <a href="/free-stock-video/a-cute-cat-video-1779/" title="Cute cat video">Cute cat</a>
+      <video><source src="https://assets.mixkit.co/videos/1779/1779-360.mp4"></video>
+      <video><source src="https://assets.mixkit.co/videos/1779/1779-720.mp4"></video>
+      <video><source src="https://assets.mixkit.co/videos/1779/1779-1080.mp4"></video>
+      <a href="/free-stock-video/dogs-playing-222/">Dogs</a>
+      <video><source src="https://assets.mixkit.co/videos/222/222-360.mp4"></video>
+      <video><source src="https://assets.mixkit.co/videos/222/222-2160.mp4"></video> <!-- 4K premium -->
+    </body></html>
+    '''
+    mk = MixkitProvider(session=FakeSession())
+    items = mk._parse_category_page(html)
+    assert len(items) == 2
+    by_id = {it["id"]: it for it in items}
+    # 1779: en yuksek free res 1080 secilmeli
+    assert by_id["1779"]["resolution"] == 1080
+    assert by_id["1779"]["download_url"].endswith("1779-1080.mp4")
+    assert "Cute cat" in by_id["1779"]["title"]
+    # 222: 2160 premium atlanip 360 secilmeli
+    assert by_id["222"]["resolution"] == 360
+    assert by_id["222"]["download_url"].endswith("222-360.mp4")
+
+
+def test_mixkit_search_filters_head_failures():
+    """HTTP 200 + 200 + mp4 content-type + size <64MB olani secmeli."""
+    html = '''
+    <html><body>
+      <a href="/free-stock-video/cute-cat-100/" title="Cute cat 100">Cat 100</a>
+      <video><source src="https://assets.mixkit.co/videos/100/100-720.mp4"></video>
+      <a href="/free-stock-video/cute-cat-200/" title="Cute cat 200">Cat 200</a>
+      <video><source src="https://assets.mixkit.co/videos/200/200-720.mp4"></video>
+    </body></html>
+    '''
+    get_map = {"https://mixkit.co/free-stock-video/cat/": FakeResp(200, text=html)}
+    head_map = {
+        # ilk aday 200, video/mp4, 5MB
+        "https://assets.mixkit.co/videos/100/100-720.mp4":
+            FakeResp(200, headers={"content-type": "video/mp4", "content-length": str(5*1024*1024)}),
+        # ikinci aday 403
+        "https://assets.mixkit.co/videos/200/200-720.mp4": FakeResp(403),
+    }
+    sess = FakeSession(get_map=get_map, head_map=head_map)
+    mk = MixkitProvider(session=sess)
+    cands = mk.search("cat")
+    assert len(cands) == 1
+    assert cands[0].media_id == "100"
+    assert cands[0].download_url.endswith("100-720.mp4")
+    assert cands[0].license.verified is True
 
 
 # ---------- Calistir ----------

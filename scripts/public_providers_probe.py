@@ -32,11 +32,13 @@ import requests  # type: ignore
 from src.media_processing.media_providers import (
     NasaProvider,
     InternetArchiveProvider,
+    MixkitProvider,
     MediaCandidate,
 )
 
 MAX_BYTES_DEFAULT = 64 * 1024 * 1024
-USER_AGENT = "Mozilla/5.0 (compatible; youtube-shorts-automation/faz6-public-probe; +https://github.com/ahmetbysoy/youtube_shorts_automation)"
+# Tarayici User-Agent kullan (bazi CDN'ler bot UA'ya 403 veriyor)
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
 
 def human_bytes(n: int) -> str:
@@ -218,6 +220,7 @@ def main():
     providers = [
         ("nasa", NasaProvider(session=sess)),
         ("archiveorg", InternetArchiveProvider(session=sess)),
+        ("mixkit", MixkitProvider(session=sess)),
     ]
 
     report = {"keyword": args.keyword, "max_bytes": max_bytes, "results": {}}

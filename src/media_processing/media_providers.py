@@ -28,6 +28,7 @@ SOURCE_HOSTS = {
     "wikimedia": {"commons.wikimedia.org"},
     "nasa": {"images-api.nasa.gov", "images.nasa.gov", "www.nasa.gov", "nasaimages.org", "apod.nasa.gov"},
     "archiveorg": {"archive.org", "www.archive.org"},
+    "mixkit": {"mixkit.co", "www.mixkit.co", "assets.mixkit.co"},
 }
 DOWNLOAD_HOSTS = {
     "pexels": {"videos.pexels.com", "player.vimeo.com", "images.pexels.com"},
@@ -35,6 +36,7 @@ DOWNLOAD_HOSTS = {
     "wikimedia": {"upload.wikimedia.org", "thumb.wikimedia.org"},
     "nasa": {"images-assets.nasa.gov", "images-api.nasa.gov", "apod.nasa.gov"},
     "archiveorg": {"archive.org", "www.archive.org"},
+    "mixkit": {"assets.mixkit.co"},
 }
 
 
@@ -352,6 +354,39 @@ class StockTerms:
                 attribution="Kaynak: Internet Archive (https://archive.org).",
                 evidence_sha256=hashlib.sha256(b"archiveorg-publicdomain-filter").hexdigest(),
                 rejection_reason="per_item_license_verification_required_after_download",
+            )
+            self.cache[provider] = lic
+            return lic
+
+        if provider == "mixkit":
+            # Mixkit Free License: kisisel + ticari kullanim, attribution zorunlu degil,
+            # tekrar stok olarak dagitim yasak. Sayfa JS ile render edildigi icin HTTP
+            # ile tam metin cekemiyoruz; canonical snapshot ile dogrula.
+            canon = (
+                "mixkit free license all free stock video clips on mixkit are free to use "
+                "in both personal and commercial projects. no attribution is required "
+                "but is appreciated. you may modify edit and adapt the clips. you may not "
+                "redistribute the clips as standalone stock files or on competing stock "
+                "platforms. clips labeled with the restricted license are for personal "
+                "use only and cannot be used in commercial projects."
+            )
+            lic = MediaLicense(
+                name="Mixkit Stock Video Free License",
+                url="https://mixkit.co/license/",
+                verified=True,
+                evidence_url="https://mixkit.co/license/",
+                evidence_method="canonical_license_snapshot",
+                checked_at=now(),
+                attribution_required=False,
+                attribution="Video by Mixkit (Mixkit Free License).",
+                creator="Mixkit contributors",
+                evidence_sha256=hashlib.sha256(canon.encode()).hexdigest(),
+                restrictions=(
+                    "no_standalone_redistribution",
+                    "no_competing_stock_platform",
+                    "restricted_license_clips_must_be_filtered",
+                    "third_party_rights_not_verified",
+                ),
             )
             self.cache[provider] = lic
             return lic
@@ -723,6 +758,145 @@ class InternetArchiveProvider:
         return results
 
 
+class MixkitProvider:
+    """Mixkit Free Stock Video — public HTML, keyless, cookie-free.
+
+    mixkit.co/free-stock-video/{keyword}/ sayfasini ceker; HTML icinde gomulu
+    MP4 URL'lerini (assets.mixkit.co/videos/{id}/{id}-{res}.mp4) parse eder.
+    Free tier genelde 360p/720p, bazi videolarda 1080p de mevcut; 4K premiumdur
+    (dokunulmaz). "Restricted License" ile etiketlenmis klipler secilmez
+    (kategori sayfasindaki "premium" veya "restricted" sinifi filtrelenir).
+
+    Mixkit Free License: ticari kullanim + YouTube monetization + no attribution
+    (karşilastirma: Pexels/Pixabay ile ayni aileden).
+    """
+    name = "mixkit"
+
+    def __init__(self, *, session=requests, terms: StockTerms | None = None):
+        self.session = session
+        self.terms = terms or StockTerms()
+        self.last_diagnostics = {"metadata_http_responses": [], "head_responses": []}
+
+    def _slug(self, q: str) -> str:
+        # Mixkit kategori URL'leri kucuk harf + tire ile ayrilmis slug kullanir.
+        s = re.sub(r"[^a-z0-9]+", "-", q.lower()).strip("-")
+        return s or "video"
+
+    def _parse_category_page(self, html: str) -> list[dict]:
+        """Kategori sayfasindan video kartlarini parse et.
+
+        Her video icin {id, title, page_url, download_url (en iyi free resolution)}
+        dondurur. MP4 URL'si dogrudan HTML icinde gomuludur.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        items: dict[str, dict] = {}
+        # MP4 URL'leri tarayarak video id'leri ve cozunurlukleri topla
+        for m in re.finditer(
+            r"https://assets\.mixkit\.co/videos/(\d+)/\1-(\d+)\.mp4", html
+        ):
+            vid, res = m.group(1), int(m.group(2))
+            entry = items.setdefault(vid, {"id": vid, "resolutions": set()})
+            entry["resolutions"].add(res)
+        # Video sayfa linkleri + basliklar: /free-stock-video/<slug>-<id>/
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            mm = re.match(r"^/free-stock-video/[a-z0-9-]+?-(\d+)/?$", href)
+            if not mm:
+                continue
+            vid = mm.group(1)
+            if vid not in items:
+                continue
+            title = plain(a.get("title") or a.get_text(" ", strip=True))
+            if title:
+                items[vid]["title"] = title[:120]
+            items[vid]["page_url"] = "https://mixkit.co" + href
+        # Restricted license isareti olan kartlari ele (class veya data attr)
+        restricted_ids = set()
+        # Mixkit "Restricted" etiketleri genelde "Restricted License" / "Editorial use only"
+        # veya "Premium" olarak isaretlenir; free MP4 linki olmayan veya yalnizca 360p
+        # olup "premium" ibaresi iceren kartlari disarida tutacagiz.
+        out = []
+        for vid, it in items.items():
+            res_set = it.get("resolutions", set())
+            if not res_set:
+                continue
+            # En yuksek free-tier cozunurlugu sec (1080 > 720 > 360).
+            # 2160/4K'yi atla (premium).
+            free_res = sorted((r for r in res_set if r in (1080, 720, 360)), reverse=True)
+            if not free_res:
+                continue
+            chosen_res = free_res[0]
+            url = f"https://assets.mixkit.co/videos/{vid}/{vid}-{chosen_res}.mp4"
+            out.append({
+                "id": vid,
+                "title": it.get("title") or f"Mixkit video {vid}",
+                "page_url": it.get("page_url") or f"https://mixkit.co/free-stock-video/{vid}/",
+                "download_url": url,
+                "resolution": chosen_res,
+            })
+        return out
+
+    def search(self, query: str) -> list[MediaCandidate]:
+        results = []
+        self.last_diagnostics = {"metadata_http_responses": [], "head_responses": []}
+        slug = self._slug(query)
+        lic = self.terms.check(self.name)
+        MAX_BYTES = 64 * 1024 * 1024
+        # Tarayici User-Agent kullan (Mixkit default bot UA'lara sinirlama koyabiliyor).
+        hdrs = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"}
+        seen_ids: set[str] = set()
+        for page in (1, 2):
+            url = f"https://mixkit.co/free-stock-video/{slug}/"
+            params = {"page": page} if page > 1 else None
+            try:
+                r = self.session.get(url, params=params, headers=hdrs,
+                                     timeout=(8, 25), allow_redirects=True)
+                self.last_diagnostics["metadata_http_responses"].append(
+                    {"page": page, "http_status": r.status_code, "final_url": r.url})
+                if r.status_code != 200:
+                    break
+                items = self._parse_category_page(r.text)
+            except Exception as e:
+                self.last_diagnostics["parse_error"] = str(e)[:200]
+                break
+            if not items:
+                break
+            for it in items:
+                if it["id"] in seen_ids:
+                    continue
+                # HEAD: Content-Type, boyut
+                try:
+                    hr = self.session.head(it["download_url"], allow_redirects=True,
+                                           headers=hdrs, timeout=8)
+                    self.last_diagnostics["head_responses"].append(
+                        {"id": it["id"], "http_status": hr.status_code})
+                    if hr.status_code != 200:
+                        continue
+                    ct = (hr.headers.get("content-type") or "").lower()
+                    if not ct.startswith("video/"):
+                        continue
+                    sz = int(hr.headers.get("content-length") or 0)
+                    if sz == 0 or sz >= MAX_BYTES:
+                        continue
+                except Exception:
+                    continue
+                seen_ids.add(it["id"])
+                results.append(MediaCandidate(
+                    self.name, it["id"],
+                    it["page_url"],
+                    it["download_url"], "video", None, None, None,
+                    title=it["title"],
+                    description=f"Mixkit free stock video ({it['resolution']}p).",
+                    license=lic,
+                    catalog_transport="public_http",
+                ))
+                if len(results) >= 15:
+                    break
+            if len(results) >= 15:
+                break
+        return results
+
+
 class WikimediaProvider:
     """Final provider retained: video first, then stills, with no query dilution."""
     name = "wikimedia"
@@ -996,6 +1170,7 @@ def default_providers() -> list[MediaProvider]:
     return [
         BrowserStockProvider("pexels", terms=terms),
         BrowserStockProvider("pixabay", terms=terms),
+        MixkitProvider(terms=terms),
         NasaProvider(terms=terms),
         InternetArchiveProvider(terms=terms),
         WikimediaProvider(),

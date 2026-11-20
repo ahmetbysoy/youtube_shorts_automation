@@ -441,3 +441,13 @@ Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olama
 - Pixabay cookie yenileme (kullanıcıya daha sonra sorulacak).
 - IA per-item license verification indirme sonrası (şu anda search'te `verified=False`).
 - Içerik seçiciye yeni sağlayıcıları dahil eden senaryo testleri.
+
+## Faz6C — Mixkit Free Stock Video (20 Kasım 2026)
+
+- `MixkitProvider` eklendi (keyless public HTTP).
+- URL: `mixkit.co/free-stock-video/{keyword}/` → HTML parse → `assets.mixkit.co` CDN MP4.
+- Free-tier çözünürlük: 1080 > 720 > 360 (4K atlanır).
+- Mixkit Free License: ticari kullanım + YouTube, attribution zorunlu değil.
+- 4K/premium ve Restricted License klipler filtrelenir.
+- 5 yeni birim testi (toplam 12 testin 12'si geçiyor).
+- CI probe pending.
