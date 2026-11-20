@@ -736,5 +736,63 @@
       "created_at": "2026-11-19T21:51:33.831645+00:00"
     }
   ],
-  "pending": []
+  "pending": [
+    {
+      "title": "Çin Seddi Uzaydan Görünmez, Bu Bir Efsane! #Shorts",
+      "topic": "Tarih",
+      "topic_subject": "Çin Seddi Uzaydan Görünmez, Bu Bir Efsane! #Shorts",
+      "topic_key": "",
+      "category": "tarih",
+      "entities": [
+        "cin",
+        "efsane",
+        "gorunmez",
+        "seddi",
+        "tarih",
+        "uzaydan"
+      ],
+      "claims": [],
+      "scenario_tokens": [
+        "aciklad",
+        "astronot",
+        "bizzat",
+        "boyunc",
+        "cin",
+        "ciplak",
+        "curutt",
+        "dardir",
+        "dusuk",
+        "efsan",
+        "efsane",
+        "etmistir",
+        "genislig",
+        "goremedigin",
+        "goremeyeceg",
+        "gorunmez",
+        "gozl",
+        "hayatiniz",
+        "ilk",
+        "insan",
+        "liwe",
+        "metr",
+        "nasa",
+        "ogrendiginiz",
+        "oldugun",
+        "orbit",
+        "ortalam",
+        "resm",
+        "sedd",
+        "tarih",
+        "te",
+        "teyit",
+        "uzay",
+        "yang",
+        "yanlis",
+        "yapi"
+      ],
+      "created_at": "2026-11-20T01:55:36.366063+00:00",
+      "reservation_id": "a45e7637-2847-4fe6-b758-c167bad13077",
+      "run_id": "44655900502:1"
+    }
+  ]
 }
