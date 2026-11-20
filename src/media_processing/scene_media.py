@@ -1588,7 +1588,7 @@ def scene_plan(script: dict) -> list[dict]:
     return plan
 
 
-def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[str], recent: list[dict], measured: bool = False) -> dict:
+def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[str], recent: list[dict], measured: bool = False, relaxed: bool = False) -> dict:
     reasons = []
     lic = candidate.license
     if candidate.provider not in SOURCE_HOSTS or not candidate.media_id or not valid_url(candidate.source_url, SOURCE_HOSTS.get(candidate.provider, set())):
@@ -1636,10 +1636,16 @@ def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[st
     # least 1 word from a 2-word query, 2 words from a 4–5 word query),
     # (b) share at least one content word with narration, and
     # (c) if a strong anchor pool exists, hit at least one anchor term.
-    if query_coverage < 0.34 or not narration_overlap:
+    # In "relaxed" mode (emergency fallback), we only require (a) — any
+    # license-compatible media that matches the query is acceptable as
+    # generic B-roll.
+    if query_coverage < 0.34:
         reasons.append("relevance_unproven_or_unrelated")
-    elif minimum_anchors >= 1 and not anchor_overlap:
-        reasons.append("relevance_unproven_or_unrelated")
+    elif not relaxed:
+        if not narration_overlap:
+            reasons.append("relevance_unproven_or_unrelated")
+        elif minimum_anchors >= 1 and not anchor_overlap:
+            reasons.append("relevance_unproven_or_unrelated")
     if evidence & BLOCKED:
         reasons.append("blocked_or_sensitive_metadata")
     # Unknown dimensions/duration may proceed ONLY to download+probe, never to
@@ -1916,6 +1922,24 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                                    "nature documentary landscape",
                                    "old vintage historical photograph black white",
                                    "world landmarks documentary"])
+                # FAZ4K EN SON CARE: Tum visual_keywords'i (scene ayirimi
+                # yapmadan) tek tek Wikimedia'da ara. LLM bazen bir keyword'u
+                # yanlis scene'e atamis olabilir ama herhangi bir konuyla ilgili
+                # PD gorsel B-roll olarak kullanilabilir.
+                if isinstance(vk, list):
+                    for v in vk:
+                        if isinstance(v, str) and v.strip():
+                            em_queries.append(v.strip())
+                # EN EN SON CARE: Title/topic icindeki anlamli Ingilizce
+                # kelimeleri kullan (4+ harf, stop-word degil). Boylece hicbir
+                # kategori eslesmese bile dogrudan konu ismiyle arama yapilir.
+                _en_words = []
+                for w in re.findall(r"[a-zA-Z]{4,}", title + " " + topic):
+                    wl = w.lower()
+                    if wl not in STOP and wl not in ("shorts", "daha", "icin", "gibi", "olarak", "nasil"):
+                        _en_words.append(wl)
+                if _en_words:
+                    em_queries.append(" ".join(list(dict.fromkeys(_en_words))[:5]))
                 # EN SON CARE: narration'daki anlamli Turkce kelimeleri dogrudan
                 # ara. Wikimedia Commons'ta Turkce metadata da var; bu, hicbir
                 # kategori/alias eslesmediginde bile PD icerik bulmayi saglar.
@@ -1949,7 +1973,7 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                         try:
                             candidates = provider.search(em_query)[:8]
                             for candidate in candidates:
-                                verdict = evaluate(candidate, scene, em_query, used=used, recent=recent)
+                                verdict = evaluate(candidate, scene, em_query, used=used, recent=recent, relaxed=True)
                                 if verdict["eligible"]:
                                     em_ranked.append((candidate, verdict, pi))
                         except Exception:
@@ -1966,7 +1990,7 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                             downloader(candidate, path)
                             probe = prober(path, candidate.media_type)
                             measured = replace(candidate, width=probe["width"], height=probe["height"], duration=probe["duration"], download_status="downloaded_and_decoded")
-                            verdict = evaluate(measured, scene, em_query, used=used, recent=recent, measured=True)
+                            verdict = evaluate(measured, scene, em_query, used=used, recent=recent, measured=True, relaxed=True)
                             if probe.get("decode_status") != "passed":
                                 verdict["rejection_reasons"].append("decode_not_confirmed")
                             if probe["sha256"] in used:
