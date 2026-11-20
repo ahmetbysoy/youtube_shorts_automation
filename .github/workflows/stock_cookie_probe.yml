@@ -81,10 +81,12 @@ jobs:
                           k, v = part.strip().split("=", 1)
                           if k.strip():
                               cookies.append({"name": k.strip(), "value": v.strip(), "domain": expected_domain})
-              # Domain filtresi
+              # Domain filtresi: expected_domain = ".pixabay.com" veya ".pexels.com";
+              # hem noktali (domain-wide) hem noktasiz (hostOnly) ve alt alanlari kabul et.
               def dom_ok(d):
-                  d = (d or "").lower()
-                  return d == expected_domain or d.endswith(expected_domain)
+                  d = (d or "").lower().strip().lstrip("[").split("]")[0]  # markdown link temizligi
+                  bare = expected_domain.lstrip(".")
+                  return d == expected_domain or d == bare or d.endswith("." + bare)
               cookies = [c for c in cookies if dom_ok(c.get("domain", expected_domain))]
               entry["cookies"] = cookies
               entry["cookie_count"] = len(cookies)

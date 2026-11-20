@@ -210,11 +210,13 @@ function loadCookies(source, defaultDomain) {
     ? parseCookiesFromJson(trimmed, defaultDomain)
     : parseCookieString(trimmed, defaultDomain);
   // YALNIZ defaultDomain ve alt domain'lerine ait cookie'leri filtrele.
+  // suffix: ".pixabay.com" (domain-wide), bare: "pixabay.com" (host-only).
+  // Kabul edilenler: exact suffix, exact bare, veya *.{bare} (alt domain).
   const suffix = defaultDomain; // ".pexels.com" veya ".pixabay.com"
   const bare = defaultDomain.replace(/^\./, '');
   cookies = cookies.filter(c => {
     const d = (c.domain || '').toLowerCase();
-    return d === suffix || d === bare || d.endsWith(suffix);
+    return d === suffix || d === bare || d.endsWith('.' + bare);
   });
   // (name,domain,path) ile tekillestir (son gecerli olan kazansin)
   const seen = new Map();
@@ -673,7 +675,13 @@ async function fetchProviderTerms(provider) {
   diag.cookie_present = cookies.length > 0;
   diag.cookie_count = cookies.length;
   if (cookies.length === 0) { diag.error = 'cookie_missing'; return { ok: false, text: '', diag }; }
-  diag.cookie_domain_ok = cookies.every(c => c.domain === defaultDomain || c.domain.endsWith(defaultDomain));
+  // Domain kontrolu: ya defaultDomain (.pixabay.com) ile eslesen domain-wide cookie,
+  // ya da bare domain (pixabay.com) — hostOnly cookie'ler noktasiz gelir.
+  const bareDomain = defaultDomain.replace(/^\./, '');
+  diag.cookie_domain_ok = cookies.every(c => {
+    const d = c.domain || '';
+    return d === defaultDomain || d === bareDomain || d.endsWith('.' + bareDomain);
+  });
   if (!diag.cookie_domain_ok) { diag.error = 'cookie_wrong_domain'; return { ok: false, text: '', diag }; }
   const { browser, ctx } = await launchContext(cookies, provider);
   try {
@@ -748,9 +756,10 @@ async function runProvider(provider, opts) {
     return { candidates: [], diagnostics: diag, provider };
   }
   // Butun cookie'lerin dogru domain'de oldugunu teyit et
+  const bareDomain = defaultDomain.replace(/^\./, '');
   diag.cookie_domain_ok = cookies.every(c => {
-    const d = c.domain;
-    return d === defaultDomain || d.endsWith(defaultDomain);
+    const d = c.domain || '';
+    return d === defaultDomain || d === bareDomain || d.endsWith('.' + bareDomain);
   });
   if (!diag.cookie_domain_ok) {
     diag.error = 'cookie_wrong_domain';
