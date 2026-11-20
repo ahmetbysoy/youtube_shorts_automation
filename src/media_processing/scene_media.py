@@ -1964,7 +1964,10 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                                                "fallback_used": True, "selected_query": em_query,
                                                "media_type": measured.media_type,
                                                "fit_mode": ("contain" if measured.media_type == "video" else "crop"),
-                                               "download_status": "downloaded_and_decoded"})
+                                               "download_status": "downloaded_and_decoded",
+                                               "assessment": verdict,
+                                               "media": measured.record(),
+                                               "file_probe": probe})
                                 # Faz4K: Image'lar icin "crop" kullan (contain modu siyah padding ile
                                 # black frame QC'sini tetikliyor). Videolar icin "contain" korunur
                                 # (hareketli videoda siyah barlar daha az belirgin ve daha kisa).
@@ -1977,54 +1980,6 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                                 break
                         except Exception:
                             path.unlink(missing_ok=True); continue
-            # Faz4K: SON CARE — daha once secilmis bir sahnenin medyasini tekrar
-            # kullan. Bazi LLM storyboard'larda ayni/benzer narration'a sahip
-            # sahneler olabiliyor (bazense kirpilmis tekrar). Bu durumda benzersiz
-            # medya bulmak imkansiz olabilir; en benzer sahnenin medyasini yeniden
-            # kullanmak (kisa bir short video icin tolere edilebilir) en iyisidir.
-            if selected is None and runtime:
-                import difflib
-                best_match = None; best_ratio = 0.0
-                for prev in runtime:
-                    prev_scene_id = prev["scene_id"]
-                    prev_record = next((x for x in report["scenes"] if x["scene_id"] == prev_scene_id), None)
-                    if prev_record is None: continue
-                    r = difflib.SequenceMatcher(None, scene["narration"].lower(),
-                                                prev_record["narration"].lower()).ratio()
-                    if r > best_ratio:
-                        best_ratio = r; best_match = prev
-                # Only reuse if narration is ≥60% similar (same/duplicate scene)
-                if best_match is not None and best_ratio >= 0.6:
-                    import shutil
-                    prev_path = best_match["path"]
-                    reuse_path = work_dir/f"scene_{scene['scene_id']}_reuse.{prev_path.suffix.lstrip('.')}"
-                    shutil.copy(prev_path, reuse_path)
-                    prev_record = next(x for x in report["scenes"] if x["scene_id"] == best_match["scene_id"])
-                    record.update({
-                        "selected_provider": best_match["provider"],
-                        "selected_media_id": f"{best_match['media_id']}_reuse",
-                        "source_url": prev_record.get("source_url"),
-                        "license": prev_record.get("license"),
-                        "attribution": best_match["credit"],
-                        "duration": None,
-                        "resolution": prev_record.get("resolution"),
-                        "aspect_ratio": prev_record.get("aspect_ratio"),
-                        "selection_score": 0,
-                        "rejection_reason": None,
-                        "fallback_used": True,
-                        "selected_query": "reuse_similar_scene",
-                        "media_type": best_match["media_kind"],
-                        "fit_mode": best_match["fit_mode"],
-                        "download_status": "reused_from_previous_scene",
-                    })
-                    selected = {"path": reuse_path, "duration": scene["duration"],
-                                "media_kind": best_match["media_kind"],
-                                "provider": best_match["provider"],
-                                "credit": best_match["credit"],
-                                "scene_id": scene["scene_id"],
-                                "fit_mode": best_match["fit_mode"],
-                                "loop_allowed": True}
-                    # NOTE: do NOT add to `used` set (we explicitly want reuse)
             if selected is None:
                 record["rejection_reason"] = "no_acceptable_media_after_bounded_queries"
                 raise ValueError(f"scene_{scene['scene_id']}_has_no_acceptable_media")
