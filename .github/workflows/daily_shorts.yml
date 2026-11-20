@@ -34,6 +34,14 @@ on:
         options:
           - '0'
           - '1'
+      dry_run:
+        description: "1 = sadece video uret (YouTube'a YUKLEME), kalite kontrol + render testi. Uretim akisini test etmek icin."
+        required: false
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '1'
 
 # FAZ 12: Tıkanan/eski job'ı iptal et, en günceli çalıştır (kuyruk tıkanmasın).
 # NOT: zincir (cron-kick) tetiklemesi POST'u tamamladıktan SONRA iptal olur,
@@ -96,6 +104,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs: channel-map
+    # FAZ C uretim kapisi ortam degiskenleri (medya + LLM cookie'leri globaldir)
+    env:
+      PEXELS_COOK: ${{ secrets.PEXELS_COOK }}
+      PIXABAY_COOK: ${{ secrets.PIXABAY_COOK }}
+      GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+      DAILY_VIDEO_LIMIT: "8"
+      MIN_UPLOAD_SPACING_MINUTES: "60"
     # Studio oturum kilidi: ayni anda tek oturum acilir (cerez/cerez catismasi olmasin)
     concurrency:
       group: studio-upload-lock
@@ -168,14 +183,37 @@ jobs:
 
           python -c "import json; c=json.load(open('cookies.json')); print(f'[OK] Kanal ${{ matrix.channel_id }} cookies.json doğrulandı ({len(c)} YouTube çerezi; medya çerezleri env üzerinden izole)')"
 
+      - name: "Faz C Üretim Güvenlik Kapısı (cookie/sağlık/kota/aralık/stop)"
+        id: safety
+        if: ${{ steps.gate.outputs.produce == 'true' }}
+        run: |
+          set +e
+          python scripts/production_gate.py \
+            --daily-limit "${DAILY_VIDEO_LIMIT:-8}" \
+            --min-spacing "${MIN_UPLOAD_SPACING_MINUTES:-60}" \
+            --max-errors 3
+          rc=$?
+          set -e
+          if [ "$rc" = "0" ]; then
+            echo "allow=true" >> "$GITHUB_OUTPUT"
+            echo "[SAFETY] production allowed"
+          else
+            echo "allow=false" >> "$GITHUB_OUTPUT"
+            echo "[SAFETY] bu tur atlandi (rc=$rc)"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo "::warning::Manuel tetiklemede bile kapı izin vermedi — loglara bakin."
+            fi
+          fi
+
       - name: Run Orchestrator (Main Pipeline)
         id: orchestrator
-        if: ${{ steps.gate.outputs.produce == 'true' }}
+        if: ${{ steps.gate.outputs.produce == 'true' && steps.safety.outputs.allow == 'true' }}
         env:
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
           FORCE_LOCAL_THUMBNAIL: ${{ inputs.force_local_thumbnail || '0' }}
           SKIP_THUMBNAIL: ${{ inputs.skip_thumbnail || '0' }}
+          SKIP_UPLOAD: ${{ inputs.dry_run || '0' }}
           # frame (varsayilan): baslik-odakli kapak ilk 1.0 sn boyunca videonun ilk karesinde gomuludur.
           # Studio'da videodan sec akisi, gomulu kapakla eslesen kareyi secer; ayri dosya yuklenmez.
           THUMBNAIL_MODE: ${{ vars.THUMBNAIL_MODE || 'frame' }}

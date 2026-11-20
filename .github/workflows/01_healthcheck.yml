@@ -1,0 +1,103 @@
+name: "01 — Sabah Healthcheck (Cookie Saglik + Stop)"
+run-name: "Healthcheck"
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: read
+  contents: write
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PEXELS_COOK: ${{ secrets.PEXELS_COOK }}
+      PIXABAY_COOK: ${{ secrets.PIXABAY_COOK }}
+      GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Araçlar
+        uses: ./.github/actions/setup-tools
+        with:
+          apt_packages: ffmpeg
+          python: 'true'
+          python_version: '3.11'
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+          python_playwright: 'true'
+          pip_requirements: ''
+          pip_extra: 'playwright requests beautifulsoup4 python-dotenv python-dateutil lxml'
+
+      - name: Emergency stop kontrolu (issue label)
+        id: stopcheck
+        run: |
+          STOPPED=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues?labels=EMERGENCY_STOP&state=open&per_page=1" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d) if isinstance(d,list) else 0)")
+          echo "stop_issues=$STOPPED" >> "$GITHUB_OUTPUT"
+          if [ "$STOPPED" -gt 0 ]; then
+            echo "::warning::EMERGENCY_STOP etiketli $STOPPED acik issue var."
+            touch .emergency_stop
+            exit 1
+          else
+            rm -f .emergency_stop
+            echo "[OK] Acik EMERGENCY_STOP issue yok."
+          fi
+
+      - name: Cookie uzunluk kontrolu
+        run: |
+          python3 -c "
+          import os,sys
+          required = {'PEXELS_COOK':50,'PIXABAY_COOK':50,'GEMINI_COOK':50}
+          yt = os.environ.get('COOKIES_JSON', os.environ.get('COOKIES_JSON_1',''))
+          required['YT_COOKIES'] = 200
+          os.environ['YT_COOKIES'] = yt
+          missing=[]
+          for name,ml in required.items():
+            v=os.environ.get(name,'').strip()
+            print(f'  {name:15s} len={len(v):5d}  {\"OK\" if len(v)>=ml else \"YOK\"}')
+            if len(v)<ml: missing.append(name)
+          if missing:
+            print(f'::error::Eksik: {missing}')
+            sys.exit(1)
+          print('[OK] tum cookie ler mevcut')
+          "
+        env:
+          COOKIES_JSON: ${{ secrets.COOKIES_JSON || secrets.COOKIES_JSON_1 }}
+
+      - name: Public saglayicilar probe (Nasa+IA+Mixkit)
+        run: |
+          python3 scripts/public_providers_probe.py --keyword "nature" --out /tmp/health_probe --max-bytes 32M 2>&1 | tail -20
+
+      - name: Ozet
+        run: |
+          echo "=== Healthcheck OK ==="
+          echo "Stop issues: 0"
+          echo "Cookies: HEPSI MEVCUT"
+          echo "Public providers: probe tamamlandi"
+          echo "Bugun uretim devam edebilir."
+
+      - name: Hata durumunda issue ac + stop
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              labels: 'HEALTHCHECK_FAILURE', state: 'open',
+            });
+            if (open.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: 'HEALTHCHECK FAILED — ' + new Date().toISOString().slice(0,10),
+                labels: ['HEALTHCHECK_FAILURE','EMERGENCY_STOP'],
+                body: 'Sabah healthcheck basarisiz. Uretim durduruldu. Insan mudahalesi gerekli.',
+              });
+            }

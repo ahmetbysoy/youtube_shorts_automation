@@ -32,6 +32,19 @@ logging.basicConfig(
     ]
 )
 
+def _record_gate(status: str) -> None:
+    """Production gate loguna sonucu yaz (gunluk kota ve ardisik hata takibi)."""
+    try:
+        subprocess.run(
+            [sys.executable, str(BASE_DIR / "scripts" / "production_gate.py"),
+             "--record", status],
+            cwd=BASE_DIR, env=os.environ.copy(),
+            capture_output=True, timeout=15, check=False,
+        )
+    except Exception:
+        pass
+
+
 def write_status(status: str, channel_id: str, **extra) -> None:
     """Tek satirlik kosu durumu -> logs/run_status.json (CI ozeti + artifact)."""
     payload = {
@@ -46,8 +59,13 @@ def write_status(status: str, channel_id: str, **extra) -> None:
             json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
         )
         logging.info(f"[*] RUN DURUMU: {status} {payload}")
-    except Exception as exc:  # pragma: no cover - dosya yazma hatasi uretimi durdurmaz
+    except Exception as exc:  # pragma: no cover
         logging.warning(f"[!] run_status.json yazilamadi: {exc}")
+    # Uretim sonucu gate loguna kaydet
+    if status == "uploaded":
+        _record_gate("published")
+    elif status == "error":
+        _record_gate("error")
 
 
 def content_generation_command(channel_id: str) -> list[str]:
@@ -311,6 +329,7 @@ def main():
     logging.info("=" * 70)
     logging.info(" ✅ TÜM FAZLAR BAŞARIYLA TAMAMLANDI. PARA MAKİNESİ ÇALIŞIYOR. ✅")
     logging.info("=" * 70)
+
 
 if __name__ == "__main__":
     main()
