@@ -27,7 +27,8 @@
     "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
     "Venüs'te Bir Gün, Bir Yıldan Daha Uzundur! #Shorts",
     "Posta Pulları Balın Yapışkanlığını Kullanırdı! #Shorts",
-    "İlk Uçuş Sadece 12 Saniye Sürdü! #Shorts"
+    "İlk Uçuş Sadece 12 Saniye Sürdü! #Shorts",
+    "Piri Reis Haritası 1513'te Güney Amerika'yı Nasıl Çizdi? #Shorts"
   ],
   "used_records": [
     {
@@ -791,9 +792,7 @@
         "yerel"
       ],
       "created_at": "2026-11-20T05:40:38.981022+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Piri Reis Haritası 1513'te Güney Amerika'yı Nasıl Çizdi? #Shorts",
       "topic": "Tarih",
@@ -865,9 +864,8 @@
         "yeni",
         "yi"
       ],
-      "created_at": "2026-11-20T08:16:08.927076+00:00",
-      "reservation_id": "2415ea0c-7c9c-4ea2-b8b4-14f72462983e",
-      "run_id": "44700976069:1"
+      "created_at": "2026-11-20T08:16:08.927076+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
