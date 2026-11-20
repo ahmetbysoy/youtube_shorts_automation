@@ -246,3 +246,37 @@ def test_commons_license_accepts_no_restrictions():
     lic = commons_license(page, info)
     assert lic.verified is True, f"'No restrictions' kabul edilmeli; reason={lic.rejection_reason}"
     assert lic.attribution_required is False
+
+
+def test_browser_provider_consecutive_empty_short_circuits():
+    """Cookie oturumu acik olsa bile (probe_status='ok') arka arkaya
+    CONSECUTIVE_EMPTY_THRESHOLD kadar bos sonuc gelirse sonraki aramalar
+    tarayiciyi tekrar acmamali."""
+    import os
+    from unittest import mock
+    from src.media_processing.media_providers import BrowserStockProvider, StockTerms
+
+    prov = BrowserStockProvider("pexels", terms=StockTerms())
+    prov._probe_status = "ok"
+    prov._probe_logged = True
+    # Ilk 2 arama bosa ciksin (simule)
+    prov._consecutive_empty = 2
+    os.environ["PEXELS_COOK"] = "dummy"
+    try:
+        with mock.patch("subprocess.run") as spy:
+            r = prov.search("cat")
+            spy.assert_not_called()
+        assert r == [], "esik asildiginda tarayici acilmamali"
+    finally:
+        del os.environ["PEXELS_COOK"]
+
+
+def test_wikimedia_provider_returns_enough_licensed_results_for_common_queries():
+    """WikimediaProvider gsrlimit=20 ile by-sa disi CC0/CC-BY adaylar
+    donmeli (dead sea crystals gibi by-sa agirlikli sorgularda da)."""
+    from src.media_processing.media_providers import WikimediaProvider
+    w = WikimediaProvider()
+    r = w.search("dead sea crystals")
+    licensed = [c for c in r if c.license.verified and "by-sa" not in c.license.name.lower()]
+    assert len(r) >= 12, f"en az 12 aday donmeli, {len(r)} dondu"
+    assert len(licensed) >= 3, f"CC0/CC-BY en az 3 aday olmali, {len(licensed)} var"

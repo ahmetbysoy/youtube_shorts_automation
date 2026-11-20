@@ -506,10 +506,14 @@ class WikimediaProvider:
     def search(self, query: str) -> list[MediaCandidate]:
         results = []
         self.last_diagnostics = {"metadata_http_responses": []}
+        # Faz4K: gsrlimit=6 ilk sayfa sadece by-sa dosyalar içeriyorsa seçim
+        # tamamen bloklanıyor (örn. "dead sea crystals" — Dead Sea fotoğrafları
+        # çoğunlukla CC BY-SA). Sayfa başına 20 sonuç al ve lisans filtrelemesi
+        # sonrasında uygun aday kalma olasılığını artır.
         for kind in ("video", "bitmap"):
             r = self.session.get("https://commons.wikimedia.org/w/api.php",
                                  params={"action": "query", "format": "json", "generator": "search", "gsrsearch": f"filetype:{kind} {query}",
-                                         "gsrnamespace": 6, "gsrlimit": 6, "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata|metadata", "iiurlwidth": 1440},
+                                         "gsrnamespace": 6, "gsrlimit": 20, "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata|metadata", "iiurlwidth": 1440},
                                  headers={"User-Agent": USER_AGENT}, timeout=(5, 25), allow_redirects=False)
             self.last_diagnostics["metadata_http_responses"].append({"kind": kind, "http_status": r.status_code})
             if r.status_code != 200:
@@ -565,6 +569,12 @@ class BrowserStockProvider:
         # aksi halde her sahne için 30-60 saniye boşa 403 beklenir.
         self._probe_status: str | None = None  # "ok" veya hata durumu
         self._probe_logged = False
+        # Faz4K: "ok" durumunda bile arka arkaya EMPTY sonuç geliyorsa
+        # (örn. query'de video yok, veya video_fetcher seçicileri site
+        # değişikliği nedeniyle kırık), tarayıcıyı her sahne tekrar açmak
+        # zaman kaybı. CONSECUTIVE_EMPTY_THRESHOLD kadar boş sonuçtan sonra
+        # kısa devre yap.
+        self._consecutive_empty = 0
 
     def _emit_probe_log(self) -> None:
         """İlk kez hata/ok durumunu bir kere log'la."""
@@ -584,8 +594,15 @@ class BrowserStockProvider:
     def search(self, query: str) -> list[MediaCandidate]:
         env_name = "PEXELS_COOK" if self.provider == "pexels" else "PIXABAY_COOK"
         provider_label = "Pexels" if self.provider == "pexels" else "Pixabay"
+        CONSECUTIVE_EMPTY_THRESHOLD = 2
         # Daha önce kalıcı hata teşhisi konduysa tarayıcıyı tekrar açma
         if self._probe_status is not None and self._probe_status != "ok":
+            return []
+        # Faz4K: Cookie oturumu açık olsa bile (status="ok") arka arkaya
+        # CONSECUTIVE_EMPTY_THRESHOLD kadar boş sonuç geldiyse (örn. query'de
+        # video yok veya video_fetcher seçicileri kırık) sonraki aramalarda
+        # tarayıcıyı tekrar açma; bu her sahne için 30-60 saniye kaybı önler.
+        if self._probe_status == "ok" and self._consecutive_empty >= CONSECUTIVE_EMPTY_THRESHOLD:
             return []
         cookie_raw = os.environ.get(env_name, "")
         if not cookie_raw or not cookie_raw.strip():
@@ -716,7 +733,10 @@ class BrowserStockProvider:
         self._probe_status = "ok"
         self._emit_probe_log()
         if not diag.get("candidates_found"):
+            self._consecutive_empty += 1
             return []
+        # Aday bulundu: sayacı sıfırla
+        self._consecutive_empty = 0
         lic = self.terms.check(self.provider)
         out = []
         for row in (raw.get("candidates") or [])[:6]:
