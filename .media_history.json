@@ -168,6 +168,34 @@
       "sha256": "372a408fc593ab43e16e1ab1c6646a030d5deb152493e9b82d57ea4690aee7bd",
       "selected_at": "2026-11-20T01:57:48.159853+00:00",
       "generation_id": "4362fadc-0ddd-46e2-a30e-67f31cf6de4c"
+    },
+    {
+      "key": "wikimedia:105462507",
+      "source_url": "https://commons.wikimedia.org/wiki/File:GEBCO_2019_bathymetry_Challenger_Deep_and_Sirena_Deep.jpg",
+      "sha256": "281df4ee2e59fb1c61752d3bc76000bacaa8a240635a8b087dd4593be9f0ecc2",
+      "selected_at": "2026-11-20T03:47:13.796027+00:00",
+      "generation_id": "33d4787a-367d-4805-a3bc-a2ede9015e13"
+    },
+    {
+      "key": "pexels:18160311",
+      "source_url": "https://www.pexels.com/search/videos/science%20deep/",
+      "sha256": "4ffc0882c410e4b422dec7622569a9eb25a621c51cfc7903cf34244247a82dad",
+      "selected_at": "2026-11-20T03:47:40.556836+00:00",
+      "generation_id": "33d4787a-367d-4805-a3bc-a2ede9015e13"
+    },
+    {
+      "key": "pexels:3196465",
+      "source_url": "https://www.pexels.com/search/videos/science%20named/",
+      "sha256": "318d84ea0c2213c50737954fb70db37c166ae71ea6a3b8ec10fd2d3758114c12",
+      "selected_at": "2026-11-20T03:47:56.721994+00:00",
+      "generation_id": "33d4787a-367d-4805-a3bc-a2ede9015e13"
+    },
+    {
+      "key": "wikimedia:147005278",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Built_to_Explore_NASA%27s_Deep-Space_Rocket,_the_Space_Launch_System_(740786151978).webm",
+      "sha256": "8231558b9730481b2d2bfea02ad4549c3ad1c96b199e60b573e90d21f2f77905",
+      "selected_at": "2026-11-20T03:48:13.846927+00:00",
+      "generation_id": "33d4787a-367d-4805-a3bc-a2ede9015e13"
     }
   ]
 }
