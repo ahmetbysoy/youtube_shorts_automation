@@ -108,6 +108,12 @@ Aşağıdaki **33 secret** listesi tarihsel başlangıç envanteridir; bugünkü
 
 ---
 
+
+
+## Zorunlu GitHub Actions Cache Standardı
+
+Sonraki tüm ajanlar ve geliştiriciler, workflow eklemeden veya kurulum adımlarını değiştirmeden önce [`docs/GITHUB_ACTIONS_CACHE_POLICY.md`](docs/GITHUB_ACTIONS_CACHE_POLICY.md) belgesini okumalı ve uygulamalıdır. Ortak kurulum/cache noktası `.github/actions/setup-tools/action.yml` dosyasıdır. Aynı bağımlılık kurulumunu workflow'larda kopyalamayın; ortak action'ı kullanın veya geriye uyumlu biçimde genişletin. Secret, cookie, oturum ve üretim verileri cache'e alınmaz. Cache hit/miss, smoke test ve süre ölçümü doğrulanmadan optimizasyon tamamlandı sayılmaz.
+
 ## 4. Altın Mühendislik Kuralları & Çözülmüş Tuzaklar (SAKIN BOZMA!)
 
 Bu projede daha önce karşılaşılan ve çözülen kritik teknik engeller şunlardır — **kodda değişiklik yaparken bu mekanizmaları koru**:
