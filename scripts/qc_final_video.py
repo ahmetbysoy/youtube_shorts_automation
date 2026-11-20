@@ -133,21 +133,36 @@ def measure_audio_volume(path: Path, timeout=60) -> tuple[float | None, float | 
     return mean_v, max_v
 
 
-def measure_audio_silence(path: Path, timeout=60) -> list[tuple[float, float]]:
+def measure_audio_silence(path: Path, timeout=60) -> tuple[list[tuple[float, float]], str | None]:
     """ffmpeg silencedetect ile uzun sessizlik bolgelerini bulur.
 
-    Donus: (start_s, end_s) ciftleri listesi. 2 saniyeden uzun sessizlikler
-    (noise=-40dB altinda) uyaridir; 4 saniyeden uzun sessizlikler HATA.
+    Donus: (silences, error). error varsa silences [] olur.
+    sessizlik: noise=-40dB altinda 0.5sn+ (2sn+ uyarı, 4sn+ hata).
+    Dosya sonuna kadar sessizlik durumunda (sona erisip silence_end cikmazsa)
+    cur_start'tan dosya sonuna kadar olan sureyi sessizlik kabul eder.
     """
+    if not path.exists():
+        return [], "file_not_found"
     cmd = ["ffmpeg", "-v", "info", "-i", str(path),
            "-af", "silencedetect=noise=-40dB:d=0.5", "-f", "null", "-"]
     try:
         rc, out, err = run(cmd, timeout=timeout)
-    except Exception:
-        return []
+    except Exception as exc:
+        return [], f"ffmpeg_exception:{type(exc).__name__}"
+    if rc != 0:
+        return [], f"ffmpeg_exit_{rc}"
+    combined = out + err
+    # Dosya suresini bul
+    duration = None
+    for line in combined.splitlines():
+        m_dur = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", line)
+        if m_dur:
+            h, mi, s = m_dur.groups()
+            duration = int(h)*3600 + int(mi)*60 + float(s)
+            break
     silences: list[tuple[float, float]] = []
     cur_start = None
-    for line in (out + err).splitlines():
+    for line in combined.splitlines():
         m_start = re.search(r"silence_start:\s*(-?\d+(?:\.\d+)?)", line)
         if m_start:
             cur_start = float(m_start.group(1))
@@ -155,7 +170,62 @@ def measure_audio_silence(path: Path, timeout=60) -> list[tuple[float, float]]:
         if m_end and cur_start is not None:
             silences.append((cur_start, float(m_end.group(1))))
             cur_start = None
-    return silences
+    # Dosya sonuna kadar sessizse ekle
+    if cur_start is not None and duration is not None and cur_start < duration:
+        silences.append((cur_start, duration))
+    return silences, None
+
+
+def measure_audio_clipping(path: Path, timeout=60) -> tuple[float | None, float | None]:
+    """Sesi ham PCM'e cozumleyip clipping oranini ve tepe seviyesini olcer.
+
+    Clipping tanimi: orneklerin mutlak degeri tam skalaya (>= 0.999) ulastigi orneklerin orani.
+    Bu sesin zorla kesildigini (hard-clipping) gosterir — sadece yuksek ses demek degildir.
+
+    Donus: (clipped_ratio, peak_db). Hata durumunda (None, None).
+    clipped_ratio: 0..1 — 0.01 (1%) ustu GERCEK clipping olarak kabul edilir.
+    peak_db: 0 dBFS'ye gore tepe seviyesi (0 dBFS = tam skala).
+    """
+    if not path.exists():
+        return None, None
+    # 16-bit signed PCM mono 44.1kHz'e cozumle
+    cmd = ["ffmpeg", "-v", "error", "-i", str(path),
+           "-ac", "1", "-ar", "44100", "-f", "s16le", "-acodec", "pcm_s16le", "-"]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, timeout=timeout)
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return None, None
+    if proc.returncode != 0 or not proc.stdout:
+        return None, None
+    import array
+    try:
+        samples = array.array("h")
+        samples.frombytes(proc.stdout)
+    except Exception:
+        return None, None
+    if not samples:
+        return 0.0, -float("inf")
+    total = len(samples)
+    # Clipping eşiği: -1 dBFS (10^(-1/20) * 32767 ≈ 29163).
+    # MP3/AAC gibi kayıplı kodekler tam 0 dBFS örneklerini yumuşatır; -1 dBFS üstü örnekler
+    # pratikte hard-clipping işaretidir (TTS için normal tepe -3..-6 dBFS'dir).
+    abs_max = 0
+    clip_count = 0
+    clip_threshold = int(32767 * (10 ** (-1.0 / 20.0)))  # ≈29163
+    for s in samples:
+        a = s if s >= 0 else -s
+        if a > abs_max:
+            abs_max = a
+        if a >= clip_threshold:
+            clip_count += 1
+    ratio = clip_count / total
+    # dBFS: 20*log10(abs_max/32767)
+    import math
+    if abs_max <= 0:
+        peak_db = -float("inf")
+    else:
+        peak_db = 20.0 * math.log10(abs_max / 32767.0)
+    return round(ratio, 6), round(peak_db, 3)
 
 
 def list_scene_files(work_dir: Path):
@@ -453,14 +523,16 @@ def main():
         check("audio_volume", False, f"volumedetect calismadi: {e}", warning=True)
 
     # Faz 5: Uzun sessizlik kontrolu (2sn+ uyari, 4sn+ hata)
-    try:
-        silences = measure_audio_silence(vpath, timeout=60)
+    silences, sil_err = measure_audio_silence(vpath, timeout=60)
+    if sil_err:
+        check("audio_long_silence", False, f"silencedetect calismadi: {sil_err}", warning=True)
+    else:
         long_silences = [(s, e) for (s, e) in silences if (e - s) >= 2.0]
         very_long = [(s, e) for (s, e) in silences if (e - s) >= 4.0]
         if very_long:
             worst = max(very_long, key=lambda x: x[1] - x[0])
             check("audio_long_silence", False,
-                  f"{len(silences)} sessizlik bolgesi; en uzunu {worst[1]-worst[0]:.1f}s @{worst[0]:.1f}s (4sn+ hata)")
+                  f"{len(silences)} sessizlik; en uzunu {worst[1]-worst[0]:.1f}s @{worst[0]:.1f}s (4sn+ hata)")
         elif long_silences:
             worst = max(long_silences, key=lambda x: x[1] - x[0])
             check("audio_long_silence", True,
@@ -469,8 +541,24 @@ def main():
         else:
             check("audio_long_silence", True,
                   f"uzun sessizlik yok ({len(silences)} kisa duraklama)")
-    except Exception as e:
-        check("audio_long_silence", False, f"silencedetect calismadi: {e}", warning=True)
+
+    # Faz 5: Clipping kontrolu (astats clipped samples orani)
+    clip_ratio, peak_db = measure_audio_clipping(vpath, timeout=60)
+    if clip_ratio is None:
+        check("audio_clipping", False, "astats/clipping olculemedi", warning=True)
+    else:
+        # %1'den fazla clipped sample = yuksek bozulma (hata)
+        # %0.1-%1 arasi uyari
+        if clip_ratio >= 0.01:
+            check("audio_clipping", False,
+                  f"clipped={clip_ratio*100:.2f}% (1% ustu bozulma), peak={peak_db:.1f}dBFS")
+        elif clip_ratio >= 0.001:
+            check("audio_clipping", True,
+                  f"clipped={clip_ratio*100:.2f}% (uyari), peak={peak_db:.1f}dBFS",
+                  warning=True)
+        else:
+            check("audio_clipping", True,
+                  f"clipped={clip_ratio*100:.3f}%, peak={peak_db:.1f}dBFS")
 
     # 3) FFmpeg tam decode
     rc, errs = full_decode(vpath)

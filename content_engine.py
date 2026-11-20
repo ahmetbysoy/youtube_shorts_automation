@@ -3829,6 +3829,8 @@ def run_content_pipeline(
     # FAZ 5: Storyboard sahnelerini TTS WordBoundary zaman damgalarıyla hizala.
     # Her sahneye gerçek start_ms/end_ms/narration_start_ms/end_ms/word_indices/
     # timing_method/timing_confidence alanlarını yazar.
+    # Fail-closed: align_scenes_to_timestamps ya TÜM sahnelere gerçek timing yazar
+    # ya da HİÇBİRİNE yazmaz (proportional fallback). Karışık durum olmaz.
     timing_report: dict[str, Any] | None = None
     scene_boundaries: list[tuple[float, float]] = []
     if isinstance(payload.get("storyboard"), list) and payload["storyboard"]:
@@ -3840,9 +3842,16 @@ def run_content_pipeline(
                 if isinstance(s, dict) and "start_ms" in s and "end_ms" in s:
                     scene_boundaries.append((float(s["start_ms"]), float(s["end_ms"])))
         except Exception as exc:
-            print(f"[UYARI] Faz5 scene timing alignment basarisiz, proportional timing korunacak: {exc}",
+            print(f"[UYARI] Faz5 scene timing alignment exception, fallback proportional: {exc}",
                   file=sys.stderr)
             timing_report = None
+            # Exception durumunda da eski/kirli timing alanlarını temizle (karma fallback önleme)
+            for s in payload["storyboard"]:
+                if isinstance(s, dict):
+                    for k in ("start_ms", "end_ms", "narration_start_ms", "narration_end_ms",
+                              "word_start_idx", "word_end_idx", "timing_confidence",
+                              "timing_method", "duration_sec", "visual_start_ms", "visual_end_ms"):
+                        s.pop(k, None)
 
     # 5. Dinamik Shorts Altyazısı (voiceover.srt) — FAZ 5: sahne sinirlarina duyarli
     srt_content = build_dynamic_shorts_srt(
