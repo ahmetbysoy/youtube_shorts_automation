@@ -79,7 +79,11 @@ def test_distinct_query_and_media_for_every_storyboard_scene(tmp_path):
     assert sum(s["duration"] for s in runtime) == 8
     assert report["visual_verification"] == "not_performed"
     assert all(s["assessment"]["relevance_status"] == "metadata_supported" for s in data["scene_media"])
-    assert all(s["timing_basis"].endswith("not_tts_aligned") for s in data["scene_media"])
+    # Faz 5: timing_basis artik "estimated_word_weight_proportional" da olabilir
+    # (eski "narration_word_weighted_provisional_not_tts_aligned" de korunur)
+    valid_timing = {"narration_word_weighted_provisional_not_tts_aligned",
+                    "estimated_word_weight_proportional", "edge-tts-wordboundary"}
+    assert all(s["timing_basis"] in valid_timing for s in data["scene_media"])
 
 
 def test_alternatives_are_tried_in_order_without_generic_query_dilution(tmp_path):

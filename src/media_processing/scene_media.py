@@ -1578,13 +1578,39 @@ def scene_plan(script: dict) -> list[dict]:
                 if not (isinstance(vk, list) and vk):
                     raise ValueError("query_narration_alignment_unknown")
         weights.append(max(1, len(scene["narration"].split())))
-        plan.append({"scene_id": scene["scene_id"], "narration": scene["narration"], "queries": queries,
-                     "primary_query": queries[0], "media_type": scene.get("media_type")})
-    for scene, weight in zip(plan, weights):
-        scene["duration"] = round(total*weight/sum(weights), 3)
-        if scene["duration"] < 0.5:
-            raise ValueError("scene_duration_too_short")
-    plan[-1]["duration"] = round(total-sum(s["duration"] for s in plan[:-1]), 3)
+        # Faz 5: scene nesnesinde gerçek TTS zamanı (start_ms/end_ms) varsa
+        # hazırlanan plan içine doğrudan taşı. Bu alanlar content_engine
+        # tarafından align_scenes_to_timestamps() ile yazılır.
+        scene_props = {"scene_id": scene["scene_id"], "narration": scene["narration"], "queries": queries,
+                       "primary_query": queries[0], "media_type": scene.get("media_type")}
+        # Türetilmiş zamanlama alanlarını da kopyala
+        for _k in ("start_ms", "end_ms", "narration_start_ms", "narration_end_ms",
+                   "visual_start_ms", "visual_end_ms", "word_start_idx", "word_end_idx",
+                   "timing_method", "timing_confidence", "duration_sec"):
+            if _k in scene:
+                scene_props[_k] = scene[_k]
+        plan.append(scene_props)
+
+    # FAZ 5: Gerçek TTS zamanı varsa süreleri word-count oranı yerine ondan hesapla.
+    real_timing_available = all(
+        isinstance(s.get("start_ms"), (int, float)) and isinstance(s.get("end_ms"), (int, float))
+        and s.get("end_ms", 0) > s.get("start_ms", 0)
+        for s in plan
+    )
+    if real_timing_available:
+        for scene in plan:
+            scene["duration"] = round((float(scene["end_ms"]) - float(scene["start_ms"])) / 1000.0, 3)
+            if scene["duration"] < 0.3:
+                raise ValueError("scene_duration_too_short_tts_aligned")
+        # Son sahnenin süresini toplam ses süresine uzat (kuyruk tail)
+        plan[-1]["duration"] = round(total - sum(s["duration"] for s in plan[:-1]), 3)
+        # timing_basis gerçek TTS olarak işaretlenecek (aşağıda)
+    else:
+        for scene, weight in zip(plan, weights):
+            scene["duration"] = round(total*weight/sum(weights), 3)
+            if scene["duration"] < 0.5:
+                raise ValueError("scene_duration_too_short")
+        plan[-1]["duration"] = round(total-sum(s["duration"] for s in plan[:-1]), 3)
     return plan
 
 
@@ -1729,8 +1755,11 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
     prober = probe_media if prober is None else prober
     providers = default_providers() if providers is None else providers
     history = history if history is not None else MediaHistory.from_environment()
+    # FAZ 5: Gercek TTS zamanlamasi mevcutsa timing_basis'i oyle etiketle
+    from src.media_processing.timing import compute_timing_method
+    effective_timing = compute_timing_method(script)
     report = {"version": 1, "status": "blocked", "method": METHOD, "created_at": now(),
-              "visual_verification": "not_performed", "timing_basis": "narration_word_weighted_provisional_not_tts_aligned",
+              "visual_verification": "not_performed", "timing_basis": effective_timing,
               "history_scope": "github_contents_cas" if history.url else "local_atomic_file",
               "scenes": [], "failure": None}
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -1741,11 +1770,16 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
         recent = history.recent()
         for scene in plan:
             record = {"scene_id": scene["scene_id"], "narration": scene["narration"], "planned_duration": scene["duration"],
-                      "timing_basis": report["timing_basis"], "queries_tried": [], "provider_errors": [], "rejections": [],
+                      "timing_basis": scene.get("timing_method", report["timing_basis"]),
+                      "queries_tried": [], "provider_errors": [], "rejections": [],
                       "measured_candidates": [], "ranking_scope": "at_most_four_downloads_per_scene_measured_rerank",
                       "selected_provider": None, "selected_media_id": None, "source_url": None, "license": None,
                       "attribution": None, "duration": None, "resolution": None, "aspect_ratio": None,
                       "selection_score": None, "rejection_reason": "not_selected", "fallback_used": False}
+            # Faz 5: narration zamanlamasi varsa kayda ekle
+            for _tk in ("timing_confidence", "narration_start_ms", "narration_end_ms"):
+                if _tk in scene:
+                    record[_tk] = scene[_tk]
             report["scenes"].append(record)
             selected = None; downloads = 0
             for qi, query in enumerate(scene["queries"]):

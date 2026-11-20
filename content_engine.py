@@ -3545,31 +3545,68 @@ def format_srt_timestamp(ms: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{seconds:02d},{millis:03d}"
 
 
-def build_dynamic_shorts_srt(word_timestamps: list[dict[str, Any]], words_per_cue: int = 3) -> str:
-    """Kelime bazlı zaman damgalarını Shorts temposuna uygun 2-3 kelimelik altyazı bloklarına dönüştürür."""
+def build_dynamic_shorts_srt(
+    word_timestamps: list[dict[str, Any]],
+    words_per_cue: int = 3,
+    *,
+    scene_boundaries: list[tuple[float, float]] | None = None,
+) -> str:
+    """Kelime bazlı zaman damgalarını Shorts temposuna uygun 2-3 kelimelik altyazı bloklarına dönüştürür.
+
+    Faz 5: scene_boundaries verilirse (her biri (visual_start_ms, visual_end_ms)),
+    altyazı blokları sahne kesim noktalarında zorla bölünür — böylece sahne geçişinde
+    önceki sahnenin altyazısı ekranda kalmaz.
+    """
     if not word_timestamps:
         return ""
+
+    # Sahne sinirlarinda altyazi kesilecek kelime indekslerini onceden hesapla.
+    # Sinir noktasi (be_ms) bir kelimenin ORTASINA denk gelirse, o kelimeden ONCEKI
+    # kelimede kes. Kelimeler arasi boslukta (cocuk uretimindeki midpoint) olursa
+    # zaten dogal olarak bir sonraki kelime ile yeni cue baslar.
+    boundary_cut_indices: set[int] = set()
+    if scene_boundaries:
+        for (bs_ms, be_ms) in scene_boundaries:
+            # Ilk kelimeyi bul ki start_ms >= be_ms veya end_ms > be_ms
+            # Bu kelime yeni cue'da baslamali, onceki kelimede kesilmeli.
+            for i, wt in enumerate(word_timestamps):
+                w_start = float(wt.get("start_ms", 0))
+                w_end = float(wt.get("end_ms", 0))
+                if w_end >= be_ms - 5 or w_start >= be_ms:
+                    # Bu kelime sinirdan sonra/icinde → bu kelimeden ONCE kes.
+                    # Yani i-1'de (ya da i'de eger i==0) flush.
+                    cut_at = max(0, i - 1)
+                    boundary_cut_indices.add(cut_at)
+                    # Bir sonraki sinir noktasina gec
+                    break
 
     cues: list[str] = []
     chunk: list[dict[str, Any]] = []
 
-    for item in word_timestamps:
+    def _flush(current_chunk):
+        if not current_chunk:
+            return
+        start_str = format_srt_timestamp(current_chunk[0]["start_ms"])
+        end_str = format_srt_timestamp(current_chunk[-1]["end_ms"])
+        # Noktalama işaretlerini kelimelerden ayırma — Türkçe'de kelimeye bitişik
+        words_text = []
+        for w in current_chunk:
+            wtext = str(w["word"]).strip()
+            words_text.append(wtext)
+        text_line = " ".join(words_text)
+        idx = len(cues) + 1
+        cues.append(f"{idx}\n{start_str} --> {end_str}\n{text_line}\n")
+
+    for i, item in enumerate(word_timestamps):
         chunk.append(item)
         ends_sentence = str(item["word"]).endswith((".", "!", "?", ",", ":", ";"))
-        if len(chunk) >= words_per_cue or ends_sentence:
-            start_str = format_srt_timestamp(chunk[0]["start_ms"])
-            end_str = format_srt_timestamp(chunk[-1]["end_ms"])
-            text_line = " ".join(w["word"] for w in chunk)
-            idx = len(cues) + 1
-            cues.append(f"{idx}\n{start_str} --> {end_str}\n{text_line}\n")
+        is_boundary_cut = i in boundary_cut_indices
+        if len(chunk) >= words_per_cue or ends_sentence or is_boundary_cut:
+            _flush(chunk)
             chunk = []
 
     if chunk:
-        start_str = format_srt_timestamp(chunk[0]["start_ms"])
-        end_str = format_srt_timestamp(chunk[-1]["end_ms"])
-        text_line = " ".join(w["word"] for w in chunk)
-        idx = len(cues) + 1
-        cues.append(f"{idx}\n{start_str} --> {end_str}\n{text_line}\n")
+        _flush(chunk)
 
     return "\n".join(cues)
 
@@ -3697,8 +3734,11 @@ def synthesize_voiceover(
     try:
         print(f"[TTS] Birincil seslendirme başlatıldı: edge-tts ({voice}, hız={rate})...")
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop is not None and loop.is_running():
                 import nest_asyncio
                 nest_asyncio.apply()
                 word_timestamps = loop.run_until_complete(_edge_tts_generate(text, voice, rate, audio_out))
@@ -3757,11 +3797,7 @@ def run_content_pipeline(
     # 3. Saf Metin (script.txt) Kaydı
     txt_out.write_text(script_text + "\n", encoding="utf-8")
 
-    # 4. Dinamik Shorts Altyazısı (voiceover.srt) Kaydı
-    srt_content = build_dynamic_shorts_srt(word_timestamps, words_per_cue=3)
-    srt_out.write_text(srt_content, encoding="utf-8")
-
-    # 5. Zengin Faz-3/Faz-4 Paketi (script.json) Kaydı
+    # 4. Zengin Faz-3/Faz-4 Paketi (script.json) Kaydı — SRT icin timing once gerekli
     payload = {
         "schema_version": "2.0",
         "generation_id": str(uuid.uuid4()),
@@ -3789,6 +3825,33 @@ def run_content_pipeline(
     for key in ("sources", "fact_check", "storyboard", "claims", "topic_source_id", "prompt_version"):
         if key in scenario:
             payload[key] = scenario[key]
+
+    # FAZ 5: Storyboard sahnelerini TTS WordBoundary zaman damgalarıyla hizala.
+    # Her sahneye gerçek start_ms/end_ms/narration_start_ms/end_ms/word_indices/
+    # timing_method/timing_confidence alanlarını yazar.
+    timing_report: dict[str, Any] | None = None
+    scene_boundaries: list[tuple[float, float]] = []
+    if isinstance(payload.get("storyboard"), list) and payload["storyboard"]:
+        try:
+            from src.media_processing.timing import align_scenes_to_timestamps
+            timing_report = align_scenes_to_timestamps(payload)
+            payload["timing_report"] = timing_report
+            for s in payload["storyboard"]:
+                if isinstance(s, dict) and "start_ms" in s and "end_ms" in s:
+                    scene_boundaries.append((float(s["start_ms"]), float(s["end_ms"])))
+        except Exception as exc:
+            print(f"[UYARI] Faz5 scene timing alignment basarisiz, proportional timing korunacak: {exc}",
+                  file=sys.stderr)
+            timing_report = None
+
+    # 5. Dinamik Shorts Altyazısı (voiceover.srt) — FAZ 5: sahne sinirlarina duyarli
+    srt_content = build_dynamic_shorts_srt(
+        word_timestamps,
+        words_per_cue=3,
+        scene_boundaries=scene_boundaries if scene_boundaries else None,
+    )
+    srt_out.write_text(srt_content, encoding="utf-8")
+
     json_out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     return payload

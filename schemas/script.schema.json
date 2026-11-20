@@ -290,7 +290,11 @@
               "const": "not_performed"
             },
             "timing_basis": {
-              "const": "narration_word_weighted_provisional_not_tts_aligned"
+              "enum": [
+                "narration_word_weighted_provisional_not_tts_aligned",
+                "edge-tts-wordboundary",
+                "estimated_word_weight_proportional"
+              ]
             }
           },
           "additionalProperties": true
@@ -518,7 +522,24 @@
           "exclusiveMinimum": 0
         },
         "timing_basis": {
-          "const": "narration_word_weighted_provisional_not_tts_aligned"
+          "enum": [
+            "narration_word_weighted_provisional_not_tts_aligned",
+            "edge-tts-wordboundary",
+            "estimated_word_weight_proportional"
+          ]
+        },
+        "timing_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "narration_start_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "narration_end_ms": {
+          "type": "number",
+          "exclusiveMinimum": 0
         },
         "assessment": {
           "type": "object",

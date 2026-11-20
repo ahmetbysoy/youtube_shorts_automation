@@ -133,6 +133,31 @@ def measure_audio_volume(path: Path, timeout=60) -> tuple[float | None, float | 
     return mean_v, max_v
 
 
+def measure_audio_silence(path: Path, timeout=60) -> list[tuple[float, float]]:
+    """ffmpeg silencedetect ile uzun sessizlik bolgelerini bulur.
+
+    Donus: (start_s, end_s) ciftleri listesi. 2 saniyeden uzun sessizlikler
+    (noise=-40dB altinda) uyaridir; 4 saniyeden uzun sessizlikler HATA.
+    """
+    cmd = ["ffmpeg", "-v", "info", "-i", str(path),
+           "-af", "silencedetect=noise=-40dB:d=0.5", "-f", "null", "-"]
+    try:
+        rc, out, err = run(cmd, timeout=timeout)
+    except Exception:
+        return []
+    silences: list[tuple[float, float]] = []
+    cur_start = None
+    for line in (out + err).splitlines():
+        m_start = re.search(r"silence_start:\s*(-?\d+(?:\.\d+)?)", line)
+        if m_start:
+            cur_start = float(m_start.group(1))
+        m_end = re.search(r"silence_end:\s*(-?\d+(?:\.\d+)?)\s*\|\s*silence_duration:\s*(\d+(?:\.\d+)?)", line)
+        if m_end and cur_start is not None:
+            silences.append((cur_start, float(m_end.group(1))))
+            cur_start = None
+    return silences
+
+
 def list_scene_files(work_dir: Path):
     """work_dir icindeki scene_*_pw.mp4 dosyalarini indeks sirasiyla dondur."""
     scenes = sorted(work_dir.glob("scene_*_pw.mp4"))
@@ -426,6 +451,26 @@ def main():
                 check("audio_volume", True, f"mean={mean_db:.1f} dBFS max={max_db:.1f} dBFS")
     except Exception as e:
         check("audio_volume", False, f"volumedetect calismadi: {e}", warning=True)
+
+    # Faz 5: Uzun sessizlik kontrolu (2sn+ uyari, 4sn+ hata)
+    try:
+        silences = measure_audio_silence(vpath, timeout=60)
+        long_silences = [(s, e) for (s, e) in silences if (e - s) >= 2.0]
+        very_long = [(s, e) for (s, e) in silences if (e - s) >= 4.0]
+        if very_long:
+            worst = max(very_long, key=lambda x: x[1] - x[0])
+            check("audio_long_silence", False,
+                  f"{len(silences)} sessizlik bolgesi; en uzunu {worst[1]-worst[0]:.1f}s @{worst[0]:.1f}s (4sn+ hata)")
+        elif long_silences:
+            worst = max(long_silences, key=lambda x: x[1] - x[0])
+            check("audio_long_silence", True,
+                  f"{len(silences)} sessizlik; en uzunu {worst[1]-worst[0]:.1f}s @{worst[0]:.1f}s (uyari)",
+                  warning=True)
+        else:
+            check("audio_long_silence", True,
+                  f"uzun sessizlik yok ({len(silences)} kisa duraklama)")
+    except Exception as e:
+        check("audio_long_silence", False, f"silencedetect calismadi: {e}", warning=True)
 
     # 3) FFmpeg tam decode
     rc, errs = full_decode(vpath)
