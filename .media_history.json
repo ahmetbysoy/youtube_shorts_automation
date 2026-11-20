@@ -280,6 +280,34 @@
       "sha256": "359248605825a50d057edb4b60bb00c0b86cb11175b8f113a55555a7db53c61d",
       "selected_at": "2026-11-20T05:42:23.456341+00:00",
       "generation_id": "c4111ab5-3a4d-4d01-89ca-bbbe04b15187"
+    },
+    {
+      "key": "wikimedia:10513589",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Battle-of-sinope.jpg",
+      "sha256": "93bfb7f70e4453340e0120c97afdc5e1430b292a5c36be5308b7a110e59b8ffb",
+      "selected_at": "2026-11-20T07:31:04.014392+00:00",
+      "generation_id": "3b96fe25-00ca-4b9a-8f76-9089ccdfc6ef"
+    },
+    {
+      "key": "wikimedia:179476944",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Castle_Tower_at_Pena_Palace,_Sintra,_Portugal_(54876827882).jpg",
+      "sha256": "13c5d7ab80c0f6c44a155aad7dd2776ebf65a92fac97430fd5788f16d9ed0e3b",
+      "selected_at": "2026-11-20T07:31:17.807113+00:00",
+      "generation_id": "3b96fe25-00ca-4b9a-8f76-9089ccdfc6ef"
+    },
+    {
+      "key": "wikimedia:10962729",
+      "source_url": "https://commons.wikimedia.org/wiki/File:ENI_02015523_UTRECHT_(04).JPG",
+      "sha256": "e3f8ae03278cba14bb2170bfc3e3e761cece74856233282b7200f8105bde444b",
+      "selected_at": "2026-11-20T07:31:20.514314+00:00",
+      "generation_id": "3b96fe25-00ca-4b9a-8f76-9089ccdfc6ef"
+    },
+    {
+      "key": "wikimedia:138639326",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Ausdehnung_und_Zerfall_des_Osmanischen_Reichs.webm",
+      "sha256": "edb6f3fe98f1350338ee0a065869d696500b0e8e4d1d362397235527bfad3ced",
+      "selected_at": "2026-11-20T07:31:31.331925+00:00",
+      "generation_id": "3b96fe25-00ca-4b9a-8f76-9089ccdfc6ef"
     }
   ]
 }
