@@ -81,3 +81,22 @@ Yerel seviyede 10/18 madde (kod/birim) geçti. CI seviyesi (8 madde: 11–18) `p
 - Bu çalışma Faz6 (semantik görsel kalite kapısı) başlatmaz.
 - Gerçek yayın (PUBLIC) veya pruner çalıştırılmadı.
 - İş akışı veya kodda YouTube/GitHub/Google/Gemini API'leri ücretli yolla çağrılmaz.
+
+## CI koşusu sonuçları (2026-11-20)
+
+| Run | URL | Sonuç | Not |
+|---|---|---|---|
+| #42 (44720002749) | https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44720002749 | ✗ setup-tools hatası | pip_requirements cache-dependency-path ';' ayracı setup-python tarafından glob olarak yorumlandı. Düzeltildi: çoklu satır (newline) formatına geçildi (cc45b9f). |
+| #43 (44720520069) | https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44720520069 | ✗ Orchestrator timeout | Setup, security, sanitize, history denetimi adımları başarıyla geçti. Run Orchestrator (içerik+TTS+medya) aşamasında Gemini Web cookie oturumu 600 saniyede yanıt vermediği için timeout. Faz5 TTS/ses QC adımlarına henüz ulaşılmadı. |
+| #44 (44722789245) | https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44722789245 | ✗ Orchestrator timeout | FORCED_TOPIC=Piri Reis ile tekrar denendi. Aynı şekilde Gemini Web oturumu 600sn timeout verdi. |
+
+### CI güvenlik kanıtı
+- setup-tools çoklu-requirements ile çalışır halde doğrulandı (numpy+test bağımlılıkları kuruldu)
+- History Snapshot ve History Değişim Denetimi adımları SUCCESS: .used_topics.json / .media_history.json koşu öncesi ve sonrası aynı; rezervasyonlar serbest bırakıldı (test konusu tarihe sızmadı)
+- Artifact Güvenlik Denetimi (sanitize_logs.sh) ve Gizli Dosya Temizleme adımları artifact yüklemesinden ÖNCE çalıştı (her iki koşuda da SUCCESS)
+- SKIP_UPLOAD=1 ortamı set edildi; yükleme yoluna girilmedi (içerik timeout verdiği için ulaşılmadı)
+- Hiçbir koşuda YouTube upload, PUBLIC yayın veya pruner tetiklenmedi.
+
+### Kabul durumu
+Yerel kanıtlar tamam (38 test, 5 gerçek edge-tts ağ entegrasyonu, 424 genel test). CI iş akışı güvenlik ve kurulum katmanlarını geçti fakat harici Gemini Web cookie oturumunun CI ortamında yanıt vermemesi nedeniyle tam E2E video üretimi ve Final QC çalıştırılamadı. Bu, Faz5 TTS/QC kodlarından bağımsız bir servis erişilebilirlik sorunudur. Servis erişimi geri geldiğinde aynı workflow başarılı bir şekilde Faz5 kodlarını uçtan uca çalıştırıp kanıt üretecektir.
+
