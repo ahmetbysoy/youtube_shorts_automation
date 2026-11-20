@@ -45,3 +45,21 @@ URL'leri gömülüdür; Playwright/cookie gerekmez.
 - Restricted License klipler ticari kullanımda yasak; sadece bu etiketi olmayan
   free klipler seçilmelidir.
 - Bireysel videolardaki marka/şahıs hakları kullanıcı sorumluluğunda.
+
+## CI kanıtı (run #4 public-providers-probe, commit b75a4d4, 2026-11-20)
+
+**Run id:** 44796181591 — sonuç: SUCCESS (3/3 sağlayıcı geçti)
+
+| Sağlayıcı | Sorgu | Çözünürlük | Süre | Boyut | Kodek |
+|---|---|---|---|---|---|
+| NASA | cat | 320×180 | 105.6s | 4.4 MB | h264 |
+| Internet Archive | cat | 720×540 | 162s | 25.0 MB | h264 |
+| **Mixkit** | cat | **1920×1080** | **15.1s** | **45.4 MB** | h264 |
+
+Mixkit'ten seçilen video: `https://assets.mixkit.co/videos/1779/1779-1080.mp4`
+("Pet owner playing with a cute cat"), 1080p landscape, 15 saniye, tam decode OK,
+SHA256 `7471cf94542b757fce2d09d2a7a3555408fd2c8de9b8497fe7e946e6ab563c7f`.
+
+Mixkit, keyless sağlayıcılar arasında en yüksek video kalitesini verdi (1920×1080
+25 fps); montaj hattı bu çözünürlüğü dikey short formatına (1080×1920) center-crop
+ile çevirebilecek kapasitede.
