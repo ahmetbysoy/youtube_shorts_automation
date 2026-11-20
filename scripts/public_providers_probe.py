@@ -209,7 +209,7 @@ def main():
     else:
         max_bytes = int(mb)
 
-    out_dir = args.out
+    out_dir = (ROOT / args.out).resolve() if not os.path.isabs(args.out) else Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     sess = requests.Session()
