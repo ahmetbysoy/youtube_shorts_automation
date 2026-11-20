@@ -1486,35 +1486,52 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                     history_entries.append({"key": measured.key, "source_url": public_url(measured.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
                     break
             # Faz4K: Emergency generic fallback — hicbir query ile secim yapilamadiysa,
-            # son bir sans olarak jenerik/otomatik cikartilmis terimlerle Wikimedia'yi tekrar dene.
-            # Birkac farkli jenerik query sirayla denenir; ilki basarisiz olursa digerleri de
-            # sansini dener.
+            # son bir sans olarak genis kapsamli jenerik terimlerle Wikimedia'yi tekrar dene.
+            # Birden fazla jenerik query sirayla denenir; ilki uygun aday bulursa digerleri atlanir.
             if selected is None:
                 topic = str(script.get("topic", "")).lower()
                 narration_l = scene["narration"].lower()
-                # Kategori tespiti (genis kume)
                 em_queries = []
-                if any(k in narration_l for k in ("uzay", "gök", "goz", "yıldız", "yildiz", "gezegen", "space", "star", "planet", "galaxy", "black hole", "karadelik", "venüs", "venus", "mars", "dünya", "dunya", "ay", "güneş", "gunes")):
-                    em_queries.append("space galaxy nebula stars")
-                if any(k in narration_l for k in ("tarih", "tariht", "roma", "imparator", "savaş", "savas", "osmanlı", "osmanli", "sultan", "fatih", "mehmet", "istanbul", "bizans", "constantinople", "gemiler", "gemi", "yelken", "donanma", "ordu", "asker", "kral", "kraliçe", "kralice", "savaş", "savas", "ancient", "medieval", "history", "emperor", "war", "ottoman", "empire", "ship", "sailing", "army", "soldier", "king", "queen", "castle", "ruins")):
-                    em_queries.append("ancient medieval history ruins castle")
-                    em_queries.append("historical sailing ship ocean")
-                if any(k in narration_l for k in ("bilim", "fizik", "kimya", "bilgisa", "bilim adam", "bilim ins", "mucit", "icat", "deney", "laboratuvar", "science", "physics", "chemistry", "computer", "scientist", "inventor", "experiment", "laboratory", "technology")):
-                    em_queries.append("science laboratory technology vintage")
-                if any(k in narration_l for k in ("doğa", "doga", "deniz", "okyanus", "dag", "dağ", "orman", "nehir", "göl", "gol", "hayvan", "bitki", "nature", "ocean", "sea", "forest", "mountain", "river", "lake", "animal", "plant", "wildlife")):
-                    em_queries.append("nature landscape ocean mountain wildlife")
-                # Narasyondan otomatik meaningful keyword cikarma (ALIASES ile TR→EN)
-                try:
-                    narr_terms = sorted(terms(narration_l))
-                    stock_terms = [t for t in narr_terms if len(t) >= 4 and t not in {"tarih", "savas", "bilim", "doga", "history", "ancient", "science", "nature", "imparator", "scientist", "emperor"}]
-                    if len(stock_terms) >= 2:
-                        auto_q = " ".join(stock_terms[:3])
-                        if auto_q and len(auto_q) > 6:
-                            em_queries.append(auto_q)
-                except Exception:
-                    pass
-                # Son care: belgesel manzara
-                em_queries.append("cinematic documentary landscape world")
+                # Kategori tespiti — genis kume, hem TR hem EN anahtar kelimeler
+                if any(k in narration_l for k in ("uzay","gök","goz","yıldız","yildiz","gezegen","ay","güneş","gunes",
+                                                   "space","star","planet","galaxy","black hole","karadelik",
+                                                   "venüs","venus","mars","dünya","dunya","lunar","solar")):
+                    em_queries.extend(["space galaxy nebula stars","planet earth from space",
+                                       "astronaut space station"])
+                if any(k in narration_l for k in ("tarih","tariht","roma","imparator","savaş","savas",
+                                                   "osmanlı","osmanli","sultan","fatih","mehmet","istanbul","bizans",
+                                                   "constantinople","gemiler","gemi","yelken","donanma","ordu","asker",
+                                                   "kral","kraliçe","kralice","savaş","savas","antika","antik",
+                                                   "ancient","medieval","history","emperor","war","ottoman",
+                                                   "empire","ship","sailing","army","soldier","king","queen",
+                                                   "castle","ruins","archaeolog")):
+                    em_queries.extend(["ancient medieval history ruins castle",
+                                       "historical sailing ship ocean",
+                                       "ottoman empire history constantinople"])
+                if any(k in narration_l for k in ("bilim","fizik","kimya","bilgisa","bilim adam","bilim ins",
+                                                   "mucit","icat","deney","laboratuvar","teknoloji","makine",
+                                                   "beyin","beynin","beyni","sinir","hücre","hcre","hucre",
+                                                   "noroloji","norolog","doktor","hastane","ameliyat",
+                                                   "tıbbi","tibbi","tıp","tip","hastalik","hastalık","ağrı","agri",
+                                                   "science","physics","chemistry","computer","scientist",
+                                                   "inventor","experiment","laboratory","technology","machine",
+                                                   "brain","neural","neuron","cell","biology","medical","medicine",
+                                                   "doctor","hospital","surgery","disease","pain","health")):
+                    em_queries.extend(["science laboratory technology vintage",
+                                       "medical hospital brain surgery",
+                                       "biology science microscopic cells"])
+                if any(k in narration_l for k in ("doğa","doga","deniz","okyanus","dag","dağ","orman","nehir",
+                                                   "göl","gol","hayvan","bitki","vadi","plaj","kumsal",
+                                                   "nature","ocean","sea","forest","mountain","river","lake",
+                                                   "animal","plant","wildlife","beach","coast","island")):
+                    em_queries.extend(["nature landscape ocean mountain wildlife",
+                                       "underwater sea coral fish",
+                                       "forest mountain landscape"])
+                # Son careler: her konuda en az bir uygun gorsel bulunabilecek
+                # genis belgesel tarzi sorgular
+                em_queries.extend(["cinematic documentary landscape world",
+                                   "vintage archival historical footage",
+                                   "nature documentary landscape"])
                 # Her query'yi sirayla dene, biri basarirsa cik
                 for em_query in em_queries:
                     if selected is not None:
