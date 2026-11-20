@@ -132,6 +132,7 @@ jobs:
             output/cover.jpg
             output/final.ass
             output/qc_report.json
+            output/scene_media_manifest.json
             script.json
           if-no-files-found: warn
           retention-days: 7
