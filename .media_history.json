@@ -252,6 +252,34 @@
       "sha256": "b872ad48d2969dfce16a9955d08ee655b691528dbd8417411b04e38c7a7e81cc",
       "selected_at": "2026-11-20T04:38:47.893898+00:00",
       "generation_id": "b6131a5c-5b07-4161-9c44-4ee0f878bf92"
+    },
+    {
+      "key": "pexels:10480415",
+      "source_url": "https://www.pexels.com/search/videos/history%20first/",
+      "sha256": "d9ef78732dd984c1a60508271b66c38b70526f91c39cef34d57b01644f5d2247",
+      "selected_at": "2026-11-20T05:41:22.132590+00:00",
+      "generation_id": "c4111ab5-3a4d-4d01-89ca-bbbe04b15187"
+    },
+    {
+      "key": "wikimedia:43723040",
+      "source_url": "https://commons.wikimedia.org/wiki/File:1902_Wright_Brothers%27_Glider_Tests_(13066000785).jpg",
+      "sha256": "216dc93ab0bfdc62e71ea517b11eadfa3d30a9adbedf34d8403a9e42f1606ac4",
+      "selected_at": "2026-11-20T05:41:37.127457+00:00",
+      "generation_id": "c4111ab5-3a4d-4d01-89ca-bbbe04b15187"
+    },
+    {
+      "key": "wikimedia:142552220",
+      "source_url": "https://commons.wikimedia.org/wiki/File:120th_Anniversary_of_the_First_Powered,_Controlled_Flight.jpg",
+      "sha256": "64f1a2761bbe2422f7d93b0b7f1f88b8eaf73b63a20b45708c696861f79eb439",
+      "selected_at": "2026-11-20T05:41:44.298742+00:00",
+      "generation_id": "c4111ab5-3a4d-4d01-89ca-bbbe04b15187"
+    },
+    {
+      "key": "wikimedia:151154399",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Deep_time_and_cosmic_history_as_one_year_%E2%80%93_the_cosmic_calendar.webm",
+      "sha256": "359248605825a50d057edb4b60bb00c0b86cb11175b8f113a55555a7db53c61d",
+      "selected_at": "2026-11-20T05:42:23.456341+00:00",
+      "generation_id": "c4111ab5-3a4d-4d01-89ca-bbbe04b15187"
     }
   ]
 }
