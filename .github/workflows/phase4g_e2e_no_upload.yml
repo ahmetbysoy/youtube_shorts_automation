@@ -50,7 +50,9 @@ jobs:
           apt_packages: ffmpeg xvfb fonts-montserrat fonts-liberation fonts-dejavu-core libass9
           python: 'true'
           python_version: '3.11'
-          pip_requirements: 'requirements.txt;requirements-test.txt'
+          pip_requirements: |
+            requirements.txt
+            requirements-test.txt
           node: 'true'
           node_version: '20'
           node_playwright: 'true'
