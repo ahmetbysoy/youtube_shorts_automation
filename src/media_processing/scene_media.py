@@ -1475,10 +1475,13 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                                    "aspect_ratio": round(measured.width/measured.height, 6), "selection_score": verdict["score"],
                                    "rejection_reason": None, "fallback_used": qi > 0 or pi > 0,
                                    "selected_query": query, "assessment": verdict, "media": measured.record(), "file_probe": probe,
-                                   "media_type": measured.media_type, "fit_mode": "contain", "download_status": "downloaded_and_decoded"})
+                                   "media_type": measured.media_type,
+                                   "fit_mode": ("contain" if measured.media_type == "video" else "crop"),
+                                   "download_status": "downloaded_and_decoded"})
+                    _fit = "contain" if measured.media_type == "video" else "crop"
                     selected = {"path": path, "duration": scene["duration"], "media_kind": measured.media_type,
                                 "provider": measured.provider, "credit": measured.license.attribution, "scene_id": scene["scene_id"],
-                                "fit_mode": "contain", "loop_allowed": True}
+                                "fit_mode": _fit, "loop_allowed": True}
                     used.update({measured.key, public_url(measured.source_url), public_url(measured.download_url), probe["sha256"]})
                     history_entries.append({"key": measured.key, "source_url": public_url(measured.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
                     break
@@ -1562,11 +1565,16 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                                                "aspect_ratio": round(measured.width/measured.height, 6),
                                                "selection_score": verdict["score"], "rejection_reason": None,
                                                "fallback_used": True, "selected_query": em_query,
-                                               "media_type": measured.media_type, "fit_mode": "contain",
+                                               "media_type": measured.media_type,
+                                               "fit_mode": ("contain" if measured.media_type == "video" else "crop"),
                                                "download_status": "downloaded_and_decoded"})
+                                # Faz4K: Image'lar icin "crop" kullan (contain modu siyah padding ile
+                                # black frame QC'sini tetikliyor). Videolar icin "contain" korunur
+                                # (hareketli videoda siyah barlar daha az belirgin ve daha kisa).
+                                fit = "contain" if measured.media_type == "video" else "crop"
                                 selected = {"path": path, "duration": scene["duration"], "media_kind": measured.media_type,
                                             "provider": measured.provider, "credit": measured.license.attribution,
-                                            "scene_id": scene["scene_id"], "fit_mode": "contain", "loop_allowed": True}
+                                            "scene_id": scene["scene_id"], "fit_mode": fit, "loop_allowed": True}
                                 used.update({measured.key, public_url(measured.source_url), public_url(measured.download_url), probe["sha256"]})
                                 history_entries.append({"key": measured.key, "source_url": public_url(measured.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
                                 break
