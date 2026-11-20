@@ -280,3 +280,14 @@ def test_wikimedia_provider_returns_enough_licensed_results_for_common_queries()
     licensed = [c for c in r if c.license.verified and "by-sa" not in c.license.name.lower()]
     assert len(r) >= 12, f"en az 12 aday donmeli, {len(r)} dondu"
     assert len(licensed) >= 3, f"CC0/CC-BY en az 3 aday olmali, {len(licensed)} var"
+
+
+def test_wikimedia_returns_high_resolution_candidates():
+    """Wikimedia thumbnail width 1920px olmalı ki dikey videoda min 720p
+    kosulu gecilebilsin."""
+    from src.media_processing.media_providers import WikimediaProvider
+    w = WikimediaProvider()
+    r = w.search("einstein theory physics")
+    image_or_video = [c for c in r if c.license.verified and c.width and c.height
+                      and min(c.width, c.height) >= 720]
+    assert len(image_or_video) >= 3, f"en az 3 yuksek cozunurluklu aday olmali, {len(image_or_video)} var"

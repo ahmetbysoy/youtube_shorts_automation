@@ -511,10 +511,13 @@ class WikimediaProvider:
         # çoğunlukla CC BY-SA). Sayfa başına 20 sonuç al ve lisans filtrelemesi
         # sonrasında uygun aday kalma olasılığını artır.
         for kind in ("video", "bitmap"):
+            # Faz4K: iiurlwidth=1440 → 1920. 1440p thumbnails 1080p vertical
+            # video (1080x1920) icin min(w,h)>=720 kuralini gecemiyor
+            # (insufficient_resolution). 1920px thumbnail bu sorunu cozer.
             r = self.session.get("https://commons.wikimedia.org/w/api.php",
                                  params={"action": "query", "format": "json", "generator": "search", "gsrsearch": f"filetype:{kind} {query}",
-                                         "gsrnamespace": 6, "gsrlimit": 20, "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata|metadata", "iiurlwidth": 1440},
-                                 headers={"User-Agent": USER_AGENT}, timeout=(5, 25), allow_redirects=False)
+                                         "gsrnamespace": 6, "gsrlimit": 30, "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata|metadata", "iiurlwidth": 1920},
+                                 headers={"User-Agent": USER_AGENT}, timeout=(5, 30), allow_redirects=False)
             self.last_diagnostics["metadata_http_responses"].append({"kind": kind, "http_status": r.status_code})
             if r.status_code != 200:
                 raise RuntimeError(f"commons_catalog_http_{r.status_code}")
