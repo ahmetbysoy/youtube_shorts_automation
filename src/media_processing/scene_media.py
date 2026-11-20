@@ -1523,10 +1523,11 @@ def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[st
         anchor_pool = primary_narr | query_narr
     anchor_overlap = sorted(evidence & anchor_pool)
     minimum_anchors = min(2, len(anchor_pool))
-    # Relevance pass: candidate must (a) cover ≥50% of query terms,
+    # Relevance pass: candidate must (a) cover ≥34% of query terms (i.e. at
+    # least 1 word from a 2-word query, 2 words from a 4–5 word query),
     # (b) share at least one content word with narration, and
     # (c) if a strong anchor pool exists, hit at least one anchor term.
-    if query_coverage < 0.5 or not narration_overlap:
+    if query_coverage < 0.34 or not narration_overlap:
         reasons.append("relevance_unproven_or_unrelated")
     elif minimum_anchors >= 1 and not anchor_overlap:
         reasons.append("relevance_unproven_or_unrelated")
@@ -1796,6 +1797,25 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                                    "nature documentary landscape",
                                    "old vintage historical photograph black white",
                                    "world landmarks documentary"])
+                # EN SON CARE: narration'daki anlamli Turkce kelimeleri dogrudan
+                # ara. Wikimedia Commons'ta Turkce metadata da var; bu, hicbir
+                # kategori/alias eslesmediginde bile PD icerik bulmayi saglar.
+                _narr_tokens = re.findall(r"[a-zA-ZçğıöşüÇĞİÖŞÜ]{5,}", scene["narration"].lower())
+                _stop_tr = {"bir","bu","şu","ki","ile","için","gibi","olarak","sonra","önce","daha","çok",
+                            "ama","fakat","ancak","çünkü","de","da","mi","mı","mu","mü","en","bile","hem",
+                            "ya da","hic","hiç","her","hangi","neden","nasıl","diye","kadar","karşı",
+                            "göre","karşın","rağmen","üzere","tüm","bütün","sadece","yalnız","aynı",
+                            "birlikte","içinde","üzerinde","arasında","olduğunu","olduğu","olacak",
+                            "oldu","olan","olur","oluyor","etti","ettiği","eden","ederek","olarak",
+                            "kendi","yine","diye","bana","sana","ona","bizim","sizin","onlar","ben",
+                            "sen","o","biz","siz","onlar","bizi","sizi","onları","bende","sende",
+                            "onda","günü","gunu","yil","yıl","tane","kez","defa","adet"}
+                _content_words = [t for t in _narr_tokens if t not in _stop_tr and len(t) >= 5]
+                # En fazla 4 kelimelik bir sorgu yap
+                if _content_words:
+                    # En uzun kelimeleri tercih et (daha anlamlı olma eğiliminde)
+                    _sorted_words = sorted(dict.fromkeys(_content_words), key=lambda x: -len(x))[:3]
+                    em_queries.append(" ".join(_sorted_words))
                 # Her query'yi sirayla dene, biri basarirsa cik
                 for em_query in em_queries:
                     if selected is not None:
