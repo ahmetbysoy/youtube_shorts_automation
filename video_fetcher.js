@@ -116,15 +116,41 @@ const COOKIE_FIELDS = ['name','value','domain','path','secure','httpOnly','sameS
 
 function normalizeCookie(raw, defaultDomain) {
   if (!raw || typeof raw.name !== 'string' || !raw.name || typeof raw.value !== 'string') return null;
-  const domain = (typeof raw.domain === 'string' && raw.domain) ? raw.domain : defaultDomain;
+  let domain = (typeof raw.domain === 'string' && raw.domain) ? raw.domain : defaultDomain;
+  // Nokta prefix'ini temizle (bazı exportlarda ".[domain]" markdown link geliyor)
+  domain = domain.replace(/^\[/, '').replace(/\].*$/, '').trim();
+  // sameSite normalizasyonu: Chrome export "strict"/"lax"/"none"/"no_restriction"
+  // degerleri gelebilir; Playwright Strict/Lax/None bekler.
   let sameSite = raw.sameSite;
-  if (!['Strict','Lax','None'].includes(sameSite)) sameSite = 'Lax';
+  if (typeof sameSite === 'string') {
+    const ss = sameSite.toLowerCase().replace(/[^a-z]/g,'');
+    if (ss === 'strict') sameSite = 'Strict';
+    else if (ss === 'lax') sameSite = 'Lax';
+    else if (ss === 'none' || ss === 'norestriction' || ss === 'unspecified') sameSite = 'None';
+    else sameSite = 'Lax';
+  } else {
+    sameSite = 'Lax';
+  }
+  // expires: Chrome export "expirationDate" (unix seconds) kullanir,
+  // Playwright ise "expires" (unix seconds) ister.
   let expires = raw.expires;
+  if (typeof expires !== 'number' || expires <= 0) {
+    expires = (typeof raw.expirationDate === 'number') ? raw.expirationDate : -1;
+  }
   if (typeof expires !== 'number' || expires <= 0) expires = -1;
+  // Session cookie'ler (expires -1) icin expires alani Playwright'a gore
+  // verilmemeli ya da -1 olmali.
+  // hostOnly cookie'lerde domain'e nokta prefix eklenmez — aksi takdirde
+  // Playwright "cookie domain must not have leading dot" hatasi verir veya
+  // cookie yanlis gonderilir.
+  const hostOnly = raw.hostOnly === true;
+  const finalDomain = (hostOnly || !domain.startsWith('.'))
+    ? domain.replace(/^\./, '')
+    : domain;
   return {
     name: raw.name,
     value: raw.value,
-    domain: domain.startsWith('.') ? domain : ('.' + domain),
+    domain: finalDomain,
     path: (typeof raw.path === 'string' && raw.path.startsWith('/')) ? raw.path : '/',
     secure: !!raw.secure,
     httpOnly: !!raw.httpOnly,
@@ -820,6 +846,9 @@ async function runProvider(provider, opts) {
     return { chosen, diagnostics: diag, provider };
   } catch (e) {
     diag.error = 'browser_exception';
+    diag.error_message = (e && e.message) ? String(e.message).slice(0, 300) : String(e).slice(0, 300);
+    diag.error_stack = (e && e.stack) ? String(e.stack).split('\n').slice(0,5).join('\n') : null;
+    console.error(`[${provider}] browser_exception: ${diag.error_message}`);
     try { await browser.close(); } catch {}
     return { chosen: null, diagnostics: diag, provider };
   }
