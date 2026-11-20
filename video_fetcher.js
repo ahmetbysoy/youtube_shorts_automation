@@ -410,8 +410,8 @@ async function fetchFromPixabay(page, kw, opts) {
   // Cloudflare/Turnstile/CAPTCHA/Login kontrolu
   const pageTitle = await page.title();
   diag.page_title = pageTitle.slice(0, 120);
-  const currentUrl = await page.url().catch(()=>'');
-  const urlAfterNav = currentUrl.slice(0, 200);
+  let urlAfterNav = '';
+  try { urlAfterNav = (page.url() || '').slice(0, 200); } catch { urlAfterNav = ''; }
   diag.final_url = safeUrl(urlAfterNav);
   const isLogin = /\/(login|sign-?in|log-in|giris|accounts)/i.test(urlAfterNav) ||
                   /log\s*in|sign\s*in|giriş yap|hesap|account/i.test(pageTitle);
