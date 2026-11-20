@@ -1,34 +1,48 @@
 {
-  "scraped_at": "2026-11-19T15:11:14.283Z",
+  "scraped_at": "2026-11-20T14:50:42.781Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
-  "videos_analyzed": 15,
+  "videos_analyzed": 14,
+  "duplicates_removed": 1,
   "status": "ok",
   "winning_topic": "Tarih",
   "boost_active": false,
-  "outperformance_ratio": 1.05,
+  "boost_reason": "insufficient_sample(top=5,second=1)",
+  "outperformance_ratio": 1.04,
   "discarded_topics": [],
-  "optimization_directive": "Tüm konularda dengeli yüksek dopaminli kanca (hook) üretimine devam et.",
+  "optimization_directive": "En yüksek skor 'Tarih' görünse de örneklem küçük (n=5); agresif kategori kayması YAPILMIYOR, dengeli dağılım korunuyor.",
+  "data_quality": {
+    "avg_view_duration_available_count": 0,
+    "avg_view_duration_total": 14,
+    "note": "Ortalama izleme süresi Studio metrik kartından okunamadı (muhtemelen yeni video/erişim yok); AVD sıfır değil null olarak kaydedildi, kategori skoruna dahil edilmedi.",
+    "min_videos_per_niche_for_boost": 4
+  },
   "topic_scores": [
     {
       "niche": "Tarih",
-      "video_count": 7,
-      "avg_views": 1195.43,
-      "avg_view_duration_sec": 0,
-      "avg_score": 1195.43
+      "video_count": 5,
+      "avg_views": 1176.6,
+      "avg_view_duration_sec": null,
+      "avg_view_duration_sample_size": 0,
+      "avg_score": 1176.6,
+      "statistically_reliable": true
     },
     {
       "niche": "Uzay",
       "video_count": 1,
-      "avg_views": 1135,
-      "avg_view_duration_sec": 0,
-      "avg_score": 1135
+      "avg_views": 1136,
+      "avg_view_duration_sec": null,
+      "avg_view_duration_sample_size": 0,
+      "avg_score": 1136,
+      "statistically_reliable": false
     },
     {
       "niche": "Bilim",
-      "video_count": 7,
-      "avg_views": 1077.29,
-      "avg_view_duration_sec": 0,
-      "avg_score": 1077.29
+      "video_count": 8,
+      "avg_views": 1060.88,
+      "avg_view_duration_sec": null,
+      "avg_view_duration_sample_size": 0,
+      "avg_score": 1060.88,
+      "statistically_reliable": true
     }
   ],
   "recent_videos": [
@@ -37,31 +51,17 @@
       "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
       "niche": "Tarih",
       "views": 1349,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1349
-    },
-    {
-      "videoId": "1IAgNqsjgvQ",
-      "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
-      "niche": "Tarih",
-      "views": 1245,
-      "avgViewDurationSec": 0,
-      "compositeScore": 1245
-    },
-    {
-      "videoId": "3SFUI9fSYSU",
-      "title": "Napolyon'un Tavşan Ordusuna Karşı Tuhaf Yenilgisi! #Shorts",
-      "niche": "Tarih",
-      "views": 1240,
-      "avgViewDurationSec": 0,
-      "compositeScore": 1240
     },
     {
       "videoId": "A2F4P7BLB8A",
       "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
       "niche": "Bilim",
       "views": 1214,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1214
     },
     {
@@ -69,7 +69,8 @@
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
       "niche": "Tarih",
       "views": 1210,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1210
     },
     {
@@ -77,23 +78,26 @@
       "title": "Tarihin En Kısa Savaşı Sadece 38 Dakika Sürdü! #Shorts",
       "niche": "Tarih",
       "views": 1208,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1208
     },
     {
       "videoId": "Ji6u0gBcg1E",
       "title": "Güneş Her Saniye 4 Milyon Ton Kütlesini Işığa Dönüştürür! #Shorts",
       "niche": "Uzay",
-      "views": 1135,
-      "avgViewDurationSec": 0,
-      "compositeScore": 1135
+      "views": 1136,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
+      "compositeScore": 1136
     },
     {
       "videoId": "IyiItvCRj30",
       "title": "Avustralya Ordusunun Emularına Karşı Başarısız Operasyonu! #Shorts",
       "niche": "Tarih",
       "views": 1135,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1135
     },
     {
@@ -101,7 +105,8 @@
       "title": "İnsan Vücudunda Bakteri Hücreden Fazladır! #Shorts",
       "niche": "Bilim",
       "views": 1099,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1099
     },
     {
@@ -109,7 +114,8 @@
       "title": "Tesla'ya Söz Verilen Parayı Edison Vermedi! #Shorts",
       "niche": "Bilim",
       "views": 1080,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1080
     },
     {
@@ -117,7 +123,8 @@
       "title": "Kuzey Kore ile Finlandiya'nın Arasında Tek Bir Ülke Var! #Shorts",
       "niche": "Bilim",
       "views": 1070,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1070
     },
     {
@@ -125,7 +132,8 @@
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "niche": "Bilim",
       "views": 1054,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1054
     },
     {
@@ -133,7 +141,8 @@
       "title": "Ahtapotlar Renk Körü Olmalarına Rağmen Renkleri Görüyor! #Shorts",
       "niche": "Bilim",
       "views": 1016,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1016
     },
     {
@@ -141,7 +150,8 @@
       "title": "Yunuslar Uyurken Beyninin Yarısı Uyanık Kalır! #Shorts",
       "niche": "Bilim",
       "views": 1008,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 1008
     },
     {
@@ -149,8 +159,18 @@
       "title": "Moğol İmparatorluğu Tarihin En Büyük Kara İmparatorluğuydu! #Shorts",
       "niche": "Tarih",
       "views": 981,
-      "avgViewDurationSec": 0,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
       "compositeScore": 981
+    },
+    {
+      "videoId": "NKBqoA_o34I",
+      "title": "Bir Denizaltıyı Tuvalet Arızası Yüzünden Kaybetmek: U-1206! #Shorts",
+      "niche": "Bilim",
+      "views": 946,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
+      "compositeScore": 946
     }
   ]
 }
