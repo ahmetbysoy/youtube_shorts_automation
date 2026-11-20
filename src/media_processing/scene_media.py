@@ -965,6 +965,53 @@ ALIASES = {
     "kale": "castle",
     "fetih": "conquest",
     "turkiye": "turkey",
+    # Hayvanlar / animals
+    "domuz": "pig",
+    "domuzlar": "pig",
+    "domuzlarin": "pig",
+    "inek": "cow",
+    "koyun": "sheep",
+    "at": "horse",
+    "kus": "bird",
+    "kedi": "cat",
+    "kopek": "dog",
+    "balik": "fish",
+    "hayvan": "animal",
+    "hayvanlar": "animal",
+    "hayvanlardan": "animal",
+    "primat": "primate",
+    "primatlar": "primate",
+    "sempanze": "chimpanzee",
+    "sempanzeler": "chimpanzee",
+    "maymun": "monkey",
+    # Biliş/zeka
+    "zeka": "intelligence",
+    "beyin": "brain",
+    "zeki": "smart",
+    "akilli": "smart",
+    "davranis": "behavior",
+    "davranış": "behavior",
+    "oyun": "game",
+    "oyunlar": "game",
+    "oyunlarini": "game",
+    "oynamak": "play",
+    "oynamayi": "play",
+    "ogrenmek": "learn",
+    "ogrenebildigini": "learn",
+    "tanimak": "recognize",
+    "tanidigini": "recognize",
+    "taniyabilen": "recognize",
+    "test": "test",
+    "testini": "test",
+    "testinde": "test",
+    "ayna": "mirror",
+    "goruntu": "image",
+    "goruntulerini": "image",
+    "sosyal": "social",
+    "sembolik": "symbolic",
+    "dil": "language",
+    "dili": "language",
+    "ciftlik": "farm",
     "turk": "turkish",
     "rusya": "russia",
     "cin": "china",
@@ -1365,10 +1412,11 @@ def scene_plan(script: dict) -> list[dict]:
                 if isinstance(v, str) and v.strip() and len(v.strip()) <= 180:
                     queries.append(v.strip())
             queries = list(dict.fromkeys(queries))
-        # Faz 4J: Require at least one query (primary or alternative) to overlap
-        # with narration terms. This prevents completely unrelated footage while
-        # allowing the greedy keyword assignment to leave the primary as a
-        # generic topic query when specific keywords go to other scenes.
+        # Faz 4J/4K: Check query/narration overlap. If no query overlaps (can
+        # happen when the LLM produces total garbage AND TR→EN aliases don't
+        # cover every word), inject extra topic-derived queries instead of
+        # crashing. The emergency fallback + visual_keywords will still find
+        # relevant footage.
         narr_terms = terms(scene["narration"])
         overlap_found = False
         for q in queries:
@@ -1376,7 +1424,50 @@ def scene_plan(script: dict) -> list[dict]:
                 overlap_found = True
                 break
         if not overlap_found:
-            raise ValueError("query_narration_alignment_unknown")
+            # Faz4K: LLM sometimes produces generic placeholder primary queries
+            # (e.g. "science nature", "history named", "science together") that
+            # don't share terms with Turkish narration because TR→EN aliases
+            # don't cover every word. Detect this pattern and inject topic-
+            # derived queries instead of failing closed. Only do this when:
+            #   (a) the primary query looks like a generic placeholder
+            #       ("science", "history", "nature" + a non-content word), AND
+            #   (b) script-level visual_keywords exist (proves topic context).
+            # Otherwise keep the strict fail-closed behavior.
+            GENERIC_PREFIXES = ("science", "history", "nature")
+            GARBAGE_SECONDS = {"named","back","most","deep","trench","front","side",
+                               "together","first","last","next","old","new","big",
+                               "small","many","much","people","world","years"}
+            primary_words = terms(scene["visual_query"])
+            looks_like_placeholder = bool(
+                isinstance(vk, list) and vk and
+                len(primary_words) <= 3 and
+                any(w in GENERIC_PREFIXES for w in primary_words) and
+                (len(primary_words) < 2 or
+                 any(w in GARBAGE_SECONDS for w in primary_words) or
+                 all(w in GENERIC_PREFIXES for w in primary_words))
+            )
+            if looks_like_placeholder:
+                topic_blob = " ".join([str(script.get("title","")), str(script.get("topic",""))]
+                                      + [v for v in vk if isinstance(v, str)])
+                extra = []
+                for w in re.findall(r"[a-zA-Z]{4,}", topic_blob):
+                    wl = w.lower()
+                    if wl not in STOP and wl not in queries:
+                        extra.append(wl)
+                fallback_probes = []
+                keys = list(dict.fromkeys(extra))[:4]
+                if keys:
+                    fallback_probes.append(" ".join(keys))
+                for fp in fallback_probes:
+                    if fp.strip() and fp.strip() not in queries:
+                        queries.append(fp.strip())
+                for q in queries:
+                    if terms(q) & narr_terms:
+                        overlap_found = True
+                        break
+                queries = list(dict.fromkeys(queries))
+            if not overlap_found:
+                raise ValueError("query_narration_alignment_unknown")
         weights.append(max(1, len(scene["narration"].split())))
         plan.append({"scene_id": scene["scene_id"], "narration": scene["narration"], "queries": queries,
                      "primary_query": queries[0], "media_type": scene.get("media_type")})
