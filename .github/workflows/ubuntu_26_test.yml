@@ -12,6 +12,8 @@ on:
     paths:
       - '.github/workflows/daily_shorts.yml'
       - '.github/workflows/ubuntu_26_test.yml'
+      - '.github/actions/setup-tools/action.yml'
+      - 'docs/GITHUB_ACTIONS_CACHE_POLICY.md'
       - 'youtube_studio_uploader.js'
       - 'scripts/embed_cover_frame.py'
       - 'content_engine.py'
