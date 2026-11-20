@@ -308,6 +308,34 @@
       "sha256": "edb6f3fe98f1350338ee0a065869d696500b0e8e4d1d362397235527bfad3ced",
       "selected_at": "2026-11-20T07:31:31.331925+00:00",
       "generation_id": "3b96fe25-00ca-4b9a-8f76-9089ccdfc6ef"
+    },
+    {
+      "key": "wikimedia:166203178",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Astrophysics_Multiwavelength_Vertical_Video_(SVS14798_-_reel_crab_v4).webm",
+      "sha256": "955359d826d92580bf43f7c4fa6aabc69aec015c60959d2f550da8ebb98dea52",
+      "selected_at": "2026-11-20T08:16:43.384696+00:00",
+      "generation_id": "f16dd295-954b-43b1-91cc-1141a34d3ffb"
+    },
+    {
+      "key": "wikimedia:151205819",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Daily_Polar_Sea_Ice,_Two_Year_History_(SVS5099_-_polar_sea_ice_sxs_no_date_2048p30_h265).webm",
+      "sha256": "3ab1d13c817a2ebd5f178eb7aa281c76b325f53da0665f6e5456ecc0381982af",
+      "selected_at": "2026-11-20T08:17:02.564271+00:00",
+      "generation_id": "f16dd295-954b-43b1-91cc-1141a34d3ffb"
+    },
+    {
+      "key": "wikimedia:115852076",
+      "source_url": "https://commons.wikimedia.org/wiki/File:1611_print_of_the_world_map_of_Pietro_Vesconte.jpg",
+      "sha256": "949b3f4d15ace427f198ce593e36c68fab8fea8015ae737b8fa65d6c4c534c3d",
+      "selected_at": "2026-11-20T08:17:05.668508+00:00",
+      "generation_id": "f16dd295-954b-43b1-91cc-1141a34d3ffb"
+    },
+    {
+      "key": "wikimedia:154929352",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Celebrating_impactful_leaders_during_Black_History_Month.webm",
+      "sha256": "8613d3ccad2a89adb00eb8694244282ee088cdae896bf82c1ef16f78ab04002a",
+      "selected_at": "2026-11-20T08:17:15.233988+00:00",
+      "generation_id": "f16dd295-954b-43b1-91cc-1141a34d3ffb"
     }
   ]
 }
