@@ -336,6 +336,34 @@
       "sha256": "8613d3ccad2a89adb00eb8694244282ee088cdae896bf82c1ef16f78ab04002a",
       "selected_at": "2026-11-20T08:17:15.233988+00:00",
       "generation_id": "f16dd295-954b-43b1-91cc-1141a34d3ffb"
+    },
+    {
+      "key": "wikimedia:43343727",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Bell_telephone_magazine_(1922)_(14753070491).jpg",
+      "sha256": "08473c17844d56af266252e434f57d1b7cf9a5a71bcfd12a17c2fcf1dea60783",
+      "selected_at": "2026-11-20T21:26:11.479866+00:00",
+      "generation_id": "ba2a7cdc-ba41-48d6-9bdd-8c6b01c05260"
+    },
+    {
+      "key": "wikimedia:143037426",
+      "source_url": "https://commons.wikimedia.org/wiki/File:2022_Annual_Highlights_of_Results_from_the_International_Space_Station.webm",
+      "sha256": "d161303a13a0bb0620eff91fe28f62e7782f174322a9d4ec0257a3f17623de04",
+      "selected_at": "2026-11-20T21:27:40.823600+00:00",
+      "generation_id": "ba2a7cdc-ba41-48d6-9bdd-8c6b01c05260"
+    },
+    {
+      "key": "wikimedia:148319599",
+      "source_url": "https://commons.wikimedia.org/wiki/File:NASA_Black_Hole_Visualization_Takes_Viewers_Beyond_the_Brink_(SVS14576_BHPlunge_360_Still).jpg",
+      "sha256": "bc487bbfcbbbc977f0bb1e6e9ad29d6828763862160f17122c28f2aa9f22c3cf",
+      "selected_at": "2026-11-20T21:28:38.835788+00:00",
+      "generation_id": "ba2a7cdc-ba41-48d6-9bdd-8c6b01c05260"
+    },
+    {
+      "key": "wikimedia:150032342",
+      "source_url": "https://commons.wikimedia.org/wiki/File:NASA%E2%80%99s_Laser_Communications_Experiment_Streamed_From_Deep_Space_(SVS31275_-_NASAs_Laser_Comms_Experiment).webm",
+      "sha256": "3ae0747dc88919e31956bc19858fda8bcc8280ab51669c4be4f17a5570193d6d",
+      "selected_at": "2026-11-20T21:29:46.325392+00:00",
+      "generation_id": "ba2a7cdc-ba41-48d6-9bdd-8c6b01c05260"
     }
   ]
 }
