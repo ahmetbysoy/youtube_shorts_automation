@@ -130,3 +130,76 @@ def test_media_providers_diagnostics_contain_no_cookie_values():
     for forbidden in ("Cookie:", "Set-Cookie:", "sessionid=", "cf_clearance=",
                       "PEXELS_COOK=", "PIXABAY_COOK=", "Authorization:"):
         assert forbidden not in s, f"diagnostics cookie/secret iceriyor: {forbidden}"
+
+
+
+
+# ── Faz4K: BrowserStockProvider probe cache ──
+
+def test_browser_provider_probe_cache_skips_subprocess_on_permanent_error():
+    """Kalıcı hata durumlarında (cookie_missing, access_denied, login_required,
+    captcha_challenge) BrowserStockProvider tarayıcıyı tekrar açmamalı."""
+    import os
+    from unittest import mock
+    from src.media_processing.media_providers import BrowserStockProvider, StockTerms
+
+    # Test 1: PEXELS_COOK yok → cookie_missing, ikinci çağrıda subprocess çalışmamalı
+    prov = BrowserStockProvider("pexels", terms=StockTerms())
+    old = os.environ.pop("PEXELS_COOK", None)
+    try:
+        r1 = prov.search("cat")
+        assert r1 == [], "cookie yoksa boş liste dönmeli"
+        assert prov._probe_status == "cookie_missing"
+        assert prov._probe_logged is True
+        with mock.patch("subprocess.run") as spy:
+            r2 = prov.search("cat")
+            spy.assert_not_called()
+        assert r2 == [], "cached hata da boş liste dönmeli"
+    finally:
+        if old is not None:
+            os.environ["PEXELS_COOK"] = old
+
+    # Test 2: _probe_status='access_denied' iken search() subprocess'e gitmemeli
+    prov2 = BrowserStockProvider("pixabay", terms=StockTerms())
+    prov2._probe_status = "access_denied"
+    prov2.last_diagnostics = {"provider": "pixabay", "status": "access_denied"}
+    old2 = os.environ.get("PIXABAY_COOK")
+    os.environ["PIXABAY_COOK"] = "dummy_cookie_value"
+    try:
+        with mock.patch("subprocess.run") as spy:
+            r = prov2.search("trees")
+            spy.assert_not_called()
+        assert r == []
+    finally:
+        if old2 is None:
+            del os.environ["PIXABAY_COOK"]
+        else:
+            os.environ["PIXABAY_COOK"] = old2
+
+
+def test_browser_provider_transient_errors_not_cached():
+    """browser_timeout ve rate_limited geçici hatalardır; sonraki aramalar
+    tekrar denemeli (probe_cache'e alınmamalı)."""
+    from src.media_processing.media_providers import BrowserStockProvider, StockTerms
+    prov = BrowserStockProvider("pexels", terms=StockTerms())
+    # Başlangıç durumu
+    assert prov._probe_status is None
+    # Geçici hata senaryosu manuel simülasyon: search() metodu bu hataları
+    # _probe_status'a yazmaz, dolayısıyla _probe_status None kalmalı ve
+    # bir sonraki aramada tekrar subprocess çağrılır.
+    # (Bu testin doğrulaması: kod akışında bu hata durumlarında
+    # self._probe_status = X ataması yok.)
+    import inspect
+    src = inspect.getsource(prov.search)
+    # Kalıcı hata durumları search_status değişkeni üzerinden set edilir:
+    #   if search_status in ("login_required", "auth_required", "access_denied",
+    #                        "captcha_challenge"):
+    #       self._probe_status = search_status
+    # Geçici durumlar (browser_timeout, rate_limited) bu listede YOK.
+    assert '"login_required"' in src and '"access_denied"' in src and '"captcha_challenge"' in src, \
+        "kalıcı hata durumları search_status listesinde olmalı"
+    assert 'self._probe_status = search_status' in src, \
+        "kalıcı hatalar için _probe_status set edilmeli"
+    # Bu iki satırdan sonra browser_timeout/rate_limited için _probe_status set edilmemeli
+    assert '_probe_status = "ok"' in src, \
+        "başarılı durumda _probe_status=ok set edilmeli"

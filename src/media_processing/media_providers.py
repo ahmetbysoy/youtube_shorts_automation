@@ -542,10 +542,34 @@ class BrowserStockProvider:
             raise ValueError("unsupported_browser_provider")
         self.provider, self.name, self.terms = provider, f"{provider}-browser", terms or StockTerms()
         self.last_diagnostics = {"status": "not_started"}
+        # Faz4K: probe cache — ilk search() çağrısından sonra cookie/auth durumu
+        # bilinir. Kalıcı hata durumlarında (cookie_missing/login_required/
+        # access_denied/captcha_challenge) sonraki aramalar tarayıcıyı tekrar açmaz;
+        # aksi halde her sahne için 30-60 saniye boşa 403 beklenir.
+        self._probe_status: str | None = None  # "ok" veya hata durumu
+        self._probe_logged = False
+
+    def _emit_probe_log(self) -> None:
+        """İlk kez hata/ok durumunu bir kere log'la."""
+        if self._probe_logged:
+            return
+        self._probe_logged = True
+        import sys
+        d = self.last_diagnostics
+        status = d.get("status", "unknown")
+        provider_label = "Pexels" if self.provider == "pexels" else "Pixabay"
+        if status == "ok" or status == "loaded" or status == "no_valid_video":
+            print(f"[MEDYA] {provider_label} cookie oturumu aktif.", file=sys.stderr)
+        elif d.get("action_hint"):
+            print(f"[MEDYA] {provider_label} erişim sorunu: {status} — {d['action_hint']}",
+                  file=sys.stderr)
 
     def search(self, query: str) -> list[MediaCandidate]:
         env_name = "PEXELS_COOK" if self.provider == "pexels" else "PIXABAY_COOK"
         provider_label = "Pexels" if self.provider == "pexels" else "Pixabay"
+        # Daha önce kalıcı hata teşhisi konduysa tarayıcıyı tekrar açma
+        if self._probe_status is not None and self._probe_status != "ok":
+            return []
         cookie_raw = os.environ.get(env_name, "")
         if not cookie_raw or not cookie_raw.strip():
             self.last_diagnostics = {
@@ -558,6 +582,8 @@ class BrowserStockProvider:
                 "action_hint": f"{provider_label} icin '{env_name}' GitHub Secret'i tanimli degil; "
                                f"tarayicida {provider_label}'a giris yap, cookie'yi kopyala ve secret'a yaz.",
             }
+            self._probe_status = "cookie_missing"
+            self._emit_probe_log()
             return []
         # Tarayici child prosesine yalnizca gerekli env degiskenlerini gec;
         # YOUTUBE/GEMINI/GITHUB cookie/token/keyleri ASLA gecme.
@@ -649,15 +675,29 @@ class BrowserStockProvider:
         }
         if not cookie_present or search_status in ("cookie_missing", "cookie_missing_or_wrong_domain", "cookie_wrong_domain"):
             self.last_diagnostics["status"] = "cookie_missing_or_wrong_domain"
+            self._probe_status = "cookie_missing_or_wrong_domain"
+            self._emit_probe_log()
             return []
-        # Hatali durum (auth/captcha/access_denied/rate_limited/timeout) — bos liste,
-        # ama diagnostics her seyi acikca raporlamis oluyor.
+        # Kalıcı hata durumları: probe cache'e al, sonraki aramalar tarayıcı açmasın
         if search_status in ("login_required", "auth_required", "access_denied",
-                             "captcha_challenge", "rate_limited", "browser_timeout"):
-            import sys
-            print(f"[MEDYA] {provider_label} erisim sorunu: {search_status} — {action_hint}",
-                  file=sys.stderr)
+                             "captcha_challenge"):
+            self._probe_status = search_status
+            self._emit_probe_log()
             return []
+        if search_status == "browser_timeout":
+            # Timeout geçici olabilir; probe'a kaydetme ama yine de logla
+            import sys
+            print(f"[MEDYA] {provider_label}: {search_status} — {action_hint}", file=sys.stderr)
+            return []
+        if search_status == "rate_limited":
+            # Rate limit geçici; probe'u başarısız sayma ama bu query için boş dön
+            import sys
+            print(f"[MEDYA] {provider_label}: {search_status} — {action_hint}", file=sys.stderr)
+            return []
+        # Başarılı veya "no_valid_video" (sorgu için sonuç yok, site erişilebilir):
+        # probe OK.
+        self._probe_status = "ok"
+        self._emit_probe_log()
         if not diag.get("candidates_found"):
             return []
         lic = self.terms.check(self.provider)
