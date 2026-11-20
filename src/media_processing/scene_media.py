@@ -1478,7 +1478,7 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                                    "media_type": measured.media_type, "fit_mode": "contain", "download_status": "downloaded_and_decoded"})
                     selected = {"path": path, "duration": scene["duration"], "media_kind": measured.media_type,
                                 "provider": measured.provider, "credit": measured.license.attribution, "scene_id": scene["scene_id"],
-                                "fit_mode": "contain", "loop_allowed": False}
+                                "fit_mode": "contain", "loop_allowed": True}
                     used.update({measured.key, public_url(measured.source_url), public_url(measured.download_url), probe["sha256"]})
                     history_entries.append({"key": measured.key, "source_url": public_url(measured.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
                     break
@@ -1550,7 +1550,7 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                                                "download_status": "downloaded_and_decoded"})
                                 selected = {"path": path, "duration": scene["duration"], "media_kind": measured.media_type,
                                             "provider": measured.provider, "credit": measured.license.attribution,
-                                            "scene_id": scene["scene_id"], "fit_mode": "contain", "loop_allowed": False}
+                                            "scene_id": scene["scene_id"], "fit_mode": "contain", "loop_allowed": True}
                                 used.update({measured.key, public_url(measured.source_url), public_url(measured.download_url), probe["sha256"]})
                                 history_entries.append({"key": measured.key, "source_url": public_url(measured.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
                                 break
