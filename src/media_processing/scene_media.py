@@ -1483,28 +1483,44 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                     history_entries.append({"key": measured.key, "source_url": public_url(measured.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
                     break
             # Faz4K: Emergency generic fallback — hicbir query ile secim yapilamadiysa,
-            # son bir sans olarak jenerik konu terimleriyle Wikimedia'yi tekrar dene.
-            # Bu yalnızca hikaye akisini kurtarmak icin; gorsel illaki konuyla tam
-            # ortusmeyebilir ama hic yoktan (ve tum pipeline'in cokmesinden) iyidir.
+            # son bir sans olarak jenerik/otomatik cikartilmis terimlerle Wikimedia'yi tekrar dene.
+            # Birkac farkli jenerik query sirayla denenir; ilki basarisiz olursa digerleri de
+            # sansini dener.
             if selected is None:
-                em_query = None
                 topic = str(script.get("topic", "")).lower()
                 narration_l = scene["narration"].lower()
-                if any(k in narration_l for k in ("uzay", "gök", "goz", "yıldız", "yildiz", "gezegen", "space", "star", "planet", "galaxy", "black hole", "karadelik")):
-                    em_query = "space galaxy nebula stars"
-                elif any(k in narration_l for k in ("tarih", "tariht", "roma", "imparator", "savaş", "savas", "history", "ancient", "emperor", "war")):
-                    em_query = "ancient history ruins archaeological"
-                elif any(k in narration_l for k in ("bilim", "fizik", "kimya", "bilgisa", "science", "physics", "computer", "scientist")):
-                    em_query = "science laboratory scientist portrait"
-                elif any(k in narration_l for k in ("doğa", "doga", "deniz", "okyanus", "nature", "ocean", "sea", "forest", "mountain")):
-                    em_query = "nature landscape ocean mountain"
-                else:
-                    em_query = "cinematic documentary landscape"
-                if em_query:
+                # Kategori tespiti (genis kume)
+                em_queries = []
+                if any(k in narration_l for k in ("uzay", "gök", "goz", "yıldız", "yildiz", "gezegen", "space", "star", "planet", "galaxy", "black hole", "karadelik", "venüs", "venus", "mars", "dünya", "dunya", "ay", "güneş", "gunes")):
+                    em_queries.append("space galaxy nebula stars")
+                if any(k in narration_l for k in ("tarih", "tariht", "roma", "imparator", "savaş", "savas", "osmanlı", "osmanli", "sultan", "fatih", "mehmet", "istanbul", "bizans", "constantinople", "gemiler", "gemi", "yelken", "donanma", "ordu", "asker", "kral", "kraliçe", "kralice", "savaş", "savas", "ancient", "medieval", "history", "emperor", "war", "ottoman", "empire", "ship", "sailing", "army", "soldier", "king", "queen", "castle", "ruins")):
+                    em_queries.append("ancient medieval history ruins castle")
+                    em_queries.append("historical sailing ship ocean")
+                if any(k in narration_l for k in ("bilim", "fizik", "kimya", "bilgisa", "bilim adam", "bilim ins", "mucit", "icat", "deney", "laboratuvar", "science", "physics", "chemistry", "computer", "scientist", "inventor", "experiment", "laboratory", "technology")):
+                    em_queries.append("science laboratory technology vintage")
+                if any(k in narration_l for k in ("doğa", "doga", "deniz", "okyanus", "dag", "dağ", "orman", "nehir", "göl", "gol", "hayvan", "bitki", "nature", "ocean", "sea", "forest", "mountain", "river", "lake", "animal", "plant", "wildlife")):
+                    em_queries.append("nature landscape ocean mountain wildlife")
+                # Narasyondan otomatik meaningful keyword cikarma (ALIASES ile TR→EN)
+                try:
+                    narr_terms = sorted(terms(narration_l))
+                    stock_terms = [t for t in narr_terms if len(t) >= 4 and t not in {"tarih", "savas", "bilim", "doga", "history", "ancient", "science", "nature", "imparator", "scientist", "emperor"}]
+                    if len(stock_terms) >= 2:
+                        auto_q = " ".join(stock_terms[:3])
+                        if auto_q and len(auto_q) > 6:
+                            em_queries.append(auto_q)
+                except Exception:
+                    pass
+                # Son care: belgesel manzara
+                em_queries.append("cinematic documentary landscape world")
+                # Her query'yi sirayla dene, biri basarirsa cik
+                for em_query in em_queries:
+                    if selected is not None:
+                        break
+                    if not em_query:
+                        continue
                     record["queries_tried"].append(f"{em_query} [generic_fallback]")
+                    em_ranked = []
                     for pi, provider in enumerate(providers):
-                        # Generic fallback sadece Wikimedia ile (browser provider'lar
-                        # zaten bos dondu veya cache'li)
                         if provider.name != "wikimedia":
                             continue
                         try:
@@ -1512,11 +1528,11 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                             for candidate in candidates:
                                 verdict = evaluate(candidate, scene, em_query, used=used, recent=recent)
                                 if verdict["eligible"]:
-                                    ranked.append((candidate, verdict, pi))
+                                    em_ranked.append((candidate, verdict, pi))
                         except Exception:
                             pass
-                    # Generic fallback adaylarini indirme/olcme (tek bir try)
-                    ranked.sort(key=lambda x: (-x[1]["score"], x[2], x[0].key))
+                    em_ranked.sort(key=lambda x: (-x[1]["score"], x[2], x[0].key))
+                    ranked = em_ranked  # Download asamasinda ranked kullaniliyor
                     for candidate, _pre, pi in ranked:
                         identities = {candidate.key, public_url(candidate.source_url), public_url(candidate.download_url)}
                         if identities & catalog_seen:
