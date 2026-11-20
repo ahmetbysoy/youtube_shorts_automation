@@ -115,6 +115,12 @@ npm run test:syntax
 
 ---
 
+## GitHub Actions bağımlılık cache standardı
+
+Tüm ajanlar ve geliştiriciler workflow değişikliği yapmadan önce [zorunlu cache politikasını](docs/GITHUB_ACTIONS_CACHE_POLICY.md) okumalıdır. Ortak kurulum/cache action'ı `.github/actions/setup-tools/action.yml` dosyasıdır; APT `.deb`, pip, npm `node_modules` ve Playwright Chromium cache'leri burada yönetilir. Yeni workflow'lar aynı kurulum mantığını kopyalamak yerine ortak action'ı kullanmalı veya eksik input'ları bu action'a eklemelidir. Secret, cookie, oturum ve üretim verileri cache'e konmaz. Cache miss ve hit ayrı ayrı doğrulanmadan hız kazanımı iddia edilmez.
+
+---
+
 ## GitHub Actions Otomasyonu ve Sıralı Kanal Matrisi
 
 `.github/workflows/daily_shorts.yml` güncel yapılandırmada iki saatlik cron (`13 */2 * * *`) ve `workflow_dispatch` ile çalışır. Kanal işlerini `max-parallel: 1` ile sıralar.
