@@ -24,7 +24,7 @@
 
 > **Faz 14:** Kullanıcı ücretli AI görsel API kullanımını reddetti; [plan](docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md). Google API key GitHub Secrets içinde; değerini asla gösterme. Şu an ücretsiz proje olduğu Studio UI üzerinden gözlendi; API görüntü üretimi ücretsiz değildir.
 
-> **Son Güncelleme:** `2026-11-18` (Faz4D cookie-only stok medya kanıtlandı — run 44380726215 ile Pexels+Pixabay 1920x1080 h264 tam decode; domain-izole Playwright context, safe env sansurlu diag artifact; 16 cookie izolasyon testi + 145 Faz4 testi geçti; MEDIA_COOKIES_JSON birleştirme kaldırıldı; stock_cookie_probe.yml workflow eklendi)
+> **Son Güncelleme:** `2026-11-20` (Faz4K kök neden onarımı — Faz4G run 44670492824 SUCCESS; Wikimedia CC0/NoRestrictions lisans kabulü, gsrlimit=30, iiurlwidth=1920, video min 2s loop, jenerik Wikimedia fallback, loop_allowed=True, cookie probe cache ve consecutive_empty cache; 39/39 QC GEÇTİ; scene_media_manifest artifact'e eklendi; [PHASE4K_ACCEPTANCE.md](docs/evidence/PHASE4K_ACCEPTANCE.md))
 > **Hedef Kitle:** Bu projeyi devralacak bir sonraki Yapay Zeka Ajanı (Arena Agent, Claude Code, Cursor, Codex vb.) veya Geliştirici.
 
 Bu belge, projeyi devralan bir yapay zekanın **sıfır tahmin, sıfır deneme-yanılma ve sıfır güvenlik ihlali** ile 30 saniye içinde sistemi anlayıp geliştirmeye devam edebilmesi için hazırlanmıştır.
