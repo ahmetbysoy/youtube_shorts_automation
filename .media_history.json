@@ -364,6 +364,34 @@
       "sha256": "3ae0747dc88919e31956bc19858fda8bcc8280ab51669c4be4f17a5570193d6d",
       "selected_at": "2026-11-20T21:29:46.325392+00:00",
       "generation_id": "ba2a7cdc-ba41-48d6-9bdd-8c6b01c05260"
+    },
+    {
+      "key": "wikimedia:107955449",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Battle_of_Focchies,_1649_RCIN_723088.jpg",
+      "sha256": "66d5b5f46c32bf5fb2dddef2d0fcc87e1ecb2f52b72cb1d1f0f25c1912e3c83f",
+      "selected_at": "2026-11-20T21:37:12.859312+00:00",
+      "generation_id": "476c528d-f88d-4d46-a920-faf92138b477"
+    },
+    {
+      "key": "wikimedia:91966776",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Die_ersten_Zahlungsmittel_(CC_BY_4.0).webm",
+      "sha256": "568a151b0a3e719f537cdac674fa87f4addbdfd514d4740e5fc34231cc6e4400",
+      "selected_at": "2026-11-20T21:38:32.691372+00:00",
+      "generation_id": "476c528d-f88d-4d46-a920-faf92138b477"
+    },
+    {
+      "key": "pexels:11436307",
+      "source_url": "https://www.pexels.com/search/videos/wooden%20ship%20ropes/",
+      "sha256": "6dc50cdf8e9c9a56504037576961996392f61108504ed3367999a9f944c8aaba",
+      "selected_at": "2026-11-20T21:39:42.483831+00:00",
+      "generation_id": "476c528d-f88d-4d46-a920-faf92138b477"
+    },
+    {
+      "key": "wikimedia:165938133",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Explore_Oregon_Recreation-_Alvord_Desert_(26094770103).webm",
+      "sha256": "ca8dfe261067bf9850eca71f9b14e9e24d9cb798bb902bf144776fc5f1b0e8cb",
+      "selected_at": "2026-11-20T21:40:45.854771+00:00",
+      "generation_id": "476c528d-f88d-4d46-a920-faf92138b477"
     }
   ]
 }
