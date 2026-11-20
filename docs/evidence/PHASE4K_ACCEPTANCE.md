@@ -1,120 +1,130 @@
 # Faz 4K Kabul Raporu — Orkestrasyon Kök Neden Analizi ve Medya Zinciri Güçlendirmesi
 
 **Tarih (Europe/Istanbul):** 2026-11-20
-**Branch:** `main` (commits: `b6a54f9` → `e5c0f70`)
+**Branch:** `main` (commits: `b6a54f9` → `f8a53b9`)
 **Repo:** https://github.com/ahmetbysoy/youtube_shorts_automation
 
 ---
 
 ## 1. Yönetici Özeti
 
-Faz 4J sonrası Faz 4G uçtan uca koşuları (run `44662518260`, `44663635924`, `44664938550`)
-`storyboard_media_selection_blocked` hatasıyla ve bir durumda video-ses süre uyumsuzluğuyla
-başarısız oluyordu. Aynı SHA (`e117660`) ile çalışan Faz 4E cookie-only storyboard testi
-(`44662520660`) başarılıydı; bu da sorunun kodda değil, **4G orkestrasyonunun gerçek
-fallback senaryolarıyla karşılaştığında medya zincirinin zayıf halka** olduğunu gösterdi.
+Faz 4J sonrası Faz 4G uçtan uca koşuları rastgele fallback konularında
+`storyboard_media_selection_blocked` ve `black_frames` ile başarısız oluyordu.
+İlk başarılı koşu (Posta Pulları — run **44670492824** @ `e5c0f70`) sonrasında
+yeni konularda (Fatih Sultan Mehmet, Mariana Çukuru, Beyin Ağrı, Mariana plastik,
+İlk Uçuş, Domuzlar, Antarktika, Çikolata-Uzay, Piri Reis) peş peşe farklı hata
+modları ortaya çıktı; her biri tek tek teşhis edilip düzeltildi.
 
-**Kök nedenler (kümülatif):**
-
-1. **Wikimedia Commons lisans tespiti çok sıkıydı** — CC0 URL'sinde `/deed.en` veya `/deed.tr`
-   dil suffix'i varsa (ki Commons'un varsayılan URL biçimi budur) lisans "doğrulanamadı"
-   olarak reddediliyordu. Ayrıca müzelerin "No restrictions" / "No known copyright
-   restrictions" (örn. Getty Open Content) public domain işareti kabul edilmiyordu.
-2. **Wikimedia gsrlimit=6 çok küçüktü** — ilk sayfa tamamen CC BY-SA dosyalarından
-   oluşuyorsa (örn. "dead sea crystals") seçim tamamen bloklanıyordu.
-3. **Wikimedia thumbnail width=1440 yetersizdi** — dikey 1080×1920 videoda `min(w,h)≥720`
-   kuralı geçilemiyordu (`insufficient_resolution`).
-4. **Video süre kuralı çok sıkıydı** — `video.duration ≥ scene.duration` gerektiriyordu;
-   6-8 saniyelik stok klipler 9+ saniyelik sahneler için reddediliyordu. Loop ile
-   uzatılabileceği hesaba katılmıyordu.
-5. **`loop_allowed: False`** — seçilen medya metadata'sında loop izni yoktu; kısa
-   videolar FFmpeg'de `-t` ile kesilip video akışı sesten kısa kalıyordu.
-6. **Browser provider boş sonuç cache'i yoktu** — cookie oturumu açık olsa bile
-   (Pexels/Pixabay 403 değil ama arama sonucu dönmüyorsa) her sahne için tarayıcı
-   tekrar açılıyor, 30-60 saniye boşa harcanıyordu.
-7. **Jenerik fallback yoktu** — tüm sahne-özel sorgular başarısız olursa (örn.
-   "science tooth", "history day" gibi anlamsız kelimeler) tüm pipeline çöküyordu.
-
-**Sonuç:** `phase4g_e2e_no_upload.yml` koşusu **run 44670492824** olarak SUCCESS ile
-tamamlandı (commit `e5c0f70`).
-- ✅ 4/4 sahne medya seçimi (Pexels + Wikimedia karışımı; loop_allowed=True)
+**Nihai başarı:** Faz 4G run **44700976069** @ `f8a53b9` → **SUCCESS**
+- ✅ 4/4 sahne medya seçimi (Wikimedia; resim+crop, video+contain, loop_allowed)
 - ✅ FFmpeg cinematic montaj + altyazı + kapak
-- ✅ Son QC: 39/39 kontrol geçti, 0 hata, 0 uyarı
-- ✅ Video: 6.7 MB, 33.33s, 1080×1920, h264/aac, V/A sync 0.04s
+- ✅ Final QC: **39/39 geçti, 0 hata** (3 uyarı)
+- ✅ Video: **6.91 MB, 38.57s, 1080×1920, h264/aac**, black frames %0.0
 - ✅ YouTube yüklemesi HİÇ çalıştırılmadı
-- ✅ scene_media_manifest.json artifact'e eklendi (hata ayıklama için)
+- ✅ scene_media_manifest.json artifact olarak kaydedildi
+
+URL: https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44700976069
+
+Önceki ara başarılar (daha dar konu seti):
+- **44670492824** @ `e5c0f70` — Posta Pulları (39/39 QC)
+- **44682413882** @ `0ab08bc` — İlk Uçuş (39/39 QC)
 
 ---
 
-## 2. Kök Neden Analizi — Üç Başarısız Koşu
+## 2. Kök Nedenler (Kümülatif)
 
-### 2.1 Run 44662518260 @ `e117660` (faz4k: 3 kritik hata düzeltmesi)
-- **Konu:** "Çikolata Yer Çekiminin Olmadığı Yerde Farklı Erir!" (fallback)
-- **Hata:** `SceneMediaError: storyboard_media_selection_blocked`
-- **Kök neden:** Pexels HTTP 403 (cookie geçersiz). Pixabay de 403. Wikimedia
-  Commons adaylarının tümü `missing_or_unsupported_file_license` ile elendi
-  — CC0 `/deed.en` suffix ve "No restrictions" lisansları tanınmıyordu.
+### İlk dalga (b6a54f9 → e5c0f70; Posta Pulları başarısı)
+1. **Wikimedia CC0 lisans tespiti sıkıydı** — `/deed.en` suffix ve "No restrictions"
+   PD işaretleri reddediliyordu.
+2. **gsrlimit=6 küçük** — ilk sayfa BY-SA doluysa seçim bloklanıyor.
+3. **iiurlwidth=1440 yetersiz** — dikey videoda `min(w,h)≥720` sağlanamıyor.
+4. **Video min süre ≥ scene.duration** — loop ile uzatılabileceği hesaba katılmıyor.
+5. **`loop_allowed: False`** — kısa klipler V/A süre uyumsuzluğu yaratıyor.
+6. **Browser provider probe/consecutive_empty cache yoktu**.
+7. **Jenerik Wikimedia fallback yoktu**.
 
-### 2.2 Run 44663635924 @ `fa419f1` (topic-history chore)
-- **Konu:** "Roma'yı Bitiren Son İmparator Sadece 16 Yaşındaydı!" (fallback)
-- **Hata:** `SceneMediaError: storyboard_media_selection_blocked`
-- **Kök neden:** Aynı kod, aynı Wikimedia lisans hatası. Pexels+Pixabay ikisi de
-  403, Wikimedia CC0/NoRestrictions dosyaları eleniyor. Sorgular "history only",
-  "history day", "history dead" gibi çok genel kelimeler — by-sa dosyalar
-  çoğunlukta ve uygun CC0 dosya kalmıyor (gsrlimit=6).
+### İkinci dalga (c15a3dd → 14ef346; konu-özel hatalar)
+8. **Osmanlı/tarih kategorisi dardı** — "ottoman","sailing","constantinople","bizans"
+   gibi kelimeler fallback'te yoktu (Fatih Sultan Mehmet konusu).
+9. **Image fit_mode=contain** → landscape görsellerde siyah letterbox → QC
+   `black_frames` ~%20 (Mariana Çukuru). **Düzeltme:** imajlar `crop`, videolar
+   `contain`.
+10. **Medikal kategori eksikti** — "beyin","ağrı","doktor","ameliyat","surgery",
+    "brain","medical","biology","cell" gibi kelimeler yoktu; otomatik keyword
+    çıkarma (ALIASES ile kök birleştirme) "absent agri agrilarinizi" gibi çöp
+    üretiyordu.
+11. **LLM garbage query'leri** — local-fallback matrix "science named",
+    "science nature", "history fear", "science together", "history back" gibi
+    placeholder/geçersiz sorgular üretiyor; visual_keywords enjekte edildi,
+    "science X" / "history X" / "nature X" placeholder pattern'i tespit edilip
+    konu-özel sorgular eklendi.
 
-### 2.3 Run 44664938550 @ `9eea0bd` (Wikimedia CC0 lisans düzeltmesi)
-- **Konu:** "Dünyanın İlk Programcısı Bir Kadındı!" (fallback)
-- **Hata:** `SceneMediaError: storyboard_media_selection_blocked`
-- **Kök neden:** Pexels cookie oturumu aktif ama "historical woman scientist"
-  gibi sorgulara video döndürmüyor. Pixabay de boş. Wikimedia tarafında CC0 fix
-  uygulanmış ama gsrlimit=6 ve iiurlwidth=1440 nedeniyle adaylar ya by-sa
-  ya da `insufficient_resolution` ile eleniyor.
-
-### 2.4 4E (44662520660) başarılı — 4G neden başarısız?
-- 4E workflow'u basit, kanıtlanmış sorgular kullanır: `"cat"`, `"dog"`. Bu
-  kelimeler Pexels'te binlerce yüksek kaliteli video döndürür.
-- 4G ise fallback havuzundan üretilen `visual_query` ve `alternative_queries`
-  kullanır. Bu sorguların çoğu ya çok genel ("science", "history") ya da
-  alakasız ("history only", "science deep", "science named"). Pexels'te
-  cookie 403 veya sonuç dönmediğinde tüm yük Wikimedia'ya biner, ama
-  Wikimedia tarafındaki sıkı lisans/çözünürlük/süre filtreleri uygun aday
-  bulamaz.
+### Üçüncü dalga (2981157 → f8a53b9; dil ve kategori kör noktaları)
+12. **TR→EN alias kapsamı yetersizdi** — Türkçe ekli kelimeler (uzayda, çukuru,
+    beynin, yılda, kızaklar, vs.) İngilizce köklere eşlenmiyordu. Prefix-match
+    ile Turkish agglutinative suffix stripping eklendi; 120+ yeni alias
+    (osmanlı→ottoman, çukur→trench, antarktika→antarctica, çöl→desert,
+    foton→photon, ışık→light, beyin→brain, domuz→pig, ve niceleri).
+13. **Compound splitter yanlış pozitif üretiyordu** — heuristic pozisyona
+    dayalı ayırma "çıkmadı" → "cikm"+"adi" → "named" gibi saçma eşleşmeler
+    yaratıyordu. Kapatıldı; sadece bilinen İngilizce compound'lar kullanılıyor.
+14. **Relevance anchor primary_query'e çok bağlıydı** — primary query garbage
+    ("history back") ise "back" gibi stop-word'e anchor alınıyordu. Düzeltme:
+    primary sağlam değilse (content-word yoksa) mevcut query ile narration
+    kesişimi anchor olarak kullanılıyor.
+15. **query_coverage=0.5** — uzun/çok-kelimeli sorgularda tek kelime eşleşmesi
+    yetersiz kalıyordu. 0.34'e düşürüldü (en az 1/N kelime).
+16. **Hayvan/çöl/kutup/fizik kategorileri yoktu** — domuz/çöl/antarktika/ışık/foton
+    gibi konularda fallback hiç tetiklenmiyordu. Kapsam genişletildi,
+    kategoriye özel ek sorgular eklendi.
+17. **Schema validasyonu** — emergency fallback yolunda scene_media kaydına
+    `assessment`, `media`, `file_probe` alanları yazılmıyordu; schema zorunlu
+    kılıyor. Düzeltildi.
+18. **En son çare katmanları** — tüm kategoriler ve Türkçe kelimeler başarısız
+    olursa (a) tüm visual_keywords tek tek Wikimedia'da denenir, (b) title/topic
+    kelimeleriyle arama yapılır, (c) relaxed modda narration overlap zorunluluğu
+    kaldırılır, yalnızca lisans/çözünürlük/aspect kontrolü yapılır.
 
 ---
 
-## 3. Yapılan Düzeltmeler
+## 3. Yapılan Düzeltmeler (Commit Özeti)
 
-| Commit | Dosya | Düzeltme |
-|---|---|---|
-| `b6a54f9` | `src/media_processing/media_providers.py` | BrowserStockProvider için cookie/auth **probe cache** — kalıcı hatalarda (403/cookie_missing/captcha) her sahne tarayıcı tekrar açmaz. |
-| `9eea0bd` | `src/media_processing/media_providers.py` | **Wikimedia lisans tespiti** — CC0 URL path `/publicdomain/zero/1.0` ile başlayarak kontrol (deed.XX suffix tolere edilir); "No restrictions"/"No known copyright restrictions" public domain olarak kabul edilir. |
-| `9fda0b7` | `.github/workflows/phase4g_e2e_no_upload.yml` | `output/scene_media_manifest.json` artifact'e eklendi. |
-| `35bfc61` | `src/media_processing/media_providers.py` | Wikimedia **gsrlimit=20** (sonra 30); Browser provider **consecutive_empty** cache (ok durumda 2+ boş sonuç sonrası tarayıcı tekrar açılmaz). |
-| `e11b25d` | `src/media_processing/media_providers.py` | Wikimedia **iiurlwidth=1920** (thumbnail 1440→1920, vertical 1080p için yeterli). |
-| `abcb635` | `src/media_processing/scene_media.py` | **Video süre kuralı** yumuşatıldı — min 2.0 saniye (loop ile uzatılabilir), video≥scene_duration zorunluluğu kaldırıldı. Skor: eşit/uzun=10, ≥2s=7. |
-| `cd49aaa` | `src/media_processing/scene_media.py` | **Jenerik Wikimedia fallback** — son çare (space/ancient/science/nature/cinematic keyword'leri). |
-| `e5c0f70` | `src/media_processing/scene_media.py` | `loop_allowed: True` — kısa videolar `-stream_loop -1` ile sahne süresince tekrar edilir (V/A sync sağlanır). |
+| Commit | Düzeltme |
+|---|---|
+| `b6a54f9`–`e5c0f70` | İlk dalga: probe cache, CC0/deed/NoRestrictions fix, gsrlimit=30, iiurlwidth=1920, video min 2s/loop, `loop_allowed=True`, generic fallback, manifest artifact |
+| `c15a3dd` | Osmanlı/tarih kategori genişletmesi (ottoman/sailing/bizans/medieval) |
+| `14ef346` | Image fit_mode=crop (black letterbox fix); video=contain |
+| `bae4c8c`–`372c554` | Medikal kategori + auto-keyword removal + last-resort queries |
+| `2981157`/`0fd6c8a` | visual_keywords scene queries'e enjekte; placeholder ("science X") toleransı; Anchor garbage fix (named/back/most/deep) |
+| `067dbac` | ALIASES: cukur*→trench, mariana→trench (over-broad alias removed) |
+| `b1c730d` | Çöl/kutup/antarktika aliases + desert/antarctica/polar kategori sorguları |
+| `89bec94`/`7821107` | Emergency fallback record schema fields (assessment/media/file_probe) |
+| `f37a224`/`8f1f220` | Fizik/ışık/quantum kategori + isik/foton/lazer/optik/enerji/hız aliases |
+| `f8a53b9` | **En son çare katmanı**: tüm vk + title kelimeleri Wikimedia'da; relaxed evaluate (narration overlap zorunlu değil) |
 
 ---
 
 ## 4. Test Kapsamı
 
-### Birim testler (lokalde çalışan)
-- `test_browser_provider_probe_cache_skips_subprocess_on_permanent_error` ✅
-- `test_browser_provider_transient_errors_not_cached` ✅
-- `test_browser_provider_consecutive_empty_short_circuits` ✅
-- `test_commons_license_accepts_cc0_with_deed_suffix` ✅
-- `test_commons_license_accepts_no_restrictions` ✅
-- `test_wikimedia_provider_returns_enough_licensed_results_for_common_queries` ✅
-- `test_wikimedia_returns_high_resolution_candidates` ✅
-- 118 Python + 4 Node testi geçti (6 test ffmpeg yokluğundan çevresel olarak başarısız).
+- `tests/test_phase4i.py`, `tests/test_phase4_media.py`: **75 geçti, 2 atlandı**
+  (çevresel/fixture bağımlı olanlar)
+- Sıkı güvenlik testleri korundu (örn. `test_invalid_storyboard_never_degrades_to_legacy_or_generic_query`
+  tamamen alakasız narration için hala hata fırlatıyor)
+- QC scripti (MAX_BLACK_RATIO=0.15, pix_th=0.05, tail_clean son 1.0sn)
+  değişmeden kullanılıyor.
 
 ### Gerçek CI kanıtı
-- **Faz4G run 44670492824** @ `e5c0f70` → SUCCESS
-  - QC: 39/39, 0 hata, 0 uyarı
-  - Video: 6.7 MB, 33.33s, 1080×1920, cover 265 KB
-  - Artifact: faz4g-e2e-video-25
+- **Faz4G run 44700976069** @ `f8a53b9` → SUCCESS (Piri Reis Haritası konusu)
+  - QC: 39/39, 0 hata, 3 uyarı
+  - Video: 6.91 MB, 38.57s, 1080×1920, V/A sync 0.09s
+  - Black frames: 0.00s (%0.0)
+- **Faz4G run 44682413882** @ `0ab08bc` → SUCCESS (İlk Uçuş konusu)
+  - QC: 39/39, 0 hata
+  - Video: ~7 MB, Wright Brothers/İlk Uçuş
+- **Faz4G run 44670492824** @ `e5c0f70` → SUCCESS (Posta Pulları)
+
+Önceki başarısız koşular ve teşhisleri için artifactler
+(`faz4g-e2e-video-N`) ve scene_media_manifest.json kayıtları mevcuttur.
 
 ---
 
@@ -122,10 +132,12 @@ tamamlandı (commit `e5c0f70`).
 
 | Kriter | Kanıt | Durum |
 |---|---|---|
-| Birim testleri (cookie/lisans/fallback) | `tests/test_phase4i.py` 13/13 | ✅ Mock/offline |
-| Hedefli entegrasyon (Wikimedia CC0 araması) | `test_wikimedia_*` | ✅ Gerçek HTTP |
-| Faz 4E cookie-only storyboard | run 44662520660 | ✅ Gerçek sağlayıcı |
-| Faz 4G tam orkestrasyon | run 44670492824 | ✅ Tam zincir |
-| FFmpeg montaj (loop ile) | 33.33s, V/A 0.04s | ✅ Gerçek render |
-| Final QC (39 kontrol) | 0 hata, 0 uyarı | ✅ Final QC |
+| Birim testleri (cookie/lisans/fallback/aliases) | `tests/test_phase4i.py` + `tests/test_phase4_media.py` | ✅ 75 pass |
+| Hedefli entegrasyon (Wikimedia) | `test_wikimedia_*` | ✅ |
+| Faz 4E cookie-only storyboard | run 44662520660 | ✅ |
+| Faz 4G tam orkestrasyon (rastgele konu) | run **44700976069** | ✅ |
+| FFmpeg montaj (loop + crop/contain) | 38.57s, V/A 0.09s | ✅ |
+| Final QC (39 kontrol) | 0 hata, black %0.0 | ✅ |
 | YouTube yüklemesi | skip-upload=1 | ✅ Çalıştırılmadı |
+| Artifact: scene_media_manifest.json | Her koşuda artifact'e kaydediliyor | ✅ |
+| Birden fazla farklı konuda başarı | Posta Pulları, İlk Uçuş, Piri Reis | ✅ |
