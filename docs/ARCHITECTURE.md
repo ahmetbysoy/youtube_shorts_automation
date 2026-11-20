@@ -42,6 +42,12 @@ Bu doküman, `youtube_shorts_automation` boru hattındaki modüllerin iç yapıs
            └─ youtube_studio_uploader.js → Studio'da aynı video ID + PUBLIC doğrulaması
 ```
 
+
+
+## GitHub Actions bağımlılık/cache mimarisi (zorunlu standart)
+
+Tüm workflow'lar için bağlayıcı cache politikası [`GITHUB_ACTIONS_CACHE_POLICY.md`](GITHUB_ACTIONS_CACHE_POLICY.md) belgesindedir. Ortak kurulum katmanı `.github/actions/setup-tools/action.yml` dosyasıdır; APT `.deb`, pip, `node_modules` ve Playwright Chromium cache davranışları burada merkezi olarak yönetilir. Yeni veya güncellenen workflow'lar bu action'ı kullanmalı; aynı kurulum mantığını kopyalamamalıdır. Cache yalnızca yeniden üretilebilir bağımlılıkları içerir; secret/cookie/oturum/üretim dosyaları kesinlikle cache'lenmez. Runner'ların temiz olduğu varsayımı korunur: cache hit doğrulanır, miss/bozuk cache durumunda normal kurulum çalışır. Cache doğrulaması için üretim/yayın/pruner workflow'ları dispatch edilmez.
+
 ## 1. Tarihsel Uçtan Uca Boru Hattı (Pipeline) Akışı
 
 ```text
