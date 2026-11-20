@@ -196,6 +196,34 @@
       "sha256": "8231558b9730481b2d2bfea02ad4549c3ad1c96b199e60b573e90d21f2f77905",
       "selected_at": "2026-11-20T03:48:13.846927+00:00",
       "generation_id": "33d4787a-367d-4805-a3bc-a2ede9015e13"
+    },
+    {
+      "key": "pexels:2402375",
+      "source_url": "https://www.pexels.com/search/videos/documentary%20animal/",
+      "sha256": "83c7289f32e263bb15c537590a4b6c9fef02e2ad87443c76792abaed796c7293",
+      "selected_at": "2026-11-20T03:53:48.227492+00:00",
+      "generation_id": "55b3b460-019e-4d94-a22f-1e4599bc117a"
+    },
+    {
+      "key": "pexels:10953795",
+      "source_url": "https://www.pexels.com/search/videos/documentary%20snow/",
+      "sha256": "9adb0878c4663d372e601aa8a9f082960cd089a272cf97f7ec14cfae83c938cd",
+      "selected_at": "2026-11-20T03:54:25.289738+00:00",
+      "generation_id": "55b3b460-019e-4d94-a22f-1e4599bc117a"
+    },
+    {
+      "key": "pexels:10949965",
+      "source_url": "https://www.pexels.com/search/videos/documentary%20country/",
+      "sha256": "340480d194d7cd16475d59fa7a287a122a46acf4d69bce757adcb565226ec1d6",
+      "selected_at": "2026-11-20T03:54:42.643689+00:00",
+      "generation_id": "55b3b460-019e-4d94-a22f-1e4599bc117a"
+    },
+    {
+      "key": "pexels:17670032",
+      "source_url": "https://www.pexels.com/search/videos/documentary%20however/",
+      "sha256": "38cf66c1b121376d53b87a17862728074d509582b6cb0c2edf04595bf6b15ae2",
+      "selected_at": "2026-11-20T03:55:03.864132+00:00",
+      "generation_id": "55b3b460-019e-4d94-a22f-1e4599bc117a"
     }
   ]
 }
