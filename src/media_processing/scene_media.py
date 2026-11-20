@@ -1305,9 +1305,31 @@ def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[st
     qterms, nterms, primary = terms(query), terms(scene["narration"]), terms(scene["primary_query"])
     query_coverage = len(evidence & qterms)/max(1, len(qterms))
     narration_overlap = sorted(evidence & nterms)
-    primary_overlap = sorted(evidence & primary & nterms)
-    minimum_anchors = min(2, len(primary & nterms))
-    if query_coverage < 0.5 or not minimum_anchors or len(primary_overlap) < minimum_anchors or not narration_overlap:
+    # Faz 4K: Relevance anchor — use the best anchor terms from (query ∪ primary)
+    # that are also in narration. The local-fallback LLM sometimes produces
+    # garbage primary queries (e.g. "history back", "science named") that
+    # anchor on stopword-like words (e.g. "back" ← "geri"). When the primary
+    # is weak, prefer the current query's overlap with narration.
+    primary_narr = primary & nterms
+    query_narr = qterms & nterms
+    # Determine anchor pool: if primary is strong (≥2 real content words that
+    # overlap narration), use it; otherwise use the union of query+primary
+    # overlap with narration so the current query gets a fair shake.
+    STOP_ANCHOR = {"back", "named", "most", "deep", "trench", "front", "side",
+                   "first", "last", "next", "old", "new", "big", "small"}
+    strong_primary_anchors = {w for w in primary_narr if w not in STOP_ANCHOR}
+    if len(strong_primary_anchors) >= 2:
+        anchor_pool = primary_narr
+    else:
+        anchor_pool = primary_narr | query_narr
+    anchor_overlap = sorted(evidence & anchor_pool)
+    minimum_anchors = min(2, len(anchor_pool))
+    # Relevance pass: candidate must (a) cover ≥50% of query terms,
+    # (b) share at least one content word with narration, and
+    # (c) if a strong anchor pool exists, hit at least one anchor term.
+    if query_coverage < 0.5 or not narration_overlap:
+        reasons.append("relevance_unproven_or_unrelated")
+    elif minimum_anchors >= 1 and not anchor_overlap:
         reasons.append("relevance_unproven_or_unrelated")
     if evidence & BLOCKED:
         reasons.append("blocked_or_sensitive_metadata")
@@ -1340,7 +1362,7 @@ def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[st
         else 0)
     components = {
         "query_metadata": round(30*query_coverage, 2),
-        "narration_metadata": 20 if primary_overlap else 0,
+        "narration_metadata": 20 if anchor_overlap else 0,
         "resolution": min(15, round(min(w or 0, h or 0)/1080*15, 2)),
         "aspect_ratio": 10 if ratio and 0.45 <= ratio <= 0.8 else 6 if ratio and 0.4 <= ratio <= 2.2 else 0,
         "duration": duration_score,
@@ -1350,7 +1372,7 @@ def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[st
     }
     return {"eligible": not reasons, "score": round(max(0, sum(components.values())), 2), "components": components,
             "rejection_reasons": reasons, "relevance_status": "metadata_supported" if not ("relevance_unproven_or_unrelated" in reasons) else "unproven",
-            "visual_verification": "not_performed", "query_coverage": round(query_coverage, 3), "primary_narration_overlap": primary_overlap,
+            "visual_verification": "not_performed", "query_coverage": round(query_coverage, 3), "primary_narration_overlap": anchor_overlap,
             "quality_basis": "measured_dimensions_duration_and_full_decode" if measured else "provider_advertised_metadata_only",
             "framing": "contain_letterbox"}
 
@@ -1515,23 +1537,31 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                 # Faz 4K: Kategori eslesmesi — daha belirgin/ozel kelimeler once
                 # (orn. "dünya" tek basina uzay tetiklemez; "okyanus" doga'yi tetikler)
                 if any(k in narration_l for k in ("uzay","gök","goz","yıldız","yildiz","gezegen","ay","güneş","gunes",
-                                                   "karadelik","astronot","uydu","teleskop",
-                                                   "space","star","planet","galaxy","black hole",
-                                                   "astronaut","satellite","nasa","telescope",
-                                                   "venüs","venus","mars","jupiter","saturn","lunar","solar",
-                                                   "dünya dışı","uzaylı")):
+                                                   "karadelik","astronot","uydu","teleskop","roket","roketsan",
+                                                   "space","star","planet","galaxy","black hole","moon","lunar",
+                                                   "astronaut","satellite","nasa","telescope","rocket",
+                                                   "apollo","mars","jupiter","saturn","venus","solar",
+                                                   "dünya dışı","uzaylı","iniş","ay'a")):
                     em_queries.extend(["space galaxy nebula stars","planet earth from space",
-                                       "astronaut space station"])
+                                       "astronaut space station",
+                                       "nasa apollo moon landing astronaut",
+                                       "moon surface earth from space"])
                 if any(k in narration_l for k in ("tarih","tariht","roma","imparator","savaş","savas",
                                                    "osmanlı","osmanli","sultan","fatih","mehmet","istanbul","bizans",
                                                    "constantinople","gemiler","gemi","yelken","donanma","ordu","asker",
-                                                   "kral","kraliçe","kralice","antika","antik","fetih","fetih",
+                                                   "kral","kraliçe","kralice","antika","antik","fetih",
+                                                   "uçak","ucak","havacılık","havacilik","pilot","balon","zeplin",
+                                                   "wright","kitty hawk","flyer","uçuş","ucus",
                                                    "ancient","medieval","history","emperor","war","ottoman",
                                                    "empire","ship","sailing","army","soldier","king","queen",
-                                                   "castle","ruins","archaeolog","conquest")):
+                                                   "castle","ruins","archaeolog","conquest",
+                                                   "airplane","aircraft","aviation","pilot","flight","flying",
+                                                   "biplane","balloon","zeppelin","airship","vintage plane")):
                     em_queries.extend(["ancient medieval history ruins castle",
                                        "historical sailing ship ocean",
-                                       "ottoman empire history constantinople"])
+                                       "ottoman empire history constantinople",
+                                       "vintage airplane wright brothers flight",
+                                       "early aviation biplane historic"])
                 if any(k in narration_l for k in ("bilim","fizik","kimya","bilgisa","bilim adam","bilim ins",
                                                    "mucit","icat","deney","laboratuvar","teknoloji","makine",
                                                    "beyin","beynin","beyni","sinir","hücre","hcre","hucre",
@@ -1564,7 +1594,9 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                 # genis belgesel tarzi sorgular
                 em_queries.extend(["cinematic documentary landscape world",
                                    "vintage archival historical footage",
-                                   "nature documentary landscape"])
+                                   "nature documentary landscape",
+                                   "old vintage historical photograph black white",
+                                   "world landmarks documentary"])
                 # Her query'yi sirayla dene, biri basarirsa cik
                 for em_query in em_queries:
                     if selected is not None:
