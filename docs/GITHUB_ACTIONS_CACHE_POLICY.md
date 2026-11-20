@@ -83,3 +83,20 @@ Cache ile ilgili her değişiklikte:
 - YouTube yükleme başarısı veya üretim başarısı cache/CI testinden çıkarılamaz.
 
 Bu belge, sonraki tüm ajanlar ve geliştiriciler için bağlayıcıdır. Çelişki halinde secret güvenliği ve mevcut üretim davranışını koruma kuralları önceliklidir.
+
+## 9. Başlangıç workflow denetimi (2026-11-20)
+
+İncelenen workflow'larda bağımlılık kurulumu gerekenler mevcut ortak action'ı çağırıyor:
+
+- `.github/workflows/daily_shorts.yml`
+- `.github/workflows/ubuntu_26_test.yml`
+- `.github/workflows/public_providers_probe.yml`
+- `.github/workflows/stock_cookie_probe.yml`
+- `.github/workflows/phase4_media_probe.yml`
+- `.github/workflows/hourly_pruner.yml`
+
+`.github/workflows/cron_probe.yml` yalnızca runner imajındaki hazır `curl` ve `python3` komutlarını kullanır; bağımlılık indirme/kurma adımı olmadığı için cache eklenmesi gerekmez.
+
+Bu liste, README ve AI handoff belgelerinde atıf yapılan ve doğrudan okunabilen workflow dosyalarının denetimidir. GitHub bağlantısında workflow dizinini listeleyen bir uç nokta bulunmadığından, depodaki atıf yapılmayan tüm workflow dosyalarının eksiksiz envanteri bu işlemde bağımsız olarak doğrulanamadı. Yeni ajan, workflow dizinini yerel checkout veya GitHub Contents API üzerinden listeleyerek bu envanteri tamamlamalıdır; eksiksiz denetim yapılmış gibi davranmamalıdır.
+
+Ayrıca `ubuntu_26_test.yml` artık ortak composite action dosyası değiştiğinde de tetiklenecek şekilde izlenmelidir. Bu, cache altyapısındaki gelecekteki değişikliklerin test dışı kalmasını önler.
