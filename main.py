@@ -212,7 +212,8 @@ def main():
         "FAZ 2: Gemini Web Cookie İçerik + Fallback ve Ses Üretimi",
         content_generation_command(args.channel_id),
         env_overrides=step_env,
-        timeout_seconds=420,  # 7 dk — 10 dk yerine daha hizli hata verip sonraki cron'u bekler
+        # Gemini max 180s (probe timeout) + fallback 60s + TTS 90s + margin = 360s
+        timeout_seconds=360,
     )
     if not step1_ok:
         logging.error("İçerik üretimi başarısız. Orkestrasyon durduruldu.")

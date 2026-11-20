@@ -87,80 +87,105 @@ def validate_model_text(raw_text: str) -> dict[str, Any]:
     return scenario
 
 
+async def _one_topic_attempt(
+    cookies: dict, topic_slug: str, research: dict,
+    concept: str, recent_titles: list[str] | None,
+) -> dict[str, Any]:
+    """Tek bir konu icin Gemini init + generate + validate. Tamami timeout'lu."""
+    from gemini_webapi import GeminiClient
+
+    system_prompt, user_prompt = build_grounded_prompt(
+        research,
+        recent_topics=recent_used_topics(),
+        recent_titles=recent_titles,
+    )
+    if concept.strip():
+        user_prompt += "\nEk editoryal tercih (olguları değiştirmeden): " + concept.strip()
+    client = GeminiClient(cookies["__Secure-1PSID"], cookies["__Secure-1PSIDTS"])
+    # auto_refresh=False — arka planda token yenileme gorevi bazen event loop'u kilitliyor
+    await asyncio.wait_for(client.init(timeout=20, auto_refresh=False), timeout=25)
+    try:
+        response = await asyncio.wait_for(
+            client.generate_content(system_prompt + "\n\n" + user_prompt), timeout=55
+        )
+    finally:
+        try:
+            await asyncio.wait_for(client.close(), timeout=5)
+        except Exception:
+            pass
+    response_text = getattr(response, "text", None)
+    if not isinstance(response_text, str) or not response_text.strip():
+        raise ValueError("Gemini Web metin yanıtı boş veya okunamadı.")
+    draft = validate_grounded_response(response_text, topic_slug=topic_slug, research=research)
+    scenario = draft_to_script_metadata(draft)
+    scenario.update({
+        "word_count": draft["word_count"],
+        "provider": draft["provider"],
+        "draft_only": True,
+        "publish": False,
+        "topic_source_id": draft["topic_source_id"],
+        "claims": draft["claims"],
+        "prompt_version": draft["prompt_version"],
+    })
+    return scenario
+
+
 async def generate_text_scenario(
     concept: str = "", recent_titles: list[str] | None = None
 ) -> tuple[dict[str, Any], list[str]]:
-    """Cookie ile Gemini Web'den senaryo üret. En fazla MAX_TOPIC_ATTEMPTS farkli
-    konu dener; bir konu fetch basarili olsa bile validate_grounded_response
-    (semantic/claim kontrolu) basarisiz olursa sonraki konuya gecer.
-    Tum konular tukenirse son ValueError yukariya dogru yayilir (falleback'i tetikler).
+    """Cookie ile Gemini Web'den senaryo üret. Her konu denemesi 90s, toplam 180s
+    hard timeout ile sinirli. Asilirsa TimeoutError yukariya dogru yayilir
+    (content_engine fallback'i tetikler).
     """
     MAX_TOPIC_ATTEMPTS = 3
+    PER_ATTEMPT_TIMEOUT = 80   # saniye, tek konu icin ust sinir
+    TOTAL_TIMEOUT = 180        # saniye, tum Gemini akisi icin mutlak ust sinir
     cookies = load_cookie_payload()
     last_error: Exception | None = None
     excluded: set[str] = set()
-    for attempt in range(MAX_TOPIC_ATTEMPTS):
-        topic_slug, reservation_id, research = select_researched_topic(
-            recent_titles=recent_titles, exclude_slugs=excluded)
-        completed = False
-        try:
-            from gemini_webapi import GeminiClient
 
-            system_prompt, user_prompt = build_grounded_prompt(
-                research,
-                recent_topics=recent_used_topics(),
-                recent_titles=recent_titles,
-            )
-            if concept.strip():
-                user_prompt += "\nEk editoryal tercih (olguları değiştirmeden): " + concept.strip()
-            client = GeminiClient(cookies["__Secure-1PSID"], cookies["__Secure-1PSIDTS"])
-            await client.init(timeout=30, auto_refresh=True)
-            response = await asyncio.wait_for(
-                client.generate_content(system_prompt + "\n\n" + user_prompt), timeout=90
-            )
-            response_text = getattr(response, "text", None)
-            if not isinstance(response_text, str) or not response_text.strip():
-                raise ValueError("Gemini Web metin yanıtı boş veya okunamadı.")
+    async def _run_all_attempts() -> dict[str, Any]:
+        nonlocal last_error
+        for attempt in range(MAX_TOPIC_ATTEMPTS):
+            topic_slug, reservation_id, research = select_researched_topic(
+                recent_titles=recent_titles, exclude_slugs=excluded)
+            try:
+                scenario = await asyncio.wait_for(
+                    _one_topic_attempt(cookies, topic_slug, research, concept, recent_titles),
+                    timeout=PER_ATTEMPT_TIMEOUT,
+                )
+                finish_topic_reservation(topic_slug, reservation_id, commit=True)
+                return scenario
+            except ValueError as exc:
+                last_error = exc
+                excluded.add(topic_slug)
+                print(f"[GEMINI_WEB] konu={topic_slug} deneme {attempt+1}/{MAX_TOPIC_ATTEMPTS} "
+                      f"basarisiz: {str(exc)[:150]}", file=sys.stderr, flush=True)
+            except asyncio.TimeoutError as exc:
+                last_error = exc
+                excluded.add(topic_slug)
+                print(f"[GEMINI_WEB] konu={topic_slug} deneme {attempt+1}/{MAX_TOPIC_ATTEMPTS} "
+                      f"timeout (>{PER_ATTEMPT_TIMEOUT}s) — konu atlandi", file=sys.stderr, flush=True)
+            except Exception as exc:
+                last_error = exc
+                excluded.add(topic_slug)
+                print(f"[GEMINI_WEB] konu={topic_slug} deneme {attempt+1}/{MAX_TOPIC_ATTEMPTS} "
+                      f"harici hata: {type(exc).__name__}", file=sys.stderr, flush=True)
+            # Basarisiz denemede rezervasyonu serbest birak
+            try:
+                finish_topic_reservation(topic_slug, reservation_id, commit=False)
+            except Exception:
+                pass
+        assert last_error is not None
+        raise last_error
 
-            draft = validate_grounded_response(
-                response_text, topic_slug=topic_slug, research=research
-            )
-            scenario = draft_to_script_metadata(draft)
-            scenario.update({
-                "word_count": draft["word_count"],
-                "provider": draft["provider"],
-                "draft_only": True,
-                "publish": False,
-                "topic_source_id": draft["topic_source_id"],
-                "claims": draft["claims"],
-                "prompt_version": draft["prompt_version"],
-            })
-            finish_topic_reservation(topic_slug, reservation_id, commit=True)
-            completed = True
-            return scenario, list(cookies.values())
-        except ValueError as exc:
-            # Validate/fetch/semantic hatasi — bu konuyu serbest birak ve digerini dene.
-            # (ValueError'lar bizim kontrollu hata mesajlarimizdir; cookie icermez.)
-            last_error = exc
-            excluded.add(topic_slug)
-            print(f"[GEMINI_WEB] konu={topic_slug} deneme {attempt+1}/{MAX_TOPIC_ATTEMPTS} "
-                  f"basarisiz: {str(exc)[:150]}", file=sys.stderr)
-        except Exception as exc:
-            # Harici kutuphane/ag hatasi — turunu yaz (cookie sizintisi riski),
-            # yeniden denemek yerine bu konuyu da serbest birak.
-            last_error = exc
-            excluded.add(topic_slug)
-            print(f"[GEMINI_WEB] konu={topic_slug} deneme {attempt+1}/{MAX_TOPIC_ATTEMPTS} "
-                  f"harici hata: {type(exc).__name__}", file=sys.stderr)
-        finally:
-            if not completed:
-                try:
-                    finish_topic_reservation(topic_slug, reservation_id, commit=False)
-                except Exception:
-                    pass
-    # Tum denemeler tukendi
-    assert last_error is not None
-    raise last_error
+    try:
+        scenario = await asyncio.wait_for(_run_all_attempts(), timeout=TOTAL_TIMEOUT)
+    except asyncio.TimeoutError:
+        print(f"[GEMINI_WEB] TOPLAM TIMEOUT ({TOTAL_TIMEOUT}s) — fallback'e donuluyor",
+              file=sys.stderr, flush=True)
+        raise  # content_engine fallback'e
+    return scenario, list(cookies.values())
 
 
 def main() -> int:

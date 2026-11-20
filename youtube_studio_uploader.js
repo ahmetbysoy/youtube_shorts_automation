@@ -2,7 +2,9 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-require('dotenv').config();
+// dotenv yalnizca yerel .env dosyasi varsa yuklenir; CI'da (package.json -> devDependencies)
+// yuklu olmamasini tolere et.
+try { require('dotenv').config(); } catch (_) { /* CI'da dotenv yoksa sorun degil */ }
 
 const BASE_DIR = process.cwd();
 const VIDEO_PATH = path.join(BASE_DIR, 'output', 'final_short.mp4');
