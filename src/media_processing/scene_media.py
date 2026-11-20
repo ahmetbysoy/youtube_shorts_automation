@@ -1244,6 +1244,16 @@ def scene_plan(script: dict) -> list[dict]:
         queries = list(dict.fromkeys(q.strip() for q in [scene["visual_query"], *alternatives]))
         if any(len(q) > 180 for q in queries):
             raise ValueError("query_length_limit")
+        # Faz 4K: Inject script-level visual_keywords as extra alternatives.
+        # The local-fallback LLM sometimes produces garbage scene-level queries
+        # like "science named" or "science trench"; global visual_keywords are
+        # usually better-formed and topic-relevant. Deduplicated via dict.fromkeys.
+        vk = script.get("visual_keywords")
+        if isinstance(vk, list):
+            for v in vk:
+                if isinstance(v, str) and v.strip() and len(v.strip()) <= 180:
+                    queries.append(v.strip())
+            queries = list(dict.fromkeys(queries))
         # Faz 4J: Require at least one query (primary or alternative) to overlap
         # with narration terms. This prevents completely unrelated footage while
         # allowing the greedy keyword assignment to leave the primary as a
@@ -1490,21 +1500,32 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
             # Birden fazla jenerik query sirayla denenir; ilki uygun aday bulursa digerleri atlanir.
             if selected is None:
                 topic = str(script.get("topic", "")).lower()
-                narration_l = scene["narration"].lower()
+                title = str(script.get("title", "")).lower()
+                # Topic + title + visual_keywords'i de kategori tespitine dahil et
+                extra_text = " ".join([topic, title])
+                vk = script.get("visual_keywords")
+                if isinstance(vk, list):
+                    extra_text += " " + " ".join(v for v in vk if isinstance(v, str))
+                narration_l = (scene["narration"] + " " + extra_text).lower()
                 em_queries = []
                 # Kategori tespiti — genis kume, hem TR hem EN anahtar kelimeler
+                # Faz 4K: Kategori eslesmesi — daha belirgin/ozel kelimeler once
+                # (orn. "dünya" tek basina uzay tetiklemez; "okyanus" doga'yi tetikler)
                 if any(k in narration_l for k in ("uzay","gök","goz","yıldız","yildiz","gezegen","ay","güneş","gunes",
-                                                   "space","star","planet","galaxy","black hole","karadelik",
-                                                   "venüs","venus","mars","dünya","dunya","lunar","solar")):
+                                                   "karadelik","astronot","uydu","teleskop",
+                                                   "space","star","planet","galaxy","black hole",
+                                                   "astronaut","satellite","nasa","telescope",
+                                                   "venüs","venus","mars","jupiter","saturn","lunar","solar",
+                                                   "dünya dışı","uzaylı")):
                     em_queries.extend(["space galaxy nebula stars","planet earth from space",
                                        "astronaut space station"])
                 if any(k in narration_l for k in ("tarih","tariht","roma","imparator","savaş","savas",
                                                    "osmanlı","osmanli","sultan","fatih","mehmet","istanbul","bizans",
                                                    "constantinople","gemiler","gemi","yelken","donanma","ordu","asker",
-                                                   "kral","kraliçe","kralice","savaş","savas","antika","antik",
+                                                   "kral","kraliçe","kralice","antika","antik","fetih","fetih",
                                                    "ancient","medieval","history","emperor","war","ottoman",
                                                    "empire","ship","sailing","army","soldier","king","queen",
-                                                   "castle","ruins","archaeolog")):
+                                                   "castle","ruins","archaeolog","conquest")):
                     em_queries.extend(["ancient medieval history ruins castle",
                                        "historical sailing ship ocean",
                                        "ottoman empire history constantinople"])
@@ -1513,19 +1534,28 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                                                    "beyin","beynin","beyni","sinir","hücre","hcre","hucre",
                                                    "noroloji","norolog","doktor","hastane","ameliyat",
                                                    "tıbbi","tibbi","tıp","tip","hastalik","hastalık","ağrı","agri",
+                                                   "sağlık","saglik","kanser","virüs","virus","aşı","asi",
                                                    "science","physics","chemistry","computer","scientist",
                                                    "inventor","experiment","laboratory","technology","machine",
                                                    "brain","neural","neuron","cell","biology","medical","medicine",
-                                                   "doctor","hospital","surgery","disease","pain","health")):
+                                                   "doctor","hospital","surgery","disease","pain","health",
+                                                   "cancer","virus","vaccine")):
                     em_queries.extend(["science laboratory technology vintage",
                                        "medical hospital brain surgery",
                                        "biology science microscopic cells"])
                 if any(k in narration_l for k in ("doğa","doga","deniz","okyanus","dag","dağ","orman","nehir",
-                                                   "göl","gol","hayvan","bitki","vadi","plaj","kumsal",
+                                                   "göl","gol","hayvan","bitki","vadi","plaj","kumsal","ada",
+                                                   "çukur","cukur","derin","dip","dalgıç","dalgic","dalis",
+                                                   "denizaltı","denizalti","mercan","resif","balık","balik",
+                                                   "plastik","kirlilik","akıntı","akinti","dalga","sahil",
                                                    "nature","ocean","sea","forest","mountain","river","lake",
-                                                   "animal","plant","wildlife","beach","coast","island")):
+                                                   "animal","plant","wildlife","beach","coast","island",
+                                                   "deep","trench","abyss","underwater","submarine","coral",
+                                                   "reef","fish","shark","whale","dive","diving","ocean floor",
+                                                   "plastic","pollution","wave","current","mariana")):
                     em_queries.extend(["nature landscape ocean mountain wildlife",
-                                       "underwater sea coral fish",
+                                       "underwater deep sea ocean trench",
+                                       "ocean underwater coral fish",
                                        "forest mountain landscape"])
                 # Son careler: her konuda en az bir uygun gorsel bulunabilecek
                 # genis belgesel tarzi sorgular
