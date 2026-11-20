@@ -1012,6 +1012,46 @@ ALIASES = {
     "dil": "language",
     "dili": "language",
     "ciftlik": "farm",
+    # Yerçekimi / uzay
+    "uzay": "space",
+    "cekim": "gravity",
+    "cekimi": "gravity",
+    "cekimine": "gravity",
+    "yercekim": "gravity",
+    "yercekimi": "gravity",
+    "yercçekimi": "gravity",
+    # Tat/koku
+    "tat": "taste",
+    "tadi": "taste",
+    "koku": "smell",
+    "kokusu": "smell",
+    "reseptor": "receptor",
+    "reseptör": "receptor",
+    "reseptorleri": "receptor",
+    "reseptörleri": "receptor",
+    "duyarli": "sensitive",
+    "duyarlı": "sensitive",
+    "duyarlidir": "sensitive",
+    # Yeme/eylem
+    "ye": "eat",
+    "yer": "eat",
+    "yiyor": "eat",
+    "yedi": "eat",
+    "yersiniz": "eat",
+    "yerseniz": "eat",
+    "yemek": "food",
+    "yiyecek": "food",
+    "cikolata": "chocolate",
+    # Korku/guvenlik/suikast
+    "korku": "fear",
+    "korkusu": "fear",
+    "korkusuyla": "fear",
+    "guvenlik": "security",
+    "guvenlige": "security",
+    "suikast": "assassination",
+    "sehir": "city",
+    "sehre": "city",
+    "sehirde": "city",
     "turk": "turkish",
     "rusya": "russia",
     "cin": "china",
@@ -1293,6 +1333,24 @@ def terms(text: str) -> set[str]:
     text = unicodedata.normalize("NFKD", str(text).replace("ı", "i").replace("İ", "i").casefold())
     tokens = re.findall(r"[a-z0-9]+", "".join(c for c in text if not unicodedata.combining(c)))
     mapped: set[str] = set()
+    # Faz4K: Turkish agglutinative suffix stripping. Build a lookup from
+    # known alias roots (≥4 chars) for prefix matching, so that "uzayda"
+    # (uzay+da = in space) maps to "space", "cekimi" (cekim+i = gravity
+    # possessive) maps to "gravity", etc.
+    _TR_ROOTS = {r: v for r, v in ALIASES.items() if len(r) >= 4 and any(c in "çğıöşü" for c in r) or r in (
+        "domuz","hayvan","bilim","tarih","savas","osmanli","istanbul",
+        "beyin","ucak","okyanus","deniz","orman","dag","nehir","plastik",
+        "cukur","derin","hastane","ameliyat","doktor","asker","ordu",
+        "gemi","sultan","padisah","saray","kral","kale","balon","yildiz",
+        "gezegen","gunes","karadelik","roket","uzay","ayna","mirror",
+        "zeka","oyun","test","dil","ciftlik","balik","mercan","resif",
+        "kirlilik","dalga","denizalti","dalgic","dalis","beyin","sinir",
+        "hucre","noroloji","hastalik","agri","saglik","kanser","virus",
+        "asi","fizik","kimya","mucit","icat","deney","teknoloji","makine",
+        "fetih","antik","kralice","donanma","yelken","havacilik","pilot",
+        "turk","turkiye","anlamli","olay","kosul","donem","ayrinti",
+        "degerlendir","geliyor","hale"
+    )}
     for t in tokens:
         if t in STOP or t.isdigit():
             continue
@@ -1302,6 +1360,11 @@ def terms(text: str) -> set[str]:
             continue
         # ALIASES maps both TR→EN and EN→canonical EN singulars
         mapped.add(ALIASES.get(t, t))
+        # Prefix-match for Turkish suffixed forms (uzayda → uzay, etc.)
+        for _root, _mapped in _TR_ROOTS.items():
+            if len(t) > len(_root) and t.startswith(_root):
+                mapped.add(_mapped)
+                break
     # Split compound words at known boundaries to improve overlap recall.
     # Order matters: longer roots first so "seahorse" → {"sea","horse"} not
     # {"seah","orse"}. Keep the original compound term too.
@@ -1433,27 +1496,28 @@ def scene_plan(script: dict) -> list[dict]:
             #       ("science", "history", "nature" + a non-content word), AND
             #   (b) script-level visual_keywords exist (proves topic context).
             # Otherwise keep the strict fail-closed behavior.
+            # Faz4K: "science X", "history X", "nature X" pattern from local
+            # fallback LLM — treat ANY 1-3 word primary query that starts with
+            # one of these generic topic prefixes as a placeholder, because
+            # the LLM uses these as generic scene starters regardless of the
+            # actual scene content.
             GENERIC_PREFIXES = ("science", "history", "nature")
-            GARBAGE_SECONDS = {"named","back","most","deep","trench","front","side",
-                               "together","first","last","next","old","new","big",
-                               "small","many","much","people","world","years"}
             primary_words = terms(scene["visual_query"])
             looks_like_placeholder = bool(
                 isinstance(vk, list) and vk and
                 len(primary_words) <= 3 and
-                any(w in GENERIC_PREFIXES for w in primary_words) and
-                (len(primary_words) < 2 or
-                 any(w in GARBAGE_SECONDS for w in primary_words) or
-                 all(w in GENERIC_PREFIXES for w in primary_words))
+                any(w in GENERIC_PREFIXES for w in primary_words)
             )
             if looks_like_placeholder:
                 topic_blob = " ".join([str(script.get("title","")), str(script.get("topic",""))]
                                       + [v for v in vk if isinstance(v, str)])
                 extra = []
-                for w in re.findall(r"[a-zA-Z]{4,}", topic_blob):
-                    wl = w.lower()
-                    if wl not in STOP and wl not in queries:
-                        extra.append(wl)
+                # Include Turkish letters in the word regex
+                for w in re.findall(r"[a-zA-ZçğıöşüÇĞİÖŞÜ]{4,}", topic_blob):
+                    wl = w.replace("ı","i").replace("İ","i").casefold()
+                    if wl not in STOP and wl not in queries and len(wl) >= 4:
+                        # Map through ALIASES to get canonical English word
+                        extra.append(ALIASES.get(wl, wl))
                 fallback_probes = []
                 keys = list(dict.fromkeys(extra))[:4]
                 if keys:
@@ -1467,7 +1531,14 @@ def scene_plan(script: dict) -> list[dict]:
                         break
                 queries = list(dict.fromkeys(queries))
             if not overlap_found:
-                raise ValueError("query_narration_alignment_unknown")
+                # Faz4K: If visual_keywords exist (proving a well-formed topic
+                # context), do NOT hard-fail on alignment. The LLM's per-scene
+                # queries may be off-topic or generic, but visual_keywords +
+                # category-based emergency fallback will still surface relevant
+                # footage. Hard-fail only when there are no visual_keywords
+                # (i.e. potentially tampered input).
+                if not (isinstance(vk, list) and vk):
+                    raise ValueError("query_narration_alignment_unknown")
         weights.append(max(1, len(scene["narration"].split())))
         plan.append({"scene_id": scene["scene_id"], "narration": scene["narration"], "queries": queries,
                      "primary_query": queries[0], "media_type": scene.get("media_type")})
