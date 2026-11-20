@@ -4,7 +4,9 @@
 
 > **Tarihsel Faz4B snapshot’ı:** Kaynak `59e2c79`, CI44301070745 **301+16/35/122/8/11Node**; eski yerel canlı Commons tam zinciri geçti, eski Actions44301095341 stock403 ve generic Commons download/decode failure verdi. Bu eski kayıtlar yeni koşu değildir; [Faz4B raporu](evidence/PHASE4B_ACCEPTANCE_2026-11-18.md) ve [JSON](evidence/PHASE4B_ACTIONS_EVIDENCE_2026-11-18.json) değiştirilmeden korunur.
 
-Başlangıç davranışı ve sağlayıcı/API/Playwright sırası: [PHASE4_MEDIA_BASELINE.md](PHASE4_MEDIA_BASELINE.md). Bu belge uygulanmış kodun tasarımını açıklar; [canlı kanıt raporu](evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md) **tam Faz 4 kabulünün geçmediğini** kaydeder. Storyboard bulunmayan payload'ların eski davranışı korunur; eski yolun lisans/uygunluk açıkları yeni kod tarafından doğrulanmış sayılmaz.
+Başlangıç davranışı ve sağlayıcı/Playwright sırası: [PHASE4_MEDIA_BASELINE.md](PHASE4_MEDIA_BASELINE.md). Bu belge uygulanmış kodun tasarımını açıklar; [canlı kanıt raporu](evidence/PHASE4_ACTIONS_EVIDENCE_2026-11-18.md) **tam Faz 4 kabulünün geçmediğini** kaydeder. Storyboard bulunmayan payload'ların eski davranışı korunur; eski yolun lisans/uygunluk açıkları yeni kod tarafından doğrulanmış sayılmaz.
+
+> **2026-11-20 politika güncellemesi: API anahtarı kullanılmaz — cookie-only / keyless public.** `PEXELS_API_KEY`/`PIXABAY_API_KEY` rotası kaldırılmıştır. Pexels/Pixabay ve benzeri sağlayıcılar **yalnızca Playwright + cookie** rotasıyla çalışır; cookie gerektirmeyen sağlayıcılar (NASA, Internet Archive, Wikimedia Commons) doğrudan HTTPS public API üzerinden çalışır. Hiçbir koşulda API key/ücretli servis kullanılmaz. Referans mimari: Pexels Playwright+cookie zincirinin stock-cookie-probe run #11'de (44773494574) başardığı arama→CDN MP4 indirme→SHA256→ffprobe→tam decode akışıdır (bkz. [Faz5 sertleştirme raporu](evidence/FAZ5_HARDENING_REPORT_2026-11-16.md)). CAPTCHA/Cloudflare bot koruması asla bypass edilmez.
 
 ## 1. Akış
 

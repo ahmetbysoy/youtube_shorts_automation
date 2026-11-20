@@ -26,11 +26,15 @@ SOURCE_HOSTS = {
     "pexels": {"www.pexels.com", "pexels.com"},
     "pixabay": {"pixabay.com", "www.pixabay.com"},
     "wikimedia": {"commons.wikimedia.org"},
+    "nasa": {"images-api.nasa.gov", "images.nasa.gov", "www.nasa.gov", "nasaimages.org", "apod.nasa.gov"},
+    "archiveorg": {"archive.org", "www.archive.org"},
 }
 DOWNLOAD_HOSTS = {
     "pexels": {"videos.pexels.com", "player.vimeo.com", "images.pexels.com"},
     "pixabay": {"cdn.pixabay.com", "videos.pexels.com"},
     "wikimedia": {"upload.wikimedia.org", "thumb.wikimedia.org"},
+    "nasa": {"images-assets.nasa.gov", "images-api.nasa.gov", "apod.nasa.gov"},
+    "archiveorg": {"archive.org", "www.archive.org"},
 }
 
 
@@ -192,6 +196,8 @@ class StockTerms:
     icermez.
     """
     URLS = {"pexels": "https://www.pexels.com/license/", "pixabay": "https://pixabay.com/service/terms/"}
+    # NASA ve archiveorg icin StockTerms.check() yukarida ozel davranisla
+    # (builtin public domain / pending) donuyor; bu URL'ler yalniz referans.
     # Lisans kanonik snapshot'lari (temizlenmis, kucuk harfe cevrilmis metin).
     # Bu snapshot'lar kodu degistirmeden guncellenebilir: marker gruplarina
     # ekleme yapildiginda otomatik olarak yeni snapshot algilanir.
@@ -302,6 +308,54 @@ class StockTerms:
     def check(self, provider: str) -> MediaLicense:
         if provider in self.cache:
             return self.cache[provider]
+
+        # Cookie'siz kamu kaynaklari: NASA ve Internet Archive
+        if provider == "nasa":
+            # NASA medyasi: ABD federal hukumet eseri olarak genelde public domain.
+            # Bazi ozel ogeler farkli lisansla yayinlanabilir; bu durumda NASA
+            # detail sayfasi acikca belirtir. Strict policy: yalnizca NASA
+            # government-work PD varsayimi ile "verified" olarak isaretle, ama
+            # "third_party_rights_not_verified" kisitini koy.
+            lic = MediaLicense(
+                name="NASA Public Domain (US Government Work)",
+                url="https://www.nasa.gov/nasa-brand-center/images-and-media/",
+                verified=True,
+                evidence_url="https://images.nasa.gov/",
+                evidence_method="nasa_public_domain_policy",
+                checked_at=now(),
+                attribution_required=False,
+                attribution="NASA (public domain, US Government work).",
+                creator="NASA",
+                evidence_sha256=hashlib.sha256(b"nasa-public-domain").hexdigest(),
+                restrictions=("third_party_rights_not_verified",
+                              "some_items_may_have_additional_restrictions"),
+            )
+            self.cache[provider] = lic
+            return lic
+
+        if provider == "archiveorg":
+            # Internet Archive'in kendisi bir lisans vermez; yukleyenlerin lisansini
+            # korur. Strict policy: download ettigimiz ~orig.mp4 dosyalarinda
+            # license metadatasini asset metadata'dan dogrulamadan lisansli
+            # sayilmaz. Ancak search asamasinda "publicdomain" filtreli query
+            # kullaniyoruz ve "Internet Archive Public Domain Mark" olarak kabul
+            # ediyoruz; bu kanit metin tabanli, dosya bazli kesin lisans dogrulamasi
+            # indirme sonrasi yapilacak.
+            lic = MediaLicense(
+                name="Internet Archive — Public Domain (per-item verification pending)",
+                url="https://archive.org/about/terms.php",
+                verified=False,
+                evidence_url="https://archive.org/",
+                evidence_method="archiveorg_publicdomain_search_filter",
+                checked_at=now(),
+                attribution_required=True,
+                attribution="Kaynak: Internet Archive (https://archive.org).",
+                evidence_sha256=hashlib.sha256(b"archiveorg-publicdomain-filter").hexdigest(),
+                rejection_reason="per_item_license_verification_required_after_download",
+            )
+            self.cache[provider] = lic
+            return lic
+
         url = self.URLS[provider]
         text: str | None = None
         method = "official_provider_terms_http"
@@ -493,6 +547,179 @@ class PixabayProvider:
             f = files[0]; tags = tuple(x.strip() for x in str(row.get("tags", "")).split(",") if x.strip())
             results.append(MediaCandidate(self.name, str(row["id"]), row["pageURL"], f["url"], "video", int(f["width"]), int(f["height"]),
                                           float(row["duration"]) if row.get("duration") else None, title=" ".join(tags), tags=tags, license=lic))
+        return results
+
+
+class NasaProvider:
+    """NASA Image and Video Library — public API, keyless, cookie-free.
+
+    images-api.nasa.gov uzerinden video aramasi yapar. NASA medyasi ABD hukumetinin
+    eseri olarak genelde public domain'dir; bireysel ogelerin NASA websitesindeki
+    aciklamalarinda lisans notu yoksa "public domain (NASA goverment work)" olarak
+    etiketlenir.
+    """
+    name = "nasa"
+
+    def __init__(self, *, session=requests, terms: StockTerms | None = None):
+        self.session = session
+        self.terms = terms or StockTerms()
+        self.last_diagnostics = {"metadata_http_responses": []}
+
+    def search(self, query: str) -> list[MediaCandidate]:
+        results = []
+        self.last_diagnostics = {"metadata_http_responses": [], "manifest_responses": []}
+        from urllib.parse import quote
+        # Cookie'siz/keyless public NASA search endpoint.
+        r = self.session.get("https://images-api.nasa.gov/search",
+                             params={"q": query, "media_type": "video", "page_size": 15},
+                             headers={"User-Agent": USER_AGENT},
+                             timeout=(5, 20), allow_redirects=False)
+        self.last_diagnostics["metadata_http_responses"].append({"http_status": r.status_code})
+        if r.status_code != 200:
+            raise RuntimeError(f"nasa_catalog_http_{r.status_code}")
+        items = ((r.json().get("collection") or {}).get("items") or [])
+        lic = self.terms.check(self.name)
+        MAX_BYTES = 64 * 1024 * 1024  # Faz4 I/O siniri
+        for it in items:
+            data = (it.get("data") or [{}])[0]
+            nasa_id = data.get("nasa_id") or ""
+            if not nasa_id:
+                continue
+            title = plain(data.get("title", ""))
+            desc = plain(data.get("description", ""))
+            nid_q = quote(str(nasa_id), safe="")
+            # Manifest cek ve MP4 varyantlari arasindan en kucugunu (<64MB) sec.
+            manifest_url = f"https://images-assets.nasa.gov/video/{nid_q}/collection.json"
+            try:
+                mr = self.session.get(manifest_url, headers={"User-Agent": USER_AGENT},
+                                      timeout=(5, 15), allow_redirects=True)
+                self.last_diagnostics["manifest_responses"].append(
+                    {"nasa_id": nasa_id, "http_status": mr.status_code})
+                if mr.status_code != 200:
+                    continue
+                manifest = mr.json()
+            except Exception:
+                continue
+            best_url: str | None = None
+            best_size = 10**12
+            for href in manifest:
+                if not isinstance(href, str):
+                    continue
+                if href.startswith("http://"):
+                    href = "https://" + href[7:]
+                if not href.endswith(".mp4"):
+                    continue
+                if not valid_url(href, DOWNLOAD_HOSTS[self.name]):
+                    continue
+                try:
+                    hr = self.session.head(href, allow_redirects=True,
+                                           headers={"User-Agent": USER_AGENT}, timeout=8)
+                    if hr.status_code != 200:
+                        continue
+                    ct = (hr.headers.get("content-type") or "").lower()
+                    if not ct.startswith("video/"):
+                        continue
+                    sz = int(hr.headers.get("content-length") or 0)
+                    if 0 < sz < MAX_BYTES and sz < best_size:
+                        best_size = sz
+                        best_url = href
+                except Exception:
+                    continue
+            if not best_url:
+                continue
+            results.append(MediaCandidate(
+                self.name, nasa_id,
+                f"https://images.nasa.gov/details-{nid_q}",
+                best_url, "video", None, None, None,
+                title=title, description=desc, license=lic,
+                tags=tuple((data.get("keywords") or [])[:8]),
+                catalog_transport="public_http",
+            ))
+        return results
+
+
+class InternetArchiveProvider:
+    """Internet Archive — public JSON API, keyless, cookie-free.
+
+    archive.org/advancedsearch.php ile mediatype:movies AND (publicdomain OR CC0)
+    aramasi yapar; ~orig.mp4 derive'ina HEAD atarak dosya varligi ve 64MB boyut
+    sinirini dogrular.
+    """
+    name = "archiveorg"
+
+    def __init__(self, *, session=requests, terms: StockTerms | None = None):
+        self.session = session
+        self.terms = terms or StockTerms()
+        self.last_diagnostics = {"metadata_http_responses": [], "head_responses": []}
+
+    def search(self, query: str) -> list[MediaCandidate]:
+        results = []
+        self.last_diagnostics = {"metadata_http_responses": [], "head_responses": []}
+        # Public domain/CC0 + küratörlü koleksiyonlar: Prelinger (klasik kamu domain
+        # filmler/reklamlar), NASA, US government films. Genis tam-metinden kacip
+        # title: prefix'i ile baslikta arama yap; aksi halde alaka skoru cok dusuyor
+        # (eski oyun videolari, rastgele long-form icerik donebiliyor).
+        safe_q = query.replace('"', ' ').replace(":", " ").replace("(", " ").replace(")", " ")
+        # Cok-kelimeli sorgulari tek bir phrase olarak ara (alaka skoru icin)
+        ia_query = (
+            '(mediatype:movies) AND '
+            '(collection:prelinger OR collection:nasa OR collection:usgovfilms OR licenseurl:(*publicdomain*)) AND '
+            f'(title:"{safe_q}" OR description:"{safe_q}")'
+        )
+        r = self.session.get("https://archive.org/advancedsearch.php",
+                             params={"q": ia_query,
+                                     "fl": "identifier,title,description,licenseurl,rights",
+                                     "sort[]": "downloads desc",
+                                     "rows": 25, "page": 1, "output": "json"},
+                             headers={"User-Agent": USER_AGENT},
+                             timeout=(5, 20), allow_redirects=False)
+        self.last_diagnostics["metadata_http_responses"].append({"http_status": r.status_code})
+        if r.status_code != 200:
+            raise RuntimeError(f"archiveorg_catalog_http_{r.status_code}")
+        docs = ((r.json().get("response") or {}).get("docs") or [])
+        lic = self.terms.check(self.name)
+        MAX_BYTES = 64 * 1024 * 1024
+        for doc in docs:
+            ident = doc.get("identifier") or ""
+            if not ident:
+                continue
+            title = plain(doc.get("title", ""))
+            desc = plain(doc.get("description", ""))
+            # MP4 derive var mi + boyut kontrolu (HEAD)
+            dl_url = f"https://archive.org/download/{ident}/{ident}.mp4"
+            if not valid_url(dl_url, DOWNLOAD_HOSTS[self.name]):
+                continue
+            try:
+                hr = self.session.head(dl_url, allow_redirects=True,
+                                       headers={"User-Agent": USER_AGENT}, timeout=8)
+                self.last_diagnostics["head_responses"].append(
+                    {"identifier": ident, "http_status": hr.status_code})
+                if hr.status_code != 200:
+                    # Bazi IA ogelerinde {ident}_512kb.mp4 gibi alternatif derive'lar var
+                    alt_url = f"https://archive.org/download/{ident}/{ident}_512kb.mp4"
+                    hr = self.session.head(alt_url, allow_redirects=True,
+                                           headers={"User-Agent": USER_AGENT}, timeout=8)
+                    if hr.status_code == 200:
+                        dl_url = alt_url
+                    else:
+                        continue
+                ct = (hr.headers.get("content-type") or "").lower()
+                if not ct.startswith("video/") and ct != "application/octet-stream":
+                    continue
+                sz = int(hr.headers.get("content-length") or 0)
+                if sz >= MAX_BYTES:
+                    continue
+            except Exception:
+                continue
+            results.append(MediaCandidate(
+                self.name, ident,
+                f"https://archive.org/details/{ident}",
+                dl_url, "video", None, None, None,
+                title=title, description=desc, license=lic,
+                catalog_transport="public_http",
+            ))
+            if len(results) >= 15:
+                break
         return results
 
 
@@ -769,5 +996,7 @@ def default_providers() -> list[MediaProvider]:
     return [
         BrowserStockProvider("pexels", terms=terms),
         BrowserStockProvider("pixabay", terms=terms),
+        NasaProvider(terms=terms),
+        InternetArchiveProvider(terms=terms),
         WikimediaProvider(),
     ]

@@ -1,0 +1,82 @@
+name: public-providers-probe
+run-name: "Public keyless providers probe — ${{ github.event.inputs.keyword || 'solar flare' }}"
+on:
+  workflow_dispatch:
+    inputs:
+      keyword:
+        description: 'Aranacak anahtar kelime (orn: cats, solar flare, ocean, mars)'
+        required: false
+        default: 'solar flare'
+        type: string
+      max_bytes:
+        description: 'Maksimum dosya boyutu (orn: 64M)'
+        required: false
+        default: '64M'
+        type: string
+
+# Cookie'siz / API key'siz kamu kaynaklarini (NASA Image/Video Library, Internet Archive)
+# test eder. HICBIR SECRET KULLANMAZ. Yalnizca kamuya acik HTTP endpoint'lerine baglanir.
+# - CAPTCHA/Cloudflare bypass YAPMAZ (bu kaynaklar bot korumasi kullanmaz).
+# - Yukleme/yayinlama/varolan verileri degistirme YAPMAZ.
+# - Gunluk uretici/cron islerini cagirmaz.
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # HICBIR SECRET/SERVICE CREDENTIAL SET ETMİYORUZ.
+      # API key'ler ve cookie'ler bu workflow'un kapsami DISINDA.
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Araçları Kur (Python + FFmpeg)
+        uses: ./.github/actions/setup-tools
+        with:
+          node: 'false'
+          apt_packages: ffmpeg
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'requests beautifulsoup4 python-dateutil lxml'
+      - name: "Public provider probe: search → download → ffprobe → full decode"
+        id: probe
+        run: |
+          mkdir -p probe_out_public
+          set +e
+          python3 scripts/public_providers_probe.py \
+            --keyword "${{ github.event.inputs.keyword }}" \
+            --max-bytes "${{ github.event.inputs.max_bytes }}" \
+            --out probe_out_public \
+            2>&1 | tee probe_out_public/run.log
+          rc=${PIPESTATUS[0]}
+          echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
+          set -e
+          echo "exit_code=$rc"
+      - name: Raporu ozetle
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads((Path("probe_out_public")/"probe_report.json").read_text("utf8"))
+          print("\n=== OZET ===")
+          for name, p in r["results"].items():
+              c = p
+              print(f"[{name}] overall={p.get('overall')} stage={p.get('stage')} "
+                    f"candidates={p.get('candidates_found')} "
+                    f"{p.get('width')}x{p.get('height')} {p.get('duration')}s {p.get('codec')} "
+                    f"{p.get('bytes',0)/1e6:.1f}MB sha256={str(p.get('sha256',''))[:12]}")
+          PY
+      - name: Rapor ve loglari artifact olarak yukle
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-providers-probe-report
+          path: |
+            probe_out_public/probe_report.json
+            probe_out_public/run.log
+      - name: Sonucu kırmızıya cevir (saglayicilar gecmediyse)
+        if: steps.probe.outputs.exit_code != '0'
+        run: |
+          echo "Public provider probe BASARISIZ (exit=${{ steps.probe.outputs.exit_code }})."
+          echo "Artifact'teki probe_report.json ve run.log dosyalarina bak."
+          exit 1

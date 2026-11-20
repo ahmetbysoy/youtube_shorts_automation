@@ -403,3 +403,35 @@ Kural: **zorunlu kapak teslimi hiçbir dış servis rate-limit'una bağlı olama
 ### Bilinen sınırlamalar
 - GitHub remote/push bu workspace'te yapılandırılmadı; commitler yerel
 - Canlı cookie search+download CI'da doğrulanmalı
+
+## Faz6 — Cookie-free public providers (20 Kasım 2026)
+
+### Politika (kalıcı)
+- API key YOK (`PEXELS_API_KEY`/`PIXABAY_API_KEY`/`NASA_API_KEY` vb. tamamen yasak).
+- Mimari: ya cookie ile Playwright (Pexels/Pixabay) ya da cookie'siz kamu HTTP (NASA, Internet Archive, Wikimedia).
+- CAPTCHA/Cloudflare bypass YOK.
+
+### Tamamlanan
+- `NasaProvider` (keyless public): `images-api.nasa.gov/search` → manifest HEAD → en küçük MP4 (<64 MB).
+- `InternetArchiveProvider` (keyless public): mediatype:movies + publicdomain + title/description phrase + küratörlü koleksiyonlar (prelinger/nasa/usgovfilms) → MP4 derive HEAD + 512kb fallback.
+- `StockTerms`: NASA=verified public domain; IA=per-item verification pending.
+- `default_providers()` sırası: pexels, pixabay, nasa, archiveorg, wikimedia.
+- Yeni probe: `.github/workflows/public_providers_probe.yml` (HİÇ SECRET YOK).
+- Probe scripti: `scripts/public_providers_probe.py` (search→download→SHA256→ffprobe→full-decode).
+- Yeni birim testleri: `tests/test_phase6_public_providers.py` (7 testin 7'si geçiyor, mock HTTP).
+- Dokumantasyon: `docs/evidence/FAZ6_PUBLIC_PROVIDERS_REPORT_2026-11-20.md`.
+
+### Yerel kanıt (sandbox)
+- NASA solar flare → 3.3 MB mobile.mp4 (82 saniye h264+AAC) → ffprobe OK → full decode OK.
+- IA solar flare → 467 KB mp4 (5.2 saniye h264 480×480) → ffprobe OK → full decode OK.
+
+### CI için beklenen
+- `public_providers_probe.yml` workflow_dispatch ile tetiklenip NASA+IA için gerçek indirme+decode kanıtı üretecek.
+- Pixabay cookie preflight 12 cookie görüyor ama `browser_exception` ile başarısız oluyor (run #11, dc8b1e6 sonrası); kullanıcı yeni PIXABAY_COOK verene kadar IA/NASA/Wikimedia fallback olarak görev yapacak.
+
+### Kalan / Sıradaki
+- Faz6C: Openverse (CC image fallback, keyless).
+- Faz6D: Mixkit/Videvo cookie mi, lisans uygun mu arastirmasi.
+- Pixabay cookie yenileme (kullanıcıya daha sonra sorulacak).
+- IA per-item license verification indirme sonrası (şu anda search'te `verified=False`).
+- Içerik seçiciye yeni sağlayıcıları dahil eden senaryo testleri.

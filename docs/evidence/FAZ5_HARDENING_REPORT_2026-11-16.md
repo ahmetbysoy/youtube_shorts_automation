@@ -76,7 +76,22 @@ Yerel seviyede 10/18 madde (kod/birim) geçti. CI seviyesi (8 madde: 11–18) `p
    - Artifact'te (final_short.mp4, script.json) cookie/token/secret izi taramasını yap.
 4. Tüm kontrol olumluysa `PHASE5_ACCEPTANCE.md` içinde 11–18 maddeleri işaretle, CI run numarası/commit SHA yaz, durumu "KABUL EDİLDİ" yap.
 
-## 14. Sınırlamalar
+## 14. Karar: Cookie-only politika (2026-11-20)
+
+- **API anahtarı kullanılmaz.** `PEXELS_API_KEY`, `PIXABAY_API_KEY` ve benzeri kimlik doğrulama anahtarları sisteme eklenmez; cookie rotası tektir.
+- Pexels, Playwright+cookie ile Cloudflare stealt'i minimum müdahaleyle geçip CDN üzerinden MP4 indirme + SHA256 + ffprobe + tam decode zincirini başarıyla gerçekleştiriyor (bkz. stock-cookie-probe run #11 / 44773494574: 720×1280 dikey kedi videosu, 6.3s, h264).
+- Bu mimari (Pexels'teki `fetchFromPexels` + `downloadWithChecks` + `ffprobe` + `validHttpsUrl`) tüm yeni sağlayıcılar için referans olacaktır.
+- Cookie gerektirmeyen siteler (NASA, Internet Archive vb.) için de aynı indirme+doğrulama zinciri kullanılır (tarayıcı gerekmez, doğrudan HTTP request); fakat host allowlist, Content-Type doğrulaması, SHA256, ffprobe ve tam decode adımları aynı titizlikte uygulanır.
+- CAPTCHA/Cloudflare bot koruması asla bypass edilmez; engellenirse `blocked_unverified` olarak raporlanır.
+- Cookie'ler hiçbir zaman log, artifact, JSON raporu veya commit'e sızmaz.
+- Pixabay cookie şu anda `browser_exception` veriyor (preflight geçiyor, fakat addCookies veya page.goto aşamasında hata); kullanıcı yeni/düzgün formatlı cookie eklediğinde tekrar denenecektir.
+
+### Yeni sağlayıcı yolu haritası (Faz6)
+1. **NASA Image/Video Library** — cookiesiz, keyless public HTTP API (`images-api.nasa.gov`); uzay/bilim konuları için ideal.
+2. **Internet Archive** — cookiesiz, keyless public JSON API (`archive.org/advancedsearch.php`); lisans filtreli (public domain/CC); tarih/belgesel konuları için ideal.
+3. Diğer sağlayıcılar (Mixkit vb.) ancak cookie/Cloudflare sorunu çözülebilirse ve lisans durumu netleşirse eklenir.
+
+## 15. Sınırlamalar
 - Gerçek FFmpeg MP4 montajı ve tam video decode CI koşusuyla kanıtlanacak (birim testler ve gerçek edge-tts yerelde geçti ama gerçek video render CI'da).
 - Bu çalışma Faz6 (semantik görsel kalite kapısı) başlatmaz.
 - Gerçek yayın (PUBLIC) veya pruner çalıştırılmadı.
