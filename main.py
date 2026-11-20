@@ -32,14 +32,22 @@ logging.basicConfig(
     ]
 )
 
-def _record_gate(status: str) -> None:
+def _record_gate(status: str, extra: dict | None = None) -> None:
     """Production gate loguna sonucu yaz (gunluk kota ve ardisik hata takibi)."""
+    env = os.environ.copy()
+    if extra:
+        # Ekstra alanlari env olarak gecir (production_gate kayda ekler)
+        for k, v in extra.items():
+            if v is None:
+                continue
+            key = f"GATE_RECORD_{k.upper()}"
+            env[key] = str(v)[:200]
     try:
         subprocess.run(
             [sys.executable, str(BASE_DIR / "scripts" / "production_gate.py"),
              "--record", status],
-            cwd=BASE_DIR, env=os.environ.copy(),
-            capture_output=True, timeout=15, check=False,
+            cwd=BASE_DIR, env=env,
+            capture_output=True, timeout=20, check=False,
         )
     except Exception:
         pass
@@ -63,9 +71,9 @@ def write_status(status: str, channel_id: str, **extra) -> None:
         logging.warning(f"[!] run_status.json yazilamadi: {exc}")
     # Uretim sonucu gate loguna kaydet
     if status == "uploaded":
-        _record_gate("published")
+        _record_gate("published", extra={"channel_id": channel_id, **extra})
     elif status == "error":
-        _record_gate("error")
+        _record_gate("error", extra={"channel_id": channel_id, **extra})
 
 
 def content_generation_command(channel_id: str) -> list[str]:
@@ -204,7 +212,7 @@ def main():
         "FAZ 2: Gemini Web Cookie İçerik + Fallback ve Ses Üretimi",
         content_generation_command(args.channel_id),
         env_overrides=step_env,
-        timeout_seconds=600,
+        timeout_seconds=420,  # 7 dk — 10 dk yerine daha hizli hata verip sonraki cron'u bekler
     )
     if not step1_ok:
         logging.error("İçerik üretimi başarısız. Orkestrasyon durduruldu.")

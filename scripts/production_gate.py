@@ -271,6 +271,12 @@ def record_result(status: str, **extra) -> None:
         "status": status,
     }
     entry.update(extra)
+    # GATE_RECORD_* env vars'dan otomatik alan ekle (channel_id, stage, video_id vb.)
+    for k, v in os.environ.items():
+        if k.startswith("GATE_RECORD_"):
+            field = k[len("GATE_RECORD_"):].lower()
+            if field and v and v != "None":
+                entry.setdefault(field, v[:200])
     # error/skipped/ok/published — hepsi error_log'a gider (consecutive hata takibi icin)
     err_log = _load_json(ERROR_LOG, [])
     if not isinstance(err_log, list):
