@@ -224,6 +224,34 @@
       "sha256": "38cf66c1b121376d53b87a17862728074d509582b6cb0c2edf04595bf6b15ae2",
       "selected_at": "2026-11-20T03:55:03.864132+00:00",
       "generation_id": "55b3b460-019e-4d94-a22f-1e4599bc117a"
+    },
+    {
+      "key": "wikimedia:141555190",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Don_Walsh_and_James_Cameron_in_front_of_the_Bathyscaph_Trieste.jpg",
+      "sha256": "6027bf879dd5ce7a179a770fae4d02bae337f71ac1cac2752b3abba01c28c9a3",
+      "selected_at": "2026-11-20T04:37:37.518503+00:00",
+      "generation_id": "b6131a5c-5b07-4161-9c44-4ee0f878bf92"
+    },
+    {
+      "key": "wikimedia:96466482",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Inside_KSC!_for_Nov._4,_2016_r_5lZ2S0zTg.webm",
+      "sha256": "a7c1a4e07f5a44316c654ff97bb7b93c8779936e859940f463e8817e1d7c64db",
+      "selected_at": "2026-11-20T04:38:01.491640+00:00",
+      "generation_id": "b6131a5c-5b07-4161-9c44-4ee0f878bf92"
+    },
+    {
+      "key": "pexels:8381461",
+      "source_url": "https://www.pexels.com/search/videos/science%20person/",
+      "sha256": "70a27765984e24a12d4c7fda7d85f67b099d52aef2d1e88046e70ce0de86cc2f",
+      "selected_at": "2026-11-20T04:38:21.178138+00:00",
+      "generation_id": "b6131a5c-5b07-4161-9c44-4ee0f878bf92"
+    },
+    {
+      "key": "wikimedia:84244221",
+      "source_url": "https://commons.wikimedia.org/wiki/File:A_Flight_Through_the_CANDELS_Ultra_Deep_Survey_Field.webm",
+      "sha256": "b872ad48d2969dfce16a9955d08ee655b691528dbd8417411b04e38c7a7e81cc",
+      "selected_at": "2026-11-20T04:38:47.893898+00:00",
+      "generation_id": "b6131a5c-5b07-4161-9c44-4ee0f878bf92"
     }
   ]
 }
