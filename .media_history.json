@@ -140,6 +140,34 @@
       "sha256": "e141ee0e59602b5e6409bd411aadcfc72327b4e989a7dffecfbf1fe656fee5f1",
       "selected_at": "2026-11-19T21:53:52.155777+00:00",
       "generation_id": "8a3e1e02-646c-4b6b-83d1-7b6b9eda6113"
+    },
+    {
+      "key": "pexels:1193306",
+      "source_url": "https://www.pexels.com/search/videos/great%20wall%20china%20aerial%20view/",
+      "sha256": "6248d023fafa649f88aa69d9f7cbda534acd62387556d1498c03f41a4558ca69",
+      "selected_at": "2026-11-20T01:56:17.718615+00:00",
+      "generation_id": "4362fadc-0ddd-46e2-a30e-67f31cf6de4c"
+    },
+    {
+      "key": "wikimedia:42707876",
+      "source_url": "https://commons.wikimedia.org/wiki/File:The_animal_kingdom,_arranged_according_to_its_organization,_serving_as_a_foundation_for_the_natural_history_of_animals_(10294090573).jpg",
+      "sha256": "429710de2aa0d13f0639f5a70cc5388f9d1526ad80308deb5f0ebb68049d8698",
+      "selected_at": "2026-11-20T01:56:45.092827+00:00",
+      "generation_id": "4362fadc-0ddd-46e2-a30e-67f31cf6de4c"
+    },
+    {
+      "key": "pexels:14485621",
+      "source_url": "https://www.pexels.com/search/videos/china%20ancient%20architecture/",
+      "sha256": "cd87a014bb4951d7af4a7eba6790caab3218a027fc432317ad1ee90fcdac875f",
+      "selected_at": "2026-11-20T01:57:18.405900+00:00",
+      "generation_id": "4362fadc-0ddd-46e2-a30e-67f31cf6de4c"
+    },
+    {
+      "key": "wikimedia:36299029",
+      "source_url": "https://commons.wikimedia.org/wiki/File:George_MacKinnon_Wrong_(1860-1948),_Professor_of_History_Wellcome_L0074450.jpg",
+      "sha256": "372a408fc593ab43e16e1ab1c6646a030d5deb152493e9b82d57ea4690aee7bd",
+      "selected_at": "2026-11-20T01:57:48.159853+00:00",
+      "generation_id": "4362fadc-0ddd-46e2-a30e-67f31cf6de4c"
     }
   ]
 }
