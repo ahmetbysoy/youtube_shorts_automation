@@ -374,29 +374,42 @@ def commons_license(page: dict, info: dict) -> MediaLicense:
     try:
         p = urlsplit(lic_url if lic_url.startswith("http") else "https:"+lic_url) if lic_url else None
         path = p.path.rstrip("/") if p else ""
-        cc_host = (p and p.scheme in {"https", "http"} and p.hostname in {"creativecommons.org", "www.creativecommons.org"}
-                   and not p.username and not p.password and not p.query and not p.fragment
-                   and p.port in (None, 443 if p.scheme == "https" else 80))
+        # Creative Commons host kontrolü. deed.XX (dil suffix'i) ve
+        # legalcode gibi alt yolları tolere et — license URL'si bu tür
+        # suffix'ler ile de aynı lisansa işaret eder.
+        cc_host = bool(p and p.scheme in {"https", "http"}
+                       and p.hostname in {"creativecommons.org", "www.creativecommons.org"}
+                       and not p.username and not p.password and not p.query and not p.fragment
+                       and p.port in (None, 443 if p.scheme == "https" else 80))
     except ValueError:
-        # A malformed port/IPv6 URL is a rejected declaration, not permission.
         p, path, cc_host = None, "", False
-    by_name = re.fullmatch(r"cc by (2\.0|2\.5|3\.0|4\.0)(?: ([a-z-]+))?", name.lower())
+    name_l = name.lower()
+    # CC BY (isimlendirme) — name ve URL sürümü/jurisdiction tutarlı olmalı.
+    by_name = re.fullmatch(r"cc by (2\.0|2\.5|3\.0|4\.0)(?: ([a-z-]+))?", name_l)
     by_path = re.fullmatch(r"/licenses/by/(2\.0|2\.5|3\.0|4\.0)(?:/([a-z-]+))?", path)
-    if "by-sa" in name.lower() or "by-sa" in path:
+    # CC0 public domain — path "/publicdomain/zero/1.0" ile başlamalı
+    # (deed.XX veya legalcode suffix'leri tolere edilir).
+    cc0_path_ok = path.startswith("/publicdomain/zero/1.0")
+    if "by-sa" in name_l or "/by-sa/" in path or "by-sa" in path:
         reason = "share_alike_downstream_policy_not_implemented"
     elif by_name and by_path and cc_host:
-        # Never reconcile contradictory license declarations by guessing which
-        # version/jurisdiction grants permission. Restricted names cannot borrow
-        # a permissive /by/ URL either; an unknown name remains unsupported.
+        # name ve path sürüm/jurisdiction tutarlı olmalı; attr=False olmamalı.
         if by_name[1] != by_path[1] or by_name[2] and by_name[2] != by_path[2] or attr is False:
             reason = "inconsistent_cc_by_license_declaration"
         attr = True
-    elif name.lower() in {"cc0", "cc0 1.0", "cc0 1.0 universal"} and cc_host and path == "/publicdomain/zero/1.0":
+    elif name_l in {"cc0", "cc0 1.0", "cc0 1.0 universal"} and cc_host and cc0_path_ok:
         attr = False
-    elif name.lower() == "public domain" and val("License").lower().startswith("pd") and attr is False:
-        # Commons sometimes omits LicenseUrl for PD. Preserve that absence;
-        # the per-file declaration is the evidence, not an invented CC0 URL.
+    elif name_l == "public domain" and val("License").lower().startswith("pd") and attr is False:
+        # Commons bazı PD dosyalarda LicenseUrl bulundurmaz; extmetadata beyanı
+        # kanıt olarak kabul edilir (uydurma CC0 URL'si üretilmez).
         pass
+    elif name_l in {"no restrictions", "no known copyright restrictions", "public domain mark 1.0", "pd-mark"} and attr is False:
+        # Müze/kurum "No known copyright restrictions" / "No restrictions" ile
+        # işaretlediği eserler (Getty Open Content, vb.). attr=False; attribution
+        # gerekli değildir ama iyi niyetle yaratıcı/kurum bilgisi korunur.
+        if lic_url and cc_host:
+            # PDM URL'si veya başka CC host URL'si. Path baskılaması yapma.
+            pass
     else:
         reason = "missing_or_unsupported_file_license"
     if not valid_url(source, SOURCE_HOSTS["wikimedia"]):
@@ -409,9 +422,13 @@ def commons_license(page: dict, info: dict) -> MediaLicense:
     attribution = ""
     if attr:
         attribution = f"{title} — {creator} — {name} ({lic_url}); {source}; değişiklikler: ölçekleme/kadraj, süre ve altyazı montajı."
+    elif creator:
+        # attr=False olsa bile (public domain / no restrictions) yaratıcı
+        # bilgisi korunur; iyi niyetle attribution'a eklenir.
+        attribution = f"{title} — {creator} — {name} ({lic_url})."
     return MediaLicense(name=name, url=lic_url, verified=reason is None,
                         evidence_url=source, evidence_method="commons_per_file_extmetadata",
-                        checked_at=now(), attribution_required=attr, attribution=attribution, creator=creator,
+                        checked_at=now(), attribution_required=bool(attr), attribution=attribution, creator=creator,
                         evidence_sha256=hashlib.sha256(json.dumps(ext, sort_keys=True, ensure_ascii=False).encode()).hexdigest(),
                         restrictions=("third_party_rights_not_verified",), rejection_reason=reason)
 

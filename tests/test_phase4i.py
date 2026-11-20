@@ -203,3 +203,46 @@ def test_browser_provider_transient_errors_not_cached():
     # Bu iki satırdan sonra browser_timeout/rate_limited için _probe_status set edilmemeli
     assert '_probe_status = "ok"' in src, \
         "başarılı durumda _probe_status=ok set edilmeli"
+
+
+# ── Faz4K: Wikimedia Commons lisans tespiti düzeltmeleri ──
+
+def test_commons_license_accepts_cc0_with_deed_suffix():
+    """CC0 lisans URL'sinde /deed.en, /deed.tr gibi dil suffix'i
+    varsa da kabul edilmeli (Lucius Verus.jpg örneği)."""
+    from src.media_processing.media_providers import commons_license
+    page = {"title": "File:Roman Emperor Lucius Verus.jpg"}
+    info = {
+        "descriptionurl": "https://commons.wikimedia.org/wiki/File:Roman_Emperor_Lucius_Verus.jpg",
+        "extmetadata": {
+            "LicenseShortName": {"value": "CC0"},
+            "LicenseUrl": {"value": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"},
+            "License": {"value": "cc0"},
+            "AttributionRequired": {"value": "false"},
+            "Artist": {"value": "Ktrepas"},
+        },
+    }
+    lic = commons_license(page, info)
+    assert lic.verified is True, f"CC0 deed.en URL'si kabul edilmeli; reason={lic.rejection_reason}"
+    assert lic.attribution_required is False
+
+
+def test_commons_license_accepts_no_restrictions():
+    """Müze 'No restrictions' / 'No known copyright restrictions' işareti
+    public domain olarak kabul edilmeli (Getty Open Content örneği)."""
+    from src.media_processing.media_providers import commons_license
+    page = {"title": "File:Bust of Emperor Commodus.jpg"}
+    info = {
+        "descriptionurl": "https://commons.wikimedia.org/wiki/File:Bust.jpg",
+        "extmetadata": {
+            "LicenseShortName": {"value": "No restrictions"},
+            "LicenseUrl": {"value": "http://www.getty.edu/about/opencontent.html"},
+            "License": {"value": ""},
+            "AttributionRequired": {"value": "false"},
+            "Artist": {"value": "J. Paul Getty Museum"},
+            "UsageTerms": {"value": "No known copyright restrictions"},
+        },
+    }
+    lic = commons_license(page, info)
+    assert lic.verified is True, f"'No restrictions' kabul edilmeli; reason={lic.rejection_reason}"
+    assert lic.attribution_required is False
