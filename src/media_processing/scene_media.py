@@ -1309,19 +1309,28 @@ def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[st
             reasons.append("unsupported_aspect_ratio")
     elif measured:
         reasons.append("missing_measured_resolution")
+    # Faz4K: Kısa videolar loop ile tekrar ederek sahne süresini doldurabilir.
+    # Min süre 2.0 saniye (anlamlı bir loop klibi için yeterli).
+    MIN_LOOP_DURATION = 2.0
     if candidate.media_type == "video":
         if candidate.duration is not None:
-            if not math.isfinite(candidate.duration) or candidate.duration+0.05 < scene["duration"]:
+            if not math.isfinite(candidate.duration) or candidate.duration < MIN_LOOP_DURATION:
                 reasons.append("insufficient_duration")
         elif measured:
             reasons.append("missing_measured_duration")
     recent_hit = any(r.get("key") == candidate.key or r.get("source_url") == public_url(candidate.source_url) for r in recent)
+    # Süre skoru: image ise tam puan (loop ile sınırsız), video en az 2s ise
+    # 7 puan (loop ile uzatılır), sahne süresine eşit/uzun ise tam 10.
+    duration_score = 10 if candidate.media_type == "image" else (
+        10 if candidate.duration is not None and candidate.duration >= scene["duration"]
+        else 7 if candidate.duration is not None and candidate.duration >= MIN_LOOP_DURATION
+        else 0)
     components = {
         "query_metadata": round(30*query_coverage, 2),
         "narration_metadata": 20 if primary_overlap else 0,
         "resolution": min(15, round(min(w or 0, h or 0)/1080*15, 2)),
         "aspect_ratio": 10 if ratio and 0.45 <= ratio <= 0.8 else 6 if ratio and 0.4 <= ratio <= 2.2 else 0,
-        "duration": 10 if candidate.media_type == "image" or candidate.duration is not None and candidate.duration >= scene["duration"] else 0,
+        "duration": duration_score,
         "provider_provenance": 5 if candidate.provider in SOURCE_HOSTS else 0,
         "license_evidence": 10 if lic.verified else 0,
         "recent_use_penalty": -25 if recent_hit else 0,
