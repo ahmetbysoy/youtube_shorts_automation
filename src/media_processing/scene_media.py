@@ -1468,10 +1468,6 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                     evidence["decision"] = "selected_highest_measured_rank"
                     for losing in measured_pool[1:]:
                         losing[3].unlink(missing_ok=True)
-                    # selected_provider: sadece gerçek provider slug'ı (pexels/pixabay/wikimedia)
-                    # — şema enum'ı ile uyumlu olması için "-browser" suffix'i KULLANMA.
-                    # Catalog transport (playwright cookie mi API mi) bilgisi zaten
-                    # record["media"]["catalog_transport"] ve io_stages içinde mevcut.
                     _sel_provider = measured.provider
                     record.update({"selected_provider": _sel_provider, "selected_media_id": measured.media_id,
                                    "source_url": public_url(measured.source_url), "license": measured.record()["license"], "attribution": measured.license.attribution,
@@ -1486,6 +1482,80 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                     used.update({measured.key, public_url(measured.source_url), public_url(measured.download_url), probe["sha256"]})
                     history_entries.append({"key": measured.key, "source_url": public_url(measured.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
                     break
+            # Faz4K: Emergency generic fallback — hicbir query ile secim yapilamadiysa,
+            # son bir sans olarak jenerik konu terimleriyle Wikimedia'yi tekrar dene.
+            # Bu yalnızca hikaye akisini kurtarmak icin; gorsel illaki konuyla tam
+            # ortusmeyebilir ama hic yoktan (ve tum pipeline'in cokmesinden) iyidir.
+            if selected is None:
+                em_query = None
+                topic = str(script.get("topic", "")).lower()
+                narration_l = scene["narration"].lower()
+                if any(k in narration_l for k in ("uzay", "gök", "goz", "yıldız", "yildiz", "gezegen", "space", "star", "planet", "galaxy", "black hole", "karadelik")):
+                    em_query = "space galaxy nebula stars"
+                elif any(k in narration_l for k in ("tarih", "tariht", "roma", "imparator", "savaş", "savas", "history", "ancient", "emperor", "war")):
+                    em_query = "ancient history ruins archaeological"
+                elif any(k in narration_l for k in ("bilim", "fizik", "kimya", "bilgisa", "science", "physics", "computer", "scientist")):
+                    em_query = "science laboratory scientist portrait"
+                elif any(k in narration_l for k in ("doğa", "doga", "deniz", "okyanus", "nature", "ocean", "sea", "forest", "mountain")):
+                    em_query = "nature landscape ocean mountain"
+                else:
+                    em_query = "cinematic documentary landscape"
+                if em_query:
+                    record["queries_tried"].append(f"{em_query} [generic_fallback]")
+                    for pi, provider in enumerate(providers):
+                        # Generic fallback sadece Wikimedia ile (browser provider'lar
+                        # zaten bos dondu veya cache'li)
+                        if provider.name != "wikimedia":
+                            continue
+                        try:
+                            candidates = provider.search(em_query)[:8]
+                            for candidate in candidates:
+                                verdict = evaluate(candidate, scene, em_query, used=used, recent=recent)
+                                if verdict["eligible"]:
+                                    ranked.append((candidate, verdict, pi))
+                        except Exception:
+                            pass
+                    # Generic fallback adaylarini indirme/olcme (tek bir try)
+                    ranked.sort(key=lambda x: (-x[1]["score"], x[2], x[0].key))
+                    for candidate, _pre, pi in ranked:
+                        identities = {candidate.key, public_url(candidate.source_url), public_url(candidate.download_url)}
+                        if identities & catalog_seen:
+                            continue
+                        catalog_seen.update(identities)
+                        try:
+                            path = work_dir/f"scene_{scene['scene_id']}_g.{candidate.media_type}"
+                            downloader(candidate, path)
+                            probe = prober(path, candidate.media_type)
+                            measured = replace(candidate, width=probe["width"], height=probe["height"], duration=probe["duration"], download_status="downloaded_and_decoded")
+                            verdict = evaluate(measured, scene, em_query, used=used, recent=recent, measured=True)
+                            if probe.get("decode_status") != "passed":
+                                verdict["rejection_reasons"].append("decode_not_confirmed")
+                            if probe["sha256"] in used:
+                                verdict["rejection_reasons"].append("duplicate_content_in_video")
+                            if verdict["rejection_reasons"]:
+                                path.unlink(missing_ok=True); continue
+                            if verdict["eligible"]:
+                                hash_hit = any(x.get("sha256") == probe["sha256"] for x in recent)
+                                evidence = {"media": measured.record(), "file_probe": probe, "assessment": verdict,
+                                            "recent_hash_match": hash_hit, "decision": "selected_generic_fallback", "io_stages": {}}
+                                record["measured_candidates"].append(evidence)
+                                record.update({"selected_provider": measured.provider, "selected_media_id": measured.media_id,
+                                               "source_url": public_url(measured.source_url), "license": measured.record()["license"],
+                                               "attribution": measured.license.attribution, "duration": measured.duration,
+                                               "resolution": {"width": measured.width, "height": measured.height},
+                                               "aspect_ratio": round(measured.width/measured.height, 6),
+                                               "selection_score": verdict["score"], "rejection_reason": None,
+                                               "fallback_used": True, "selected_query": em_query,
+                                               "media_type": measured.media_type, "fit_mode": "contain",
+                                               "download_status": "downloaded_and_decoded"})
+                                selected = {"path": path, "duration": scene["duration"], "media_kind": measured.media_type,
+                                            "provider": measured.provider, "credit": measured.license.attribution,
+                                            "scene_id": scene["scene_id"], "fit_mode": "contain", "loop_allowed": False}
+                                used.update({measured.key, public_url(measured.source_url), public_url(measured.download_url), probe["sha256"]})
+                                history_entries.append({"key": measured.key, "source_url": public_url(measured.source_url), "sha256": probe["sha256"], "selected_at": now(), "generation_id": generation})
+                                break
+                        except Exception:
+                            path.unlink(missing_ok=True); continue
             if selected is None:
                 record["rejection_reason"] = "no_acceptable_media_after_bounded_queries"
                 raise ValueError(f"scene_{scene['scene_id']}_has_no_acceptable_media")
