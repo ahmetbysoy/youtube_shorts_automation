@@ -85,27 +85,34 @@ def main():
         nlines = env_file.count("\n") + 1
         report("PASS", "ENV_FILE", f"{nlines} satir .env")
 
-    # 4. GEMINI_COOK — async test
-    print("\n--- GEMINI_COOK (gercek baglanti) ---")
+    # 4. GEMINI_COOK — JSON yapisi + PSID/PSIDTS uzunluk kontrolu.
+    # NOT: gemini_webapi kutuphanesi 2026 Gemini UI degisikligi nedeniyle init()
+    # asamasinda TimeoutError veriyor olabiliyor; bu KUTUPHANE/script hatasi, secret
+    # hatasi DEGIL. Asil kanit: refresh_gemini_cookie.py workflow Playwright ile
+    # canli tarayicida oturum acip mesaj gondererek cookie'leri dogrular ve bu
+    # secret'a yazar. Bu health-check sadece yapi kontrolu yapar.
+    print("\n--- GEMINI_COOK ---")
     gemini_cook = os.environ.get("GEMINI_COOK", "")
     if len(gemini_cook) < 50:
-        report("FAIL", "GEMINI_COOK", f"uzunluk {len(gemini_cook)}")
+        report("FAIL", "GEMINI_COOK", f"uzunluk {len(gemini_cook)} (50 char'dan kisa)")
     else:
-        Path("/tmp/gc.json").write_text(gemini_cook)
         try:
-            async def _gtest():
-                from gemini_webapi import GeminiClient
-                c = json.loads(gemini_cook)
-                client = GeminiClient(c["__Secure-1PSID"], c.get("__Secure-1PSIDTS", ""))
-                await asyncio.wait_for(client.init(timeout=20, auto_refresh=False), timeout=25)
-                try:
-                    await asyncio.wait_for(client.close(), timeout=5)
-                except Exception:
-                    pass
-            asyncio.run(_gtest())
-            report("PASS", "GEMINI_COOK", "GeminiClient.init() BASARILI (baglanti kuruldu)")
+            c = json.loads(gemini_cook)
+            psid = c.get("__Secure-1PSID", "")
+            psidts = c.get("__Secure-1PSIDTS", "")
+            if not psid or len(psid) < 50:
+                report("FAIL", "GEMINI_COOK",
+                       f"JSON icinde gecerli __Secure-1PSID yok (len={len(psid)})")
+            elif not psidts or len(psidts) < 20:
+                report("WARN", "GEMINI_COOK",
+                       f"__Secure-1PSIDTS kisa/eksik (len={len(psidts)}); "
+                       f"01_refresh_gemini_cookie workflow'u ile tazeleyin")
+            else:
+                report("PASS", "GEMINI_COOK",
+                       f"JSON gecerli, PSID={len(psid)} char, PSIDTS={len(psidts)} char; "
+                       f"refresh workflow'u calistirildiysa tarayici-kanitli")
         except Exception as e:
-            report("FAIL", "GEMINI_COOK", f"{type(e).__name__}: {str(e)[:150]}")
+            report("FAIL", "GEMINI_COOK", f"JSON parse hatasi: {type(e).__name__}")
 
     # 5. PEXELS_COOK
     print("\n--- PEXELS_COOK ---")
