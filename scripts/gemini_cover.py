@@ -23,6 +23,14 @@ def load_cookies():
 def load_default_prompt():
     return json.loads(CFG_PATH.read_text('utf8')).get('prompt','')
 
+# Faz4L: Gemini web gorsel uretimi bazen 2+ dk sürüyor veya tek istekte
+# timeout'a düşüyor. Burada sinirli retry/backoff uygulanır; toplam kötü durum
+# süresi embed_cover_frame.py'daki 240s subprocess bütçesinin altında kalır:
+# init 45 + (75 üretim + 10 bekleme) + 75 üretim = 205s < 240s.
+GEN_TIMEOUT_S = int(os.environ.get('GEMINI_GEN_TIMEOUT_S', '75'))
+COVER_ATTEMPTS = max(1, int(os.environ.get('GEMINI_COVER_ATTEMPTS', '2')))
+COVER_BACKOFFS = (10, 20)
+
 async def generate(out_path: str, title: str, prompt_override: str | None = None):
     cookies = load_cookies()
     if prompt_override:
@@ -30,10 +38,29 @@ async def generate(out_path: str, title: str, prompt_override: str | None = None
     else:
         prompt = load_default_prompt() + '\n\nVideo basligi: ' + title
     client = GeminiClient(cookies.get('__Secure-1PSID',''), cookies.get('__Secure-1PSIDTS',''))
-    await client.init(timeout=30, auto_refresh=True)
-    resp = await client.generate_content(prompt)
+    await client.init(timeout=45, auto_refresh=True)
+    resp = None
+    last_err: Exception | None = None
+    for attempt in range(1, COVER_ATTEMPTS + 1):
+        try:
+            resp = await asyncio.wait_for(client.generate_content(prompt), timeout=GEN_TIMEOUT_S)
+            if resp and resp.images:
+                break
+            last_err = RuntimeError('gemini_gorsel_dondurmedi')
+            print(f'KAPAK deneme {attempt}/{COVER_ATTEMPTS}: gorsel yok, '
+                  f'{"yeniden denenecek" if attempt < COVER_ATTEMPTS else "vazgecildi"}',
+                  file=sys.stderr, flush=True)
+        except Exception as exc:
+            last_err = exc
+            print(f'KAPAK deneme {attempt}/{COVER_ATTEMPTS} basarisiz: {type(exc).__name__}, '
+                  f'{"yeniden denenecek" if attempt < COVER_ATTEMPTS else "vazgecildi"}',
+                  file=sys.stderr, flush=True)
+        resp = None
+        if attempt < COVER_ATTEMPTS:
+            await asyncio.sleep(COVER_BACKOFFS[min(attempt - 1, len(COVER_BACKOFFS) - 1)])
     if not resp or not resp.images:
-        raise SystemExit('Gemini gorsel dondurmedi: ' + (resp.text[:300] if resp and resp.text else '(bos)'))
+        raise SystemExit(f'Gemini gorsel uretilemedi ({COVER_ATTEMPTS} deneme): '
+                         f'{type(last_err).__name__ if last_err else "bos"}')
     img = resp.images[0]
     # Gecici dizinde uret
     import tempfile

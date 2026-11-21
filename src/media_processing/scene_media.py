@@ -133,6 +133,29 @@ ALIASES = {
     "palaces": "palace",
     "harabe": "ruins",
     "harabeler": "ruins",
+    # Faz4L: Mezopotamya / bahçe ailesi — "Babil'in Asma Bahçeleri" gibi
+    # konular İngilizce terimlere map edilemiyordu; emergency fallback
+    # kategori tespiti ve topic-anchor kontrolü bu girdilere dayanır.
+    "bahce": "garden",
+    "bahcesi": "garden",
+    "bahcesinin": "garden",
+    "bahceler": "garden",
+    "bahceleri": "garden",
+    "bahcelerinin": "garden",
+    "garden": "garden",
+    "gardens": "garden",
+    "babil": "babylon",
+    "babylon": "babylon",
+    "ninova": "nineveh",
+    "nineveh": "nineveh",
+    "mezopotamya": "mesopotamia",
+    "mezopotamyanin": "mesopotamia",
+    "mesopotamia": "mesopotamia",
+    "ziggurat": "ziggurat",
+    "sulama": "irrigation",
+    "irrigation": "irrigation",
+    "verimli": "fertile",
+    "hilal": "crescent",
     "yikinti": "ruins",
     "ruins": "ruins",
     "antik": "ancient",
@@ -1614,7 +1637,7 @@ def scene_plan(script: dict) -> list[dict]:
     return plan
 
 
-def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[str], recent: list[dict], measured: bool = False, relaxed: bool = False) -> dict:
+def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[str], recent: list[dict], measured: bool = False, relaxed: bool = False, topic_terms: frozenset[str] | set[str] | None = None) -> dict:
     reasons = []
     lic = candidate.license
     if candidate.provider not in SOURCE_HOSTS or not candidate.media_id or not valid_url(candidate.source_url, SOURCE_HOSTS.get(candidate.provider, set())):
@@ -1651,6 +1674,13 @@ def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[st
     # overlap with narration so the current query gets a fair shake.
     STOP_ANCHOR = {"back", "named", "most", "deep", "trench", "front", "side",
                    "first", "last", "next", "old", "new", "big", "small"}
+    # Faz4L: Genel alan kelimeleri — tek basina "history"/"science" gibi bir
+    # kelimeyle eslesen aday konu iliskisi kanitlamaz (orn. "Family History of
+    # Breast Cancer" videosu, tarih konulu bir videoya "history" kelimesiyle
+    # eslebiliyordu). Hem narration hem anchor ortusu YALNIZ bu kelimelerden
+    # olusuyorsa aday alakasiz sayilir.
+    GENERIC_DOMAIN_WORDS = {"history", "science", "nature", "space", "documentary",
+                            "technology", "war"}
     strong_primary_anchors = {w for w in primary_narr if w not in STOP_ANCHOR}
     if len(strong_primary_anchors) >= 2:
         anchor_pool = primary_narr
@@ -1672,6 +1702,20 @@ def evaluate(candidate: MediaCandidate, scene: dict, query: str, *, used: set[st
             reasons.append("relevance_unproven_or_unrelated")
         elif minimum_anchors >= 1 and not anchor_overlap:
             reasons.append("relevance_unproven_or_unrelated")
+        elif (not (set(narration_overlap) - GENERIC_DOMAIN_WORDS)
+              and (not anchor_overlap or not (set(anchor_overlap) - GENERIC_DOMAIN_WORDS))):
+            # Faz4L: narration ve anchor ortusunun TAMAMI genel alan
+            # kelimelerinden olusuyorsa (orn. yalniz "history") adayın konuyla
+            # gercek baglantisi kanitlanmamis demektir.
+            reasons.append("relevance_unproven_or_unrelated")
+    elif topic_terms and not (evidence & set(topic_terms)):
+        # Faz4L: Generic fallback (relaxed) için konu-bağlaç kontrolü. Aday
+        # metadata, video konusuyla (başlık+topic+visual_keywords) HİÇ ortak
+        # terim içermiyorsa alakasızdır (ör. "Babil'in Asma Bahçeleri" konusuna
+        # "space galaxy nebula stars" sorgusuyla Crab Nebula görüntüsü
+        # seçilebiliyordu). Yalnız generic fallback'te uygulanır; sahne-sorgu
+        # yolu değişmez.
+        reasons.append("relevance_unproven_or_unrelated")
     if evidence & BLOCKED:
         reasons.append("blocked_or_sensitive_metadata")
     # Unknown dimensions/duration may proceed ONLY to download+probe, never to
@@ -1765,6 +1809,13 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
     work_dir.mkdir(parents=True, exist_ok=True)
     runtime = []; used: set[str] = set(); history_entries = []
     generation = str(script.get("generation_id") or uuid.uuid4())
+    # Faz4L: Konu terim havuzu (başlık + topic + visual_keywords). Generic
+    # fallback'te (relaxed) adayın konuyla en az bir terim paylaşmasını şart koşar.
+    _vk_for_topic = script.get("visual_keywords")
+    topic_terms = terms(" ".join(
+        [str(script.get("title", "")), str(script.get("topic", ""))]
+        + [v for v in (_vk_for_topic if isinstance(_vk_for_topic, list) else []) if isinstance(v, str)]
+    )) or None
     try:
         plan = scene_plan(script)
         recent = history.recent()
@@ -1882,73 +1933,110 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                     extra_text += " " + " ".join(v for v in vk if isinstance(v, str))
                 narration_l = (scene["narration"] + " " + extra_text).lower()
                 em_queries = []
-                # Kategori tespiti — genis kume, hem TR hem EN anahtar kelimeler
-                # Faz 4K: Kategori eslesmesi — daha belirgin/ozel kelimeler once
-                # (orn. "dünya" tek basina uzay tetiklemez; "okyanus" doga'yi tetikler)
-                if any(k in narration_l for k in ("uzay","gök","goz","yıldız","yildiz","gezegen","ay","güneş","gunes",
-                                                   "karadelik","astronot","uydu","teleskop","roket","roketsan",
-                                                   "space","star","planet","galaxy","black hole","moon","lunar",
-                                                   "astronaut","satellite","nasa","telescope","rocket",
-                                                   "apollo","mars","jupiter","saturn","venus","solar",
-                                                   "dünya dışı","uzaylı","iniş","ay'a")):
-                    em_queries.extend(["space galaxy nebula stars","planet earth from space",
-                                       "astronaut space station",
-                                       "nasa apollo moon landing astronaut",
-                                       "moon surface earth from space"])
-                if any(k in narration_l for k in ("tarih","tariht","roma","imparator","savaş","savas",
-                                                   "osmanlı","osmanli","sultan","fatih","mehmet","istanbul","bizans",
-                                                   "constantinople","gemiler","gemi","yelken","donanma","ordu","asker",
-                                                   "kral","kraliçe","kralice","antika","antik","fetih",
-                                                   "uçak","ucak","havacılık","havacilik","pilot","balon","zeplin",
-                                                   "wright","kitty hawk","flyer","uçuş","ucus",
-                                                   "ancient","medieval","history","emperor","war","ottoman",
-                                                   "empire","ship","sailing","army","soldier","king","queen",
-                                                   "castle","ruins","archaeolog","conquest",
-                                                   "airplane","aircraft","aviation","pilot","flight","flying",
-                                                   "biplane","balloon","zeppelin","airship","vintage plane")):
-                    em_queries.extend(["ancient medieval history ruins castle",
-                                       "historical sailing ship ocean",
-                                       "ottoman empire history constantinople",
-                                       "vintage airplane wright brothers flight",
-                                       "early aviation biplane historic"])
-                if any(k in narration_l for k in ("bilim","fizik","kimya","bilgisa","bilim adam","bilim ins",
-                                                   "mucit","icat","deney","laboratuvar","teknoloji","makine",
-                                                   "ışık","isik","foton","lazer","optik","kuantum","enerji",
-                                                   "beyin","beynin","beyni","sinir","hücre","hcre","hucre",
-                                                   "noroloji","norolog","doktor","hastane","ameliyat",
-                                                   "tıbbi","tibbi","tıp","tip","hastalik","hastalık","ağrı","agri",
-                                                   "sağlık","saglik","kanser","virüs","virus","aşı","asi",
-                                                   "science","physics","chemistry","computer","scientist",
-                                                   "inventor","experiment","laboratory","technology","machine",
-                                                   "light","photon","laser","optics","quantum","energy","atom",
-                                                   "brain","neural","neuron","cell","biology","medical","medicine",
-                                                   "doctor","hospital","surgery","disease","pain","health",
-                                                   "cancer","virus","vaccine")):
-                    em_queries.extend(["science laboratory technology vintage",
-                                       "medical hospital brain surgery",
-                                       "biology science microscopic cells",
-                                       "physics light laser optics experiment",
-                                       "quantum physics science laboratory"])
-                if any(k in narration_l for k in ("doğa","doga","deniz","okyanus","dag","dağ","orman","nehir",
-                                                   "göl","gol","hayvan","bitki","vadi","plaj","kumsal","ada",
-                                                   "çukur","cukur","derin","dip","dalgıç","dalgic","dalis",
-                                                   "denizaltı","denizalti","mercan","resif","balık","balik",
-                                                   "plastik","kirlilik","akıntı","akinti","dalga","sahil",
-                                                   "çöl","col","sahra","kutup","kutbu","antarktika","arktik",
-                                                   "buzul","buz","kar","yagis","yağış",
-                                                   "nature","ocean","sea","forest","mountain","river","lake",
-                                                   "animal","plant","wildlife","beach","coast","island",
-                                                   "deep","trench","abyss","underwater","submarine","coral",
-                                                   "reef","fish","shark","whale","dive","diving","ocean floor",
-                                                   "plastic","pollution","wave","current","mariana",
-                                                   "desert","antarctica","arctic","polar","glacier","ice",
-                                                   "snow","sand","dune","sahara")):
-                    em_queries.extend(["nature landscape ocean mountain wildlife",
-                                       "underwater deep sea ocean trench",
-                                       "ocean underwater coral fish",
-                                       "antarctica ice polar desert glacier",
-                                       "sahara desert sand dunes",
-                                       "forest mountain landscape"])
+                # Faz4L: Kategoriler ARTIK skorlanip siralaniyor. Eski sabit
+                # sirada (uzay -> tarih -> bilim -> doga), Babil gibi tarih
+                # konularina narration'daki tek bir kisa kelime ("ay" alt-dize
+                # eslesmesi) uzay sorgularini one alabiliyordu ve Wikimedia
+                # "space galaxy nebula stars" sorgusuyla Crab Nebula goruntusu
+                # secilebiliyordu. Artik her kategori narration+topic metninde
+                # kac anahtar kelimeyle eslestigine gore siralanir; en cok
+                # eslesen kategorinin sorgulari once denenir.
+                def _kw_hit(text_l: str, kw: str) -> bool:
+                    # Kisa anahtar kelimeler (<=3, orn. "ay") kelime siniriyla
+                    # aranir; alt-dize eslesmesi "miydi"/"bahceleri" gibi yanlis
+                    # pozitifler uretiyordu.
+                    if len(kw) <= 3:
+                        return re.search(
+                            r"(?:^|[^a-z0-9çğıöşü])" + re.escape(kw) + r"(?:[^a-z0-9çğıöşü]|$)",
+                            text_l) is not None
+                    return kw in text_l
+
+                CATEGORY_BLOCKS = [
+                    ("space", ("uzay","gök","goz","yıldız","yildiz","gezegen","ay","güneş","gunes",
+                               "karadelik","astronot","uydu","teleskop","roket","roketsan",
+                               "space","star","planet","galaxy","black hole","moon","lunar",
+                               "astronaut","satellite","nasa","telescope","rocket",
+                               "apollo","mars","jupiter","saturn","venus","solar",
+                               "dünya dışı","uzaylı","iniş","ay'a"),
+                              ["space galaxy nebula stars","planet earth from space",
+                               "astronaut space station",
+                               "nasa apollo moon landing astronaut",
+                               "moon surface earth from space"]),
+                    ("history", ("tarih","tariht","roma","imparator","savaş","savas",
+                                 "osmanlı","osmanli","sultan","fatih","mehmet","istanbul","bizans",
+                                 "constantinople","gemiler","gemi","yelken","donanma","ordu","asker",
+                                 "kral","kraliçe","kralice","antika","antik","fetih",
+                                 "uçak","ucak","havacılık","havacilik","pilot","balon","zeplin",
+                                 "wright","kitty hawk","flyer","uçuş","ucus",
+                                 "ancient","medieval","history","emperor","war","ottoman",
+                                 "empire","ship","sailing","army","soldier","king","queen",
+                                 "castle","ruins","archaeolog","conquest",
+                                 "airplane","aircraft","aviation","pilot","flight","flying",
+                                 "biplane","balloon","zeppelin","airship","vintage plane",
+                                 # Faz4L: Babil/Ninova/asma bahceleri/Mezopotamya ailesi
+                                 "babil","babylon","ninova","nineveh","mezopotamya",
+                                 "mesopotamia","ziggurat","bahçe","bahce","garden",
+                                 "hanging","sulama","irrigation","tapinak","tapınak","saray"),
+                              ["ancient medieval history ruins castle",
+                               "historical sailing ship ocean",
+                               "ottoman empire history constantinople",
+                               "vintage airplane wright brothers flight",
+                               "early aviation biplane historic",
+                               "mesopotamia babylon ancient ruins",
+                               "hanging gardens ancient wonder"]),
+                    ("science", ("bilim","fizik","kimya","bilgisa","bilim adam","bilim ins",
+                                 "mucit","icat","deney","laboratuvar","teknoloji","makine",
+                                 "ışık","isik","foton","lazer","optik","kuantum","enerji",
+                                 "beyin","beynin","beyni","sinir","hücre","hcre","hucre",
+                                 "noroloji","norolog","doktor","hastane","ameliyat",
+                                 "tıbbi","tibbi","tıp","tip","hastalik","hastalık","ağrı","agri",
+                                 "sağlık","saglik","kanser","virüs","virus","aşı","asi",
+                                 "science","physics","chemistry","computer","scientist",
+                                 "inventor","experiment","laboratory","technology","machine",
+                                 "light","photon","laser","optics","quantum","energy","atom",
+                                 "brain","neural","neuron","cell","biology","medical","medicine",
+                                 "doctor","hospital","surgery","disease","pain","health",
+                                 "cancer","virus","vaccine"),
+                              ["science laboratory technology vintage",
+                               "medical hospital brain surgery",
+                               "biology science microscopic cells",
+                               "physics light laser optics experiment",
+                               "quantum physics science laboratory"]),
+                    ("nature", ("doğa","doga","deniz","okyanus","dag","dağ","orman","nehir",
+                                "göl","gol","hayvan","bitki","vadi","plaj","kumsal","ada",
+                                "çukur","cukur","derin","dip","dalgıç","dalgic","dalis",
+                                "denizaltı","denizalti","mercan","resif","balık","balik",
+                                "plastik","kirlilik","akıntı","akinti","dalga","sahil",
+                                "çöl","col","sahra","kutup","kutbu","antarktika","arktik",
+                                "buzul","buz","kar","yagis","yağış",
+                                "nature","ocean","sea","forest","mountain","river","lake",
+                                "animal","plant","wildlife","beach","coast","island",
+                                "deep","trench","abyss","underwater","submarine","coral",
+                                "reef","fish","shark","whale","dive","diving","ocean floor",
+                                "plastic","pollution","wave","current","mariana",
+                                "desert","antarctica","arctic","polar","glacier","ice",
+                                "snow","sand","dune","sahara"),
+                              ["nature landscape ocean mountain wildlife",
+                               "underwater deep sea ocean trench",
+                               "ocean underwater coral fish",
+                               "antarctica ice polar desert glacier",
+                               "sahara desert sand dunes",
+                               "forest mountain landscape"]),
+                ]
+                scored_blocks = []
+                for _cat_name, _cat_keys, _cat_queries in CATEGORY_BLOCKS:
+                    _hits = sum(1 for k in _cat_keys if _kw_hit(narration_l, k))
+                    if _hits:
+                        scored_blocks.append((_hits, _cat_queries))
+                # Stabil siralama: esitlikte CATEGORY_BLOCKS'taki eski goreli sira korunur
+                scored_blocks.sort(key=lambda t: -t[0])
+                for _hits, _cat_queries in scored_blocks:
+                    em_queries.extend(_cat_queries)
+                # Faz4L: Topic-anchor yalniz KATEGORI sorgularina uygulanir.
+                # Son care jenerik sorgulari (cinematic/vintage...) anchora
+                # baglarsak hicbir scene medya secemez ve run fail-closed
+                # cokerdi; jenerik son care yolu mevcut davranista kalir.
+                anchored_em_queries = {q for _h, qs in scored_blocks for q in qs}
                 # Son careler: her konuda en az bir uygun gorsel bulunabilecek
                 # genis belgesel tarzi sorgular
                 em_queries.extend(["cinematic documentary landscape world",
@@ -2007,7 +2095,8 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                         try:
                             candidates = provider.search(em_query)[:8]
                             for candidate in candidates:
-                                verdict = evaluate(candidate, scene, em_query, used=used, recent=recent, relaxed=True)
+                                verdict = evaluate(candidate, scene, em_query, used=used, recent=recent, relaxed=True,
+                                                   topic_terms=topic_terms if em_query in anchored_em_queries else None)
                                 if verdict["eligible"]:
                                     em_ranked.append((candidate, verdict, pi))
                         except Exception:
@@ -2024,7 +2113,8 @@ def select_storyboard_media(script: dict, work_dir: Path, *, providers=None, his
                             downloader(candidate, path)
                             probe = prober(path, candidate.media_type)
                             measured = replace(candidate, width=probe["width"], height=probe["height"], duration=probe["duration"], download_status="downloaded_and_decoded")
-                            verdict = evaluate(measured, scene, em_query, used=used, recent=recent, measured=True, relaxed=True)
+                            verdict = evaluate(measured, scene, em_query, used=used, recent=recent, measured=True, relaxed=True,
+                                               topic_terms=topic_terms if em_query in anchored_em_queries else None)
                             if probe.get("decode_status") != "passed":
                                 verdict["rejection_reasons"].append("decode_not_confirmed")
                             if probe["sha256"] in used:
