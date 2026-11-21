@@ -31,7 +31,8 @@
     "Piri Reis Haritası 1513'te Güney Amerika'yı Nasıl Çizdi? #Shorts",
     "Işık Yavaşlayabilir, Sıfır Hıza Bile Düşebilir! #Shorts",
     "Fatih Sultan Mehmet Gemileri Karadan Nasıl Yürüttü? #Shorts",
-    "Tek Bir İnsanın DNA'sını Uç Uca Ekleseniz Plüton'a Ulaşır! #Shorts"
+    "Tek Bir İnsanın DNA'sını Uç Uca Ekleseniz Plüton'a Ulaşır! #Shorts",
+    "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts"
   ],
   "used_records": [
     {
@@ -1073,9 +1074,7 @@
         "yetecek"
       ],
       "created_at": "2026-11-21T01:29:05.379580+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
       "topic": "Tarih",
@@ -1129,9 +1128,8 @@
         "year",
         "yildir"
       ],
-      "created_at": "2026-11-21T09:50:07.969427+00:00",
-      "reservation_id": "cf2dbd62-e834-4997-873d-f2ebde0037aa",
-      "run_id": "44891149823:1"
+      "created_at": "2026-11-21T09:50:07.969427+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
