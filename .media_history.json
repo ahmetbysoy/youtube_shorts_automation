@@ -532,6 +532,34 @@
       "sha256": "7a600e8d60f0ae333e076ffe92d8299849b2b7aec0d5d37c5ae7a9fe6613e388",
       "selected_at": "2026-11-21T17:36:45.196501+00:00",
       "generation_id": "07fc9fc9-a0a3-4832-974d-3c6bbe984bb0"
+    },
+    {
+      "key": "pixabay:11718",
+      "source_url": "https://pixabay.com/videos/search/black%20pepper%20spices/",
+      "sha256": "5dce73fcc2167f9c5375500c02b696e7a903ea80581b0cdee905e50b4b693d4e",
+      "selected_at": "2026-11-21T22:15:06.590391+00:00",
+      "generation_id": "0b121a9e-4fd0-4987-bfe4-7420dd3bf255"
+    },
+    {
+      "key": "wikimedia:179476944",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Castle_Tower_at_Pena_Palace,_Sintra,_Portugal_(54876827882).jpg",
+      "sha256": "13c5d7ab80c0f6c44a155aad7dd2776ebf65a92fac97430fd5788f16d9ed0e3b",
+      "selected_at": "2026-11-21T22:19:35.111420+00:00",
+      "generation_id": "0b121a9e-4fd0-4987-bfe4-7420dd3bf255"
+    },
+    {
+      "key": "pixabay:144654",
+      "source_url": "https://pixabay.com/videos/search/history%20even/",
+      "sha256": "ce041cc89d526cad4f768bddc0901f0d375b10296a9780b90efeedcb61d5d4c2",
+      "selected_at": "2026-11-21T22:20:52.483514+00:00",
+      "generation_id": "0b121a9e-4fd0-4987-bfe4-7420dd3bf255"
+    },
+    {
+      "key": "wikimedia:30862034",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Deck_of_sailing_ship_at_Port_Los_Angeles,_ca.1905_(CHS-1491).jpg",
+      "sha256": "c08582c5008c92ac348ef5833a6cf13a04dfff025d7ab5f39e424a19b52a39f6",
+      "selected_at": "2026-11-21T22:23:07.861413+00:00",
+      "generation_id": "0b121a9e-4fd0-4987-bfe4-7420dd3bf255"
     }
   ]
 }
