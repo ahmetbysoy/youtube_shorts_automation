@@ -448,6 +448,34 @@
       "sha256": "8bc501b19ecc4998eb851626168a1d17b4e47618ade2b9c6f1a0e14e165d7f90",
       "selected_at": "2026-11-21T09:58:21.408094+00:00",
       "generation_id": "e01c8b29-7672-4d0b-b051-b6137f44bcf3"
+    },
+    {
+      "key": "wikimedia:24062880",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Immunology_laboratory_at_the_central_cancer_research_labs.jpg",
+      "sha256": "97d721bebb0fce37992a4f6cc70ead8f48dd37483ffe90fdaa9dc9be117d8889",
+      "selected_at": "2026-11-21T12:57:02.005457+00:00",
+      "generation_id": "63511d5b-82a4-40c0-b42a-476b9015417e"
+    },
+    {
+      "key": "pixabay:144043",
+      "source_url": "https://pixabay.com/videos/search/history%20first/",
+      "sha256": "98a1cf0030631c1395e2ca0a603307aad86f90b5bf151d97abd5477e7441a40b",
+      "selected_at": "2026-11-21T12:58:28.417735+00:00",
+      "generation_id": "63511d5b-82a4-40c0-b42a-476b9015417e"
+    },
+    {
+      "key": "pixabay:29823",
+      "source_url": "https://pixabay.com/videos/search/ada%20lovelace%20portrait%20vintage/",
+      "sha256": "3e0840ebbbe997875b65113f9725c0cb2317a4b0ec95736716f9d661683da234",
+      "selected_at": "2026-11-21T12:59:44.790588+00:00",
+      "generation_id": "63511d5b-82a4-40c0-b42a-476b9015417e"
+    },
+    {
+      "key": "wikimedia:22629582",
+      "source_url": "https://commons.wikimedia.org/wiki/File:British_-_Sir_William_Lovelace_Kt._of_Bethersden_-_Google_Art_Project.jpg",
+      "sha256": "999ae8b64584c6765c9e174dbdd11a603400297a899d38c3f0c028db387cc74b",
+      "selected_at": "2026-11-21T13:00:08.139898+00:00",
+      "generation_id": "63511d5b-82a4-40c0-b42a-476b9015417e"
     }
   ]
 }
