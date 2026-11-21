@@ -140,13 +140,15 @@ function normalizeCookie(raw, defaultDomain) {
   if (typeof expires !== 'number' || expires <= 0) expires = -1;
   // Session cookie'ler (expires -1) icin expires alani Playwright'a gore
   // verilmemeli ya da -1 olmali.
-  // hostOnly cookie'lerde domain'e nokta prefix eklenmez — aksi takdirde
-  // Playwright "cookie domain must not have leading dot" hatasi verir veya
-  // cookie yanlis gonderilir.
+  // hostOnly cookie'ler SADECE kaynak host'a gider; nokta prefix ALMAZ
+  // (aksi halde Playwright "cookie domain must not have leading dot" hatasi
+  // verir veya cookie yanlis gonderilir).
+  // Diger tum cookie'ler domain-wide'dir: nokta prefix GARANTi edilir
+  // (bare "pixabay.com" gelse bile ".pixabay.com" yapilir; boylece subdomain
+  // eslesmesi korunur ve test sozlesmesiyle uyumlu olur).
   const hostOnly = raw.hostOnly === true;
-  const finalDomain = (hostOnly || !domain.startsWith('.'))
-    ? domain.replace(/^\./, '')
-    : domain;
+  const bareDomain = domain.replace(/^\./, '');
+  const finalDomain = hostOnly ? bareDomain : '.' + bareDomain;
   return {
     name: raw.name,
     value: raw.value,
