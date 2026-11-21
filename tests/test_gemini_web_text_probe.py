@@ -1,9 +1,49 @@
 """Gemini Web text probe için ağ ve cookie kullanmayan sözleşme testleri."""
 
 import json
+import os
 import unittest
 
-from scripts.gemini_web_text_probe import parse_cookie_payload, validate_model_text
+from scripts.gemini_web_text_probe import (
+    _env_float,
+    _parse_backoff_schedule,
+    parse_cookie_payload,
+    validate_model_text,
+)
+
+
+class TestTimeoutHelpers(unittest.TestCase):
+    def test_env_float_returns_default_when_missing(self):
+        self.assertEqual(_env_float("TEST_ENV_FLOAT_YOK_1234", 80), 80)
+
+    def test_env_float_parses_positive_value(self):
+        os.environ["TEST_ENV_FLOAT_OK"] = "123.5"
+        try:
+            self.assertEqual(_env_float("TEST_ENV_FLOAT_OK", 80), 123.5)
+        finally:
+            os.environ.pop("TEST_ENV_FLOAT_OK", None)
+
+    def test_env_float_rejects_non_positive_and_garbage(self):
+        os.environ["TEST_ENV_FLOAT_BAD1"] = "-3"
+        os.environ["TEST_ENV_FLOAT_BAD2"] = "abc"
+        try:
+            self.assertEqual(_env_float("TEST_ENV_FLOAT_BAD1", 35), 35)
+            self.assertEqual(_env_float("TEST_ENV_FLOAT_BAD2", 55), 55)
+        finally:
+            os.environ.pop("TEST_ENV_FLOAT_BAD1", None)
+            os.environ.pop("TEST_ENV_FLOAT_BAD2", None)
+
+    def test_backoff_schedule_parses_list(self):
+        self.assertEqual(_parse_backoff_schedule("10,20", 3), [10.0, 20.0])
+
+    def test_backoff_schedule_fills_missing_gaps_with_last_value(self):
+        self.assertEqual(_parse_backoff_schedule("15", 3), [15.0, 15.0])
+
+    def test_backoff_schedule_skips_invalid_parts(self):
+        self.assertEqual(_parse_backoff_schedule("10,x,30", 4), [10.0, 30.0, 30.0])
+
+    def test_backoff_schedule_empty_means_zero(self):
+        self.assertEqual(_parse_backoff_schedule("", 3), [0.0, 0.0])
 
 
 class TestGeminiWebTextProbe(unittest.TestCase):
