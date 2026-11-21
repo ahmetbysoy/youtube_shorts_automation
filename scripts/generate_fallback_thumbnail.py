@@ -165,8 +165,9 @@ def pick_best_frame(frames: list[Path]) -> Path | None:
         brightness_factor = 1.0 - abs(mean - 128) / 128 * 0.65
         score = std * max(0.3, brightness_factor)
         candidates.append((score, mean, std, frame))
+    ABSOLUTE_MIN_BRIGHTNESS = 30  # bunun alti neredeyse tamamen siyah — gradient karta dus
     if not candidates:
-        # Hic kare parlaklik esigini gecmezse, en parlak olani sec (karanliklar arasinda en iyisi)
+        # En parlak kareyi bul
         fallback: tuple[float, Path] | None = None
         for frame in frames:
             try:
@@ -177,9 +178,14 @@ def pick_best_frame(frames: list[Path]) -> Path | None:
                 continue
             if fallback is None or mean > fallback[0]:
                 fallback = (mean, frame)
-        if fallback:
+        if fallback and fallback[0] >= ABSOLUTE_MIN_BRIGHTNESS:
             print(f"[!] Parlaklik esigi asilmadi; en parlak kare seciliyor (mean={fallback[0]:.0f})")
             return fallback[1]
+        # Hic kare yeterince parlak degil (orn. karadelik, gece, uzay) -> None don,
+        # cagiran taraf gradient/illustrasyon kartina dusecek.
+        if fallback:
+            print(f"[!] Tum kareler cok karanlik (en parlak mean={fallback[0]:.0f} < {ABSOLUTE_MIN_BRIGHTNESS}); "
+                  f"video karesi yerine gradient/illustrasyon karti kullanilacak.")
         return None
     # En yuksek skorlu
     candidates.sort(reverse=True, key=lambda x: x[0])
@@ -312,7 +318,7 @@ def main() -> int:
             draw.line([(510, 1010), (565, 890), (640, 830)], fill=(238, 105, 46), width=18)
             draw.ellipse([380, 780, 420, 820], fill=(249, 187, 64))
             draw.ellipse([640, 775, 672, 807], fill=(247, 151, 52))
-        elif any(word in subject for word in ("uzay", "güneş", "gunes", "yıldız", "yildiz", "gezegen", "venüs", "venüs", "uranüs", "neptün", "voyager")):
+        elif any(word in subject for word in ("uzay", "güneş", "gunes", "yıldız", "yildiz", "yildiz", "gezegen", "venüs", "venüs", "uranüs", "neptün", "neptun", "voyager", "karadelik", "kara delik", "black hole", "solucan", "galaksi", "samanyolu", "andromeda", "bulutsu", "nebula", "asteroit", "meteor", "kuyruklu yıldız", "kuyruklu yildiz", "olay ufku", "ufuk", "astro")):
             draw.ellipse([230, 805, 850, 1425], fill=(32, 57, 91), outline=(232, 187, 62), width=12)
             draw.ellipse([345, 890, 430, 975], fill=(75, 109, 149))
             draw.ellipse([590, 1120, 755, 1285], fill=(60, 89, 131))

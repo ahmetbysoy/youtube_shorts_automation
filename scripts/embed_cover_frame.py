@@ -78,8 +78,9 @@ def build_title_driven_prompt(title: str, topic: str) -> str:
     )
 
 
-def fetch_gemini_image(prompt: str, out_path: Path, timeout: int = 120) -> bool:
-    """Gemini web API (gemini_cover.py) ile gorsel uretir. Basarisizsa False (loglu)."""
+def fetch_gemini_image(prompt: str, out_path: Path, timeout: int = 240) -> bool:
+    """Gemini web API (gemini_cover.py) ile gorsel uretir. Basarisizsa False (loglu).
+    240sn timeout: imgenin Gemini tarafinda uretilmesi buyuk promptlarda bazen 2+ dk suruyor."""
     if not prompt:
         return False
     if not GEMINI_COVER_SCRIPT.exists():
