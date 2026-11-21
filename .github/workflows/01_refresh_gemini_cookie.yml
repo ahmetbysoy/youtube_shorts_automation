@@ -1,0 +1,38 @@
+name: "01 — Gemini Cookie Otomatik Yenileme"
+run-name: "Refresh GEMINI_COOK via YT session"
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REPO_PAT: ${{ secrets.REPO_PAT }}
+      STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON || secrets.STORAGE_STATE_JSON_1 }}
+      GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Araçlar (Python + Playwright + gemini_webapi)
+        uses: ./.github/actions/setup-tools
+        with:
+          apt_packages: ffmpeg
+          python: 'true'
+          python_version: '3.11'
+          node: 'false'
+          python_playwright: 'true'
+          pip_requirements: ''
+          pip_extra: 'requests pynacl gemini_webapi playwright'
+      - name: Chromium kur
+        run: python3 -m playwright install chromium
+      - name: GEMINI_COOK yenile
+        run: python3 scripts/refresh_gemini_cookie.py
+      - name: Hata durumunda screenshot upload
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: gemini_refresh_debug
+          path: |
+            /tmp/gemini_after_load.png
+          if-no-files-found: ignore
