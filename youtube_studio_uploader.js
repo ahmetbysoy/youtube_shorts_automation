@@ -1141,72 +1141,200 @@ async function uploadToYouTubeStudio() {
         }, null, { timeout: 30000 });
         await doneBtn.click();
         console.log("[*] 'Yayınla' (Publish) butonuna tıklandı.");
-        await page.waitForTimeout(3000);
+        await page.waitForTimeout(2000);
 
-        // Kontroller devam ederken çıkabilen 'Yine de yayınla / Publish anyway' veya onay penceresini geç
+        // Kontroller/devam etmek icin "Yine de yayınla / Publish anyway" veya onay penceresini geç.
+        // DIKKAT: #secondary-action-button İPTAL/VAZGEÇ tir; ASLA tiklanmamali.
+        // Sadece birincil onay (confirm/Publish anyway) butonlarini ara.
         const postPublishConfirmSelectors = [
-            'ytcp-prechecks-warning-dialog ytcp-button#secondary-action-button',
-            'ytcp-prechecks-warning-dialog #secondary-action-button',
-            'ytcp-confirmation-dialog ytcp-button#confirm-button',
-            'ytcp-confirmation-dialog-renderer ytcp-button#confirm-button',
             'button:has-text("Yine de yayınla")',
             'button:has-text("Publish anyway")',
-            'ytcp-button#confirm-button'
+            'ytcp-prechecks-warning-dialog ytcp-button#primary-action-button',
+            'ytcp-prechecks-warning-dialog #primary-action-button',
+            'ytcp-confirmation-dialog ytcp-button#confirm-button',
+            'ytcp-confirmation-dialog-renderer ytcp-button#confirm-button',
         ];
         for (const sel of postPublishConfirmSelectors) {
             const btn = page.locator(sel).first();
-            if (await btn.isVisible({ timeout: 1200 }).catch(() => false)) {
+            if (await btn.isVisible({ timeout: 1500 }).catch(() => false)) {
+                console.log(`[*] Onay diyalogu bulundu, onaylaniyor: ${sel}`);
                 await btn.click({ force: true });
-                console.log(`[*] Yayın sonrası ek onay diyalogu geçildi: ${sel}`);
-                await page.waitForTimeout(2500);
+                await page.waitForTimeout(2000);
                 break;
             }
         }
 
-        await page.waitForTimeout(6000);
-        if (!videoUrl) {
-            const postLinkEl = page.locator('a[href*="youtube.com/shorts/"], a[href*="youtu.be/"]').first();
-            if (await postLinkEl.isVisible({ timeout: 3000 }).catch(() => false)) {
-                videoUrl = (await postLinkEl.getAttribute('href')) || '';
+        // Yayinlama BASARI diyaloğunu bekle: "Video yayınlandı" / "Published" veya
+        // upload diyalogunun KAPANMASI. En fazla 60s bekle.
+        console.log("[*] Yayın başarı diyaloğu bekleniyor...");
+        let publishedId = '';
+        const successStart = Date.now();
+        let successDialogFound = false;
+        while (Date.now() - successStart < 60000) {
+            // Success dialogdaki linkten video ID'yi cek
+            const linkEls = await page.locator('a[href*="youtube.com/shorts/"], a[href*="youtu.be/"]').all();
+            for (const el of linkEls) {
+                const href = (await el.getAttribute('href')) || '';
+                const m = href.match(/\/shorts\/([A-Za-z0-9_-]{11})/) ||
+                          href.match(/youtu\.be\/([A-Za-z0-9_-]{11})/) ||
+                          href.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+                if (m && !publishedId) {
+                    publishedId = m[1];
+                    videoUrl = href.startsWith('http') ? href : `https://youtube.com/shorts/${publishedId}`;
+                    successDialogFound = true;
+                    console.log(`[*] Video linki başarı diyaloğunda bulundu: ${videoUrl}`);
+                }
             }
+            // Close/Kapat butonunu iceren bir dialog var mi?
+            const closeBtn = page.locator('ytcp-dialog [aria-label="Close"], ytcp-dialog #close-button, ytcp-uploads-dialog #close-button').first();
+            // Upload dialog kapanmissa da basari sayilir (studio ana sayfaya donmus)
+            const uploadDialogVisible = await page.locator('ytcp-uploads-dialog, ytcp-upload-confirm-dialog').first().isVisible().catch(() => false);
+            if (publishedId && successDialogFound) break;
+            if (!uploadDialogVisible && publishedId) { successDialogFound = true; break; }
+            // "Hata" veya "sunucu hatasi" varsa hemen cik
+            const errText = await page.locator('ytcp-dialog .error-text, .error-message').first().textContent().catch(() => '');
+            if (errText && errText.trim()) {
+                throw new Error(`Yayınlama sonrası diyalogda hata: ${errText.trim().slice(0, 200)}`);
+            }
+            await page.waitForTimeout(3000);
         }
-        await page.screenshot({ path: '/tmp/yt_upload_success.png' }).catch(() => {});
-        // Yayın butonuna basılması veya işleniyor metni PUBLIC kanıtı değildir.
-        // Studio içerik tablosunda tam video ID + PUBLIC durumu doğrulanmalıdır.
-        const vidMatch = String(videoUrl || '').match(/[?&]v=([A-Za-z0-9_-]{11})(?:[&#]|$)/) ||
-                         String(videoUrl || '').match(/\/(?:shorts|embed)\/([A-Za-z0-9_-]{11})(?:[?&#/]|$)/) ||
-                         String(videoUrl || '').match(/youtu\.be\/([A-Za-z0-9_-]{11})(?:[?&#/]|$)/);
-        const publishedId = vidMatch ? vidMatch[1] : '';
+
+        // Basari dialogundaki Kapat/Tamam butonuna tikla (dialogu kapat)
+        try {
+            const closeBtn = page.locator(
+                'ytcp-dialog #close-button, ' +
+                'ytcp-dialog button:has-text("Kapat"), ' +
+                'ytcp-dialog button:has-text("Close"), ' +
+                'ytcp-button#close-button, ' +
+                'ytcp-uploads-dialog #close-button'
+            ).first();
+            if (await closeBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+                await closeBtn.click({ force: true });
+                console.log("[*] Başarı diyaloğu kapatıldı.");
+                await page.waitForTimeout(3000);
+            }
+        } catch (_) {}
+
+        // Upload diyalogu tamamen kapanana kadar bekle
+        for (let i = 0; i < 15; i++) {
+            const dialogVisible = await page.locator('ytcp-uploads-dialog, ytcp-upload-confirm-dialog').first().isVisible().catch(() => false);
+            if (!dialogVisible) { console.log("[*] Upload diyalogu kapandı."); break; }
+            await page.waitForTimeout(2000);
+        }
+
+        await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'post_publish_dialog.png') }).catch(() => {});
+
+        if (!publishedId) {
+            // Son care: channel_video_id.txt veya auth_status'tan al
+            try {
+                const cvId = fs.readFileSync(path.join(BASE_DIR, 'logs', 'channel_video_id.txt'), 'utf8').trim();
+                if (cvId.match(/^[A-Za-z0-9_-]{11}$/)) publishedId = cvId;
+            } catch (_) {}
+        }
+
+        if (!publishedId) {
+            writeAuthStatus('publish_failed_no_id', { title, channelUrl: page.url() });
+            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'publish_failed.png') }).catch(() => {});
+            throw new Error("Yayınlama sonrası video ID bulunamadı; yayın tamamlanmamış olabilir.");
+        }
+
         const channelMatch = page.url().match(/\/channel\/(UC[A-Za-z0-9_-]{22})/);
         const channelId = channelMatch ? channelMatch[1] : '';
-        let verifiedPublic = false;
-        if (publishedId && channelId) {
+
+        // 1) Studio icerik listesinde video PUBLIC olarak gorunuyor mu?
+        let studioVerified = false;
+        if (channelId) {
             const checkPage = await context.newPage();
             try {
-                for (let attempt = 0; attempt < 6; attempt++) {
+                for (let attempt = 0; attempt < 10; attempt++) {
                     await checkPage.goto(`https://studio.youtube.com/channel/${channelId}/videos/short`,
-                        { waitUntil: 'domcontentloaded', timeout: 45000 });
-                    const row = checkPage.locator(`ytcp-video-row:has(a[href*="/video/${publishedId}/"])`).first();
-                    await row.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
-                    const icons = await row.locator('yt-icon.privacy-public-icon').count();
-                    const labels = await row.locator('.icon-text-edit-triangle-wrap .label-span').allTextContents();
-                    if (icons > 0 && labels.some(label => /^(herkese açık|public)$/i.test(label.trim()))) {
-                        verifiedPublic = true;
-                        break;
+                        { waitUntil: 'networkidle', timeout: 45000 });
+                    await checkPage.waitForTimeout(4000);
+                    // Tam href ile eslesen satiri bul
+                    const rows = checkPage.locator('ytcp-video-row');
+                    const count = await rows.count();
+                    let foundRow = false;
+                    for (let r = 0; r < count; r++) {
+                        const row = rows.nth(r);
+                        const link = row.locator(`a[href*="${publishedId}"]`).first();
+                        if (await link.count().catch(() => 0) > 0) {
+                            foundRow = true;
+                            const publicIcons = await row.locator('yt-icon.privacy-public-icon').count();
+                            const labels = await row.locator('.icon-text-edit-triangle-wrap .label-span, .privacy-status').allTextContents();
+                            const isPublic = publicIcons > 0 || labels.some(l => /^(herkese açık|public)$/i.test(l.trim()));
+                            if (isPublic) {
+                                studioVerified = true;
+                                console.log(`[✓] Studio içerik listesinde video PUBLIC olarak bulundu (row #${r+1}).`);
+                            } else {
+                                console.log(`[!] Video Studio'da bulundu ama PUBLIC değil; etiketler: ${labels.join(',')}`);
+                            }
+                            break;
+                        }
                     }
-                    console.log(`[*] Studio PUBLIC doğrulaması bekleniyor (${attempt + 1}/6), video ID: ${publishedId}`);
+                    if (studioVerified) break;
+                    console.log(`[*] Studio içerik listesi bekleniyor (${attempt + 1}/10), video ID: ${publishedId} (sayfada ${count} video, bulundu=${foundRow})`);
                     await checkPage.waitForTimeout(5000);
                 }
             } catch (verifyErr) {
-                console.error(`[!] Studio görünürlük doğrulaması tamamlanamadı: ${verifyErr.message}`);
+                console.error(`[!] Studio doğrulama hatası: ${verifyErr.message}`);
             } finally {
+                await checkPage.screenshot({ path: path.join(BASE_DIR, 'logs', 'studio_content_list.png') }).catch(() => {});
                 await checkPage.close().catch(() => {});
             }
         }
-        if (!verifiedPublic) {
+
+        if (!studioVerified) {
             writeAuthStatus('publish_unverified', { title, videoUrl, videoId: publishedId, channelUrl: page.url() });
-            throw new Error(`Yayın sonrası PUBLIC doğrulanamadı; tekrar yüklemeden Studio'yu kontrol edin. Video ID: ${publishedId || 'bilinmiyor'}`);
+            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'publish_unverified.png') }).catch(() => {});
+            throw new Error(`Studio'da video PUBLIC olarak doğrulanamadı. Video ID: ${publishedId}`);
         }
+
+        // 2) DISARDS (kimliksiz) olarak herkese acik erisilebiliyor mu? (en kritik dogrulama)
+        console.log("[*] Anonim (kimliksiz) erişim doğrulanıyor...");
+        let publicVerified = false;
+        let anonPage = null;
+        try {
+            anonPage = await browser.newContext({
+                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+                locale: 'tr-TR', viewport: { width: 1366, height: 900 },
+            });
+            const anonTab = await anonPage.newPage();
+            for (let attempt = 0; attempt < 6; attempt++) {
+                const pubUrl = `https://www.youtube.com/shorts/${publishedId}`;
+                const resp = await anonTab.goto(pubUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
+                await anonTab.waitForTimeout(3000);
+                // Sayfa basliginda video basligi var mi? "Video unavailable" iceriyor mu?
+                const content = await anonTab.content().catch(() => '');
+                const unavailable = content.includes('Video unavailable') || content.includes('This video isn') || content.includes('This video has been removed') || content.includes('This video is private');
+                if (!unavailable && resp && resp.status() < 400) {
+                    // ytInitialPlayerResponse playabilityStatus'i parse et
+                    const ps = content.match(/"playabilityStatus":\{"status":"([A-Z_]+)"/);
+                    const status = ps ? ps[1] : 'UNKNOWN';
+                    if (status === 'OK' || status === 'LIVE_STREAM_OFFLINE') {
+                        publicVerified = true;
+                        console.log(`[✓] Anonim erişim BAŞARILI (status=${status}). Video gerçekten PUBLIC!`);
+                        break;
+                    }
+                    console.log(`[*] Anonim kontrol status=${status} (deneme ${attempt+1}/6)`);
+                } else {
+                    console.log(`[*] Anonim erişimde video unavailable (deneme ${attempt+1}/6)`);
+                }
+                await anonTab.waitForTimeout(8000);
+            }
+            await anonTab.screenshot({ path: path.join(BASE_DIR, 'logs', 'public_verification.png') }).catch(() => {});
+        } catch (anonErr) {
+            console.error(`[!] Anonim doğrulama hatası: ${anonErr.message}`);
+        } finally {
+            if (anonPage) await anonPage.close().catch(() => {});
+        }
+
+        if (!publicVerified) {
+            writeAuthStatus('publish_not_public', { title, videoUrl, videoId: publishedId, channelUrl: page.url() });
+            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'publish_not_public.png') }).catch(() => {});
+            throw new Error(`Studio PUBLIC gördü ama video anonim erişimde görünmüyor. Video ID: ${publishedId}. YouTube işleme süreci veya gizlilik hatası olabilir.`);
+        }
+
+        videoUrl = `https://youtube.com/shorts/${publishedId}`;
         await persistAllSessionArtifacts(context);
         writeAuthStatus('upload_completed', { title, videoUrl, videoId: publishedId, visibility: 'PUBLIC', matrixChannelId: matrixChannelId || '1', channelUrl: page.url() });
         fs.mkdirSync(path.join(BASE_DIR, 'logs'), { recursive: true });

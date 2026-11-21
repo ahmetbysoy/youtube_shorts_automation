@@ -1,10 +1,12 @@
 name: Hourly Prune Low-View YouTube Videos
 
 on:
+  # FAZ C KILIT: Pruner cron'lari DURDURULDU (2026-11-21)
+  # Yayin zincirinin dogru calistigi anonim dogrulama ile kanitlanana kadar
+  # videolarin silinmesi RISKLI. Sadece manuel tetikleme (workflow_dispatch) calisiyor.
+  # Eski cron: '7 * * * *' ve '37 * * * *'
   schedule:
-    # Saatte iki kez (:07 ve :37 UTC): 1 saatten eski ve <100 izlenme videoları temizle
-    - cron: '7 * * * *'
-    - cron: '37 * * * *'
+    - cron: '0 0 31 2 *'   # asla tetiklenmez (31 Subat yok)
   workflow_dispatch:
     inputs:
       target_channel:
