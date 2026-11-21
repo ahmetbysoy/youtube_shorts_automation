@@ -560,6 +560,34 @@
       "sha256": "c08582c5008c92ac348ef5833a6cf13a04dfff025d7ab5f39e424a19b52a39f6",
       "selected_at": "2026-11-21T22:23:07.861413+00:00",
       "generation_id": "0b121a9e-4fd0-4987-bfe4-7420dd3bf255"
+    },
+    {
+      "key": "pixabay:100549",
+      "source_url": "https://pixabay.com/videos/search/science%20color/",
+      "sha256": "0ab3455fbc006c52d462f83597841f4594944e1b105b8a49330dcf6a49f443be",
+      "selected_at": "2026-11-21T23:45:00.058326+00:00",
+      "generation_id": "67372f73-2b65-43cc-9579-6bcc86d47e4a"
+    },
+    {
+      "key": "wikimedia:83468271",
+      "source_url": "https://commons.wikimedia.org/wiki/File:HPV_Vaccine-_A_Pediatrician%27s_Recommendation.webm",
+      "sha256": "652e40328971fae3dbc945ffaf6437fd25568d52f7c37e2594112cc7f79d57dd",
+      "selected_at": "2026-11-21T23:45:56.345060+00:00",
+      "generation_id": "67372f73-2b65-43cc-9579-6bcc86d47e4a"
+    },
+    {
+      "key": "wikimedia:96471749",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Inside_KSC!_Feb._15,_2019_4fv12NUZhd0.webm",
+      "sha256": "58677fd1dae9e7c089a7aee270f8a56e7784fe348e8c89ba907e33e47a100075",
+      "selected_at": "2026-11-21T23:47:10.664486+00:00",
+      "generation_id": "67372f73-2b65-43cc-9579-6bcc86d47e4a"
+    },
+    {
+      "key": "wikimedia:64482052",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Vintage_laboratory_equipment,_Chemical_Faculty,_Gdansk_University_of_Technology2.jpg",
+      "sha256": "1aecfa6c4e08e0860025d6ee0ede08459fd5ca41c565c9355aadb633d5d1c0a9",
+      "selected_at": "2026-11-21T23:52:09.603717+00:00",
+      "generation_id": "67372f73-2b65-43cc-9579-6bcc86d47e4a"
     }
   ]
 }
