@@ -7,15 +7,16 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     env:
       PIXABAY_COOK: ${{ secrets.PIXABAY_COOK }}
+      DISPLAY: ':99'
     steps:
       - uses: actions/checkout@v7
       - name: Araçlar
         uses: ./.github/actions/setup-tools
         with:
-          apt_packages: ffmpeg
+          apt_packages: ffmpeg xvfb
           python: 'true'
           python_version: '3.11'
           node: 'false'
@@ -24,8 +25,19 @@ jobs:
           pip_extra: 'playwright'
       - name: Chromium kur
         run: python3 -m playwright install chromium
-      - name: Pixabay cookie test
+      - name: Xvfb baslat (headful Chrome)
+        run: |
+          Xvfb :99 -screen 0 1366x768x24 -ac &
+          sleep 2
+      - name: Pixabay cookie test (headful, xvfb ile)
         run: python3 scripts/test_pixabay_with_cookies.py
+      - name: Taze cookie'leri artifact olarak kaydet (cf_clearance yenilendiyse)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fresh_pix_cookies
+          path: /tmp/fresh_pix_cookies.json
+          if-no-files-found: ignore
       - name: Screenshot upload
         uses: actions/upload-artifact@v4
         if: always()
