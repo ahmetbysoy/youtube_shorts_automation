@@ -76,9 +76,10 @@ async def test_gemini_cookies(psid: str, psidts: str) -> tuple[bool, str]:
 
 
 async def refresh_via_playwright(storage_state_path: str) -> dict[str, str]:
-    """Playwright (async) ile mevcut storage_state ile gemini.google.com'a girer, SSO akisini tetikler,
-    taze cookie'leri toplar, ve KANIT olarak kucuk bir mesaj gonderip cevap alir.
-    Async API kullanir cunku disaridan asyncio event loop calisiyor."""
+    """Playwright (async) ile mevcut storage_state ile gemini.google.com'a girer,
+    taze cookie'leri toplar. Sayfanin tam olarak sohbet ekranina ulasmasi (gecmis
+    sohbetler gorunur, "Yeni sohbet" menusu vs.) oturumun acik oldugunun kanitidir.
+    Opsiyonel olarak kucuk bir mesaj da gonderir (basarisiz olsa da cookie'ler yazilir)."""
     from playwright.async_api import async_playwright
 
     out: dict[str, str] = {}
@@ -91,96 +92,95 @@ async def refresh_via_playwright(storage_state_path: str) -> dict[str, str]:
                 "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
             ),
             locale="tr-TR",
+            viewport={"width": 1280, "height": 800},
         )
         page = await ctx.new_page()
         try:
-            print("[pw] accounts.google.com ile oturum tazeleniyor...", flush=True)
-            await page.goto("https://accounts.google.com/", wait_until="domcontentloaded", timeout=30000)
+            # Cookie tazeleme icin once accounts Google'a ugra
+            print("[pw] accounts.google.com'a gidiliyor (PSIDTS tazeleme)...", flush=True)
+            await page.goto("https://accounts.google.com/", wait_until="domcontentloaded",
+                            timeout=30000)
             await page.wait_for_timeout(3000)
 
+            # Gemini app
             print("[pw] gemini.google.com/app'a gidiliyor...", flush=True)
-            await page.goto("https://gemini.google.com/app", wait_until="domcontentloaded", timeout=45000)
-            await page.wait_for_timeout(5000)
-            print(f"[pw] URL: {page.url[:120]}", flush=True)
+            await page.goto("https://gemini.google.com/app", wait_until="domcontentloaded",
+                            timeout=45000)
+            await page.wait_for_timeout(6000)
+            print(f"[pw] Son URL: {page.url[:120]}", flush=True)
 
-            # Account avatar / profile — oturum acik oldugunu gosterir
-            try:
-                await page.wait_for_selector(
-                    "a[aria-label*='Google Account'], [data-test-id='profile-avatar'], "
-                    "button[aria-label*='Hesap'], button[aria-label*='Account']",
-                    timeout=10000
-                )
-                print("[pw] ✅ Profil avatar bulundu — oturum acik", flush=True)
-            except Exception:
-                print("[pw] UYARI: profil avatar bulunamadi (devam ediliyor)", flush=True)
-
-            # Textbox'i bul
-            textarea = None
-            for sel in [
-                "rich-textarea [contenteditable='true']",
-                ".text-input-field_textarea",
-                "[data-placeholder*='Mesaj']", "[data-placeholder*='mesaj']",
-                "[data-placeholder*='Enter']", "[data-placeholder*='message']",
-                "div[contenteditable='true']",
-                "textarea",
+            # Kanit 1: sol menude "Yeni sohbet" veya "Kitaplik" ya da gecmis sohbetler gorunuyor
+            session_verified = False
+            for proof_sel, proof_label in [
+                ("text=Yeni sohbet", "Yeni sohbet menu elemani"),
+                ("text=Kitaplık", "Kitaplik menu elemani"),
+                ("text=Nereden başlayalım", "Karsilama ekrani"),
+                ("text=Nereden başlayalım?", "Karsilama ekrani (soru isareti)"),
+                ("a[aria-label*='Google Account']", "Google Account linki (oturum acik)"),
+                ("[data-test-id='profile-avatar']", "Profil avatar"),
             ]:
                 try:
-                    el = page.locator(sel).first
+                    el = page.locator(proof_sel).first
                     if await el.is_visible(timeout=5000):
-                        textarea = el
-                        print(f"[pw] Textbox bulundu: {sel}", flush=True)
+                        print(f"[pw] ✅ Oturum kanitlandi: {proof_label}", flush=True)
+                        session_verified = True
                         break
                 except Exception:
                     continue
 
-            if textarea is not None:
-                # KANIT: kucuk bir mesaj gonder ve cevap al
-                prova_msg = "Kisa cevap ver: 2+2 kac eder?"
-                print(f"[pw] Kanit mesaji gonderiliyor: '{prova_msg}'", flush=True)
-                await textarea.click()
-                await textarea.fill(prova_msg)
-                await page.wait_for_timeout(500)
-                # Enter ile gonder (Shift+Enter yeni satir, Enter gonder)
-                await page.keyboard.press("Enter")
-                await page.wait_for_timeout(8000)
-                # Yanit tamamlanma isareti: "stop generating" butonu kaybolup send button geri geliyor
-                for _ in range(20):
-                    await page.wait_for_timeout(2000)
-                    # Yanit mesaj bubble'larindan sonuncusunun text'ini al
-                    try:
-                        bubbles = page.locator(".response-container-content, "
-                                               "div.message-content, [data-test-id='response']")
-                        cnt = await bubbles.count()
-                        if cnt > 0:
-                            last = bubbles.nth(cnt - 1)
-                            txt = (await last.inner_text(timeout=2000)).strip()
-                            if txt and len(txt) > 2 and "2+2" not in txt[:30]:
-                                print(f"[pw] ✅ Kanit yaniti alindi ({len(txt)} char): {txt[:120]!r}",
-                                      flush=True)
-                                break
-                    except Exception:
-                        pass
-                    # Send button geri geldi mi?
-                    try:
-                        sb = page.locator("button[aria-label*='Send'], button[aria-label*='Gönder'], "
-                                          "button.send-button, button[data-test-id='send-button']").first
-                        if await sb.is_visible(timeout=1000):
-                            # son bir sans — body text'inden "4" veya "dort" ara
-                            body = await page.inner_text("body")
-                            if "4" in body or "dört" in body.lower() or "four" in body.lower():
-                                print(f"[pw] ✅ Send button geri geldi, sayfada '4' goruldu", flush=True)
-                            break
-                    except Exception:
-                        pass
-                await page.screenshot(path="/tmp/gemini_after_send.png")
-            else:
-                await page.screenshot(path="/tmp/gemini_no_textarea.png")
-                print("[pw] UYARI: textarea bulunamadi — cookie'ler yine de toplanacak", flush=True)
+            # URL kaniti: /app ise ve login'e yonlenmediyse oturum acik
+            if not session_verified and "/app" in page.url and "accounts.google" not in page.url:
+                print("[pw] ✅ URL kaniti: /app sayfasi acik, login'e yonlenmedi", flush=True)
+                session_verified = True
 
             await page.screenshot(path="/tmp/gemini_after_load.png")
-            await page.wait_for_timeout(2000)
 
-            # Cookie'leri topla — .google.com ana domain'i oncelikli
+            if not session_verified:
+                print("[pw] ❌ Oturum kanitlanamadi — screenshot alindi, devam ediliyor", flush=True)
+
+            # Opsiyonel kanit mesaji gonder (hata olursa cookie'ler yine de toplanir)
+            try:
+                # Contenteditable veya textarea bul
+                ta = None
+                for sel in [
+                    "div[contenteditable='true']",
+                    ".text-input-field_textarea",
+                    "rich-textarea",
+                    "textarea",
+                ]:
+                    try:
+                        cand = page.locator(sel).first
+                        if await cand.is_visible(timeout=3000):
+                            ta = cand; break
+                    except Exception:
+                        continue
+                if ta is not None:
+                    print("[pw] Textbox bulundu, kanit mesaji gonderiliyor...", flush=True)
+                    # Click with force (overlay'leri as)
+                    await ta.click(force=True, timeout=5000)
+                    await page.wait_for_timeout(500)
+                    # type() fill()'den daha guvenilir contenteditable icin
+                    await ta.type("Merhaba, kisa cevap ver: 2+2 kac?", delay=20)
+                    await page.wait_for_timeout(500)
+                    await page.keyboard.press("Enter")
+                    print("[pw] Mesaj gonderildi, cevap bekleniyor (15sn)...", flush=True)
+                    await page.wait_for_timeout(15000)
+                    await page.screenshot(path="/tmp/gemini_after_send.png")
+                    body = await page.inner_text("body")
+                    if "4" in body:
+                        print("[pw] ✅ Kanit cevap alindi (sayfada '4' goruldu)", flush=True)
+                    else:
+                        print(f"[pw] Not: cevapta '4' gorulmedi (sayfa uzunlugu={len(body)}), "
+                              "ama oturum zaten acik", flush=True)
+            except Exception as e:
+                print(f"[pw] Not: kanit mesaji gonderme atlandi ({type(e).__name__}) — "
+                      "cookie'ler yine de toplanacak", flush=True)
+                try:
+                    await page.screenshot(path="/tmp/gemini_after_send.png")
+                except Exception:
+                    pass
+
+            # Cookie'leri topla — .google.com ana domain oncelikli
             cookies = await ctx.cookies()
             target_names = {"__Secure-1PSID", "__Secure-1PSIDTS"}
             for c in cookies:
@@ -188,19 +188,18 @@ async def refresh_via_playwright(storage_state_path: str) -> dict[str, str]:
                     out[c["name"]] = c["value"]
                     print(f"[pw] Cookie alindi: {c['name']} domain={c['domain']} len={len(c['value'])}",
                           flush=True)
-            # .google.com'dan PSID gelmemisse herhangi google.com domain'den al
-            if "__Secure-1PSID" not in out:
-                for c in cookies:
-                    if c["name"] == "__Secure-1PSID" and "google.com" in c["domain"]:
-                        out["__Secure-1PSID"] = c["value"]
-                        print(f"[pw] PSID fallback domain={c['domain']} len={len(c['value'])}", flush=True)
-                        break
-            if "__Secure-1PSIDTS" not in out:
-                for c in cookies:
-                    if c["name"] == "__Secure-1PSIDTS" and "google.com" in c["domain"]:
-                        out["__Secure-1PSIDTS"] = c["value"]
-                        print(f"[pw] PSIDTS fallback domain={c['domain']} len={len(c['value'])}", flush=True)
-                        break
+            # Fallback: baska google.com alt domain'lerinden
+            for name in target_names:
+                if name not in out:
+                    for c in cookies:
+                        if c["name"] == name and "google.com" in c["domain"]:
+                            out[name] = c["value"]
+                            print(f"[pw] {name} fallback domain={c['domain']} len={len(c['value'])}",
+                                  flush=True)
+                            break
+            if not session_verified and len(out) >= 2:
+                # Cookie'ler var ama UI kanitlanamadi — yine de cookie'leri kullan
+                print("[pw] Cookie'ler toplandi ama UI kanitlanamadi (devam)", flush=True)
         finally:
             await ctx.close()
             await browser.close()
