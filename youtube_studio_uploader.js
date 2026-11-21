@@ -80,7 +80,7 @@ async function leaveAsDraftOnIdentityModal(page, context, title) {
     while (Date.now() < deadline) {
         const t = ((await page.locator('ytcp-video-upload-progress').innerText().catch(() => '')) || '').replace(/\s+/g, ' ').trim();
         if (!t || !(/%\s*\d+|\d+\s*%|yükleniyor|uploading/i.test(t))) break;
-        await page.waitForTimeout(3000);
+        await page.waitForTimeout(5000);
     }
     const videoId = await page.locator('ytcp-uploads-dialog').evaluate((d) => {
         const a = d.querySelector('a.ytcp-video-info, ytcp-video-info a, a[href*="youtu"]');
@@ -289,7 +289,7 @@ async function performGoogleLogin(page) {
         if (!hasPasswordField) {
             await page.screenshot({ path: '/tmp/yt_auth_challenge.png' }).catch(() => {});
         }
-        await page.waitForTimeout(3000);
+        await page.waitForTimeout(5000);
     }
 
     throw new Error("2FA / Oturum açma zaman aşımına uğradı.");
@@ -709,7 +709,7 @@ async function selectMatchingAutoStill(page, coverPath) {
     const openBtn = dlg.locator('ytcp-video-thumbnail-editor, ytcp-thumbnail-editor').locator('text=/Videodan seç|Select from video/').first();
     await openBtn.scrollIntoViewIfNeeded().catch(() => {});
     const deadline = Date.now() + 90000;
-    while (Date.now() < deadline && !(await openBtn.isVisible().catch(() => false))) await page.waitForTimeout(3000);
+    while (Date.now() < deadline && !(await openBtn.isVisible().catch(() => false))) await page.waitForTimeout(5000);
     await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'thumbnail_section.png') }).catch(() => {});
     if (!(await openBtn.isVisible().catch(() => false))) return { ok: false, reason: '"Videodan seç" düğmesi görünmedi' };
     await openBtn.click({ timeout: 10000 });
@@ -1129,7 +1129,7 @@ async function uploadToYouTubeStudio() {
             ) {
                 break;
             }
-            await page.waitForTimeout(3000);
+            await page.waitForTimeout(5000);
         }
 
         // Yayınla (Publish) butonuna tıkla
@@ -1196,7 +1196,7 @@ async function uploadToYouTubeStudio() {
             if (errText && errText.trim()) {
                 throw new Error(`Yayınlama sonrası diyalogda hata: ${errText.trim().slice(0, 200)}`);
             }
-            await page.waitForTimeout(3000);
+            await page.waitForTimeout(5000);
         }
 
         // Basari dialogundaki Kapat/Tamam butonuna tikla (dialogu kapat)
@@ -1211,7 +1211,7 @@ async function uploadToYouTubeStudio() {
             if (await closeBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
                 await closeBtn.click({ force: true });
                 console.log("[*] Başarı diyaloğu kapatıldı.");
-                await page.waitForTimeout(3000);
+                await page.waitForTimeout(5000);
             }
         } catch (_) {}
 
@@ -1299,13 +1299,14 @@ async function uploadToYouTubeStudio() {
                 locale: 'tr-TR', viewport: { width: 1366, height: 900 },
             });
             const anonTab = await anonPage.newPage();
-            for (let attempt = 0; attempt < 6; attempt++) {
+            for (let attempt = 0; attempt < 12; attempt++) {
                 const pubUrl = `https://www.youtube.com/shorts/${publishedId}`;
                 const resp = await anonTab.goto(pubUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
-                await anonTab.waitForTimeout(3000);
+                await anonTab.waitForTimeout(5000);
                 // Sayfa basliginda video basligi var mi? "Video unavailable" iceriyor mu?
                 const content = await anonTab.content().catch(() => '');
-                const unavailable = content.includes('Video unavailable') || content.includes('This video isn') || content.includes('This video has been removed') || content.includes('This video is private');
+                const unavailable = content.includes('Video unavailable') || content.includes('This video isn') || content.includes('This video has been removed') || content.includes('This video is private') || content.includes('This video may be');
+                const processing = content.includes('Processing') || content.includes('işleniyor') || content.includes('is being processed') || content.includes('Please wait');
                 if (!unavailable && resp && resp.status() < 400) {
                     // ytInitialPlayerResponse playabilityStatus'i parse et
                     const ps = content.match(/"playabilityStatus":\{"status":"([A-Z_]+)"/);
@@ -1315,11 +1316,11 @@ async function uploadToYouTubeStudio() {
                         console.log(`[✓] Anonim erişim BAŞARILI (status=${status}). Video gerçekten PUBLIC!`);
                         break;
                     }
-                    console.log(`[*] Anonim kontrol status=${status} (deneme ${attempt+1}/6)`);
+                    console.log(`[*] Anonim kontrol status=${status} processing=${processing} (deneme ${attempt+1}/12) — YouTube processing bekleniyor`);
                 } else {
-                    console.log(`[*] Anonim erişimde video unavailable (deneme ${attempt+1}/6)`);
+                    console.log(`[*] Anonim erişimde video ${unavailable ? 'unavailable' : 'HTTP hatasi'} (deneme ${attempt+1}/12)`);
                 }
-                await anonTab.waitForTimeout(8000);
+                await anonTab.waitForTimeout(10000);
             }
             await anonTab.screenshot({ path: path.join(BASE_DIR, 'logs', 'public_verification.png') }).catch(() => {});
         } catch (anonErr) {
