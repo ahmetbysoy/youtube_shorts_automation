@@ -1075,5 +1075,63 @@
       "created_at": "2026-11-21T01:29:05.379580+00:00"
     }
   ],
-  "pending": []
+  "pending": [
+    {
+      "title": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "topic": "Tarih",
+      "topic_subject": "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
+      "topic_key": "",
+      "category": "tarih",
+      "entities": [
+        "inis",
+        "kleopatra",
+        "piramitlerden",
+        "tarih",
+        "yakindi"
+      ],
+      "claims": [],
+      "scenario_tokens": [
+        "apollo",
+        "ay",
+        "ayak",
+        "basmas",
+        "biliyor",
+        "bundan",
+        "buyuk",
+        "complete",
+        "dokuz",
+        "donemin",
+        "gecen",
+        "gize",
+        "gorev",
+        "hayatin",
+        "ilk",
+        "inis",
+        "insa",
+        "insasin",
+        "kaybett",
+        "kleopatr",
+        "kralices",
+        "milat",
+        "misir",
+        "muydunuz",
+        "nin",
+        "oldugun",
+        "olum",
+        "piramid",
+        "piramit",
+        "sadec",
+        "sure",
+        "tarih",
+        "yakin",
+        "yakind",
+        "yasadig",
+        "year",
+        "yildir"
+      ],
+      "created_at": "2026-11-21T09:50:07.969427+00:00",
+      "reservation_id": "cf2dbd62-e834-4997-873d-f2ebde0037aa",
+      "run_id": "44891149823:1"
+    }
+  ]
 }
