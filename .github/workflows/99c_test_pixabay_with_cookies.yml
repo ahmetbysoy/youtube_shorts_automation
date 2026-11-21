@@ -1,0 +1,37 @@
+name: "TEST — Pixabay gercek cookie testi (Playwright)"
+run-name: "Pixabay cookie test"
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PIXABAY_COOK: ${{ secrets.PIXABAY_COOK }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Araçlar
+        uses: ./.github/actions/setup-tools
+        with:
+          apt_packages: ffmpeg
+          python: 'true'
+          python_version: '3.11'
+          node: 'false'
+          python_playwright: 'true'
+          pip_requirements: ''
+          pip_extra: 'playwright'
+      - name: Chromium kur
+        run: python3 -m playwright install chromium
+      - name: Pixabay cookie test
+        run: python3 scripts/test_pixabay_with_cookies.py
+      - name: Screenshot upload
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pixabay_cookie_test
+          path: |
+            /tmp/pixabay_cookie_test.png
+            /tmp/pixabay_cf_*.png
+          if-no-files-found: ignore
