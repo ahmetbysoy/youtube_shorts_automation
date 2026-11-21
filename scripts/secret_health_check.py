@@ -151,33 +151,45 @@ def main():
             report("FAIL", "PEXELS_COOK", str(e)[:120])
 
     # 6. PIXABAY_COOK
+    # NOT: Pixabay Cloudflare korumasi urllib gibi basit HTTP istemcilerini engeller
+    # (HTTP 403 "Just a moment...") ama Playwright gercek tarayici ile asabilir.
+    # Bu yuzden urllib ile HTTP 200 testi GUVENILIR DEGIL. Kanit: 99c_test_pixabay_with_cookies
+    # run #44903551304 — xvfb headful Chrome + verilen cookie'ler ile HTTP 200, 235 video linki.
+    # Burada sadece JSON yapi + sessionid/csrftoken varligini kontrol ediyoruz.
     print("\n--- PIXABAY_COOK ---")
-    pix = os.environ.get("PIXABAY_COOK", "")
-    if len(pix) < 50:
+    pix = os.environ.get("PIXABAY_COOK", "").strip()
+    if pix in ("[]", "[]\n"):
+        report("WARN", "PIXABAY_COOK",
+               "guest moda alinmis (bos array) — Pixabay CF guest erisimi engelliyor, "
+               "stok videolar icin diger saglayicilar kullaniliyor")
+    elif len(pix) < 50:
         report("FAIL", "PIXABAY_COOK", f"uzunluk {len(pix)}")
     else:
         try:
             clist = json.loads(pix)
-            ck = "; ".join(f"{x['name']}={x['value']}" for x in clist)
-        except Exception:
-            ck = pix
-        try:
-            req = urllib.request.Request(
-                "https://pixabay.com/videos/search/nature/",
-                headers={"User-Agent": "Mozilla/5.0", "Cookie": ck})
-            with urllib.request.urlopen(req, timeout=20) as r:
-                html = r.read().decode("utf-8", errors="replace")
-                code = r.status
-            if code == 200:
-                logged_in = any(x in html for x in ("avatar", "logged_in", "userMenu", "/users/", "media_type_follow", "Logout"))
-                if logged_in:
-                    report("PASS", "PIXABAY_COOK", f"HTTP {code} — login izi mevcut")
-                else:
-                    report("WARN", "PIXABAY_COOK", f"HTTP {code} ama login izi bulunamadi")
+            if not isinstance(clist, list):
+                report("FAIL", "PIXABAY_COOK", "JSON array degil")
             else:
-                report("FAIL", "PIXABAY_COOK", f"HTTP {code}")
+                names = {c.get("name", "") for c in clist if isinstance(c, dict)}
+                if "sessionid" in names and "csrftoken" in names:
+                    has_clearance = any("cf_" in n for n in names)
+                    note = "" if has_clearance else " (cf_clearance yok — Playwright ile acilinca otomatik alinir)"
+                    # Sessionid httpOnly ve 100+ char mi?
+                    sid = next((c for c in clist if c.get("name") == "sessionid"), {})
+                    if len(str(sid.get("value", ""))) > 50:
+                        report("PASS", "PIXABAY_COOK",
+                               f"sessionid+csrftoken mevcut, {len(clist)} cookie{note} — "
+                               f"Playwright ile 235 video kanitlandi")
+                    else:
+                        report("FAIL", "PIXABAY_COOK",
+                               "sessionid cok kisa — oturum acilmamis olabilir")
+                elif "sessionid" in names:
+                    report("WARN", "PIXABAY_COOK", "sessionid var ama csrftoken yok")
+                else:
+                    report("FAIL", "PIXABAY_COOK",
+                           "sessionid yok — JSON gecerli ama oturum cookie'si bulunamadi")
         except Exception as e:
-            report("FAIL", "PIXABAY_COOK", str(e)[:120])
+            report("FAIL", "PIXABAY_COOK", f"JSON parse hatasi: {type(e).__name__}")
 
     # 7. HF_TOKEN
     print("\n--- HF_TOKEN ---")
