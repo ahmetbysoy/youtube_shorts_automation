@@ -420,6 +420,34 @@
       "sha256": "015d77c5b4bfa596406742f05d8dc39282d1ee85ff7c537597db4da3be18e08e",
       "selected_at": "2026-11-21T01:32:58.734240+00:00",
       "generation_id": "5de9d363-dcff-4213-884e-3b8b227edff2"
+    },
+    {
+      "key": "wikimedia:101245276",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Ancient_Egypt_Hieroglyphic_Relief_(27794423673).jpg",
+      "sha256": "927a0751791e4afcf072af55365416a798840fd794a1592786f1ed753621a9b9",
+      "selected_at": "2026-11-21T09:51:26.787464+00:00",
+      "generation_id": "e01c8b29-7672-4d0b-b051-b6137f44bcf3"
+    },
+    {
+      "key": "pixabay:120177",
+      "source_url": "https://pixabay.com/videos/search/history%20hundred/",
+      "sha256": "9a4c916017d641a60790a984dc31cd2bb3efaef9aaa6c9848d01701188fa6f15",
+      "selected_at": "2026-11-21T09:52:43.751409+00:00",
+      "generation_id": "e01c8b29-7672-4d0b-b051-b6137f44bcf3"
+    },
+    {
+      "key": "wikimedia:199584773",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Collage_of_cutouts_of_star-forming_region_IC_348_(Webb_NIRCam_image)_(weic2619b).webm",
+      "sha256": "21940e8c3e543f5f35b36ce042472d3aedeff99b796d523900c8766c6f16dd53",
+      "selected_at": "2026-11-21T09:57:32.824091+00:00",
+      "generation_id": "e01c8b29-7672-4d0b-b051-b6137f44bcf3"
+    },
+    {
+      "key": "wikimedia:151568999",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Apollo_16_Lands_in_the_Lunar_Highlands_(SVS4989_-_apollo16_youtubehd).webm",
+      "sha256": "8bc501b19ecc4998eb851626168a1d17b4e47618ade2b9c6f1a0e14e165d7f90",
+      "selected_at": "2026-11-21T09:58:21.408094+00:00",
+      "generation_id": "e01c8b29-7672-4d0b-b051-b6137f44bcf3"
     }
   ]
 }
