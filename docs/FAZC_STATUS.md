@@ -1,56 +1,50 @@
-# FAZ C — Otonom Uretim Durumu (2026-11-20 21:43 UTC)
+# FAZ C — Otonom Uretim Durumu (2026-11-21 10:00 UTC)
 
-## ✅ DURUM: CANLI — İLK PIPELINE VIDEOSU PUBLIC YAYINDA
-- **Video:** https://youtube.com/shorts/R_EfF7h8JIM  
-- **Başlık:** Fatih Sultan Mehmet Gemileri Karadan Nasıl Yürüttü? #Shorts  
-- **Run:** 44821267926 (workflow_dispatch)  
-- **Tüm fazlar BAŞARILI**, 12 dakikada tamamlandı.
+## ✅ DURUM: CANLI — ANONIM DOGRULAMALI VIDEOSU PUBLIC YAYINDA
+- **Video:** https://youtube.com/shorts/7IwKIlxt6GY
+- **Başlık:** Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts
+- **Kanal:** mentan siytas
+- **Run:** 44891149823 (workflow_dispatch)
+- **oEmbed 200, player API OK, thumbnail 480x360 JPEG**
+- **Özel kapak (cover.jpg) YouTube'a yuklendi** (thumbnail_url hq2.jpg)
 
-## Kanıtlanmış Çalışma Zinciri
-1. Safety gate (cookie/sağlık/kota/aralık/stop) — ✅
-2. Faz 2: Gemini Web (180s hard timeout) + local fallback + edge-tts — ✅
-3. Faz 2.5: script.json şema doğrulaması — ✅
-4. Faz 3: 6 sağlayıcıdan medya seçimi + FFmpeg montaj (BGM+altyazı) — ✅
-5. Faz 3.5: Kapak karesi gömme (AI görsel + başlık) — ✅
-6. Faz 4: QC (dosya + içerik) — ✅
-7. Faz 5: Playwright ile YouTube Studio PUBLIC yükleme — ✅
-8. Kanal hijyeni (banner/about/pin) — ✅
-9. Artifact + logların repo'ya otomatik commitlenmesi — ✅
+## Kritik Duzeltmeler (2026-11-21)
+1. **Publish false-positive bug duzeltildi:** Eski kod dialog acikken 3sn bekleyip
+   "basarili" raporluyordu; sonuc YouTube'un yarim taslagi silmesi. Simdi:
+   - Başarı diyaloğundan video ID okunmadan ve diyalog kapanmadan ilerlenmez.
+   - #secondary-action (İPTAL) butonuna yanlislikla basilmasi engellendi.
+   - Studio içerik listesinde satir satir aranir, 50sn beklenir.
+   - **Anonim (kimliksiz) browser context ile video herkese acik mi test edilir.**
+   - Her asamada screenshot artifact olarak kaydedilir.
+2. **Pruner gecici olarak durduruldu** — cron 31 Subat'a ayarlandi. Anonim dogrulama
+   zincirinin 2-3 gun stabil calistigi kanitlanana kadar videolar silinmeyecek.
+3. **REPO_PAT secret yenilendi** — cookie'leri secret'a geri yazma islevi calisiyor.
+4. **Gemini timeout duzeltildi** — init 25s, konu basi 80s, toplam 180s hard timeout;
+   timeout sonrasi local fallback senaryo havuzuna aninda donuyor.
+5. **youtube_studio_uploader.js dotenv MODULE_NOT_FOUND** try/catch ile giderildi.
 
-## Aktif Cron Tablosu (UTC)
-| Saat     | Workflow                | Islem                                           |
-|----------|-------------------------|-------------------------------------------------|
-| 05:00    | `01_healthcheck.yml`    | Cookie + EMERGENCY_STOP + public probe          |
-| 06:00    | `daily_analytics.yml`   | Analytics                                       |
-| :13/2 saat | `daily_shorts.yml`    | Uretim (gate 8/gun + 60dk spacing ile denetler) |
-| :25      | `draft_publisher.yml`   | Taslaklari yayinla                              |
-| :07,:37  | `hourly_pruner.yml`     | Dusuk izlenme temizligi                         |
-| 23:30    | `06_daily_summary.yml`  | Gunluk ozet                                     |
+## Cron Tablosu (UTC)
+| Saat     | Workflow                | Islem                                      | Durum   |
+|----------|-------------------------|--------------------------------------------|---------|
+| 05:00    | `01_healthcheck.yml`    | Cookie + stop + public probe               | ✅ aktif|
+| 06:00    | `daily_analytics.yml`   | Analytics                                  | ✅ aktif|
+| :13/2s   | `daily_shorts.yml`      | Uretim (gate: 8/gun + 60dk spacing)         | ✅ aktif|
+| :25      | `draft_publisher.yml`   | Taslaklari yayinla                         | ✅ aktif|
+| :07,:37  | `hourly_pruner.yml`     | **DURDURULDU** (anonim kanitina kadar)      | ⏸ durdu |
+| 23:30    | `06_daily_summary.yml`  | Gunluk ozet                                | ✅ aktif|
 
-## Guvenlik Kapisi (scripts/production_gate.py)
-Her uretimden once 5 kontrol:
-1. **EMERGENCY_STOP**: env/stop-file/GitHub issue label "EMERGENCY_STOP"
-2. **Cookie saglik**: GEMINI/PEXELS/PIXABAY/YT min uzunluk
-3. **Gunluk kota**: 8/gun (varsayilan, `DAILY_VIDEO_LIMIT` ile ayarlanabilir)
-4. **Aralik**: Son yayindan 60+ dk gecmis olmali
-5. **Ardisik hata freni**: 3 hata ust uste → 2sa dur
-
-## Duzeltilen Kritik Hatalar (2026-11-20)
-1. **Gemini client.init() tamamen takiliyordu** — asyncio.wait_for(25s) eklendi,
-   auto_refresh=False, per-topic 80s timeout, total 180s hard timeout.
-2. **youtube_studio_uploader.js dotenv MODULE_NOT_FOUND** — try/catch ile opsiyonel.
-3. **Faz 2 timeout 600s → 360s** düşürüldü (fallback'e daha hizli donus).
-4. **REPO_PAT secret güncellendi** → cookie refresh 401 hatasi duzeltildi.
-5. **Print buffer flush** sorunları giderildi (loglar anında gorunuyor).
+## Guvenlik Kapisi Dogrulamalari
+Her uretimden once ve sonra:
+- EMERGENCY_STOP (env/issue label) — ✅ kapi testte gecti
+- Cookie saglik — ✅ healthcheck yesil
+- Gunluk kota (8/gun) — ✅ calisiyor
+- Min aralik (60dk) — ✅ calisiyor
+- Ardisik hata freni (3) — ✅ calisiyor
+- Yayin sonrasi: Studio PUBLIC ikonu + anonim oEmbed/player API OK — ✅ yeni
 
 ## Bilinen Notlar
-- Gemini Web ara ara 80s timeout'a düşüyor (cookie oturumu/rate-limit kaynakli);
-  bu durumda fallback yerel senaryo havuzu devreye girer ve video uretimi devam eder
-  (R_EfF7h8JIM'in senaryosu bu sekilde uretildi).
-- Analytics → konu ağırlıklandırma feedback loop'u henuz yapilacak.
-- BGM/QC/thumbnail polish itemleri temel zincir stabil calistikca gelecek.
-
-## Durdurma Mekanizmasi
-- Repo'da `EMERGENCY_STOP` etiketiyle issue ac → tum uretim bir sonraki cron'da DURUR
-- Issue'u kapat → uretim otomatik devam eder
-- Healthcheck basarisiz olursa otomatik EMERGENCY_STOP issue acilir
+- Gemini Web ara ara timeout veriyor ama 180s'de fallback devreye giriyor;
+  7IwKIlxt6GY videosu fallback senaryo ile uretildi ve basariyla yayinlandi.
+- AI gorsel servisi (pollinations) bazen 503/402 veriyor; otomatik olarak yerel
+  yedek (1080x1920 PIL kontrastli kare) kullaniliyor.
+- Analytics feedback loop, BGM/QC polish itemleri sonraki asama.
