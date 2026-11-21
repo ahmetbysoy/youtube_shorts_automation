@@ -28,11 +28,13 @@ jobs:
         run: python3 -m playwright install chromium
       - name: GEMINI_COOK yenile
         run: python3 scripts/refresh_gemini_cookie.py
-      - name: Hata durumunda screenshot upload
+      - name: Screenshot'lari her durumda upload (kanit)
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: gemini_refresh_debug
           path: |
             /tmp/gemini_after_load.png
+            /tmp/gemini_after_send.png
+            /tmp/gemini_no_textarea.png
           if-no-files-found: ignore
