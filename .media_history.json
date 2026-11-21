@@ -392,6 +392,34 @@
       "sha256": "ca8dfe261067bf9850eca71f9b14e9e24d9cb798bb902bf144776fc5f1b0e8cb",
       "selected_at": "2026-11-20T21:40:45.854771+00:00",
       "generation_id": "476c528d-f88d-4d46-a920-faf92138b477"
+    },
+    {
+      "key": "wikimedia:178341780",
+      "source_url": "https://commons.wikimedia.org/wiki/File:20251019_Replica_DNA_double_helix_model_Berlin_03.jpg",
+      "sha256": "cc982773c7bd6e99c283ac531b62ab992b5ea105fbab925c48ef872cadbf85e1",
+      "selected_at": "2026-11-21T01:30:13.771669+00:00",
+      "generation_id": "5de9d363-dcff-4213-884e-3b8b227edff2"
+    },
+    {
+      "key": "pexels:14569526",
+      "source_url": "https://www.pexels.com/search/videos/microscope%20cell%20biology/",
+      "sha256": "d1e88b2ee9f5f8d71561d933128e23baaac66e8739d9198bd1df60e401f95485",
+      "selected_at": "2026-11-21T01:31:14.361758+00:00",
+      "generation_id": "5de9d363-dcff-4213-884e-3b8b227edff2"
+    },
+    {
+      "key": "wikimedia:143995206",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Aereostationary_Orbit_4_satellite_Animation.webm",
+      "sha256": "43856031867aa32dfd95cc90d73d17a8a7507dde1db5f089ca1c49e8156624b5",
+      "selected_at": "2026-11-21T01:32:08.201576+00:00",
+      "generation_id": "5de9d363-dcff-4213-884e-3b8b227edff2"
+    },
+    {
+      "key": "pixabay:131701",
+      "source_url": "https://pixabay.com/videos/search/science%20cell/",
+      "sha256": "015d77c5b4bfa596406742f05d8dc39282d1ee85ff7c537597db4da3be18e08e",
+      "selected_at": "2026-11-21T01:32:58.734240+00:00",
+      "generation_id": "5de9d363-dcff-4213-884e-3b8b227edff2"
     }
   ]
 }
