@@ -139,18 +139,54 @@ def extract_candidate_frames(video: Path, workdir: Path) -> list[Path]:
 
 
 def pick_best_frame(frames: list[Path]) -> Path | None:
-    """En kontrastli (en 'bilgi dolu') kareyi secer."""
-    best: tuple[float, Path] | None = None
+    """Hem yeterince PARLAK (karanlik/gece degil) hem de KONTRASTLI (bilgi iceren) kareyi secer.
+
+    Skor = stddev(kontrast) * mean/128(parlaklik bonusu)
+    Minimum ortalama parlaklik: 45 (0-255) — bunun altindaki kareler (cok karanlik) elenir.
+    Cok parlak (mean > 220) kareler de elenir (beyaz ekran/filtre patlamasi).
+    """
+    MIN_BRIGHTNESS = 45
+    MAX_BRIGHTNESS = 225
+    candidates: list[tuple[float, float, float, Path]] = []  # (skor, mean, std, path)
     for frame in frames:
         try:
             with Image.open(frame) as img:
                 small = img.convert("L").resize((64, 114))
-                std = ImageStat.Stat(small).stddev[0]
+                stat = ImageStat.Stat(small)
+                mean = stat.mean[0]
+                std = stat.stddev[0]
         except Exception:
             continue
-        if best is None or std > best[0]:
-            best = (std, frame)
-    return best[1] if best else None
+        if mean < MIN_BRIGHTNESS or mean > MAX_BRIGHTNESS:
+            continue
+        # Parlakligi 0.5-1.5 arasi bir carpan olarak kullan:
+        # ideal mean ~128 (carpan 1.0), karanlikta cezali (mean=45 -> 0.35),
+        # parlakta da cezali (mean=220 -> 0.86)
+        brightness_factor = 1.0 - abs(mean - 128) / 128 * 0.65
+        score = std * max(0.3, brightness_factor)
+        candidates.append((score, mean, std, frame))
+    if not candidates:
+        # Hic kare parlaklik esigini gecmezse, en parlak olani sec (karanliklar arasinda en iyisi)
+        fallback: tuple[float, Path] | None = None
+        for frame in frames:
+            try:
+                with Image.open(frame) as img:
+                    small = img.convert("L").resize((64, 114))
+                    mean = ImageStat.Stat(small).mean[0]
+            except Exception:
+                continue
+            if fallback is None or mean > fallback[0]:
+                fallback = (mean, frame)
+        if fallback:
+            print(f"[!] Parlaklik esigi asilmadi; en parlak kare seciliyor (mean={fallback[0]:.0f})")
+            return fallback[1]
+        return None
+    # En yuksek skorlu
+    candidates.sort(reverse=True, key=lambda x: x[0])
+    best_score, best_mean, best_std, best_path = candidates[0]
+    print(f"[*] Kapak karesi: mean={best_mean:.0f} std={best_std:.1f} skor={best_score:.1f} "
+          f"(toplam {len(candidates)} uygun kare icinden)")
+    return best_path
 
 
 def cover_crop(img: Image.Image, width: int, height: int) -> Image.Image:
