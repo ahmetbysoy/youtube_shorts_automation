@@ -164,12 +164,17 @@ def check_emergency_stop() -> tuple[bool, str]:
 
 
 def check_cookies_present() -> tuple[bool, str]:
-    """Tum gerekli cookie'lerin varligini ve minimum uzunlugunu kontrol et."""
+    """Tum gerekli cookie'lerin varligini ve minimum uzunlugunu kontrol et.
+    Guest mode (empty array "[]") da gecerli kabul edilir — Pexels/Pixabay misafir
+    erisimiyle de arama yapabilir (sadece login-ozel icerik kilitlenir, stok video
+    arama hâlâ calisir)."""
     required = {
         "GEMINI_COOK": 50,
         "PEXELS_COOK": 50,
         "PIXABAY_COOK": 50,
     }
+    # Guest mode ile calisan saglayicilar: "[]" (bos array) yeterli
+    guest_mode_ok = {"PEXELS_COOK", "PIXABAY_COOK"}
     # YouTube cookie: COOKIES_JSON veya YT_EMAIL+YT_PASSWORD veya COOKIES_JSON_1
     yt_ok = False
     for v in ("COOKIES_JSON", "COOKIES_JSON_1", "STORAGE_STATE_JSON",
@@ -185,6 +190,11 @@ def check_cookies_present() -> tuple[bool, str]:
         return False, "YouTube cookie/giris bilgisi eksik"
     for name, min_len in required.items():
         v = os.environ.get(name, "").strip()
+        # Guest mode: "[]" bos array, misafir erisimi
+        if name in guest_mode_ok and v in ("[]", "[]\n", ""):
+            # Not: PIXABAY_COOK icin "[]" CF nedeniyle calismiyor ama pipeline
+            # orayi try/except ile diger saglayicilara duser, sorun olmaz.
+            continue
         if len(v) < min_len:
             return False, f"{name} eksik/çok kısa ({len(v)} chars)"
     return True, ""
