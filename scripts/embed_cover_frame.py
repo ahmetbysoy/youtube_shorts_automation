@@ -78,19 +78,27 @@ def build_title_driven_prompt(title: str, topic: str) -> str:
     )
 
 
-def fetch_gemini_image(prompt: str, out_path: Path, timeout: int = 240) -> bool:
+def fetch_gemini_image(title: str, out_path: Path, timeout: int = 240) -> bool:
     """Gemini web API (gemini_cover.py) ile gorsel uretir. Basarisizsa False (loglu).
-    240sn timeout: imgenin Gemini tarafinda uretilmesi buyuk promptlarda bazen 2+ dk suruyor."""
-    if not prompt:
+
+    Akis: gemini_cover.py, REPO/kapak_gemini.json'daki varsayilan promptu OKUR,
+    sonuna 'Video basligi: <title>' ekler ve Gemini'ye gonderir.
+    --prompt override KULLANILMAZ — kullanicinin kapak_gemini.json'da
+    ayarladigi prompt esas alinir (soyleside konusuldugu gibi kusursuz sonuc veren yol).
+    240sn timeout: imgenin Gemini tarafinda uretilmesi bazen 2+ dk suruyor.
+    """
+    if not title:
         return False
     if not GEMINI_COVER_SCRIPT.exists():
         log(f"gemini_cover.py bulunamadi: {GEMINI_COVER_SCRIPT}")
         return False
-    cmd = [sys.executable, str(GEMINI_COVER_SCRIPT), str(out_path), "cover", "--prompt", prompt]
+    # Sadece out_path + title gonder — kapak_gemini.json promptu gemini_cover.py
+    # tarafindan yuklenir ve sonuna baslik eklenir.
+    cmd = [sys.executable, str(GEMINI_COVER_SCRIPT), str(out_path), title]
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         if res.returncode == 0 and out_path.exists() and out_path.stat().st_size > 20_000:
-            log(f"Gemini kapak gorseli uretildi ({out_path.stat().st_size // 1024} KB).")
+            log(f"Gemini kapak gorseli uretildi ({out_path.stat().st_size // 1024} KB) — kapak_gemini.json promptu kullanildi.")
             return True
         err = (res.stderr or res.stdout or "").strip().replace("\n", " ")[:300]
         log(f"Gemini kapak basarisiz (cikis {res.returncode}): {err}")
@@ -167,19 +175,20 @@ def main() -> int:
         data = {}
     title = str(data.get("title") or "").replace("#Shorts", "").strip()
     topic = str(data.get("topic") or "").strip()
-    # Varsayilan prompt, icerik motorunun eski thumbnail_prompt alanini degil
-    # kullanicinin istedigi baslik + CTR odakli sabit talimati kullanir.
-    prompt = build_title_driven_prompt(title, topic)
-    log(f"Baslik-odakli varsayilan kapak promptu hazir: {title[:100]}")
+    # Kullanici talimati: kapak_gemini.json'daki prompt esas alinir, sonuna sadece
+    # video basligi eklenir (soyleside konusuldugu gibi kusursuz sonuc veren yol).
+    # build_title_driven_prompt() artik kullanilmiyor — ozel durumlar icin dosyada
+    # yardimci olarak tutuluyor.
+    log(f"Kapak icin Gemini cagrilacak; baslik: {title[:100]} (prompt: kapak_gemini.json)")
     use_ai = not args.no_ai and os.environ.get("COVER_AI", "1") != "0"
 
     cover_out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="cover_") as tmp_s:
         tmp = Path(tmp_s)
         ai_img = tmp / "ai.jpg"
-        got_ai = fetch_gemini_image(prompt, ai_img) if use_ai else False
+        got_ai = fetch_gemini_image(title, ai_img) if use_ai else False
         if not got_ai:
-            log("Gemini AI gorsel yok -> videonun en iyi (parlak+kontrastli) karesi kapak tabani olacak.")
+            log("Gemini AI gorsel yok -> video karesi/gradient kart fallback kullanilacak.")
         if not build_cover(title, topic, video, ai_img if got_ai else None, cover_out):
             log("kapak uretilemedi; video degistirilmedi (YouTube kendi karesini secer).")
             return 0
