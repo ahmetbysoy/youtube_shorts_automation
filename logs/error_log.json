@@ -35,5 +35,14 @@
     "status": "error",
     "channel_id": "1",
     "stage": "upload"
+  },
+  {
+    "timestamp": "2026-11-21T14:34:19.801383+00:00",
+    "status": "published",
+    "channel_id": "1",
+    "video_id": "GHIvJstLgAY",
+    "url": "https://youtube.com/shorts/GHIvJstLgAY",
+    "title": "Karadelikler Gerçekten Her Şeyi Yutmuyor! #Shorts",
+    "visibility": "PUBLIC"
   }
 ]
