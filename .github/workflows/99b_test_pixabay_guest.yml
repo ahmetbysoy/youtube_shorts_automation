@@ -1,0 +1,37 @@
+name: "TEST — Pixabay guest erisimi"
+run-name: "Pixabay guest test"
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      REPO_PAT: ${{ secrets.REPO_PAT }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Araçlar
+        uses: ./.github/actions/setup-tools
+        with:
+          apt_packages: ffmpeg
+          python: 'true'
+          python_version: '3.11'
+          node: 'false'
+          python_playwright: 'true'
+          pip_requirements: ''
+          pip_extra: 'playwright'
+      - name: Chromium kur
+        run: python3 -m playwright install chromium
+      - name: Pixabay guest test
+        run: python3 scripts/test_pixabay_guest.py
+      - name: PEXELS_COOK reset (bos array)
+        run: python3 scripts/reset_stock_cookies.py
+      - name: Screenshot upload
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pixabay_guest_test
+          path: /tmp/pixabay_guest_final.png
+          if-no-files-found: ignore
