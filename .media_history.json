@@ -504,6 +504,34 @@
       "sha256": "7a6dda2c773ef782170f3333adf8bafa40cc9059170ed3a4e9a23cbadab170e4",
       "selected_at": "2026-11-21T14:30:15.989025+00:00",
       "generation_id": "3977f66e-033a-4cd6-b631-0eaad39c5395"
+    },
+    {
+      "key": "pixabay:290679",
+      "source_url": "https://pixabay.com/videos/search/ancient%20mesopotamia%20temple/",
+      "sha256": "6c0b5d8409ea30242cfdd85abc2aa541b6b8aa61b768d49e55d9ec66c2d68004",
+      "selected_at": "2026-11-21T17:28:46.953054+00:00",
+      "generation_id": "07fc9fc9-a0a3-4832-974d-3c6bbe984bb0"
+    },
+    {
+      "key": "wikimedia:61648622",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Lisa-_Start_the_Conversation_About_Family_History_of_Breast_Cancer.webm",
+      "sha256": "01e93a40fa60b4cb6b8282ef313227312ac394a9ec22f23b321edacfc1cadeba",
+      "selected_at": "2026-11-21T17:30:35.966033+00:00",
+      "generation_id": "07fc9fc9-a0a3-4832-974d-3c6bbe984bb0"
+    },
+    {
+      "key": "wikimedia:166203178",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Astrophysics_Multiwavelength_Vertical_Video_(SVS14798_-_reel_crab_v4).webm",
+      "sha256": "955359d826d92580bf43f7c4fa6aabc69aec015c60959d2f550da8ebb98dea52",
+      "selected_at": "2026-11-21T17:35:19.959534+00:00",
+      "generation_id": "07fc9fc9-a0a3-4832-974d-3c6bbe984bb0"
+    },
+    {
+      "key": "pixabay:128150",
+      "source_url": "https://pixabay.com/videos/search/history%20along/",
+      "sha256": "7a600e8d60f0ae333e076ffe92d8299849b2b7aec0d5d37c5ae7a9fe6613e388",
+      "selected_at": "2026-11-21T17:36:45.196501+00:00",
+      "generation_id": "07fc9fc9-a0a3-4832-974d-3c6bbe984bb0"
     }
   ]
 }
