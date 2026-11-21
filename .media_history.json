@@ -476,6 +476,34 @@
       "sha256": "999ae8b64584c6765c9e174dbdd11a603400297a899d38c3f0c028db387cc74b",
       "selected_at": "2026-11-21T13:00:08.139898+00:00",
       "generation_id": "63511d5b-82a4-40c0-b42a-476b9015417e"
+    },
+    {
+      "key": "wikimedia:199774167",
+      "source_url": "https://commons.wikimedia.org/wiki/File:A_Legacy_of_Discovery,_Built_for_the_Future_(A_History_of_NASA_Science_Video_MAIN).webm",
+      "sha256": "8f19bc7210a263850975f7fff789dd84d37d914581823f08d1eed4a17137a8a1",
+      "selected_at": "2026-11-21T14:26:07.920940+00:00",
+      "generation_id": "3977f66e-033a-4cd6-b631-0eaad39c5395"
+    },
+    {
+      "key": "pixabay:121650",
+      "source_url": "https://pixabay.com/videos/search/science%20sun/",
+      "sha256": "dbeca3436ea747e32cc0e969acd59e4c7412e9799b30c85a2a211f6899a1568d",
+      "selected_at": "2026-11-21T14:27:43.581745+00:00",
+      "generation_id": "3977f66e-033a-4cd6-b631-0eaad39c5395"
+    },
+    {
+      "key": "wikimedia:150967229",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Atmospheric_Carbon_Dioxide_Tagged_by_Source_for_Science-on-a-Sphere_(SVS5273_-_SOS_TaggedCO2_4-1-2024a_co2_BB_quality_ScienceOnASphere_2048p30).webm",
+      "sha256": "ba85ccf7739781291122fb19637f517fac4a16cfad2d661ef0d4133181a2811c",
+      "selected_at": "2026-11-21T14:28:54.486090+00:00",
+      "generation_id": "3977f66e-033a-4cd6-b631-0eaad39c5395"
+    },
+    {
+      "key": "pixabay:2",
+      "source_url": "https://pixabay.com/videos/search/science%20but/",
+      "sha256": "7a6dda2c773ef782170f3333adf8bafa40cc9059170ed3a4e9a23cbadab170e4",
+      "selected_at": "2026-11-21T14:30:15.989025+00:00",
+      "generation_id": "3977f66e-033a-4cd6-b631-0eaad39c5395"
     }
   ]
 }
