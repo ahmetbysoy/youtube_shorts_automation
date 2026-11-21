@@ -75,15 +75,15 @@ async def test_gemini_cookies(psid: str, psidts: str) -> tuple[bool, str]:
         return False, f"{type(e).__name__}: {str(e)[:200]}"
 
 
-def refresh_via_playwright(storage_state_path: str) -> dict[str, str]:
-    """Playwright ile mevcut storage_state ile gemini.google.com'a girer, SSO akisini tetikler,
-    taze cookie'leri toplar."""
-    from playwright.sync_api import sync_playwright
+async def refresh_via_playwright(storage_state_path: str) -> dict[str, str]:
+    """Playwright (async) ile mevcut storage_state ile gemini.google.com'a girer, SSO akisini tetikler,
+    taze cookie'leri toplar. Async API kullanir cunku disaridan asyncio event loop calisiyor."""
+    from playwright.async_api import async_playwright
 
     out: dict[str, str] = {}
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        ctx = await browser.new_context(
             storage_state=storage_state_path,
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -91,11 +91,24 @@ def refresh_via_playwright(storage_state_path: str) -> dict[str, str]:
             ),
             locale="tr-TR",
         )
-        page = ctx.new_page()
+        page = await ctx.new_page()
         try:
             print("[pw] gemini.google.com'a gidiliyor...", flush=True)
-            page.goto("https://gemini.google.com/", wait_until="domcontentloaded", timeout=45000)
-            page.wait_for_timeout(4000)
+            await page.goto("https://gemini.google.com/", wait_until="domcontentloaded", timeout=45000)
+            await page.wait_for_timeout(5000)
+
+            # Once accounts.google.com uzerinden oturumun aktif oldugundan emin ol
+            # (PSIDTS cookie'si burada set edilecektir)
+            await page.goto("https://accounts.google.com/", wait_until="domcontentloaded", timeout=30000)
+            await page.wait_for_timeout(3000)
+            cur = page.url
+            print(f"[pw] accounts.google.com sonrasi URL: {cur[:120]}", flush=True)
+
+            # Simdi tekrar Gemini'ye don
+            await page.goto("https://gemini.google.com/", wait_until="domcontentloaded", timeout=45000)
+            await page.wait_for_timeout(5000)
+            cur = page.url
+            print(f"[pw] gemini.google.com URL: {cur[:120]}", flush=True)
 
             # "Sign in" / "Oturum aç" butonu var mi?
             for sel, label in [
@@ -107,10 +120,10 @@ def refresh_via_playwright(storage_state_path: str) -> dict[str, str]:
             ]:
                 try:
                     btn = page.locator(sel).first
-                    if btn.is_visible(timeout=2000):
+                    if await btn.is_visible(timeout=2000):
                         print(f"[pw] {label} butonu bulundu, tiklaniyor...", flush=True)
-                        btn.click(timeout=5000)
-                        page.wait_for_timeout(6000)
+                        await btn.click(timeout=5000)
+                        await page.wait_for_timeout(8000)
                         break
                 except Exception:
                     continue
@@ -118,18 +131,19 @@ def refresh_via_playwright(storage_state_path: str) -> dict[str, str]:
             # Wait for Gemini chat UI — birkaç olasi gosterge
             loaded = False
             for indicator in [
-                "rich-textarea",                  # Gemini textarea class
+                "rich-textarea",
                 "[data-placeholder*='message']",
                 "textarea",
                 "[role='textbox']",
-                "g-snackbar + div",
                 "button[aria-label*='Send']",
                 "button:has-text('Send')",
                 ".text-input-field-textarea",
                 ".input-area",
+                "mat-sidenav-container",
+                "body app-root",
             ]:
                 try:
-                    page.wait_for_selector(indicator, timeout=10000)
+                    await page.wait_for_selector(indicator, timeout=8000)
                     print(f"[pw] Gemini UI yuklendi (indicator: {indicator})", flush=True)
                     loaded = True
                     break
@@ -137,27 +151,26 @@ def refresh_via_playwright(storage_state_path: str) -> dict[str, str]:
                     continue
 
             if not loaded:
-                # Son care: URL'de "app" veya "chat" var mi
                 cur = page.url
                 if "gemini.google.com" in cur:
-                    print(f"[pw] UI indicator secici bulunamadi ama sayfa {cur} acik", flush=True)
+                    print(f"[pw] UI indicator secici bulunamadi ama sayfa {cur[:120]} acik", flush=True)
                 else:
-                    print(f"[pw] UYARI: beklenen sayfa acilmadi — su an: {cur}", flush=True)
+                    print(f"[pw] UYARI: beklenen sayfa acilmadi — su an: {cur[:120]}", flush=True)
 
-            page.screenshot(path="/tmp/gemini_after_load.png")
-            page.wait_for_timeout(3000)
+            await page.screenshot(path="/tmp/gemini_after_load.png")
+            await page.wait_for_timeout(3000)
 
-            # Cookie'leri topla (.google.com ve gemini.google.com)
-            cookies = ctx.cookies()
+            # Cookie'leri topla
+            cookies = await ctx.cookies()
             target_names = {"__Secure-1PSID", "__Secure-1PSIDTS"}
             for c in cookies:
                 if c["name"] in target_names and "google.com" in c["domain"]:
                     out[c["name"]] = c["value"]
-                    print(f"[pw] Cookie alindi: {c['name'][:20]}... domain={c['domain']} len={len(c['value'])}",
+                    print(f"[pw] Cookie alindi: {c['name']} domain={c['domain']} len={len(c['value'])}",
                           flush=True)
         finally:
-            ctx.close()
-            browser.close()
+            await ctx.close()
+            await browser.close()
     return out
 
 
@@ -214,7 +227,7 @@ async def main() -> int:
         # storage_state'i gecici dosyaya yaz
         ss_path = "/tmp/yt_storage_state.json"
         Path(ss_path).write_text(YT_STORAGE_RAW, encoding="utf-8")
-        fresh = refresh_via_playwright(ss_path)
+        fresh = await refresh_via_playwright(ss_path)
         psid = fresh.get("__Secure-1PSID", psid)
         psidts = fresh.get("__Secure-1PSIDTS", psidts)
         print(f"[4b] Taze PSID={len(psid)} char, PSIDTS={len(psidts)} char", flush=True)
