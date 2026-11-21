@@ -1,15 +1,15 @@
 {
-  "scraped_at": "2026-11-20T14:50:42.781Z",
+  "scraped_at": "2026-11-21T14:08:52.907Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 14,
   "duplicates_removed": 1,
   "status": "ok",
   "winning_topic": "Tarih",
   "boost_active": false,
-  "boost_reason": "insufficient_sample(top=5,second=1)",
-  "outperformance_ratio": 1.04,
+  "boost_reason": "no_clear_lead",
+  "outperformance_ratio": 1.13,
   "discarded_topics": [],
-  "optimization_directive": "En yüksek skor 'Tarih' görünse de örneklem küçük (n=5); agresif kategori kayması YAPILMIYOR, dengeli dağılım korunuyor.",
+  "optimization_directive": "Kategoriler arası performans farkı 12% (eşik %30); boost YAPILMIYOR, dengeli dağılım korunuyor.",
   "data_quality": {
     "avg_view_duration_available_count": 0,
     "avg_view_duration_total": 14,
@@ -27,22 +27,22 @@
       "statistically_reliable": true
     },
     {
-      "niche": "Uzay",
-      "video_count": 1,
-      "avg_views": 1136,
+      "niche": "Bilim",
+      "video_count": 7,
+      "avg_views": 1039.29,
       "avg_view_duration_sec": null,
       "avg_view_duration_sample_size": 0,
-      "avg_score": 1136,
-      "statistically_reliable": false
+      "avg_score": 1039.29,
+      "statistically_reliable": true
     },
     {
-      "niche": "Bilim",
-      "video_count": 8,
-      "avg_views": 1060.88,
+      "niche": "Uzay",
+      "video_count": 2,
+      "avg_views": 1017.5,
       "avg_view_duration_sec": null,
       "avg_view_duration_sample_size": 0,
-      "avg_score": 1060.88,
-      "statistically_reliable": true
+      "avg_score": 1017.5,
+      "statistically_reliable": false
     }
   ],
   "recent_videos": [
@@ -54,15 +54,6 @@
       "avgViewDurationSec": null,
       "avgViewDurationAvailable": false,
       "compositeScore": 1349
-    },
-    {
-      "videoId": "A2F4P7BLB8A",
-      "title": "Everest'i Yutan Karanlık Uçurum: Mariana Çukuru! #Shorts",
-      "niche": "Bilim",
-      "views": 1214,
-      "avgViewDurationSec": null,
-      "avgViewDurationAvailable": false,
-      "compositeScore": 1214
     },
     {
       "videoId": "6zwOEVEjOeo",
@@ -131,19 +122,19 @@
       "videoId": "pg39JuqqA40",
       "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
       "niche": "Bilim",
-      "views": 1054,
+      "views": 1055,
       "avgViewDurationSec": null,
       "avgViewDurationAvailable": false,
-      "compositeScore": 1054
+      "compositeScore": 1055
     },
     {
       "videoId": "V6geVxL3hb8",
       "title": "Ahtapotlar Renk Körü Olmalarına Rağmen Renkleri Görüyor! #Shorts",
       "niche": "Bilim",
-      "views": 1016,
+      "views": 1017,
       "avgViewDurationSec": null,
       "avgViewDurationAvailable": false,
-      "compositeScore": 1016
+      "compositeScore": 1017
     },
     {
       "videoId": "hJfgLHaF534",
@@ -171,6 +162,15 @@
       "avgViewDurationSec": null,
       "avgViewDurationAvailable": false,
       "compositeScore": 946
+    },
+    {
+      "videoId": "Xy1QzBs_fF0",
+      "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
+      "niche": "Uzay",
+      "views": 899,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
+      "compositeScore": 899
     }
   ]
 }
