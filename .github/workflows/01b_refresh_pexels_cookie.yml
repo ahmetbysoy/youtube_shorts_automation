@@ -17,7 +17,7 @@ jobs:
       - name: Araçlar (Python + Playwright)
         uses: ./.github/actions/setup-tools
         with:
-          apt_packages: ffmpeg
+          apt_packages: ffmpeg xvfb
           python: 'true'
           python_version: '3.11'
           node: 'false'
@@ -26,8 +26,8 @@ jobs:
           pip_extra: 'requests pynacl playwright'
       - name: Chromium kur
         run: python3 -m playwright install chromium
-      - name: PEXELS_COOK yenile
-        run: python3 scripts/refresh_pexels_cookie.py
+      - name: PEXELS_COOK yenile (xvfb ile headful Chrome — CF'yi daha iyi gecmek icin)
+        run: xvfb-run -a python3 scripts/refresh_pexels_cookie.py
       - name: Screenshot'lari her durumda upload
         uses: actions/upload-artifact@v4
         if: always()
