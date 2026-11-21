@@ -7,11 +7,11 @@ NEDEN (2026-11-07, kullanici karari):
   videonun ilk karelerine gomulunce YouTube'un kendi kare secimi (otomatik
   adaylar / "kare sec") o goruntuyu kullanabilir; ayri yukleme gerekmez.
 
-AKIS:
+AKIS (2026-11-16 duzeltme: pollinations SOKULDU, Gemini kapaga donuldu):
   1) Kapak gorseli:
-       a) ucretsiz, anahtarsiz image.pollinations.ai (script.json -> thumbnail_prompt)
-          -> konuyla ilgili dramatik/eglenceli gorsel (402/429 olursa kisa tekrar),
-       b) servis cevap vermezse videonun en kontrastli karesi.
+       a) Gemini web API (gemini_cover.py, GEMINI_COOK cookies ile) — konuyla ilgili
+          dramatik/eglenceli gorsel uretir (scripts/gemini_cover.py ile prompt gonderilir).
+       b) Gemini basarisiz olursa videonun en iyi (parlak+kontrastli) karesi fallback.
      Ikisi de scripts/generate_fallback_thumbnail.py ile baslik + rozet alir
      -> output/cover.jpg (1080x1920).
   2) FFmpeg: kapak, videonun ilk COVER_SECONDS saniyesine bindirilir (overlay).
@@ -28,18 +28,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import random
 import shutil
 import subprocess
 import sys
 import tempfile
-import time
-import urllib.parse
-import urllib.request
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 GEN_SCRIPT = BASE_DIR / "scripts" / "generate_fallback_thumbnail.py"
+GEMINI_COVER_SCRIPT = BASE_DIR / "scripts" / "gemini_cover.py"
 
 # Uploader'daki (FAZ 12) stil son eki ile ayni dil: tek net ozne, yazi yok.
 STYLE_SUFFIX = ", ".join([
@@ -77,47 +74,32 @@ def build_title_driven_prompt(title: str, topic: str) -> str:
         "Do not render text, letters, numbers, logos, watermarks, borders, collages, or split screens. "
         + (f"Topic context: {clean_topic}. " if clean_topic else "")
         + "Photorealistic, polished, premium viral Shorts thumbnail artwork."
+        + f" {STYLE_SUFFIX}"
     )
 
 
-def _trim_edges(img_path: Path, ratio: float = 0.04) -> None:
-    """Kenarlardan kucuk bir pay kirpar (servis filigrani sag altta kaliyor)."""
-    try:
-        from PIL import Image
-        with Image.open(img_path) as im:
-            w, h = im.size
-            dx, dy = int(w * ratio), int(h * ratio)
-            im.convert("RGB").crop((dx, dy, w - dx, h - dy)).save(img_path, "JPEG", quality=94)
-    except Exception as exc:
-        log(f"kenar kirpma atlandi: {exc}")
-
-
-def fetch_ai_image(prompt: str, out_path: Path, attempts: int = 3, timeout: int = 90) -> bool:
-    """Ucretsiz pollinations.ai'den gorsel indirir. Basarisizsa False (loglu)."""
+def fetch_gemini_image(prompt: str, out_path: Path, timeout: int = 120) -> bool:
+    """Gemini web API (gemini_cover.py) ile gorsel uretir. Basarisizsa False (loglu)."""
     if not prompt:
         return False
-    encoded = urllib.parse.quote(f"{prompt}, {STYLE_SUFFIX}")
-    for i in range(attempts):
-        seed = random.randint(1, 10**9)
-        url = (f"https://image.pollinations.ai/prompt/{encoded}"
-               f"?width=1080&height=1920&nologo=true&model=flux&seed={seed}")
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = resp.read()
-                ctype = resp.headers.get("Content-Type", "")
-            if len(data) < 20_000 or "image" not in ctype:
-                log(f"AI gorsel yaniti gecersiz (deneme {i + 1}: {len(data)} B, {ctype or '?'}).")
-            else:
-                out_path.write_bytes(data)
-                _trim_edges(out_path)
-                log(f"AI gorsel indirildi ({len(data) // 1024} KB, deneme {i + 1}).")
-                return True
-        except Exception as exc:  # HTTP 402/429/timeout vb.
-            log(f"AI gorsel servisi basarisiz (deneme {i + 1}/{attempts}): {str(exc)[:120]}")
-        if i < attempts - 1:
-            time.sleep(8 * (i + 1))
-    return False
+    if not GEMINI_COVER_SCRIPT.exists():
+        log(f"gemini_cover.py bulunamadi: {GEMINI_COVER_SCRIPT}")
+        return False
+    cmd = [sys.executable, str(GEMINI_COVER_SCRIPT), str(out_path), "cover", "--prompt", prompt]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        if res.returncode == 0 and out_path.exists() and out_path.stat().st_size > 20_000:
+            log(f"Gemini kapak gorseli uretildi ({out_path.stat().st_size // 1024} KB).")
+            return True
+        err = (res.stderr or res.stdout or "").strip().replace("\n", " ")[:300]
+        log(f"Gemini kapak basarisiz (cikis {res.returncode}): {err}")
+        return False
+    except subprocess.TimeoutExpired:
+        log(f"Gemini kapak zamana asimi ({timeout}s).")
+        return False
+    except Exception as exc:
+        log(f"Gemini kapak cagri hatasi: {str(exc)[:150]}")
+        return False
 
 
 def build_cover(title: str, topic: str, video: Path, base_image: Path | None, out: Path) -> bool:
@@ -194,9 +176,9 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="cover_") as tmp_s:
         tmp = Path(tmp_s)
         ai_img = tmp / "ai.jpg"
-        got_ai = fetch_ai_image(prompt, ai_img) if use_ai else False
+        got_ai = fetch_gemini_image(prompt, ai_img) if use_ai else False
         if not got_ai:
-            log("AI gorsel yok -> videonun en kontrastli karesi kapak tabani olacak.")
+            log("Gemini AI gorsel yok -> videonun en iyi (parlak+kontrastli) karesi kapak tabani olacak.")
         if not build_cover(title, topic, video, ai_img if got_ai else None, cover_out):
             log("kapak uretilemedi; video degistirilmedi (YouTube kendi karesini secer).")
             return 0
@@ -218,7 +200,7 @@ def main() -> int:
             return 0
         shutil.move(str(tmp_out), str(video))
     log(f"kapak videonun ilk {args.seconds:.1f} sn'sine gomuldu "
-        f"({'AI gorsel' if got_ai else 'video karesi'} + baslik) -> {video.name}; kapak: {cover_out}")
+        f"({'Gemini AI gorsel' if got_ai else 'video karesi'} + baslik) -> {video.name}; kapak: {cover_out}")
     return 0
 
 

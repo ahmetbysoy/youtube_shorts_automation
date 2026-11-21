@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Tek bir video icin Gemini web'den kapak uret.
-Kullanim: python3 gemini_cover.py <out_path> <video_baslik>
+Kullanim: python3 gemini_cover.py <out_path> <video_baslik> [--prompt "<ozel prompt>"]
 JPEG olarak out_path'e yazar. Hata olursa non-zero exit.
+--prompt verilirse kapak_gemini.json'daki varsayilan prompt yerine onu kullanir.
 """
-import asyncio, json, os, sys, glob, shutil
+import asyncio, json, os, sys, glob, shutil, argparse
 from pathlib import Path
 from gemini_webapi import GeminiClient
 
@@ -19,12 +20,15 @@ def load_cookies():
         return json.loads(local.read_text('utf8'))
     raise SystemExit('HATA: GEMINI_COOKIES_JSON / GEMINI_COOK env yok ve jeton/gemini_cookies.json yok')
 
-def load_prompt():
+def load_default_prompt():
     return json.loads(CFG_PATH.read_text('utf8')).get('prompt','')
 
-async def generate(out_path: str, title: str):
+async def generate(out_path: str, title: str, prompt_override: str | None = None):
     cookies = load_cookies()
-    prompt = load_prompt() + '\n\nVideo basligi: ' + title
+    if prompt_override:
+        prompt = prompt_override
+    else:
+        prompt = load_default_prompt() + '\n\nVideo basligi: ' + title
     client = GeminiClient(cookies.get('__Secure-1PSID',''), cookies.get('__Secure-1PSIDTS',''))
     await client.init(timeout=30, auto_refresh=True)
     resp = await client.generate_content(prompt)
@@ -54,14 +58,23 @@ async def generate(out_path: str, title: str):
         src = Path(files[0])
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src, out_path)
+        # JPEG'e donustur (PNG/WebP gelirse) ki generate_fallback_thumbnail tutarlı islesin
+        try:
+            from PIL import Image
+            with Image.open(out_path) as im:
+                im.convert('RGB').save(out_path, 'JPEG', quality=94)
+        except Exception:
+            pass
         sz = Path(out_path).stat().st_size
         print(f'KAPAK_OK: {out_path} ({sz} byte)', file=sys.stderr)
 
 def main():
-    if len(sys.argv) < 3:
-        print('Kullanim: gemini_cover.py <out_path> "<video baslik>"', file=sys.stderr)
-        sys.exit(2)
-    asyncio.run(generate(sys.argv[1], sys.argv[2]))
+    ap = argparse.ArgumentParser()
+    ap.add_argument('out_path', help='cikti JPEG yolu')
+    ap.add_argument('title', help='video basligi')
+    ap.add_argument('--prompt', default=None, help='ozel prompt (varsayilanin yerine gecer)')
+    args = ap.parse_args()
+    asyncio.run(generate(args.out_path, args.title, args.prompt))
 
 if __name__ == '__main__':
     main()
