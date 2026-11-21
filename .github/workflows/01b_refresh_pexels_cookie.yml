@@ -1,0 +1,43 @@
+name: "01b — Pexels Cookie Otomatik Yenileme"
+run-name: "Refresh PEXELS_COOK via YT Google session"
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REPO_PAT: ${{ secrets.REPO_PAT }}
+      STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON || secrets.STORAGE_STATE_JSON_1 }}
+      PEXELS_COOK: ${{ secrets.PEXELS_COOK }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Araçlar (Python + Playwright)
+        uses: ./.github/actions/setup-tools
+        with:
+          apt_packages: ffmpeg
+          python: 'true'
+          python_version: '3.11'
+          node: 'false'
+          python_playwright: 'true'
+          pip_requirements: ''
+          pip_extra: 'requests pynacl playwright'
+      - name: Chromium kur
+        run: python3 -m playwright install chromium
+      - name: PEXELS_COOK yenile
+        run: python3 scripts/refresh_pexels_cookie.py
+      - name: Screenshot'lari her durumda upload
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pexels_refresh_debug
+          path: |
+            /tmp/pexels_01_login.png
+            /tmp/pexels_02_google.png
+            /tmp/pexels_03_after_acc.png
+            /tmp/pexels_04_after_oauth.png
+            /tmp/pexels_05_home.png
+            /tmp/pexels_06_search.png
+          if-no-files-found: ignore
