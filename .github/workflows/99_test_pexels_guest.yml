@@ -1,0 +1,33 @@
+name: "TEST — Pexels guest erisimi"
+run-name: "Pexels guest test"
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Araçlar
+        uses: ./.github/actions/setup-tools
+        with:
+          apt_packages: ffmpeg
+          python: 'true'
+          python_version: '3.11'
+          node: 'false'
+          python_playwright: 'true'
+          pip_requirements: ''
+          pip_extra: 'playwright'
+      - name: Chromium kur
+        run: python3 -m playwright install chromium
+      - name: Pexels guest test
+        run: python3 scripts/test_pexels_guest.py
+      - name: Screenshot upload
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pexels_guest_test
+          path: /tmp/pexels_guest*.png
+          if-no-files-found: ignore
