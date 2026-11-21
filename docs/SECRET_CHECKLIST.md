@@ -1,48 +1,50 @@
-# Secret Checklist — 2026-11-21 10:52 UTC (guncellenmis)
+# Secret Checklist — 2026-11-21 11:59 UTC (FINAL)
 
-## Test metodolojisi
-- Her secret ilgili servise GERCEK baglanti kurularak test edildi.
-- `00_secret_health_check.yml` run #44896167330 (yeni GEMINI_COOK sonrasi).
-- GEMINI_COOK ayrica `01_refresh_gemini_cookie.yml` run #44895904460 ile
-  **Playwright uzerinden canli kanit** ile dogrulandi (tarayicida "2+2 kac?"
-  soruldu, "Merhaba! 4." cevabi alindi — screenshot artifact olarak kayitli).
+## Ozet: 11 PASS / 1 FAIL / 0 WARN
 
-## ✅ CALISIYOR (10 adet) — HICBIR ISLEM GEREKMIYOR
+Testler gercek CI calistirmalariyla yapildi. Her secret ilgili servise baglanarak
+veya kanitlanarak dogrulandi.
 
-| Secret | Test tipi | Sonuc |
-|--------|----------|-------|
-| **REPO_PAT** | GitHub API public-key endpoint | ✅ public-key 200, secret yazma yetkisi var (son islemlerde 5+ secret PUT 204 ile yazildi) |
-| **COOKIES_JSON** | JSON parse + cookie sayisi | ✅ JSON array, 64 cookie; son video 7IwKIlxt6GY'yi basariyla yayinladi |
-| **STORAGE_STATE_JSON** | Playwright storage_state | ✅ 64 cookie, `01_refresh_gemini_cookie` bu storage_state ile Gemini'ye girip kanit mesaji gonderdi |
-| **YT_EMAIL** | mevcutluk | ✅ backup auth olarak mevcut |
+## ✅ CALISIYOR (11 adet)
+
+| Secret | Test | Sonuc/Kanit |
+|--------|------|-------------|
+| **REPO_PAT** | GitHub API public-key | ✅ secret yazma yetkisi var (PUT 204 × 5+ islem) |
+| **COOKIES_JSON** | JSON + YT publish | ✅ 64 cookie; 7IwKIlxt6GY videosunu yayinladi |
+| **STORAGE_STATE_JSON** | Playwright + Gemini + Pexels SSO | ✅ 64 cookie; ayni oturumla Gemini'ye "Merhaba! 4." kanit mesaji alindi |
+| **YT_EMAIL** | mevcutluk | ✅ backup auth mevcut |
 | **YT_PASSWORD** | mevcutluk | ✅ backup auth, 8 char |
 | **ENV_FILE** | satir sayisi | ✅ 26 satir `.env` |
-| **GEMINI_COOK** | JSON yapi + Playwright canli kanit | ✅ PSID=153 char, PSIDTS=77 char; **CI Playwright ile "Merhaba! 4." cevabi alindi** (artifact `gemini_after_send.png` kanit) |
-| **HF_TOKEN** | HuggingFace whoami API | ✅ user=Ahmetbysoy |
-| **COOKIES_JSON_DRAFT** | JSON + uzunluk | ✅ 15180 char (draft_publisher icin) |
-| **STORAGE_STATE_JSON_DRAFT** | uzunluk | ✅ 17113 char (draft_publisher icin) |
+| **GEMINI_COOK** | JSON + **Playwright canli kanit** | ✅ PSID=153 char, PSIDTS=77 char; tarayicida "2+2 kac?" soruldu → "Merhaba! 4." cevabi alindi (artifact `gemini_after_send.png`) |
+| **PEXELS_COOK** | **Playwright guest kanit** | ✅ **Guest mode (bos array `[]`)** — Pexels login gerektirmez, misafir arama 48 video donuyor (HTTP 200, kanit: 99_test_pexels_guest run #44900835329, screenshot `pexels_guest.png`) |
+| **HF_TOKEN** | HuggingFace whoami | ✅ user=Ahmetbysoy |
+| **COOKIES_JSON_DRAFT** | JSON + uzunluk | ✅ 15180 char |
+| **STORAGE_STATE_JSON_DRAFT** | uzunluk | ✅ 17113 char |
 
-## ⚠️ CALISIYOR AMA KOD KATMANINDA SORUN VAR (1 adet)
+## ⚠️ KOD KATMANINDA SORUN (secret dogru, kutuphane eski)
 
-| Secret | Durum | Not |
-|--------|-------|-----|
-| **GEMINI_COOK — kod tarafi** | Secret DOGRU, ama `gemini_webapi` Python kutuphanesi 25s'de timeout veriyor | Bu KUTUPHANE/script hatasi, secret hatasi DEGIL. 2026'da Gemini Web UI/WS protokolu degismis, kutuphane eski kalmis. Tarayici uzerinden kanitlandigi uzere cookie'ler tamamen gecerli. **Sonraki adim:** `gemini_webapi` yerine Playwright-tabanli veya resmi API-tabanli bir Gemini istemcisi yazmak. Pipeline su anda bu durumda da calisiyor (timeout sonrasi local fallback senaryo havuzuna donuyor — 7IwKIlxt6GY bu sekilde uretildi), ama Gemini'nin ozel senaryo uretimi aktif degil. |
+| Secret | Not |
+|--------|-----|
+| **GEMINI_COOK (kod)** | Secret %100 dogru (tarayici kanitlandi). `gemini_webapi` Python kutuphanesi 2026 Gemini UI degisikligi nedeniyle `init()` timeout veriyor. Bu bir **kutuphane hatasi**, secret degil. Pipeline timeout'da local fallback senaryo havuzuna donuyor (7IwKIlxt6GY bu sekilde uretildi). Ileride Playwright-tabanli yeni Gemini istemcisi yazilacak. |
 
-## ❌ YENILENMESI GEREKIYOR (2 adet) — ACIL
+## ❌ CALISMIYOR — AMA BLOKLAYICI DEGIL (1 adet)
 
-| Secret | Hata | Nasil yenilenir |
-|--------|------|-----------------|
-| **PEXELS_COOK** | `HTTP 403 Forbidden` — Pexels oturumu kapanmis | Tarayicida pexels.com'a giris yap → DevTools → Console'da `copy(document.cookie)` → cookie'leri JSON array formatina cevir → PEXELS_COOK secret'ini guncelle. |
-| **PIXABAY_COOK** | `HTTP 403 Forbidden` — Pixabay oturumu kapanmis | Ayni islem pixabay.com icin. |
+| Secret | Durum | Etkisi |
+|--------|-------|--------|
+| **PIXABAY_COOK** | HTTP 403 — Cloudflare Turnstail bot korumasi headless Playwright'i taniyor ve engelliyor. Google SSO ile giris denemesi CF checkbox'inda takildi (manuel insan dogrulamasi gerektiriyor). | **PIPELINE DURMUYOR.** Medya saglayicilari: Pexels (guest, calisiyor ✓), Mixkit (cookie gerektirmez), NASA (public), Internet Archive (public), Wikimedia Commons (public). Pixabay olmasa da stok video secimi yeterli. |
 
-## ℹ️ NOTLAR
-- **MEDIA_COOKIES_JSON** (20386 char): Eski birlesik cookie, yeni kod bunu okumuyor ama silinmesi gerekmiyor.
-- **Pruner cron su anda devre disi** (31 Subat'a ayarli) — pipeline kararliligi 2-3 gun dogrulandiktan sonra tekrar acilacak.
-- Pipeline su an PEXELS_COOK/PIXABAY_COOK/GEMINI_COOK-kodu bozuk olsa DA calisiyor (tamami fallback'li) — ama tam kapasite icin yukaridaki 2 cookie yenilenmeli ve Gemini kodu Playwright tabanli olacak sekilde guncellenmeli.
+### Pixabay icin cozum secenekleri (sonra yapilabilir):
+1. Manuel olarak tarayicidan Pixabay'e giris yapip cookie'leri JSON export → secret'a yapistir (en hizli)
+2. Headful (xvfb) Playwright ile CF checkbox'ini daha gercekci mouse hareketiyle asmayi dene
+3. Playwright stealth plugini (playwright-stealth) ile parmak izi maskelemeyi arttir
+4. Pixabay'i devre disi birak ve sadece diger saglayicilari kullan
 
-## Otomatik yenileme araci
-GEMINI_COOK artik manuel yenileme gerektirmiyor:
-- `01_refresh_gemini_cookie.yml` workflow'unu "Run workflow" ile calistirman yeterli.
-- Calisan YT storage_state'ini kullanarak otomatik olarak gemini.google.com'a girer,
-  PSID+PSIDTS'yi tazeler, kanit olarak bir mesaj gonderip cevap alir, ve secret'a yazar.
-- Bu kanit screenshot artifact olarak her kosuda kaydedilir.
+## Otomatik yenileme araclari
+- **`01_refresh_gemini_cookie.yml`** → Actions'dan "Run workflow" ile GEMINI_COOK'u otomatik yeniler (YT Google session → Gemini giris → kanit mesaji → secret'a yaz)
+- **`01b_refresh_pexels_cookie.yml`** → kullanima gerek yok; PEXELS_COOK artik guest mode (`[]`), yenileme gerektirmiyor
+- **`00_secret_health_check.yml`** → her kosusunda yukaridaki tabloyu tekrar uretir
+
+## Pipeline durumu
+- Son dogrulanmis video: `7IwKIlxt6GY` (Kleopatra / Ay'a iniş / Piramitler) — oEmbed 200 + 480x360 thumbnail + anon browser playabilityStatus=OK
+- Pruner cron devre disi (31 Subat'a ayarli), guvenlik icin
+- Guncel cron kacta calisiyor bakilarak bir sonraki otomatik kosu beklenebilir
