@@ -159,7 +159,17 @@ runs:
         fi
         # 2) Normal apt-get yolu: önce indir, sonra kur. İndirilen .deb'leri önbellek
         # klasörüne kopyala (apt'in kendi arşivinden) ki sonraki koşuda dpkg -i ile kullanılabilsin.
-        sudo timeout 120 apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -qq || { echo "[apt] apt-get update zaman aşımı / hata"; exit 1; }
+        # 3 denemeli apt update: gecici ag kesintisi tek basina kosuyu/EMERGENCY_STOP'u tetiklemesin (2026-11-22 yanlis alarm fix).
+        # Gerçek kuruluma engel bir durum olursa asagidaki apt-get install zaten basarisizla kosuyu bitirir.
+        APT_OK=0
+        for APT_TRY in 1 2 3; do
+          if sudo timeout 120 apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -qq; then APT_OK=1; break; fi
+          echo "[apt] apt-get update deneme $APT_TRY/3 basarisiz; 5sn sonra tekrar denenecek."
+          sleep 5
+        done
+        if [ "$APT_OK" != "1" ]; then
+          echo "[apt] apt-get update 3 denemede de yanit vermedi — mevcut paket listesiyle kuruluma devam ediliyor."
+        fi
         sudo apt-get install -y --no-install-recommends $MISSING
         # 3) İndirilen .deb'leri önbelleğe taşı (kaynak: /var/cache/apt/archives)
         sudo rm -f "$DEBS"/*.deb
