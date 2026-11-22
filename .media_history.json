@@ -700,6 +700,34 @@
       "sha256": "6e628aeb7e4072cbfdbc7d3636e46660518f37268eda85a5577ee8737fee72a9",
       "selected_at": "2026-11-22T14:13:58.189370+00:00",
       "generation_id": "a7d9be96-5323-463d-a6c1-e84630a6836f"
+    },
+    {
+      "key": "pixabay:186363",
+      "source_url": "https://pixabay.com/videos/search/science%20located/",
+      "sha256": "7a6dda2c773ef782170f3333adf8bafa40cc9059170ed3a4e9a23cbadab170e4",
+      "selected_at": "2026-11-22T16:16:46.064255+00:00",
+      "generation_id": "e77117e1-2ab7-49dc-901a-d39d9107f61f"
+    },
+    {
+      "key": "wikimedia:64482053",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Vintage_laboratory_equipment,_Chemical_Faculty,_Gdansk_University_of_Technology.jpg",
+      "sha256": "0df84132299b5da4cfde26d8be4629760b32409a9fa44e8388c5902fe00facdd",
+      "selected_at": "2026-11-22T16:21:58.809658+00:00",
+      "generation_id": "e77117e1-2ab7-49dc-901a-d39d9107f61f"
+    },
+    {
+      "key": "wikimedia:64482054",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Vintage_laboratory_glass_Gdansk_University_of_Technology.jpg",
+      "sha256": "0230b4412d802390640aac4acd9ea7a20e2545ef637d1cbf83ed1a9126581ece",
+      "selected_at": "2026-11-22T16:25:09.606179+00:00",
+      "generation_id": "e77117e1-2ab7-49dc-901a-d39d9107f61f"
+    },
+    {
+      "key": "wikimedia:64482056",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Vintage_laboratory_glass_Gdansk_University_of_Technology1.jpg",
+      "sha256": "108897ec2bedc04ffb4b9a7c24c647bbef8e0d960c2e896b0bf6f6a705bfd7b5",
+      "selected_at": "2026-11-22T16:27:45.716863+00:00",
+      "generation_id": "e77117e1-2ab7-49dc-901a-d39d9107f61f"
     }
   ]
 }
