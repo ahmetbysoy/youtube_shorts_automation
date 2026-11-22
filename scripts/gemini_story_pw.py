@@ -100,6 +100,47 @@ def is_response_stable(samples: list[str]) -> bool:
     return all(len(s) >= MIN_RESPONSE_CHARS for s in window) and len(set(window)) == 1
 
 
+def _walk_strings(node) -> iter:
+    """Ic ice JSON yapilarindaki tum string degerleri soldan saga verir."""
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, list):
+        for item in node:
+            yield from _walk_strings(item)
+    elif isinstance(node, dict):
+        for value in node.values():
+            yield from _walk_strings(value)
+
+
+def find_story_text(bodies: list[str]) -> str:
+    """Yakalanan batchexecute govdelerinden model yanit metnini cikarar.
+
+    batchexecute satirlari 'uzunluk[JSON,...]' bicimindedir; her satir json.loads
+    edilip icindeki string'lerde story JSON isaretci ('script_text') aranan en
+    uzun aday dondurulur. Saf fonksiyon — offline test edilebilir.
+    """
+    best = ''
+    for body in bodies:
+        cleaned = (body or '').strip()
+        if cleaned.startswith(")]}'"):
+            cleaned = cleaned[4:].strip()
+        for raw_line in cleaned.split('\n'):
+            line = raw_line.strip()
+            if not line or not line[0].isdigit():
+                continue
+            bracket = line.find('[')
+            if bracket == -1:
+                continue
+            try:
+                data = json.loads(line[bracket:])
+            except Exception:
+                continue
+            for s in _walk_strings(data):
+                if 'script_text' in s and len(s) > len(best):
+                    best = s
+    return best
+
+
 async def generate(out_path: str, prompt: str, budget_s: int) -> None:
     started = time.monotonic()
     from playwright.async_api import async_playwright
@@ -138,6 +179,21 @@ async def generate(out_path: str, prompt: str, budget_s: int) -> None:
                 {**base_cookie, 'name': '__Secure-1PSIDTS', 'value': psidts},
             ])
         page = await context.new_page()
+
+        # Ag yakalama: tarayicinin KENDI batchexecute yanitlari calisiyor (UI saglam);
+        # DOM extraction basarisizsa model metni bu govdelerden kurtaririz.
+        captured: list[str] = []
+
+        async def _capture(resp) -> None:
+            try:
+                if 'batchexecute' in resp.url and resp.request.method == 'POST':
+                    body = await resp.text()
+                    if body:
+                        captured.append(body)
+            except Exception:
+                pass
+
+        page.on('response', lambda r: asyncio.ensure_future(_capture(r)))
 
         try:
             await page.goto('https://accounts.google.com/',
@@ -253,8 +309,16 @@ async def generate(out_path: str, prompt: str, budget_s: int) -> None:
         await browser.close()
 
         if not response_text:
-            raise SystemExit(
-                f'STORY_FAIL({budget_s}sn icinde kararli yanit yok; son_ornek={len(samples)})')
+            # DOM extraction basarisiz — ag yakalamasindan kurtarmayi dene
+            recovered = find_story_text(captured)
+            if recovered.strip():
+                response_text = recovered
+                log(f"ag yakalamasindan kurtarildi: {len(response_text)} karakter "
+                    f"({len(captured)} govde tarandi)")
+        if not response_text:
+            diag = (f"({budget_s}sn icinde kararli yanit yok; son_ornek={len(samples)}; "
+                    f"yakalanan_govde={len(captured)}")
+            raise SystemExit(f'STORY_FAIL{diag})')
 
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)
         Path(out_path).write_text(response_text, encoding='utf8')

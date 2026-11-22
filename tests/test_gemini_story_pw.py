@@ -2,6 +2,7 @@
 """gemini_story_pw.py offline testleri — ag/cookie/Chromium istemez."""
 
 import importlib.util
+import json
 import subprocess
 import sys
 import unittest
@@ -48,6 +49,44 @@ class IsResponseStableTest(unittest.TestCase):
     def test_bos_ornek_kararli_degil(self):
         m = self.mod
         self.assertFalse(m.is_response_stable([""] * m.STABLE_POLLS))
+
+
+class FindStoryTextTest(unittest.TestCase):
+    """Ag yakalama kurtaricisi — sentetik batchexecute govdesiyle."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = _load_mod()
+
+    def _line(cls, payload) -> str:
+        s = json.dumps(payload, ensure_ascii=False)
+        return str(len(s)) + s + "\n"
+
+    def test_yanit_metni_bulunur(self):
+        m = self.mod
+        story = 'İşte senaryo:\n```json\n{"topic":"x","script_text":"Merhaba dunya"}\n```'
+        body = ")]}'\n\n" + self._line(["wrb.fr", None, None]) + \
+               self._line(["wrb.fr", "x", story, None])
+        found = m.find_story_text([body])
+        self.assertIn("script_text", found)
+        self.assertIn("Merhaba dunya", found)
+
+    def test_isaretsiz_govde_bos(self):
+        m = self.mod
+        self.assertEqual(m.find_story_text([")]}'\n\n5[[1,2,3]]\n"]), "")
+
+    def test_walk_strings_ic_ice(self):
+        m = self.mod
+        data = {"a": ["x", {"b": "y"}], "c": "z"}
+        self.assertEqual(sorted(m._walk_strings(data)), ["x", "y", "z"])
+
+    def test_en_uzun_aday_kazanir(self):
+        m = self.mod
+        kisa = 'x "script_text" y'
+        uzun = 'uzun icerik {"script_text": "tam senaryo burada"} devam'
+        body = self._line(["a", kisa]) + self._line(["a", uzun])
+        found = m.find_story_text([body])
+        self.assertEqual(found, uzun)
 
 
 class CliFailPathTest(unittest.TestCase):
