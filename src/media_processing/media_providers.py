@@ -522,69 +522,6 @@ def commons_license(page: dict, info: dict) -> MediaLicense:
                         restrictions=("third_party_rights_not_verified",), rejection_reason=reason)
 
 
-class PexelsProvider:
-    name = "pexels"
-
-    def __init__(self, api_key: str | None = None, *, session=requests, terms: StockTerms | None = None):
-        self._key = api_key if api_key is not None else os.environ.get("PEXELS_API_KEY", "")
-        self.session, self.terms = session, terms or StockTerms(session)
-
-    def search(self, query: str) -> list[MediaCandidate]:
-        if not self._key or any(marker in self._key.lower() for marker in ("your_", "senin_gercek")):
-            self.last_diagnostics = {"status": "api_key_not_configured_or_placeholder"}
-            return []
-        self.last_diagnostics = {"status": "api_catalog_requested"}
-        # No redirects for authenticated requests. Never raise/print response URLs.
-        r = self.session.get("https://api.pexels.com/videos/search", params={"query": query, "per_page": 8},
-                             headers={"Authorization": self._key, "User-Agent": USER_AGENT}, timeout=(5, 20), allow_redirects=False)
-        if r.status_code != 200:
-            raise RuntimeError(f"pexels_catalog_http_{r.status_code}")
-        rows = r.json().get("videos") or []
-        lic = self.terms.check(self.name)
-        results = []
-        for row in rows:
-            files = sorted((f for f in row.get("video_files", []) if f.get("link") and f.get("width") and f.get("height")),
-                           key=lambda f: (int(f["height"]) >= 1080, int(f["width"])*int(f["height"])), reverse=True)
-            if not files or not row.get("id") or not valid_url(row.get("url", ""), SOURCE_HOSTS[self.name]):
-                continue
-            f = files[0]
-            slug = unquote(urlsplit(row["url"]).path).strip("/").replace("/", " ").replace("-", " ")
-            results.append(MediaCandidate(self.name, str(row["id"]), row["url"], f["link"], "video", int(f["width"]), int(f["height"]),
-                                          float(row["duration"]) if row.get("duration") else None, title=plain(row.get("title") or slug),
-                                          description=plain(row.get("description")), license=lic))
-        return results
-
-
-class PixabayProvider:
-    name = "pixabay"
-
-    def __init__(self, api_key: str | None = None, *, session=requests, terms: StockTerms | None = None):
-        self._key = api_key if api_key is not None else os.environ.get("PIXABAY_API_KEY", "")
-        self.session, self.terms = session, terms or StockTerms(session)
-
-    def search(self, query: str) -> list[MediaCandidate]:
-        if not self._key or any(marker in self._key.lower() for marker in ("your_", "senin_gercek")):
-            self.last_diagnostics = {"status": "api_key_not_configured_or_placeholder"}
-            return []
-        self.last_diagnostics = {"status": "api_catalog_requested"}
-        r = self.session.get("https://pixabay.com/api/videos/", params={"key": self._key, "q": query, "per_page": 8},
-                             headers={"User-Agent": USER_AGENT}, timeout=(5, 20), allow_redirects=False)
-        if r.status_code != 200:
-            raise RuntimeError(f"pixabay_catalog_http_{r.status_code}")
-        rows = r.json().get("hits") or []
-        lic = self.terms.check(self.name)
-        results = []
-        for row in rows:
-            files = [f for f in (row.get("videos") or {}).values() if f.get("url") and f.get("width") and f.get("height")]
-            files.sort(key=lambda f: int(f["width"])*int(f["height"]), reverse=True)
-            if not files or not row.get("id") or not valid_url(row.get("pageURL", ""), SOURCE_HOSTS[self.name]):
-                continue
-            f = files[0]; tags = tuple(x.strip() for x in str(row.get("tags", "")).split(",") if x.strip())
-            results.append(MediaCandidate(self.name, str(row["id"]), row["pageURL"], f["url"], "video", int(f["width"]), int(f["height"]),
-                                          float(row["duration"]) if row.get("duration") else None, title=" ".join(tags), tags=tags, license=lic))
-        return results
-
-
 class NasaProvider:
     """NASA Image and Video Library — public API, keyless, cookie-free.
 
@@ -1161,10 +1098,10 @@ class BrowserStockProvider:
 def default_providers() -> list[MediaProvider]:
     """Faz 4E — cookie-only sağlayıcılar önce; Wikimedia son çare.
 
-    PexelsProvider / PixabayProvider (API key) sınıfları korunur ama varsayılan
-    üretim zincirinde ÇAĞRILMAZ. Cookie yoksa hiçbir şekilde API fallback YAPILMAZ;
-    bunun yerine açık diagnostics (cookie_missing) döner ve zincir Wikimedia'ya
-    kadar devam eder.
+    PexelsProvider / PixabayProvider (API key) sınıfları 2026-11-22'te kullanici
+    karariyla TAMAMEN KALDIRILDI; stok medya yalniz Playwright + cookie rotasiyla
+    calisir. Cookie yoksa hicbir sekilde API fallback YAPILMAZ; bunun yerine
+    acik diagnostics (cookie_missing) doner ve zincir Wikimedia'ya kadar devam eder.
     """
     terms = StockTerms()
     return [

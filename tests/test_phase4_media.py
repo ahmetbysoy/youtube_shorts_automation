@@ -15,7 +15,7 @@ from scripts.validate_script_json import validate_payload
 from src.media_processing.media_history import MediaHistory
 from src.media_processing.media_io import download_candidate, probe_media
 from src.media_processing.media_providers import (
-    BrowserStockProvider, MediaCandidate, MediaLicense, PexelsProvider, PixabayProvider,
+    BrowserStockProvider, MediaCandidate, MediaLicense,
     StockTerms, WikimediaProvider, commons_license, get_public,
 )
 from src.media_processing.scene_media import SceneMediaError, evaluate, scene_plan, select_storyboard_media
@@ -215,14 +215,16 @@ def test_invalid_storyboard_never_degrades_to_legacy_or_generic_query(tmp_path):
 
 
 def test_legacy_branch_and_existing_wikimedia_fallback_preserved(tmp_path, monkeypatch):
+    """API-key fallback yolu (fetch_pexels/fetch_pixabay) 2026-11-22'te kaldirildi;
+    Playwright sonrasi tek yedek Wikimedia'dir."""
     p = tmp_path/"script.json"; p.write_text(json.dumps({"audio_duration_sec": 5, "visual_keywords": ["moon"]}))
     monkeypatch.setattr(mp, "SCRIPT_JSON_PATH", p)
     monkeypatch.setattr(mp, "OUTPUT_DIR", tmp_path)
     monkeypatch.setattr(mp, "ASSETS_DIR", tmp_path)
     monkeypatch.setattr(mp, "FINAL_OUTPUT", tmp_path/"out.mp4")
     fake = {"url": "https://upload.wikimedia.org/moon.jpg", "provider": "wikimedia-commons-archive", "media_kind": "image"}
-    with patch.object(mp, "fetch_video_playwright", return_value=None), patch.object(mp, "fetch_pexels_video", return_value=None), \
-         patch.object(mp, "fetch_pixabay_video", return_value=None), patch.object(mp, "fetch_wikimedia_media", return_value=fake) as commons, \
+    with patch.object(mp, "fetch_video_playwright", return_value=None), \
+         patch.object(mp, "fetch_wikimedia_media", return_value=fake) as commons, \
          patch.object(mp, "download_media", return_value=True), patch.object(mp, "_probe_has_video_stream", return_value=True), \
          patch.object(mp, "convert_srt_to_ass"), patch.object(mp, "assemble_video_ffmpeg"), patch.object(mp, "validate_output"), \
          patch.object(mp, "run_storyboard_pipeline") as strict:
@@ -319,13 +321,6 @@ def test_corrupt_history_fails_closed_before_provider_search(tmp_path):
     assert not p.calls
 
 
-def test_authenticated_api_redirects_are_disabled_and_sensitive_errors_not_propagated_to_report(tmp_path):
-    session = Mock(get=Mock(return_value=Mock(status_code=302)))
-    with pytest.raises(RuntimeError): PixabayProvider('private-key', session=session).search('moon')
-    assert session.get.call_args.kwargs['allow_redirects'] is False
-    assert 'private-key' not in str(session.get.call_args.args)
-
-
 def test_download_denies_untrusted_redirect_and_removes_partial_file(tmp_path):
     response = Mock(status_code=302, headers={'Location':'http://169.254.169.254/credentials'})
     session = Mock(get=Mock(return_value=response))
@@ -341,16 +336,6 @@ def test_terms_page_missing_or_changed_is_not_a_verified_license():
          patch.object(StockTerms, 'CANONICAL_LICENSE_TEXT', {}), \
          patch.object(StockTerms, '_fetch_via_browser', return_value=None):
         assert not StockTerms().check('pexels').verified
-
-
-def test_catalog_provider_parsers_preserve_source_identity_and_dimensions():
-    lic = license_ok(); terms = Mock(check=Mock(return_value=lic))
-    pexels = Mock(status_code=200); pexels.json.return_value = {'videos':[{'id':9,'url':'https://www.pexels.com/video/moon-apollo-9/','duration':15,'video_files':[{'width':1080,'height':1920,'link':'https://videos.pexels.com/9.mp4'}]}]}
-    result = PexelsProvider('fixture',session=Mock(get=Mock(return_value=pexels)),terms=terms).search('query-is-not-evidence')
-    assert result[0].media_id == '9' and result[0].height == 1920 and 'query-is-not-evidence' not in result[0].title
-    pix = Mock(status_code=200); pix.json.return_value = {'hits':[{'id':8,'pageURL':'https://pixabay.com/videos/moon-8/','tags':'moon, apollo','duration':12,'videos':{'large':{'url':'https://cdn.pixabay.com/8.mp4','width':1920,'height':1080}}}]}
-    result = PixabayProvider('fixture',session=Mock(get=Mock(return_value=pix)),terms=terms).search('moon')
-    assert result[0].tags == ('moon','apollo') and result[0].license.verified
 
 
 def test_commons_api_video_then_bitmap_and_no_unknown_duration_invention():
@@ -454,22 +439,6 @@ def test_real_video_probe_detects_decode_validity_before_selection(tmp_path):
     with pytest.raises(RuntimeError):probe_media(video,'video')
 
 
-def test_safe_provider_diagnostics_do_not_include_secret_values(tmp_path):
-    p=PexelsProvider('your_placeholder_secret')
-    with pytest.raises(SceneMediaError) as e:select(script(),tmp_path,[p])
-    data=json.dumps(e.value.report)
-    assert 'api_key_not_configured_or_placeholder' in data
-    assert 'your_placeholder_secret' not in data
-
-
-def test_safe_api_error_code_is_retained_but_not_request_url(tmp_path):
-    session=Mock(get=Mock(return_value=Mock(status_code=403)))
-    p=PixabayProvider('private-fixture-key',session=session)
-    with pytest.raises(SceneMediaError) as e:select(script(),tmp_path,[p])
-    data=json.dumps(e.value.report)
-    assert 'pixabay_catalog_http_403' in data and 'private-fixture-key' not in data
-
-
 def test_uploader_cta_budget_is_checked_before_history_or_render(tmp_path):
     data=script();credit='MANDATORY AUTHOR AND LICENSE CREDIT'
     data['description']='x'*(4900-len(credit)-2)
@@ -544,13 +513,15 @@ def test_explicit_compatible_cc_by_ported_license_preserves_exact_credit_url():
 
 def test_default_providers_uses_browser_stock_for_pexels_pixabay():
     """Faz4K: default_providers() BrowserStockProvider (cookie/playwright) döndürmeli
-    pexels/pixabay için; ücretli PexelsProvider/PixabayProvider kullanmamalı."""
+    pexels/pixabay için. API-key sınıfları 2026-11-22'te tamamen kaldırıldı;
+    modülde artık tanımlı bile değiller."""
+    import src.media_processing.media_providers as mpv
+    assert not hasattr(mpv, "PexelsProvider"), "PexelsProvider (API key) kaldirilmis olmali"
+    assert not hasattr(mpv, "PixabayProvider"), "PixabayProvider (API key) kaldirilmis olmali"
     from src.media_processing.media_providers import (
         default_providers, BrowserStockProvider, WikimediaProvider,
-        PexelsProvider, PixabayProvider,
     )
     provs = default_providers()
-    classes = {type(p).__name__: p for p in provs}
     # BrowserStockProvider "pexels" ve "pixabay" için olmalı
     browser = [p for p in provs if isinstance(p, BrowserStockProvider)]
     assert len(browser) == 2, f"İki adet BrowserStockProvider beklenir (pexels+pixabay), {len(browser)} var"
@@ -558,11 +529,6 @@ def test_default_providers_uses_browser_stock_for_pexels_pixabay():
     assert names == ["pexels", "pixabay"], f"BrowserStockProvider adları: {names}"
     # Wikimedia son çare olmalı
     assert any(isinstance(p, WikimediaProvider) for p in provs), "WikimediaProvider eksik"
-    # API-key sağlayıcılar OLMMAMALI
-    assert not any(isinstance(p, PexelsProvider) for p in provs), \
-        "PexelsProvider (API key) default zincirde olmamalı"
-    assert not any(isinstance(p, PixabayProvider) for p in provs), \
-        "PixabayProvider (API key) default zincirde olmamalı"
 
 
 def test_browser_stock_provider_creates_playwright_transport_candidates():

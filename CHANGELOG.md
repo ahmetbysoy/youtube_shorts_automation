@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## 2026-11-22 — PEXELS_API_KEY / PIXABAY_API_KEY Tamamen Kaldırıldı (Stok Video Cookie-Only)
+
+- **Kullanıcı kararı:** `GEMINI_API_KEY` gibi `PEXELS_API_KEY` ve `PIXABAY_API_KEY` da hiçbir yerde kullanılmayacak; stok video **yalnız cookie** (`PEXELS_COOK` / `PIXABAY_COOK`, Playwright) ve keyless public kaynaklarla (Wikimedia/NASA) yürür.
+- `src/media_processing/media_providers.py`: `PexelsProvider` ve `PixabayProvider` (API key) sınıfları **silindi**; `default_providers()` zaten browser-only zincirini kuruyordu, docstring güncellendi.
+- `src/media_processing/media_processor.py`: legacy `fetch_pexels_video` / `fetch_pixabay_video` / `_is_real_api_key` **silindi**; media zinciri artık **Playwright (cookie) → Wikimedia** şeklinde.
+- `config/settings.py`: `pexels_api_key` / `pixabay_api_key` alanları kaldırıldı.
+- `scripts/media_probe_security.py`: `consume_provider_configuration` + `ProviderConfiguration` + `STOCK_KEYS` **silindi**; `cookie_only_preflight` artık `api_presence` parametresi ve `*_api_key_present` alanları olmadan çalışır; audit taraması GH token/cookie değerlerine odaklı.
+- `scripts/phase4_media_probe.py` + `scripts/phase4b_media_probe.py`: API provider dalları kaldırıldı; `--stock-access-mode` yalnız `cookie_only` kabul eder, `auto` yolu ve `PHASE4_PROVIDER_ENV` parse'ı kalktı.
+- `.github/workflows/phase4_media_probe.yml`: `stock_access_mode` input'u, `PEXELS_API_KEY`/`PIXABAY_API_KEY`/`*_API_KEY_PRESENT` env bağlantıları ve `ENV_FILE` geçişi **tamamen çıkarıldı**; preflight her koşulda cookie-only.
+- Dokümanlar: `AI_HANDOFF.md`, `docs/PHASE4_MEDIA_ENGINE.md`, `docs/PHASE4_MEDIA_BASELINE.md` güncellendi; tarihsel kanıt dosyalarına (`docs/evidence/*`, `FAZ4E_KABUL_RAPORU.md`) dokunulmadı.
+- Testler: API provider testleri kaldırıldı/yeniden yazıldı (default zincir artık `hasattr` ile sınıf yokluğunu doğrular); dotenv sağlayıcı parser testi silindi; workflow testi `auto`/API key referanslarının olmadığını assert eder; audit testi `GH_TOKEN` fixture'ına geçirildi.
+
 ## 2026-11-22 — GEMINI_API_KEY Tamamen Kaldırıldı (Cookie-Only Mimari)
 
 - **Kullanıcı kararı:** `GEMINI_API_KEY` hiçbir yerde kullanılmayacak; tüm işlemler `GEMINI_COOK` cookie oturumuyla yürür.

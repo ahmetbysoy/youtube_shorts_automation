@@ -11,8 +11,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 @dataclass(frozen=True)
 class Settings:
     groq_api_key: str = ""
-    pexels_api_key: str = ""
-    pixabay_api_key: str = ""
     output_dir: Path = PROJECT_ROOT / "output"
     youtube_client_secrets_file: Path = PROJECT_ROOT / "secrets" / "client_secret.json"
     youtube_token_file: Path = PROJECT_ROOT / "secrets" / "youtube_token.json"
@@ -25,8 +23,6 @@ class Settings:
         """Read settings without making network requests or requiring secrets."""
         return cls(
             groq_api_key=os.getenv("GROQ_API_KEY", ""),
-            pexels_api_key=os.getenv("PEXELS_API_KEY", ""),
-            pixabay_api_key=os.getenv("PIXABAY_API_KEY", ""),
             output_dir=Path(os.getenv("OUTPUT_DIR", str(PROJECT_ROOT / "output"))),
             youtube_client_secrets_file=Path(os.getenv(
                 "YOUTUBE_CLIENT_SECRETS_FILE",

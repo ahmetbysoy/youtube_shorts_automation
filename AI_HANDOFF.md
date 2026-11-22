@@ -88,8 +88,8 @@ Aşağıdaki **33 secret** listesi tarihsel başlangıç envanteridir; bugünkü
   - Format ayrıntıları ve nasıl çıkarılacağı `.env.example` ve `README.md`'de yazılı.
 - **API / AI / Hizmet Anahtarları:**
   - `GEMINI_COOK`, `GROQ_API_KEY` (LLM/Gemini Web; `GEMINI_API_KEY` 2026-11-22'te kullanıcı kararıyla tamamen kaldırıldı, artık yoktur ve okunmaz)
-  - `PEXELS_API_KEY`, `PIXABAY_API_KEY` (opsiyonel; cookie varsa kullanılmaz)
   - `REPO_PAT` (artifact/secrets yönetimi)
+  - **`PEXELS_API_KEY` / `PIXABAY_API_KEY` de 2026-11-22'te kullanıcı kararıyla tamamen kaldırıldı:** stok video yalnız `PEXELS_COOK` / `PIXABAY_COOK` cookie rotasıyla (Playwright) ve keyless public kaynaklarla (Wikimedia/NASA) çalışır; API provider sınıfları, probe env bağlantıları ve döküman referansları söküldü
 
 > **14 Günlük Cookie Rotasyonu (`scripts/rotate_cookies.py`):** Google'ın bulut IP'lerinde oturumu düşürmemesi için her 14 günde bir yerelde `node youtube_studio_uploader.js` çalıştırılıp taze `cookies.json` ve `storage_state.json` alındıktan sonra tek komutla tüm kanallara (veya belirli bir kanala) basılır:
 > ```bash

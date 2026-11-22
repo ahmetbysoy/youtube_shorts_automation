@@ -12,11 +12,10 @@ import subprocess
 import uuid
 from pathlib import Path
 
-from scripts.media_probe_security import consume_provider_configuration
 from scripts.validate_script_json import validate_payload
 from src.media_processing.media_history import MediaHistory, atomic_json
 from src.media_processing.media_processor import assemble_video_ffmpeg, convert_srt_to_ass, validate_output
-from src.media_processing.media_providers import BrowserStockProvider, PexelsProvider, PixabayProvider, StockTerms, WikimediaProvider, now
+from src.media_processing.media_providers import BrowserStockProvider, StockTerms, WikimediaProvider, now
 from src.media_processing.scene_media import SceneMediaError, select_storyboard_media
 
 
@@ -36,12 +35,6 @@ def input_script(provider: str) -> dict:
             "topic": "Phase 4 media-only probe", "title": "Publication-free Phase 4 source proof", "description": "Source/license/download probe only; not for YouTube publication.",
             "hook": board[0]["narration"], "script_text": text, "word_count": len(text.split()), "audio_file": "test_tone.mp3",
             "srt_file": "test.srt", "audio_duration_sec": 6.0, "visual_keywords": [s["visual_query"] for s in board], "word_timestamps": [], "storyboard": board}
-
-
-def optional_keys_from_existing_secret():
-    # Kept for this historical probe CLI; Faz4B uses the same data-only parser.
-    # Keys are no longer exported into os.environ or inherited by browsers.
-    return consume_provider_configuration()
 
 
 def render_smoke(scenes: list[dict], script: dict, output: Path) -> dict:
@@ -72,7 +65,6 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=Path("output/phase4_probe"))
     parser.add_argument("--render", action="store_true")
     args = parser.parse_args()
-    config = optional_keys_from_existing_secret()
     args.output.mkdir(parents=True, exist_ok=True)
     evidence = {"version": 1, "started_at": now(), "github_run_id": os.environ.get("GITHUB_RUN_ID"), "github_sha": os.environ.get("GITHUB_SHA"),
                 "live_provider_calls": True, "mock_provider_calls": False, "publishing": False, "production_history_modified": False,
@@ -84,11 +76,12 @@ def main() -> int:
         configured = True
         if name == "wikimedia": providers = [WikimediaProvider()]
         else:
-            key_present = config.presence["providers"][name]["api_key_present"]
+            # API-key yolu 2026-11-22'te kaldirildi; stok saglayici yalniz
+            # Playwright + cookie rotasiyla calisir.
             cookie_present = any(Path(p).exists() for p in ("cookies.json", "storage_state.json"))
-            configured = key_present or cookie_present
-            providers = [PexelsProvider(config.key_for(name), terms=terms) if name == "pexels" else PixabayProvider(config.key_for(name), terms=terms), BrowserStockProvider(name, terms=terms)]
-        item = {"configured": configured, "api_key_present": None if name == "wikimedia" else key_present,
+            configured = cookie_present
+            providers = [BrowserStockProvider(name, terms=terms)]
+        item = {"configured": configured,
                 "media_cookie_file_present": None if name == "wikimedia" else cookie_present,
                 "live_selection": "not_run", "selected_scenes": 0, "catalog_transports": []}
         evidence["providers"][name] = item
@@ -131,7 +124,7 @@ def main() -> int:
     atomic_json(args.output/"evidence.json", evidence)
     print(f"PHASE4_LIVE_RESULT={evidence['overall']}", flush=True)
     # Unavailable provider coverage stays explicit in the evidence; do not turn
-    # missing API keys into a false green provider-integration claim.
+    # missing cookies into a false green provider-integration claim.
     return 0 if passed and evidence["overall"] != "media_consumer_smoke_failed" else 1
 
 

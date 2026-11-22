@@ -12,7 +12,6 @@ from src.media_processing.media_processor import (
     FINAL_OUTPUT,
     _escape_ffmpeg_filter_path,
     _extract_wikimedia_credit,
-    _is_real_api_key,
     _srt_time_to_ass,
     convert_srt_to_ass,
     get_visual_search_queries,
@@ -37,12 +36,6 @@ class TestFaz3MediaProcessor(unittest.TestCase):
     def test_media_search_keeps_legacy_and_safe_default_fallbacks(self) -> None:
         self.assertEqual(get_visual_search_queries({"visual_keywords": ["old query"]}), ["old query"])
         self.assertEqual(get_visual_search_queries({}), ["history", "nature", "cinematic"])
-
-    def test_api_key_guard_rejects_placeholders(self) -> None:
-        self.assertFalse(_is_real_api_key(None))
-        self.assertFalse(_is_real_api_key(""))
-        self.assertFalse(_is_real_api_key("senin_gercek_pexels_api_keyin_buraya"))
-        self.assertTrue(_is_real_api_key("live_key_987654321"))
 
     def test_srt_timestamp_to_ass_format(self) -> None:
         self.assertEqual(_srt_time_to_ass("00:00:01,492"), "0:00:01.49")

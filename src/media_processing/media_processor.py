@@ -49,15 +49,6 @@ def load_env() -> None:
         load_dotenv(env_path, override=False)
 
 
-def _is_real_api_key(val: str | None) -> bool:
-    if not val:
-        return False
-    cleaned = val.strip()
-    if not cleaned or "senin_gercek" in cleaned.lower() or "your_" in cleaned.lower():
-        return False
-    return True
-
-
 def _resolve_input_file(primary: Path, sample_name: str) -> Path:
     """Dosya kökte yoksa `output/` veya `samples/` dizinlerinden bulur."""
     if primary.exists():
@@ -66,76 +57,6 @@ def _resolve_input_file(primary: Path, sample_name: str) -> Path:
         if candidate.exists():
             return candidate
     return primary
-
-
-def fetch_pexels_video(keyword: str, duration_needed: float) -> Dict[str, Any] | None:
-    api_key = os.environ.get("PEXELS_API_KEY")
-    if not _is_real_api_key(api_key):
-        return None
-
-    headers = {"Authorization": api_key.strip(), "User-Agent": USER_AGENT}
-    url = (
-        f"https://api.pexels.com/videos/search"
-        f"?query={requests.utils.quote(keyword)}&orientation=portrait&per_page=8&min_duration=5"
-    )
-    try:
-        resp = requests.get(url, headers=headers, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
-        videos = data.get("videos") or []
-        if videos:
-            video = random.choice(videos)
-            video_files = [f for f in video.get("video_files", []) if f.get("link")]
-            if not video_files:
-                return None
-            target_file = next(
-                (f for f in video_files if f.get("width") == 1080 and f.get("height", 0) >= 1920),
-                sorted(video_files, key=lambda x: x.get("height", 0), reverse=True)[0],
-            )
-            return {
-                "url": target_file["link"],
-                "duration": float(video.get("duration", 10.0)),
-                "provider": "pexels",
-                "media_kind": "video",
-            }
-    except Exception as exc:
-        print(f"[UYARI] Pexels API hatası ({keyword}): {exc}", file=sys.stderr)
-    return None
-
-
-def fetch_pixabay_video(keyword: str, duration_needed: float) -> Dict[str, Any] | None:
-    api_key = os.environ.get("PIXABAY_API_KEY")
-    if not _is_real_api_key(api_key):
-        return None
-
-    # Pixabay requires the API key in the query. Never print the URL or an
-    # exception containing it; do not forward it through HTTP redirects.
-    url = "https://pixabay.com/api/videos/"
-    try:
-        resp = requests.get(url, headers={"User-Agent": USER_AGENT},
-                            params={"key": api_key.strip(), "q": keyword, "min_width": 1080, "per_page": 8},
-                            timeout=15, allow_redirects=False)
-        if 300 <= resp.status_code < 400:
-            print("[UYARI] Pixabay yönlendirmesi güvenlik nedeniyle reddedildi.", file=sys.stderr)
-            return None
-        resp.raise_for_status()
-        data = resp.json()
-        hits = data.get("hits") or []
-        if hits:
-            hit = random.choice(hits)
-            videos = hit.get("videos", {})
-            target_file = videos.get("large") or videos.get("medium") or {}
-            if target_file.get("url"):
-                return {
-                    "url": target_file["url"],
-                    "duration": float(hit.get("duration", 10.0)),
-                    "provider": "pixabay",
-                    "media_kind": "video",
-                }
-    except Exception as exc:
-        # The exception may contain the full query URL and API key.
-        print(f"[UYARI] Pixabay API hatası ({keyword}): {type(exc).__name__}; yerel/diğer yedek deneniyor.", file=sys.stderr)
-    return None
 
 
 def _build_query_variants(keyword: str) -> List[str]:
@@ -705,13 +626,11 @@ def run_media_pipeline() -> Path:
             pw_out = work_dir / f"scene_{clip_index}_pw.mp4"
             video_meta = fetch_video_playwright(keyword, audio_duration - current_duration, pw_out)
 
-            # Playwright başarısız → API key varsa klasik yöntem
+            # Playwright başarısız → keyless public Wikimedia
+            # NOT: Pexels/Pixabay API fallback yolu 2026-11-22'te kullanıcı
+            # kararıyla kaldırıldı; stok video yalnız cookie/Playwright ile yürür.
             if not video_meta:
-                video_meta = (
-                    fetch_pexels_video(keyword, audio_duration - current_duration)
-                    or fetch_pixabay_video(keyword, audio_duration - current_duration)
-                    or fetch_wikimedia_media(keyword, audio_duration - current_duration, used_urls=used_urls)
-                )
+                video_meta = fetch_wikimedia_media(keyword, audio_duration - current_duration, used_urls=used_urls)
 
             if video_meta and (video_meta.get("url") or video_meta.get("local_path")):
                 media_kind = video_meta.get("media_kind", "video")

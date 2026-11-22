@@ -33,7 +33,7 @@ Yeni strict yolun provider önceliği: **Pexels API → Pixabay API → Pixabay 
 | download_status | not_downloaded → downloaded_and_decoded; yalnız indirmek kabul değildir |
 | catalog_transport | api veya playwright |
 
-API anahtarları mevcut `PEXELS_API_KEY` / `PIXABAY_API_KEY`; cookie ayarları mevcut dosyalardır. Browser strict metadata modu `video_fetcher.js --metadata --provider ...` üzerinden ayrı katalog modülüne gider; eski indirme CLI'si korunur. Sadece CDN URL'si ve search rank'i yeterli değildir: kaynak sayfasında JSON-LD VideoObject kimliği ve lisans linki aranır. Bulunamazsa sonuç boş/kanıtsızdır. Stock browser context'ine yalnız Pexels/Pixabay cookie'leri alınır; Google/YouTube session taşınmaz.
+API anahtarı YOKTUR: `PEXELS_API_KEY` / `PIXABAY_API_KEY` rotası 2026-11-22'te kullanıcı kararıyla tamamen kaldırıldı; cookie ayarları mevcut dosyalardır ve tek stok erişim yoludur. Browser strict metadata modu `video_fetcher.js --metadata --provider ...` üzerinden ayrı katalog modülüne gider; eski indirme CLI'si korunur. Sadece CDN URL'si ve search rank'i yeterli değildir: kaynak sayfasında JSON-LD VideoObject kimliği ve lisans linki aranır. Bulunamazsa sonuç boş/kanıtsızdır. Stock browser context'ine yalnız Pexels/Pixabay cookie'leri alınır; Google/YouTube session taşınmaz.
 
 ## 3. Lisans kapısı
 
@@ -80,7 +80,7 @@ Canlı probe sabit iki-scene test girişi + sentetik test tonu kullanır. Gerçe
 ## 8. Faz4B güvenlik, gerçek tüketici ve canlı kanıt sınırı
 
 - get_public prepared request’te yalnız User-Agent/Accept bırakır; session auth/netrc/Cookie/custom-key her allowlisted hop’ta silinir. Authenticated catalog redirect kapalıdır; HTTPS/host/byte/license/decode kapıları gevşetilmez.
-- Probe exact PEXELS_API_KEY/PIXABAY_API_KEY’yi kendi API constructor’ına bellekte verir; ENV_FILE DATA/interpolate=False, disk kopyası/source/eval yoktur. Browser child yalnız temel env allowlist’i ve provider-domain stock cookie’si alır; Google/YouTube/Gemini/API key yoktur. 403’te durur, tanılama provider/status/queryID/safe class’tır. Üretim ENV_FILE→.env ve cookie kurulum kodu korunur.
+- Probe artık hiçbir API key parse etmez/göndermez (2026-11-22'te PEXELS_API_KEY/PIXABAY_API_KEY rotası tamamen kaldırıldı); `consume_provider_configuration` fonksiyonu silindi. Browser child yalnız temel env allowlist'ini ve provider-domain stock cookie'sini alır; Google/YouTube/Gemini/API key yoktur. 403'te durur, tanılama provider/status/queryID/safe class'tır. Üretim cookie kurulum kodu korunur.
 - CC BY attribution=false çelişkisi, malformed port ve query/fragment lisans URL ret; eksik izin tahmin edilmez. Kabul helper’ı canonical File HTML creator/lisans ve official CC BY deed HTTP’sini ayrıca kontrol eder. Selector evidence metodu commons_per_file_extmetadata’dır; ekstra HTML/deed kanıtı ayrı stage’dir.
 - phase4b_consumer_chain gerçek root writer/ara dönüşüm/pre-post validator/strict wrapper/persist-reload/no-AI cover JSON reader/unchanged uploader’dan iki gerçek saf işlevi kullanır. Scenario/TTS sınırları explicit fixture/synthetic tone’dur. Entry-point/Studio yoktur.
 - Aynı final kaynak [`59e2c79`](https://github.com/ahmetbysoy/youtube_shorts_automation/commit/59e2c79ae10ff38c297130d5b775a10427e64106) ile **yerel** canlı Commons video174336538 CC BY4.0 + still83667454 CC BY3.0 ve bütün zincir geçti. Motion cover dışı decoded source-content sample değişimidir; general visual-action/era/relationship onayı değildir. İkinci still downstream kanyon/akarsu, belirgin falling-water yüzeyi kanıtı değildir; narration değiştirilmedi.

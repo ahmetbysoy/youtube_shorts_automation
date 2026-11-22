@@ -21,7 +21,7 @@ class ScaffoldTests(unittest.TestCase):
         self.assertEqual(DEFAULT_PRIVACY_STATUS, "private")
 
     def test_secrets_are_not_required_for_configuration(self):
-        with patch.dict(os.environ, {"GROQ_API_KEY": "", "PEXELS_API_KEY": "", "PIXABAY_API_KEY": ""}, clear=True):
+        with patch.dict(os.environ, {"GROQ_API_KEY": ""}, clear=True):
             settings = Settings.from_env()
         self.assertEqual(settings.groq_api_key, "")
         self.assertEqual(settings.youtube_privacy_status, "private")

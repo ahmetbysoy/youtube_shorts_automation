@@ -1,8 +1,10 @@
 """Security-only helpers for publication-free media probes, never production setup.
 
-ENV_FILE is dotenv DATA, with interpolation disabled. Only the two exact runtime
-stock-key names may leave the parser, in memory and addressed to one provider.
+ENV_FILE is dotenv DATA, with interpolation disabled and is used ONLY for the
+in-memory credential sweep (audit); no key material is parsed for providers.
 No sourcing, eval, secret mutation, alias guessing or cookie refresh is allowed.
+API keys (PEXELS_API_KEY/PIXABAY_API_KEY) are fully removed as of 2026-11-22;
+stock providers run cookie-only (Playwright) or keyless public (Wikimedia/NASA).
 """
 from __future__ import annotations
 
@@ -11,44 +13,14 @@ import hashlib
 import json
 import os
 import re
-from dataclasses import dataclass, field
 from io import StringIO
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from dotenv import dotenv_values
 
-STOCK_KEYS = {"pexels": "PEXELS_API_KEY", "pixabay": "PIXABAY_API_KEY"}
 STOCK_DOMAINS = {"pexels.com", "www.pexels.com", "pixabay.com", "www.pixabay.com"}
 SECRET_PATTERN = re.compile(rb"(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]{20,}|AIza[0-9A-Za-z_-]{30,}")
-
-
-@dataclass
-class ProviderConfiguration:
-    presence: dict
-    _keys: dict[str, str] = field(repr=False)
-
-    def key_for(self, provider: str) -> str:
-        return self._keys[provider]
-
-
-def consume_provider_configuration(environ=None) -> ProviderConfiguration:
-    environ = os.environ if environ is None else environ
-    raw = environ.pop("PHASE4_PROVIDER_ENV", "")
-    parsed = dotenv_values(stream=StringIO(raw), interpolate=False) if raw else {}
-    keys, presence = {}, {"env_file_supplied": bool(raw), "interpolation_enabled": False, "providers": {}}
-    for provider, name in STOCK_KEYS.items():
-        direct = environ.pop(name, "") or ""
-        from_file = parsed.get(name) or ""
-        effective = (direct or from_file).strip()
-        placeholder = any(marker in effective.lower() for marker in ("your_", "senin_gercek"))
-        keys[provider] = effective if effective and not placeholder else ""
-        # Only booleans: never the key, its length, prefix, suffix or hash.
-        presence["providers"][provider] = {
-            "direct_name_supplied": bool(direct), "allowlisted_env_name_present": bool(from_file),
-            "placeholder_detected": placeholder, "api_key_present": bool(keys[provider]),
-        }
-    return ProviderConfiguration(presence, keys)
 
 
 def prepare_media_cookies(path: Path, raw: str) -> dict:
@@ -71,16 +43,13 @@ def prepare_media_cookies(path: Path, raw: str) -> dict:
     return {"secret_supplied": True, "stock_cookie_file_created": bool(cookies)}
 
 
-def cookie_only_preflight(path: Path, raw: str, *, api_presence: dict | None = None) -> dict:
-    """No API credential is read/required. Counts are matching-cookie counts.
+def cookie_only_preflight(path: Path, raw: str) -> dict:
+    """No API credential exists or is read. Counts are matching-cookie counts.
 
     Secret material stays in memory or an exclusive 0600 ephemeral cookie file;
     the RETURN VALUE is safe booleans/counts/fixed status codes only.
     """
-    api_presence = {} if api_presence is None else api_presence
     result = {"access_mode": "cookie_only", "status": "failed", "media_cookies_secret_present": bool(raw),
-        "pexels_api_key_present": api_presence.get("pexels") is True, "pixabay_api_key_present": api_presence.get("pixabay") is True,
-        "api_presence_scope": "direct_repository_secret_names_boolean_only" if api_presence else "not_supplied_to_cookie_only_preflight",
         "api_credentials_evaluated": False, "api_credentials_loaded": False, "env_file_read": False,
         "pexels_cookie_domain_count": 0, "pixabay_cookie_domain_count": 0,
         "stock_cookie_file_created": False, "missing_configuration": []}
@@ -140,7 +109,7 @@ def _audit_values(environ) -> list[bytes]:
             for key, value in dotenv_values(stream=StringIO(raw), interpolate=False).items():
                 if value and re.search(r"key|token|password|cookie|secret", key, re.I):
                     values.append(value)
-    for name in (*STOCK_KEYS.values(), "GITHUB_TOKEN", "GH_TOKEN"):
+    for name in ("GITHUB_TOKEN", "GH_TOKEN"):
         if environ.get(name): values.append(environ[name])
     raw = environ.get("MEDIA_COOKIES_JSON", "")
     if raw:
@@ -190,9 +159,7 @@ def main() -> int:
     args = ap.parse_args()
     try:
         if args.operation == "preflight":
-            # Actions evaluates these two booleans WITHOUT passing key values.
-            presence = {p: os.environ.pop(p.upper()+"_API_KEY_PRESENT", "false").lower() == "true" for p in STOCK_KEYS}
-            result = cookie_only_preflight(args.path, os.environ.pop("MEDIA_COOKIES_JSON", ""), api_presence=presence)
+            result = cookie_only_preflight(args.path, os.environ.pop("MEDIA_COOKIES_JSON", ""))
             if args.report:
                 args.report.parent.mkdir(parents=True, exist_ok=True)
                 args.report.write_text(json.dumps(result, indent=2)+"\n")

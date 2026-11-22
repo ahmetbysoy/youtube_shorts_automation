@@ -17,11 +17,11 @@ import pytest
 import requests
 from requests.adapters import BaseAdapter
 
-from scripts.media_probe_security import audit_artifacts, consume_provider_configuration, prepare_media_cookies
+from scripts.media_probe_security import audit_artifacts, prepare_media_cookies
 from scripts.phase4b_history_probe import GitHubProbe, probe_target
 from src.media_processing.media_history import MediaHistory
 from src.media_processing.media_io import MAX_BYTES, download_candidate, probe_media
-from src.media_processing.media_providers import BrowserStockProvider, PexelsProvider, PixabayProvider, commons_license, get_public
+from src.media_processing.media_providers import BrowserStockProvider, commons_license, get_public
 from src.media_processing.scene_media import SceneMediaError, provider_issue, select_storyboard_media
 from tests.test_phase4_media import Provider, candidate, download_stub, probe_stub, script
 
@@ -109,17 +109,6 @@ def test_redirect_host_and_credential_lookalikes_rejected_before_second_request(
     session = Mock(get=Mock(return_value=Mock(status_code=302, headers={"Location": destination})))
     with pytest.raises(ValueError): get_public(session, "https://upload.wikimedia.org/a", {"upload.wikimedia.org"})
     assert session.get.call_count == 1
-
-
-@pytest.mark.parametrize("provider", [PexelsProvider, PixabayProvider])
-def test_api_key_is_only_sent_to_its_own_api_and_authenticated_redirects_stop(provider):
-    session = Mock(get=Mock(return_value=Mock(status_code=302)))
-    with pytest.raises(RuntimeError): provider("private-fixture-key", session=session).search("ocean")
-    call = session.get.call_args
-    assert call.kwargs["allow_redirects"] is False and session.get.call_count == 1
-    assert call.args[0] == ("https://api.pexels.com/videos/search" if provider is PexelsProvider else "https://pixabay.com/api/videos/")
-    if provider is PexelsProvider: assert call.kwargs["headers"]["Authorization"] == "private-fixture-key"
-    else: assert call.kwargs["params"]["key"] == "private-fixture-key" and "Authorization" not in call.kwargs["headers"]
 
 
 @pytest.mark.parametrize("declared,chunks", [(2048, [b"x"*1024]), (0, [b"x"]), (MAX_BYTES+1, []), (0, [b"x"*(MAX_BYTES+1)])])
@@ -213,19 +202,6 @@ def test_contradictory_attribution_malformed_license_and_missing_creator_are_rej
     assert not lic.verified
 
 
-def test_dotenv_is_data_only_allowlisted_no_interpolation_or_export_to_children(tmp_path):
-    marker = tmp_path/"must-not-exist"
-    env = {"PHASE4_PROVIDER_ENV": f'PEXELS_API_KEY="${{OTHER_KEY}}"\nPIXABAY_API_KEY="$(touch {marker})"\nLEGACY_API_KEY=unrelated-private-value\nOTHER_KEY=do-not-copy\n',
-           "PEXELS_API_KEY": "direct-private-pexels-key", "PATH": "/usr/bin"}
-    config = consume_provider_configuration(env)
-    assert config.key_for("pexels") == "direct-private-pexels-key"
-    assert config.key_for("pixabay") == f"$(touch {marker})" and not marker.exists()
-    assert env == {"PATH": "/usr/bin"} and "unrelated-private-value" not in repr(config)
-    assert all(type(value) is bool for value in config.presence["providers"]["pexels"].values())
-    literal = consume_provider_configuration({"PHASE4_PROVIDER_ENV": 'PEXELS_API_KEY="${OTHER_KEY}"\nOTHER_KEY=private'})
-    assert literal.key_for("pexels") == "${OTHER_KEY}"
-
-
 def test_browser_403_has_four_safe_fields_and_never_inherits_api_github_or_gemini_values(tmp_path, monkeypatch):
     (tmp_path/"cookies.json").write_text("[]")
     monkeypatch.setattr("src.media_processing.media_providers.ROOT", tmp_path)
@@ -264,7 +240,7 @@ def test_cookie_writer_only_persists_existing_stock_domains_with_private_permiss
     with pytest.raises(ValueError): prepare_media_cookies(p, raw)
 
 
-@pytest.mark.parametrize("payload,env", [({"value": "private-provider-key"}, {"PEXELS_API_KEY": "private-provider-key"}),
+@pytest.mark.parametrize("payload,env", [({"value": "private-provider-key"}, {"GH_TOKEN": "private-provider-key"}),
     ({"value": "ghp_"+"x"*30}, {}), ({"url": "https://upload.wikimedia.org/a?signature=private"}, {}),
     ({"url": "https://user:pass@upload.wikimedia.org/a"}, {}),
     ({"description": "Credit source: https://upload.wikimedia.org/a?signature=private ; modified"}, {})])

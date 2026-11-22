@@ -40,7 +40,6 @@ def test_cookie_only_preflight_needs_no_api_and_outputs_only_safe_metadata(tmp_p
     result = cookie_only_preflight(path, json.dumps({"cookies": data} if wrapped else data))
     assert result["status"] == "passed" and not result["api_credentials_evaluated"]
     assert result["pexels_cookie_domain_count"] == result["pixabay_cookie_domain_count"] == 1
-    assert not result["pexels_api_key_present"] and not result["pixabay_api_key_present"]
     assert path.stat().st_mode & 0o777 == 0o600
     assert "google" not in path.read_text() and "unknown_field" not in path.read_text()
     assert MARKER not in json.dumps(result) and "sha256" not in json.dumps(result)
@@ -96,12 +95,14 @@ def test_conflicting_cookie_rows_and_existing_cookie_path_fail_closed(tmp_path):
 
 
 def test_cookie_only_stock_factory_never_constructs_api_provider_or_reads_config():
-    config = Mock(); config.key_for.side_effect = AssertionError("must not read API key")
-    with patch.object(live, "PexelsProvider", side_effect=AssertionError), patch.object(live, "PixabayProvider", side_effect=AssertionError):
-        for name in ("pexels", "pixabay"):
-            providers = live.stock_providers(name, "cookie_only", config)
-            assert len(providers) == 1 and isinstance(providers[0], BrowserStockProvider)
-    config.key_for.assert_not_called()
+    """API-key saglayici siniflari 2026-11-22'te kaldirildi; fabrika yalniz
+    BrowserStockProvider uretir ve hicbir anahtar kaynagina dokunmaz."""
+    import scripts.phase4b_media_probe as p4b
+    assert not hasattr(p4b, "PexelsProvider") and not hasattr(p4b, "PixabayProvider"), \
+        "API provider siniflari probe modulunden de kaldirilmis olmali"
+    for name in ("pexels", "pixabay"):
+        providers = live.stock_providers(name)
+        assert len(providers) == 1 and isinstance(providers[0], BrowserStockProvider)
 
 
 def test_runner_refuses_live_provider_calls_before_preflight(tmp_path):
@@ -125,9 +126,7 @@ def test_cookie_only_runner_does_not_parse_env_file_or_infer_api_success(tmp_pat
         return report
     with patch("sys.argv", ["probe", "--stock-access-mode", "cookie_only", "--work", str(tmp_path/"w"), "--evidence", str(e)]), \
          patch.object(live, "run_consumer_chain", side_effect=chain), \
-         patch.object(live, "diagnose_commons", return_value={"candidates": []}), \
-         patch.object(live, "consume_provider_configuration", side_effect=AssertionError("no ENV_FILE parse")), \
-         patch.object(live, "PexelsProvider", side_effect=AssertionError), patch.object(live, "PixabayProvider", side_effect=AssertionError):
+         patch.object(live, "diagnose_commons", return_value={"candidates": []}):
         assert live.main() == 1
     result = json.loads((e/"evidence.json").read_text())
     for name in ("pexels", "pixabay"):
@@ -259,21 +258,14 @@ def test_actual_consumer_render_failure_has_safe_stage_and_preserves_production(
 
 def test_workflow_defaults_cookie_only_and_gates_before_browser_or_provider():
     text=Path('.github/workflows/phase4_media_probe.yml').read_text();data=yaml.safe_load(text);events=data.get('on',data.get(True))
-    assert events['workflow_dispatch']['inputs']['stock_access_mode']['default']=='cookie_only'
+    assert not ((events.get('workflow_dispatch') or {}).get('inputs')), "stock_access_mode input'u kaldirilmis olmali"
+    assert "options: [cookie_only, auto]" not in text and "secrets.PEXELS_API_KEY" not in text \
+        and "secrets.PIXABAY_API_KEY" not in text, "API-key 'auto' yolu kaldirilmis olmali"
+    assert 'PEXELS_API_KEY' not in text and 'PIXABAY_API_KEY' not in text, "API key secret referanslari kaldirilmis olmali"
     assert data['permissions']=={'contents':'read'}
     steps=data['jobs']['media-consumer-proof']['steps'];pref=next(i for i,s in enumerate(steps) if s.get('id')=='preflight')
     assert all(pref<i for i,s in enumerate(steps) if any(marker in s.get('name','') for marker in ['Chromium probe','Media system','Live providers']))
-    for step in steps:
-        for name in ['PHASE4_PROVIDER_ENV','AUDIT_PROVIDER_ENV','PEXELS_API_KEY','PIXABAY_API_KEY']:
-            if name in step.get('env',{}):assert "inputs.stock_access_mode == 'auto'" in step['env'][name]
     assert 'main.py' not in text and 'youtube_studio_uploader.js' not in text
-
-
-def test_api_secret_presence_is_boolean_only_and_not_an_api_use_or_a_preflight_gate(tmp_path):
-    result=cookie_only_preflight(tmp_path/'cookies.json',json.dumps(rows()),api_presence={'pexels':True,'pixabay':False})
-    assert result['status']=='passed' and result['pexels_api_key_present'] and not result['pixabay_api_key_present']
-    assert not result['api_credentials_loaded'] and not result['env_file_read']
-    assert result['api_presence_scope']=='direct_repository_secret_names_boolean_only'
 
 
 def test_real_download_trace_survives_a_subsequent_probe_failure(tmp_path):
