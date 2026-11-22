@@ -62,7 +62,9 @@ function buildStorageState() {
   const storageState = buildStorageState();
   const browser = await chromium.launch({
     headless: true,
-    args: ['--disable-blink-features=AutomationControlled', '--no-sandbox'],
+    // studio_draft_publish.cjs kanitli konfigurasyonu: UA olmadan Google
+    // HeadlessChrome'u bot sayip oturumu acmiyor.
+    args: ['--disable-blink-features=AutomationControlled', '--no-first-run', '--lang=tr-TR', '--no-sandbox'],
   });
   const allUC = new Set();
   try {
@@ -70,6 +72,7 @@ function buildStorageState() {
       viewport: { width: 1366, height: 900 },
       locale: 'tr-TR',
       timezoneId: 'Europe/Istanbul',
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
       storageState,
     });
     const page = await ctx.newPage();
