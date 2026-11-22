@@ -22,7 +22,7 @@ on:
 # BU WORKFLOW YALNIZ MANUEL CALISTIRILIR.
 # - main.py, uploader, publisher, pruner veya cron islerini cagirmaz.
 # - Yalniz PEXELS_COOK ve PIXABAY_COOK secret'larini kullanir.
-# - PEXELS_API_KEY, PIXABAY_API_KEY, ENV_FILE, YOUTUBE/GEMINI/GITHUB cookie'lerini kullanmaz.
+# - Legacy stock API key'ler (2026-11-22'te tamamen kaldirildi), ENV_FILE ve YOUTUBE/GEMINI/GITHUB cookie'lerini kullanmaz.
 # - Ham cookie degerlerini, artifact'e veya loga yazmaz.
 # - Her saglayiciyi ayri Playwright context ile test eder.
 jobs:

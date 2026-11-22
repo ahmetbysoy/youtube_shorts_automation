@@ -3,7 +3,7 @@
 ENV_FILE is dotenv DATA, with interpolation disabled and is used ONLY for the
 in-memory credential sweep (audit); no key material is parsed for providers.
 No sourcing, eval, secret mutation, alias guessing or cookie refresh is allowed.
-API keys (PEXELS_API_KEY/PIXABAY_API_KEY) are fully removed as of 2026-11-22;
+Legacy stock API keys are fully removed as of 2026-11-22;
 stock providers run cookie-only (Playwright) or keyless public (Wikimedia/NASA).
 """
 from __future__ import annotations
