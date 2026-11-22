@@ -1,0 +1,100 @@
+name: 00_wire_channel2 (DRAFT oturumunu Kanal-2 slotuna telle)
+
+# Amaç:
+#   channel_map.sh cookie-hash dedup kullanir; ayni hesabin FARKLI oturumu
+#   farkli hash üretip yanlislikla "ayri hesap" sanilabilir. Bu workflow
+#   DRAFT oturumunun GERCEK kanal kimligini (studio redirect / ytcfg)
+#   çözer; yalnızca GERÇEKTEN ayrı hesap ise COOKIES_JSON_2 /
+#   STORAGE_STATE_JSON_2 / ENV_FILE_2 slotlarını yazar (server-side,
+#   cookie değerleri loglanmaz).
+
+on:
+  workflow_dispatch:
+    inputs:
+      do_wire:
+        description: "Farklı hesap kanıtlandıysa Kanal-2 secret'larını yaz"
+        required: false
+        default: '1'
+        type: choice
+        options:
+          - '0'
+          - '1'
+
+permissions:
+  contents: read
+
+jobs:
+  identity-and-wire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      REPO_PAT: ${{ secrets.REPO_PAT }}
+      C1: ${{ secrets.COOKIES_JSON_1 }}
+      S1: ${{ secrets.STORAGE_STATE_JSON_1 }}
+      CD: ${{ secrets.COOKIES_JSON_DRAFT }}
+      SD: ${{ secrets.STORAGE_STATE_JSON_DRAFT }}
+      EF1: ${{ secrets.ENV_FILE_1 }}
+    steps:
+      - name: Depoyu Çek
+        uses: actions/checkout@v7
+
+      - name: Araçları Kur (node + playwright chromium)
+        uses: ./.github/actions/setup-tools
+        with:
+          python: 'true'
+          python_version: '3.11'
+          node: 'true'
+          node_version: '20'
+          node_playwright: 'true'
+          playwright_chromium: 'true'
+
+      - name: pynacl kur (secret sealed-box PUT için)
+        run: python3 -m pip install --quiet pynacl requests
+
+      - name: Oturum dosyalarını yaz (değerler loglanmaz, umask 077)
+        run: |
+          umask 077
+          mkdir -p /tmp/identity
+          printf '%s' "$C1"  > /tmp/identity/cookies_1.json
+          printf '%s' "$S1"  > /tmp/identity/storage_1.json
+          printf '%s' "$CD"  > /tmp/identity/cookies_draft.json
+          printf '%s' "$SD"  > /tmp/identity/storage_draft.json
+          printf '%s' "$EF1" > /tmp/identity/env_file_1.txt
+          echo "dosya boyutlari (yalnizca uzunluk):"
+          wc -c /tmp/identity/cookies_1.json /tmp/identity/storage_1.json \
+                /tmp/identity/cookies_draft.json /tmp/identity/storage_draft.json \
+                /tmp/identity/env_file_1.txt
+
+      - name: Ana oturum kimlik probu
+        run: |
+          node scripts/channel_identity_probe.js \
+            --storage /tmp/identity/storage_1.json \
+            --label ana \
+            --json-out /tmp/identity/ids_ana.json
+
+      - name: DRAFT oturum kimlik probu
+        run: |
+          node scripts/channel_identity_probe.js \
+            --storage /tmp/identity/storage_draft.json \
+            --label draft \
+            --json-out /tmp/identity/ids_draft.json
+
+      - name: Farklı hesap ise Kanal-2 slotuna tel çek
+        if: ${{ inputs.do_wire == '1' }}
+        run: |
+          python3 scripts/wire_channel2.py \
+            --ids-ana /tmp/identity/ids_ana.json \
+            --ids-draft /tmp/identity/ids_draft.json \
+            --cookies-draft /tmp/identity/cookies_draft.json \
+            --storage-draft /tmp/identity/storage_draft.json \
+            --env-file1 /tmp/identity/env_file_1.txt
+
+      - name: Ozet
+        if: always()
+        run: |
+          echo "=== KIMLIK OZETI (yalnizca public kanal ID) ==="
+          for f in /tmp/identity/ids_ana.json /tmp/identity/ids_draft.json; do
+            if [ -f "$f" ]; then
+              python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('label'),'->',d.get('channel_id') or 'COZULEMEDI','| yontem:',d.get('method') or '-','| adaylar:',','.join(d.get('candidates',[])) or '-')" "$f"
+            fi
+          done
