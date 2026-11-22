@@ -7,7 +7,9 @@ import argparse
 import asyncio
 import json
 import os
+import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -124,15 +126,50 @@ def validate_model_text(raw_text: str) -> dict[str, Any]:
     return scenario
 
 
+def _pw_text_generate(prompt: str, cookies: dict, budget_s: float) -> str:
+    """PW metin adapter'ini subprocess ile kosar (senkron; asyncio.to_thread ile sarmalanir).
+
+    Cookie dict GEMINI_COOKIES_JSON env ile child'a gecer — log/artifact'a asla yazilmaz.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        pf = Path(td) / "prompt.txt"
+        of = Path(td) / "response.txt"
+        pf.write_text(prompt, encoding="utf8")
+        env = dict(os.environ)
+        env["GEMINI_COOKIES_JSON"] = json.dumps(cookies, ensure_ascii=False)
+        cmd = [sys.executable, str(BASE_DIR / "scripts" / "gemini_story_pw.py"),
+               "--prompt-file", str(pf), "--out", str(of),
+               "--timeout", str(int(budget_s))]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True,
+                                  timeout=budget_s + 40, env=env)
+        except subprocess.TimeoutExpired as exc:
+            raise TimeoutError(
+                f"PW metin adapter zamana asimi ({budget_s + 40:.0f}sn)") from exc
+        err_tail = (proc.stderr or "")[-400:]
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"PW metin adapter basarisiz (rc={proc.returncode}): {err_tail}")
+        if not of.exists():
+            raise RuntimeError(f"PW metin adapter cikti yazmadi: {err_tail}")
+        text = of.read_text("utf8")
+        if not text.strip():
+            raise RuntimeError("PW metin adapter bos yanit dondu.")
+        return text
+
+
 async def _one_topic_attempt(
     cookies: dict, topic_slug: str, research: dict,
     concept: str, recent_titles: list[str] | None,
     init_timeout_s: float = 35.0,
     generate_timeout_s: float = 55.0,
 ) -> dict[str, Any]:
-    """Tek bir konu icin Gemini init + generate + validate. Tamami timeout'lu."""
-    from gemini_webapi import GeminiClient
+    """Tek bir konu icin Gemini generate + validate. Tamami timeout'lu.
 
+    Transport varsayilani 'pw': gercek Chromium (gemini_story_pw.py) — kapak
+    adapter'i ile ayni kanitli yol; Google'in kutuphane batchexecute 400
+    engelini bypass eder. 'library' = eski gemini_webapi yolu (rollback).
+    """
     system_prompt, user_prompt = build_grounded_prompt(
         research,
         recent_topics=recent_used_topics(),
@@ -140,28 +177,36 @@ async def _one_topic_attempt(
     )
     if concept.strip():
         user_prompt += "\nEk editoryal tercih (olguları değiştirmeden): " + concept.strip()
-    client = GeminiClient(cookies["__Secure-1PSID"], cookies["__Secure-1PSIDTS"])
-    # 2026-11-22: Google kutuphanenin tum batchexecute POST'larina HTTP 400 donuyor
-    # (kapak teshisi ile ayni kok — AI_HANDOFF'a bak). _init_rpc telemetri RPC'leri
-    # bypass edilir: init 0.2sn'de biter, generate hizli APIError verir ve fallback
-    # 240sn yerine ~60sn'de tetiklenir.
-    client._init_rpc = lambda: asyncio.sleep(0)
-    # auto_refresh=False — arka planda token yenileme gorevi bazen event loop'u kilitliyor
-    # init 35sn: uretim loglarinda init fazinin 25sn'de tukendigi (Google yavas
-    # yanit verdiginde) en az iki gercek kosuda dogrulandi.
-    await asyncio.wait_for(client.init(timeout=int(init_timeout_s), auto_refresh=False),
-                           timeout=init_timeout_s)
-    try:
-        response = await asyncio.wait_for(
-            client.generate_content(system_prompt + "\n\n" + user_prompt),
-            timeout=generate_timeout_s,
+    full_prompt = system_prompt + "\n\n" + user_prompt
+
+    transport = (os.environ.get("GEMINI_TEXT_TRANSPORT", "pw") or "pw").strip().lower()
+    if transport == "pw":
+        budget = _env_float("GEMINI_PW_TEXT_TIMEOUT_S", 150.0)
+        response_text = await asyncio.wait_for(
+            asyncio.to_thread(_pw_text_generate, full_prompt, cookies, budget),
+            timeout=budget + 50,
         )
-    finally:
+    else:
+        from gemini_webapi import GeminiClient
+
+        client = GeminiClient(cookies["__Secure-1PSID"], cookies["__Secure-1PSIDTS"])
+        # 2026-11-22: Google kutuphanenin tum batchexecute POST'larina HTTP 400
+        # donuyor (kapak teshisi ile ayni kok). _init_rpc bypass: init hizli,
+        # generate hizli APIError → fallback erken tetiklenir.
+        client._init_rpc = lambda: asyncio.sleep(0)
+        await asyncio.wait_for(client.init(timeout=int(init_timeout_s), auto_refresh=False),
+                               timeout=init_timeout_s)
         try:
-            await asyncio.wait_for(client.close(), timeout=5)
-        except Exception:
-            pass
-    response_text = getattr(response, "text", None)
+            response = await asyncio.wait_for(
+                client.generate_content(full_prompt),
+                timeout=generate_timeout_s,
+            )
+        finally:
+            try:
+                await asyncio.wait_for(client.close(), timeout=5)
+            except Exception:
+                pass
+        response_text = getattr(response, "text", None)
     if not isinstance(response_text, str) or not response_text.strip():
         raise ValueError("Gemini Web metin yanıtı boş veya okunamadı.")
     draft = validate_grounded_response(response_text, topic_slug=topic_slug, research=research)
@@ -200,6 +245,13 @@ async def generate_text_scenario(
     GENERATE_TIMEOUT_S = _env_float("GEMINI_WEB_GENERATE_TIMEOUT_S", 55)
     BACKOFF_SCHEDULE = _parse_backoff_schedule(
         os.environ.get("GEMINI_WEB_BACKOFF_SCHEDULE_S", "10,20"), MAX_TOPIC_ATTEMPTS)
+    # 2026-11-22: transport=pw (gercek Chromium) tek denemesi kutuphaneden uzun surer
+    # (sayfa acilma + doldurma + yanit kararliligi). Butceler buna gore acilir.
+    TRANSPORT = (os.environ.get("GEMINI_TEXT_TRANSPORT", "pw") or "pw").strip().lower()
+    if TRANSPORT == "pw":
+        PW_TEXT_BUDGET = _env_float("GEMINI_PW_TEXT_TIMEOUT_S", 150.0)
+        PER_ATTEMPT_TIMEOUT = max(PER_ATTEMPT_TIMEOUT, PW_TEXT_BUDGET + 60)
+        TOTAL_TIMEOUT = max(TOTAL_TIMEOUT, PW_TEXT_BUDGET + 90)
     cookies = load_cookie_payload()
     last_error: Exception | None = None
     excluded: set[str] = set()
