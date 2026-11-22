@@ -588,6 +588,34 @@
       "sha256": "1aecfa6c4e08e0860025d6ee0ede08459fd5ca41c565c9355aadb633d5d1c0a9",
       "selected_at": "2026-11-21T23:52:09.603717+00:00",
       "generation_id": "67372f73-2b65-43cc-9579-6bcc86d47e4a"
+    },
+    {
+      "key": "wikimedia:45235280",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Freezing_workers%27_cottages_at_northern_end_of_Tokomaru_Bay,_East_Coast_(21636279796).jpg",
+      "sha256": "a19c9db6332e4820892cfb20b4bc6eada8611bcadba4fd49c2997b72e31c1b8b",
+      "selected_at": "2026-11-22T00:11:28.837167+00:00",
+      "generation_id": "5b18f5d8-d8c6-450a-8c53-5e9d9ca9a413"
+    },
+    {
+      "key": "wikimedia:195286151",
+      "source_url": "https://commons.wikimedia.org/wiki/File:D-Day_82-_Airborne_Jump_Reel_(1011548).webm",
+      "sha256": "4be5ccdc9f8ad627f706ccab782cdd3df214935f365609159a6320028678243d",
+      "selected_at": "2026-11-22T00:12:19.604322+00:00",
+      "generation_id": "5b18f5d8-d8c6-450a-8c53-5e9d9ca9a413"
+    },
+    {
+      "key": "pixabay:115067",
+      "source_url": "https://pixabay.com/videos/search/history%20soldier/",
+      "sha256": "9bdbd16f04dde35450a5693624a4686cc81766f46378035be3b304f0615ba8e9",
+      "selected_at": "2026-11-22T00:13:10.669130+00:00",
+      "generation_id": "5b18f5d8-d8c6-450a-8c53-5e9d9ca9a413"
+    },
+    {
+      "key": "wikimedia:91966776",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Die_ersten_Zahlungsmittel_(CC_BY_4.0).webm",
+      "sha256": "568a151b0a3e719f537cdac674fa87f4addbdfd514d4740e5fc34231cc6e4400",
+      "selected_at": "2026-11-22T00:13:43.943539+00:00",
+      "generation_id": "5b18f5d8-d8c6-450a-8c53-5e9d9ca9a413"
     }
   ]
 }
