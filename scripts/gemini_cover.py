@@ -63,8 +63,10 @@ def _try_playwright(out_path: str, title: str, prompt_override: str | None) -> b
         print(f'KAPAK Playwright yolu ile uretildi: {tail[-1] if tail else "OK"}',
               file=sys.stderr, flush=True)
         return True
-    err = (res.stderr or res.stdout or '').strip().replace('\n', ' ')[:300]
-    print(f'KAPAK-PW basarisiz (cikis {res.returncode}): {err}', file=sys.stderr, flush=True)
+    err = (res.stderr or res.stdout or '').strip()
+    # Tam hata zinciri gorunsun (300 karakter truncation teshisi zorlastiriyordu)
+    print(f'KAPAK-PW basarisiz (cikis {res.returncode}):\n{err[-1500:]}',
+          file=sys.stderr, flush=True)
     return False
 
 

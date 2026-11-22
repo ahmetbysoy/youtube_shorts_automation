@@ -220,21 +220,27 @@ async def generate(out_path: str, title: str, prompt_override: str | None = None
             await browser.close()
             raise SystemExit('HATA: oturum kanitlanamadi (cookie gecersiz olabilir) — screenshot /tmp/gemini_cover_pw_no_session.png')
 
-        # 2) Textbox bul
+        # 2) Textbox bul — deadline'li poll (UI hidrasyonu gecikme yapabilir)
         ta = None
-        for sel in ["div[contenteditable='true']", ".text-input-field_textarea",
-                    "rich-textarea", "textarea"]:
-            try:
-                cand = page.locator(sel).first
-                if await cand.is_visible(timeout=3000):
-                    ta = cand
-                    break
-            except Exception:
-                continue
+        tb_deadline = time.monotonic() + 30
+        tb_selectors = ["div[contenteditable='true']", ".text-input-field_textarea",
+                        "rich-textarea", "textarea"]
+        while time.monotonic() < tb_deadline and ta is None:
+            for sel in tb_selectors:
+                try:
+                    cand = page.locator(sel).first
+                    if await cand.is_visible(timeout=2500):
+                        ta = cand
+                        break
+                except Exception:
+                    continue
+            if ta is None:
+                await page.wait_for_timeout(2000)
         if ta is None:
+            await page.screenshot(path='/tmp/gemini_cover_pw_no_textbox.png')
             await context.close()
             await browser.close()
-            raise SystemExit('HATA: gemini mesaj kutusu bulunamadi')
+            raise SystemExit('HATA: gemini mesaj kutusu bulunamadi (30sn) — screenshot /tmp/gemini_cover_pw_no_textbox.png')
         await ta.click(force=True, timeout=5000)
         await page.wait_for_timeout(400)
 
