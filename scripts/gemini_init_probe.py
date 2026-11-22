@@ -145,7 +145,10 @@ async def part_d(client) -> list[dict]:
 
     tests = []
     payloads = [RPCData(rpcid=GRPC.GET_USER_STATUS, payload='[]')]
-    freq = json.dumps([[p.serialize() for p in payloads]])
+    # ORNEK ONEM: kutuphane f.req ve header serialization icin ORJSON kullanir
+    # (orjson.dumps bytes doner). Ayni serializer kullanilmali yoksa kiyas bozulur.
+    import orjson
+    freq = orjson.dumps([[p.serialize() for p in payloads]]).decode('utf8')
     base_params = {
         'rpcids': GRPC.GET_USER_STATUS,
         'hl': getattr(client, 'language', 'en-US') or 'en-US',
@@ -158,9 +161,9 @@ async def part_d(client) -> list[dict]:
     if getattr(client, 'session_id', None):
         base_params['f.sid'] = client.session_id
     batch_exec_headers = Headers.BATCH_EXEC.value.copy()
-    h = json.loads(batch_exec_headers[MODEL_HEADER_KEY])
+    h = orjson.loads(batch_exec_headers[MODEL_HEADER_KEY])
     h.append(client._sessionid)
-    batch_exec_headers[MODEL_HEADER_KEY] = json.dumps(h).decode('utf8')
+    batch_exec_headers[MODEL_HEADER_KEY] = orjson.dumps(h).decode('utf8')
     request_headers = {**Headers.GEMINI.value, **batch_exec_headers, **Headers.SAME_DOMAIN.value}
     data = {'at': client.access_token or '', 'f.req': freq}
 
