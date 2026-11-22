@@ -148,6 +148,14 @@ def _pw_text_generate(prompt: str, cookies: dict, budget_s: float) -> str:
                 f"PW metin adapter zamana asimi ({budget_s + 40:.0f}sn)") from exc
         err_tail = (proc.stderr or "")[-400:]
         if proc.returncode != 0:
+            # Teşhis: adapter kendi logu (cookie içermez) dosyaya yazılır; probe
+            # başarısızlıkta son 300 karakteri basar.
+            try:
+                log_dir = BASE_DIR / "logs"
+                log_dir.mkdir(parents=True, exist_ok=True)
+                (log_dir / "story_pw_last_error.log").write_text(err_tail, encoding="utf8")
+            except Exception:
+                pass
             raise RuntimeError(
                 f"PW metin adapter basarisiz (rc={proc.returncode}): {err_tail}")
         if not of.exists():
@@ -347,6 +355,11 @@ def main() -> int:
     except Exception as exc:
         # İstisna metni bazı istemci sürümlerinde oturum verisi taşıyabilir.
         print(f"[HATA] Gemini Web metin testi başarısız: {type(exc).__name__}", file=sys.stderr)
+        # PW adapter kendi logu (cookie içermez) varsa teşhis için son kısmı bas.
+        pw_log = BASE_DIR / "logs" / "story_pw_last_error.log"
+        if pw_log.exists():
+            tail = pw_log.read_text("utf8", errors="replace")[-300:]
+            print(f"[HATA] PW adapter log kuyruğu: {tail}", file=sys.stderr)
         return 1
 
     print("GEMINI_WEB_TEXT_OK")

@@ -18,6 +18,8 @@ jobs:
           pip_extra: 'requests==2.34.2 jsonschema>=4.23,<5 gemini_webapi==2.1.1 httpx playwright'
           playwright_chromium: 'true'
           python_playwright: 'true'
+      - name: Chromium kur (Python)
+        run: python3 -m playwright install chromium
       - name: One Gemini Web text call (no publication)
         env:
           GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
