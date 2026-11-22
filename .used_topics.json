@@ -38,7 +38,8 @@
     "1349'da Altın Değerinde Tutulan Baharat: Karabiber! #Shorts",
     "Birinci Dünya Savaşı'nda Cephede Noel Ateşkesi: 1914! #Shorts",
     "1325'te Tek Bir Tahta Kova Yüzünden Çıkan Gerçek Savaş! #Shorts",
-    "Domuzlar İnsanlardan Daha Zeki Olabilir! #Shorts"
+    "Domuzlar İnsanlardan Daha Zeki Olabilir! #Shorts",
+    "Merkür Güneş'e En Yakın Gezegen Ama En Sıcağı Değil! #Shorts"
   ],
   "used_records": [
     {
@@ -1544,9 +1545,7 @@
         "zeki"
       ],
       "created_at": "2026-11-22T14:09:41.867020+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Merkür Güneş'e En Yakın Gezegen Ama En Sıcağı Değil! #Shorts",
       "topic": "Bilim",
@@ -1604,9 +1603,8 @@
         "yarattig",
         "yogun"
       ],
-      "created_at": "2026-11-22T19:12:45.465278+00:00",
-      "reservation_id": "86117dd1-baa2-424d-97ab-65e85462de89",
-      "run_id": "45059141121:1"
+      "created_at": "2026-11-22T19:12:45.465278+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
