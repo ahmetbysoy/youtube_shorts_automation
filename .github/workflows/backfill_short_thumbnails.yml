@@ -50,7 +50,7 @@ jobs:
           python: 'true'
           python_version: '3.12'
           pip_requirements: ''
-          pip_extra: 'gemini_webapi httpx'
+          pip_extra: 'gemini_webapi httpx playwright'
           node_check: 'youtube_studio_uploader.js'
 
       - name: YouTube oturumunu hazirla
