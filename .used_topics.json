@@ -1546,5 +1546,67 @@
       "created_at": "2026-11-22T14:09:41.867020+00:00"
     }
   ],
-  "pending": []
+  "pending": [
+    {
+      "title": "Merkür Güneş'e En Yakın Gezegen Ama En Sıcağı Değil! #Shorts",
+      "topic": "Bilim",
+      "topic_subject": "Merkür Güneş'e En Yakın Gezegen Ama En Sıcağı Değil! #Shorts",
+      "topic_key": "",
+      "category": "bilim",
+      "entities": [
+        "bilim",
+        "degil",
+        "gezegen",
+        "gunes",
+        "merkur",
+        "sicagi",
+        "yakin"
+      ],
+      "claims": [],
+      "scenario_tokens": [
+        "atmosphere",
+        "bilim",
+        "bulut",
+        "cause",
+        "cikan",
+        "degil",
+        "degildir",
+        "dereced",
+        "derecey",
+        "duser",
+        "eksi",
+        "eritecek",
+        "etkis",
+        "gece",
+        "gezegen",
+        "gunduz",
+        "hapsedecek",
+        "heat",
+        "ikinc",
+        "kalin",
+        "kalir",
+        "karbondioksit",
+        "kontrolsuz",
+        "kursun",
+        "merkur",
+        "olmadig",
+        "olmas",
+        "ragmen",
+        "sera",
+        "sicag",
+        "sicak",
+        "sira",
+        "sistem",
+        "sun",
+        "surface",
+        "venus",
+        "yakin",
+        "yarattig",
+        "yogun"
+      ],
+      "created_at": "2026-11-22T19:12:45.465278+00:00",
+      "reservation_id": "86117dd1-baa2-424d-97ab-65e85462de89",
+      "run_id": "45059141121:1"
+    }
+  ]
 }
