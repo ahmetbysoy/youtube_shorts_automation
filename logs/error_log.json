@@ -128,5 +128,14 @@
     "status": "error",
     "channel_id": "1",
     "stage": "content"
+  },
+  {
+    "timestamp": "2026-11-22T21:34:42.353610+00:00",
+    "status": "published",
+    "channel_id": "1",
+    "video_id": "lu94KrH3XxY",
+    "url": "https://youtube.com/shorts/lu94KrH3XxY",
+    "title": "Çikolata Yer Çekiminin Olmadığı Yerde Farklı Erir! #Shorts",
+    "visibility": "PUBLIC"
   }
 ]
