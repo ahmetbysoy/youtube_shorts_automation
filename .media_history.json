@@ -784,6 +784,34 @@
       "sha256": "dbeca3436ea747e32cc0e969acd59e4c7412e9799b30c85a2a211f6899a1568d",
       "selected_at": "2026-11-22T19:18:31.687672+00:00",
       "generation_id": "907e88c5-daa8-4206-ae8c-38441bb1064a"
+    },
+    {
+      "key": "pixabay:154726",
+      "source_url": "https://pixabay.com/videos/search/chocolate%20melting%20closeup/",
+      "sha256": "03dd97491fe55ab6a1c8c4db2928a47bce2379f9b5bbf36a63fd3f8623ba135f",
+      "selected_at": "2026-11-22T21:24:56.156787+00:00",
+      "generation_id": "6afc944c-033b-4916-b02f-21cd5287906a"
+    },
+    {
+      "key": "wikimedia:169585200",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Hiller_Model_1031-A-1_Flying_Platform_-_DPLA_-_a7a01ea9dc9a1653831585b75592f414_(page_1).jpg",
+      "sha256": "1df04927f645d6cbb65c065a1a69b4bdcbadd9ed5823ef796326a81197260f5d",
+      "selected_at": "2026-11-22T21:25:48.833870+00:00",
+      "generation_id": "6afc944c-033b-4916-b02f-21cd5287906a"
+    },
+    {
+      "key": "wikimedia:142989554",
+      "source_url": "https://commons.wikimedia.org/wiki/File:How_to_Prepare_(Thanksgiving)_Food_in_Space.webm",
+      "sha256": "ff0b653ec3fcb4d0d655a4b12c3ceedf7d5da66f55240a85152e11dbcb22fc98",
+      "selected_at": "2026-11-22T21:26:55.369518+00:00",
+      "generation_id": "6afc944c-033b-4916-b02f-21cd5287906a"
+    },
+    {
+      "key": "wikimedia:166203178",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Astrophysics_Multiwavelength_Vertical_Video_(SVS14798_-_reel_crab_v4).webm",
+      "sha256": "955359d826d92580bf43f7c4fa6aabc69aec015c60959d2f550da8ebb98dea52",
+      "selected_at": "2026-11-22T21:30:08.223781+00:00",
+      "generation_id": "6afc944c-033b-4916-b02f-21cd5287906a"
     }
   ]
 }
