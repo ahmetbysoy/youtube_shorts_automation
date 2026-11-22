@@ -35,7 +35,8 @@
     "Kleopatra, Ay'a İniş'e Piramitlerden Daha Yakındı! #Shorts",
     "Karadelikler Gerçekten Her Şeyi Yutmuyor! #Shorts",
     "Babil'in Asma Bahçeleri Gerçekte Ninova'da mıydı? #Shorts",
-    "1349'da Altın Değerinde Tutulan Baharat: Karabiber! #Shorts"
+    "1349'da Altın Değerinde Tutulan Baharat: Karabiber! #Shorts",
+    "Birinci Dünya Savaşı'nda Cephede Noel Ateşkesi: 1914! #Shorts"
   ],
   "used_records": [
     {
@@ -1327,9 +1328,7 @@
         "yolu"
       ],
       "created_at": "2026-11-21T22:13:32.883227+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Birinci Dünya Savaşı'nda Cephede Noel Ateşkesi: 1914! #Shorts",
       "topic": "Tarih",
@@ -1404,9 +1403,8 @@
         "year",
         "yillard"
       ],
-      "created_at": "2026-11-22T00:10:23.034474+00:00",
-      "reservation_id": "f4f2649c-a97f-4047-9ac8-3e087d6e7208",
-      "run_id": "44965027584:1"
+      "created_at": "2026-11-22T00:10:23.034474+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
