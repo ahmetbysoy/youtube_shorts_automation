@@ -27,13 +27,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Araçları Kur (Python 3.11 + gemini_webapi)
+      - name: Araçları Kur (Python 3.11 + gemini_webapi + Playwright)
         uses: ./.github/actions/setup-tools
         with:
           python: 'true'
           python_version: '3.11'
           pip_requirements: ''
-          pip_extra: 'gemini_webapi==2.1.1 httpx Pillow loguru'
+          pip_extra: 'gemini_webapi==2.1.1 httpx Pillow loguru playwright'
+          playwright_chromium: 'true'
+          python_playwright: 'true'
+
+      - name: Chromium kur (Python)
+        run: python3 -m playwright install chromium
 
       - name: Init teshis matrisi + tam kapak uretimi
         env:
@@ -53,6 +58,18 @@ jobs:
             python scripts/gemini_init_probe.py --title "${{ inputs.title }}"
           fi
 
+      - name: Uretim girisi testi (gemini_cover.py: PW adapter + kutuphane fallback)
+        if: always()
+        env:
+          GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+          PYTHONUNBUFFERED: '1'
+        run: |
+          set -o pipefail
+          umask 077
+          python scripts/gemini_cover.py output/probe_cover_production.jpg "Ay'a Gitmek Icin Hicbir Zaman Cikmayacak: Iste Gercek Sebep!" 2>&1 | tee /tmp/cover_production.log
+          echo "--- URETIM GIRIS SONUCU ---"
+          grep -E "KAPAK_OK|KAPAK-PW|basarisiz|zamana" /tmp/cover_production.log | tail -5
+
       - name: Rapor artifact
         if: always()
         uses: actions/upload-artifact@v7
@@ -61,5 +78,6 @@ jobs:
           path: |
             probe_report.json
             probe_cover.jpg
+            output/probe_cover_production.jpg
           if-no-files-found: warn
           retention-days: 7

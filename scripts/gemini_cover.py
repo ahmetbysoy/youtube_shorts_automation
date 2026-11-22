@@ -4,7 +4,7 @@ Kullanim: python3 gemini_cover.py <out_path> <video_baslik> [--prompt "<ozel pro
 JPEG olarak out_path'e yazar. Hata olursa non-zero exit.
 --prompt verilirse kapak_gemini.json'daki varsayilan prompt yerine onu kullanir.
 """
-import asyncio, json, os, sys, glob, shutil, argparse
+import asyncio, json, os, sys, glob, shutil, argparse, time
 from pathlib import Path
 from gemini_webapi import GeminiClient
 
@@ -33,14 +33,62 @@ GEN_TIMEOUT_S = int(os.environ.get('GEMINI_GEN_TIMEOUT_S', '65'))
 INIT_TIMEOUT_S = int(os.environ.get('GEMINI_COVER_INIT_TIMEOUT_S', '45'))
 COVER_ATTEMPTS = max(1, int(os.environ.get('GEMINI_COVER_ATTEMPTS', '2')))
 COVER_BACKOFFS = (10, 20)
+PW_BUDGET_S = int(os.environ.get('GEMINI_PW_BUDGET_S', '200'))
+
+# 2026-11-22 teshisi: Google, kutuphanenin tum batchexecute POST'larina HTTP 400
+# donuyor (yanit: er/400 + e=4,138 — istek formati reddi; GET/app + SNlM0e ise
+# 0.2sn'de basarili). Cozum: once Playwright UI adapter'i (gemini_cover_pw.py,
+# gercek tarayici = guncel sozlesme), sonra kutuphane fallback'i. Fallback'te
+# _init_rpc telemetri RPC'leri bypass edilir (generate icin gereksiz; bu RPC'ler
+# 400 alip ~30sn ic retry ile budget yakar).
+PW_SCRIPT = Path(__file__).resolve().parent / 'gemini_cover_pw.py'
+
+
+def _try_playwright(out_path: str, title: str, prompt_override: str | None) -> bool:
+    if not PW_SCRIPT.exists():
+        return False
+    import subprocess
+    cmd = [sys.executable, str(PW_SCRIPT), out_path, title]
+    if prompt_override:
+        cmd += ['--prompt', prompt_override]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=PW_BUDGET_S)
+    except subprocess.TimeoutExpired:
+        print(f'KAPAK-PW zamana asimi ({PW_BUDGET_S}s) — kutuphane fallback denenecek',
+              file=sys.stderr, flush=True)
+        return False
+    if res.returncode == 0 and Path(out_path).exists() \
+            and Path(out_path).stat().st_size > 20_000:
+        tail = (res.stderr or '').strip().splitlines()
+        print(f'KAPAK Playwright yolu ile uretildi: {tail[-1] if tail else "OK"}',
+              file=sys.stderr, flush=True)
+        return True
+    err = (res.stderr or res.stdout or '').strip().replace('\n', ' ')[:300]
+    print(f'KAPAK-PW basarisiz (cikis {res.returncode}): {err}', file=sys.stderr, flush=True)
+    return False
+
 
 async def generate(out_path: str, title: str, prompt_override: str | None = None):
+    t_start = time.monotonic()
+    # 1) Playwright adapter (birincil yol)
+    if _try_playwright(out_path, title, prompt_override):
+        return
+    # 2) Kutuphane fallback — kalan butceyle sinirli deneme
+    remaining = 235 - (time.monotonic() - t_start)
+    gen_budget = min(GEN_TIMEOUT_S, 30)
+    attempts = 1
+    if remaining < 50:
+        raise SystemExit('Gemini gorsel uretilemedi (Playwright yolu budceyi doldurdu)')
+    print(f'KAPAK kutuphane fallback ({remaining:.0f}s kalan butce)', file=sys.stderr, flush=True)
     cookies = load_cookies()
     if prompt_override:
         prompt = prompt_override
     else:
         prompt = load_default_prompt() + '\n\nVideo basligi: ' + title
     client = GeminiClient(cookies.get('__Secure-1PSID',''), cookies.get('__Secure-1PSIDTS',''))
+    # Telemetri RPC bypass: _init_rpc 400 alip ~30sn ic retry yapiyor; generate
+    # icin gerekli degil (model=None -> hesap varsayilani). Init 0.2sn'e iner.
+    client._init_rpc = lambda: asyncio.sleep(0)
     # auto_refresh=False + wait_for hard-cap: arka plan token yenileme görevi
     # bazen event loop'u kilitliyor (content tarafında da aynı nedenle False);
     # kütüphane iç timeout'ları toplam bütçeyi aşan iç retry'lara izin veriyor.
@@ -48,25 +96,25 @@ async def generate(out_path: str, title: str, prompt_override: str | None = None
                            timeout=INIT_TIMEOUT_S)
     resp = None
     last_err: Exception | None = None
-    for attempt in range(1, COVER_ATTEMPTS + 1):
+    for attempt in range(1, attempts + 1):
         try:
-            resp = await asyncio.wait_for(client.generate_content(prompt), timeout=GEN_TIMEOUT_S)
+            resp = await asyncio.wait_for(client.generate_content(prompt), timeout=gen_budget)
             if resp and resp.images:
                 break
             last_err = RuntimeError('gemini_gorsel_dondurmedi')
-            print(f'KAPAK deneme {attempt}/{COVER_ATTEMPTS}: gorsel yok, '
-                  f'{"yeniden denenecek" if attempt < COVER_ATTEMPTS else "vazgecildi"}',
+            print(f'KAPAK deneme {attempt}/{attempts}: gorsel yok, '
+                  f'{"yeniden denenecek" if attempt < attempts else "vazgecildi"}',
                   file=sys.stderr, flush=True)
         except Exception as exc:
             last_err = exc
-            print(f'KAPAK deneme {attempt}/{COVER_ATTEMPTS} basarisiz: {type(exc).__name__}, '
-                  f'{"yeniden denenecek" if attempt < COVER_ATTEMPTS else "vazgecildi"}',
+            print(f'KAPAK deneme {attempt}/{attempts} basarisiz: {type(exc).__name__}, '
+                  f'{"yeniden denenecek" if attempt < attempts else "vazgecildi"}',
                   file=sys.stderr, flush=True)
         resp = None
-        if attempt < COVER_ATTEMPTS:
+        if attempt < attempts:
             await asyncio.sleep(COVER_BACKOFFS[min(attempt - 1, len(COVER_BACKOFFS) - 1)])
     if not resp or not resp.images:
-        raise SystemExit(f'Gemini gorsel uretilemedi ({COVER_ATTEMPTS} deneme): '
+        raise SystemExit(f'Gemini gorsel uretilemedi ({attempts} deneme): '
                          f'{type(last_err).__name__ if last_err else "bos"}')
     img = resp.images[0]
     # Gecici dizinde uret
