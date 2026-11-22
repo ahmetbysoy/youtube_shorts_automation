@@ -109,12 +109,10 @@ class TestGeminiWebContentEngine(unittest.TestCase):
                  patch.object(content_engine, "pick_fallback_scenario", return_value=fallback), \
                  patch.object(content_engine, "save_recent_title"), \
                  patch.object(content_engine, "call_groq_llm") as groq, \
-                 patch.object(content_engine, "call_gemini_llm") as gemini, \
-                 patch.dict("os.environ", {"GROQ_API_KEY": "not-used", "GEMINI_API_KEY": "not-used"}):
+                 patch.dict("os.environ", {"GROQ_API_KEY": "not-used"}):
                 result = content_engine.generate_scenario(gemini_web_only=True)
             self.assertIs(result, fallback)
             groq.assert_not_called()
-            gemini.assert_not_called()
 
     def test_pipeline_serializes_grounding_storyboard_and_passes_v2_schema(self):
         scenario = content_engine.validate_and_normalize_scenario(self.draft, "gemini-web-session")

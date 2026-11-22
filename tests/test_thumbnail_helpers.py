@@ -17,7 +17,6 @@ SCRIPTS = BASE / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 import generate_fallback_thumbnail as fallback  # noqa: E402
-import gemini_frame_selector  # noqa: E402
 
 
 def test_fallback_thumbnail_cli_creates_vertical_jpeg(tmp_path: Path):
@@ -91,20 +90,33 @@ def test_pick_matching_still_reports_exact_match(tmp_path: Path):
     assert payload["matched"] is True
 
 
-def test_gemini_frame_selector_stays_offline_when_disabled(tmp_path: Path, monkeypatch):
-    monkeypatch.setenv("GEMINI_FREE_VISION_ENABLED", "0")
-    monkeypatch.setenv("GEMINI_API_KEY", "must-not-be-used")
-    frame = tmp_path / "frame.png"
-    Image.new("RGB", (32, 32), "black").save(frame)
-    assert gemini_frame_selector.select_subject_frame("Test title", [frame]) is None
-
-
-def test_gemini_frame_selector_rejects_too_many_frames_before_network(tmp_path: Path, monkeypatch):
-    monkeypatch.setenv("GEMINI_FREE_VISION_ENABLED", "1")
-    monkeypatch.setenv("GEMINI_API_KEY", "must-not-be-used")
-    frames = []
-    for index in range(9):
-        frame = tmp_path / f"frame-{index}.png"
-        Image.new("RGB", (32, 32), "black").save(frame)
-        frames.append(frame)
-    assert gemini_frame_selector.select_subject_frame("Test title", frames) is None
+def test_strict_subject_mode_needs_no_api_and_falls_back_to_local_card(tmp_path: Path):
+    """Gemini vision kare yolu 2026-11-22'te kaldirildi; strict mod API'siz metin kartina duser."""
+    output = tmp_path / "strict.jpg"
+    video = tmp_path / "video.mp4"
+    # Hareketli test videosu uret (ffmpeg ile 2 sn; statik renkte kare cikmaz)
+    subprocess.run(
+        ["ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=size=320x568:duration=2",
+         "-pix_fmt", "yuv420p", str(video)],
+        capture_output=True, timeout=60, check=True,
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPTS / "generate_fallback_thumbnail.py"),
+            "--title",
+            "Konu Kare Eslesme Testi",
+            "--video",
+            str(video),
+            "--strict-subject",
+            "--out",
+            str(output),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        cwd=BASE,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert output.exists()
+    assert "kaldirildi" in result.stdout

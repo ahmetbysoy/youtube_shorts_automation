@@ -73,9 +73,12 @@ GIT_EDITOR=true git rebase --continue
 | Servis | Dosya | Format |
 |---|---|---|
 | GitHub PAT | `jeton/github_erisim.json` | `GITHUB_TOKEN=ghp_...` |
-| Gemini API | `jeton/gemini_erisim.json` | `GEMINI_API_KEY=...` |
 | Gemini cookie | `jeton/gemini_cookies.json` | JSON (Playwright state) |
 | HuggingFace | `jeton/huggingface_erisim.json` | `HF_TOKEN=hf_...` |
+
+> NOT: `GEMINI_API_KEY` 2026-11-22'te kullanıcı kararıyla tamamen kaldırıldı;
+> repo'da kod/workflow/doküman seviyesinde hiçbir kullanımı kalmadı. Tüm işlemler
+> `GEMINI_COOK` cookie oturumuyla yürür.
 
 ## 6. Workflow / CI takip püf noktaları
 

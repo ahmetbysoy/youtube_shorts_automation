@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## 2026-11-22 — GEMINI_API_KEY Tamamen Kaldırıldı (Cookie-Only Mimari)
+
+- **Kullanıcı kararı:** `GEMINI_API_KEY` hiçbir yerde kullanılmayacak; tüm işlemler `GEMINI_COOK` cookie oturumuyla yürür.
+- `content_engine.py` ve `src/content_generation/engine.py`: Google Gemini Free API ikincil katmanı (`call_gemini_llm` + `gemini_key`/`GOOGLE_API_KEY` okuması) silindi; fallback zinciri artık **Gemini Web cookie → Groq (varsa) → yerel senaryo havuzu** şeklinde.
+- `config/settings.py`: `gemini_api_key` alanı ve `GEMINI_API_KEY`/`GOOGLE_API_KEY` env okuması kaldırıldı.
+- `scripts/gemini_frame_selector.py` **silindi** (ücretsiz Gemini vision kare analiz yolu); `scripts/generate_fallback_thumbnail.py` `--strict-subject` modu artık API'siz yerel metin kartına düşer.
+- `.github/workflows/free_gemini_probe.yml` ve `.github/workflows/free_gemini_frame_rejection_probe.yml` **silindi**; `daily_shorts.yml` env bloğundan `GEMINI_API_KEY` + `GEMINI_FREE_VISION_ENABLED` çıkarıldı.
+- Repo değişkeni `GEMINI_FREE_VISION_ENABLED` Actions Variables listesinden kaldırıldı.
+- Dokümanlar güncellendi: `AI_HANDOFF.md`, `GITHUB_ERISIM_REHBERI.md`, `docs/GEMINI_AUTONOMOUS_SHORTS_PLAN.md`, `docs/GEMINI_AUTONOMOUS_SHORTS_TODO.md`; `docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md` silindi. Tarihsel kanıt dosyaları (`docs/evidence/*`, kabul raporları) geçmiş kayıt olduğu için olduğu gibi bırakıldı.
+- Testler: `test_gemini_frame_selector_*` iki testi kaldırılıp API'siz `--strict-subject` fallback testiyle değiştirildi; web-only API izolasyon testi ve dotenv güvenlik testi fixture'ı yeni mimariye uyarlandı.
+
 ## 2026-11-08 — REBEL Faz 2 & Faz 3: Senaryo Havuzu Genişletme (`77 -> 127`), Wikimedia CC BY-SA Lisans Atfı, İlk 3 Saniye Hook Altyazısı ve Canlı Pruner Doğrulaması
 
 - `content_engine.py`: `FALLBACK_SCENARIOS` havuzu doğrulanmış Wikipedia/UNESCO/NASA kaynaklı **50 yeni senaryo** ile `77 -> 127` senaryoya çıkarıldı (`75` adet kanalda hiç yayınlanmamış taze senaryo). Ayrıca `load_channel_live_titles()` ile `prune_state.json` içindeki tüm canlı kanal geçmişi mükerrer konu kilidine dahil edildi.

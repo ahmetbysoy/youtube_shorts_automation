@@ -260,10 +260,10 @@ def main() -> int:
             frames = extract_candidate_frames(video_path, Path(tmp))
             best = None
             if args.strict_subject and frames:
-                from gemini_frame_selector import select_subject_frame
-                selected = select_subject_frame(title, frames)
-                if selected is not None:
-                    best = frames[selected]
+                # Konu-eslesme Gemini vision yolu 2026-11-22'te kaldirildi (kullanici karari:
+                # GEMINI_API_KEY hicbir yerde kullanilmaz); dogrulanmis kare olmadigindan
+                # bu mod yerel metin kartina duser.
+                print("[*] --strict-subject: dogrulanmis konu karesi yolu kaldirildi; yerel metin karti kullanilacak.")
             elif not args.strict_subject:
                 # Backward-compatible explicit non-strict mode: contrast is not semantic matching.
                 best = pick_best_frame(frames)

@@ -229,12 +229,10 @@ jobs:
           # Studio'da videodan sec akisi, gomulu kapakla eslesen kareyi secer; ayri dosya yuklenmez.
           THUMBNAIL_MODE: ${{ vars.THUMBNAIL_MODE || 'frame' }}
           COVER_SECONDS: ${{ vars.COVER_SECONDS || '1.0' }}
-          # Yalnız serbest kota için ayrılmış ve faturalandırması KAPALI proje.
-          # Projeye ödeme bağlanırsa vars.GEMINI_FREE_VISION_ENABLED değerini hemen 0 yapın.
-          GEMINI_FREE_VISION_ENABLED: ${{ vars.GEMINI_FREE_VISION_ENABLED || '0' }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           # Gemini Web cookie yalnız main.py → content_engine → Gemini Web metin adaptöründe kullanılır.
           # Değer loglanmaz, dosyaya/artifact'e yazılmaz; web oturumu başarısızsa ücretli API'ye geçilmez.
+          # NOT: GEMINI_API_KEY yolu 2026-11-22'te kullanıcı kararıyla tamamen kaldırıldı;
+          # her şey yalnız cookie oturumu + yerel fallback ile yürür.
           GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
           # Stok video (Pexels/Pixabay) cookie'leri. Playwright storage_state cookies JSON dizisi
           # veya "k=v; k=v" string formati kabul edilir; video_fetcher.js otomatik normalize eder.

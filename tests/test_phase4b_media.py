@@ -215,7 +215,7 @@ def test_contradictory_attribution_malformed_license_and_missing_creator_are_rej
 
 def test_dotenv_is_data_only_allowlisted_no_interpolation_or_export_to_children(tmp_path):
     marker = tmp_path/"must-not-exist"
-    env = {"PHASE4_PROVIDER_ENV": f'PEXELS_API_KEY="${{OTHER_KEY}}"\nPIXABAY_API_KEY="$(touch {marker})"\nGEMINI_API_KEY=unrelated-private-value\nOTHER_KEY=do-not-copy\n',
+    env = {"PHASE4_PROVIDER_ENV": f'PEXELS_API_KEY="${{OTHER_KEY}}"\nPIXABAY_API_KEY="$(touch {marker})"\nLEGACY_API_KEY=unrelated-private-value\nOTHER_KEY=do-not-copy\n',
            "PEXELS_API_KEY": "direct-private-pexels-key", "PATH": "/usr/bin"}
     config = consume_provider_configuration(env)
     assert config.key_for("pexels") == "direct-private-pexels-key"

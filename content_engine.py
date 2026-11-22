@@ -7,8 +7,10 @@ YouTube Shorts senaryo + seslendirme motoru.
 
 Mimari Katmanlar ("Sadece ücretsiz katmanlar & her aracın bir alternatifi"):
   1. LLM Senaryo Katmanı (60-80 kelime / 30-45 sn Shorts Senaryosu):
-     - Birincil  : Groq Cloud Free API (`llama-3.3-70b-versatile` - GROQ_API_KEY)
-     - İkincil   : Google Gemini Free API (`gemini-2.0-flash-lite` - GEMINI_API_KEY)
+     - Birincil  : Gemini Web cookie oturumu (`GEMINI_COOK` - ücretsiz, API anahtarı yok)
+     - Yedek     : Groq Cloud Free API (`llama-3.3-70b-versatile` - GROQ_API_KEY) ve
+                   doğrulanmış yerel yedek senaryo havuzu. Google Gemini API anahtarı
+                   (GEMINI_API_KEY) 2026-11-22'te kullanıcı kararıyla tamamen kaldırıldı.
      - Gerçeklik : Türkçe Wikipedia REST API üzerinden doğrulanmış kaynak özeti beslemesi
      - Tolerans  : API kesintisi, anahtar eksikliği veya kota aşımında (`try-except`)
                    devreye giren doğrulanmış 4'lü yedek (fallback) senaryo havuzu
@@ -3263,30 +3265,6 @@ def call_groq_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[st
     return validate_and_normalize_scenario(extract_json_object(content), "groq:llama-3.3-70b-versatile")
 
 
-def call_gemini_llm(system_prompt: str, user_prompt: str, api_key: str) -> dict[str, Any]:
-    """Text model: only free-tier project use; key stays in a header, never the URL."""
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent"
-    resp = requests.post(
-        url,
-        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
-        allow_redirects=False,
-        json={
-            "systemInstruction": {"parts": [{"text": system_prompt}]},
-            "contents": [{"parts": [{"text": user_prompt}]}],
-            "generationConfig": {
-                "temperature": 0.65,
-                "responseMimeType": "application/json",
-            },
-        },
-        timeout=25,
-    )
-    resp.raise_for_status()
-    candidates = resp.json().get("candidates", [])
-    parts = candidates[0]["content"]["parts"]
-    content = "".join(p.get("text", "") for p in parts if isinstance(p, dict) and not p.get("thought"))
-    return validate_and_normalize_scenario(extract_json_object(content), "gemini:gemini-2.0-flash-lite")
-
-
 def validate_fallback_scenario(raw_data: dict[str, Any], provider_name: str) -> dict[str, Any]:
     """Yerel yedek metinleri 45 kelimelik alt sınıra tamamlar; LLM doğrulamasını gevşetmez."""
     candidate = dict(raw_data)
@@ -3490,10 +3468,12 @@ def generate_scenario(
                     continue
             raise RuntimeError(f"Fallback senaryo seçimi 3 denemede başarısız oldu: {last_err}")
 
+    # NOT: Google Gemini API (GEMINI_API_KEY / GOOGLE_API_KEY) katmani 2026-11-22'te
+    # kullanici karariyla tamamen kaldirildi; metin uretimi yalniz Gemini Web cookie
+    # oturumu (GEMINI_COOK), Groq yedegi ve yerel fallback havuzuyla yurur.
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
-    gemini_key = (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or "").strip()
 
-    if groq_key or gemini_key:
+    if groq_key:
         wiki_fact = fetch_wikipedia_grounding(recent_titles)
         if wiki_fact:
             print(f"[KAYNAK] Doğrulanmış Wikipedia referansı alındı: {wiki_fact['title']}")
@@ -3501,28 +3481,17 @@ def generate_scenario(
             concept, recent_titles, wiki_fact=wiki_fact, analytics_feedback=analytics_feedback
         )
 
-        # 1. Katman: Groq API (Birincil Tercih)
-        if groq_key:
-            try:
-                print("[LLM] Birincil sağlayıcı deneniyor: Groq API (llama-3.3-70b-versatile)...")
-                scenario = call_groq_llm(system_prompt, user_prompt, groq_key)
-                save_recent_title(scenario["title"], scenario)
-                return scenario
-            except Exception as exc:
-                print(f"[UYARI] Groq API hatası/kotası ({exc}); ikinci katmana geçiliyor...", file=sys.stderr)
-
-        # 2. Katman: Google Gemini API (İkincil Alternatif)
-        if gemini_key:
-            try:
-                print("[LLM] İkincil sağlayıcı deneniyor: Google Gemini API (gemini-2.0-flash-lite)...")
-                scenario = call_gemini_llm(system_prompt, user_prompt, gemini_key)
-                save_recent_title(scenario["title"], scenario)
-                return scenario
-            except Exception as exc:
-                print(f"[UYARI] Gemini API hatası/kotası ({exc}); yedek senaryo havuzuna geçiliyor...", file=sys.stderr)
+        # Yedek Katman: Groq API
+        try:
+            print("[LLM] Yedek sağlayıcı deneniyor: Groq API (llama-3.3-70b-versatile)...")
+            scenario = call_groq_llm(system_prompt, user_prompt, groq_key)
+            save_recent_title(scenario["title"], scenario)
+            return scenario
+        except Exception as exc:
+            print(f"[UYARI] Groq API hatası/kotası ({exc}); yedek senaryo havuzuna geçiliyor...", file=sys.stderr)
     else:
         print(
-            "[TOLERANS] GROQ_API_KEY / GEMINI_API_KEY tanımlı değil; "
+            "[TOLERANS] GROQ_API_KEY tanımlı değil; "
             "sistem çökmeden doğrulanmış yedek (fallback) senaryo havuzunu devreye alıyor..."
         )
 

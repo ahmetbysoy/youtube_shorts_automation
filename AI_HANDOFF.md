@@ -13,7 +13,7 @@
 >
 > İki ayrı Actions koşusu [44280024395](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280024395) (`reserve`) ve [44280111635](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44280111635) (`verify`) başarılı: aynı `probe_id=phase3-20261118` rezervasyonu ikinci koşuda GitHub Contents API’den okunup release edildi. `pending` **0 → 1 → 0**, legacy **25 başlık korundu**, test başlığı `used_titles` / `used_records` içine yazılmadı. [Actions kanıtı](docs/evidence/PHASE3_ACTIONS_EVIDENCE_2026-11-18.md) ve [makine okunur kayıt](docs/evidence/PHASE3_ACTIONS_EVIDENCE_2026-11-18.json). Gerçek CAS race/conflict yalnız mock testlidir; canlı kanıt iki sıralı koşunun kalıcılığıdır.
 >
-> Korunacak eski gerçek Gemini Web kanıtı: [44262444017](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44262444017), SHA `57166f8`, 58 kelime/5 sahne/3 claim, `draft_only=true`, `publish=false`, fact check `partial`. Yeni Faz 3 koduyla canlı model/YouTube yayın testi değildir. Cookie-only Gemini Web, mevcut fallback, `GEMINI_COOK`, `GEMINI_API_KEY` ve kullanıcı onaylı `partial` publication behavior korunur; `partial`, `verified` diye yeniden etiketlenmez.
+> Korunacak eski gerçek Gemini Web kanıtı: [44262444017](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44262444017), SHA `57166f8`, 58 kelime/5 sahne/3 claim, `draft_only=true`, `publish=false`, fact check `partial`. Yeni Faz 3 koduyla canlı model/YouTube yayın testi değildir. Cookie-only Gemini Web, mevcut fallback, `GEMINI_COOK` ve kullanıcı onaylı `partial` publication behavior korunur; `partial`, `verified` diye yeniden etiketlenmez.
 >
 > Sıradaki iş: Faz 4 canlı stock erişimi/atıf-gerektiren ve hareketli asset kanıtı; ayrı medya-history persistence ve Faz 1 gerçek tüketici zinciri açık. Yeni strict source/licensing/manifest/dedup kodu var, tam kabul yok; Faz 5 timing/audio ayrı. **`daily_shorts.yml`, `hourly_pruner.yml`, `draft_publisher.yml` bu kabul için tetiklenmedi; test amacıyla tetikleme.** Gerçek üretim adımının başarılı/başarısız finalization yolu uçtan uca denenmedi; CLI import/komutları ve CAS/release davranışları test edildi. Yeni Gemini model çalışması veya yayın izni çıkarma.
 >
@@ -22,9 +22,9 @@
 
 > **Güncel operasyon notu (5 Kasım 2026):** Kullanıcı önceki silme isteğini değiştirerek tüm taslakların PUBLIC yayınını seçti. 26 mevcut video Studio’da aynı ID üzerinden PUBLIC doğrulandı; silme yapılmadı. [Kanıt listesi](docs/evidence/draft_publications_2026-11-05.md). İki başlık `final short`; içerik tekrarı, görsel uyumu ve açıklamalar çözülmedi. Aktif otomasyon/pruner değiştirilmedi. Önceki bloklar tarihsel kanıttır.
 
-> **Faz 14 uygulama:** `scripts/gemini_frame_selector.py` ücretsiz text/vision endpointini en fazla bir kez kullanır; `vars.GEMINI_FREE_VISION_ENABLED` kod varsayılanı 0; repo değişkeni şu anda 1. Yeni görsel üretmez. Gerçek CI kare incelemesi `41988709577` başarılı; Studio kapak yükleme kanıtı henüz yok; Google projesine billing bağlanırsa text API ücretli olabilir, değişkeni kapat.
+> **Faz 14 uygulama:** `scripts/gemini_frame_selector.py` ücretsiz text/vision endpointini en fazla bir kez kullanır; `vars.GEMINI_FREE_VISION_ENABLED` kod varsayılanı 0; repo değişkeni şu anda 1. Yeni görsel üretmez. Gerçek CI kare incelemesi `41988709577` başarılı; Studio kapak yükleme kanıtı henüz yok; Google projesine billing bağlanırsa text API ücretli olabilir, değişkeni kapat. **(2026-11-22 GÜNCELLEME: Bu API yolu kullanıcı kararıyla tamamen kaldırıldı — `gemini_frame_selector.py`, `free_gemini_probe.yml`, `free_gemini_frame_rejection_probe.yml`, `docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md` silindi; repo değişkeni ve workflow env bağlantısı söküldü.)**
 
-> **Faz 14:** Kullanıcı ücretli AI görsel API kullanımını reddetti; [plan](docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md). Google API key GitHub Secrets içinde; değerini asla gösterme. Şu an ücretsiz proje olduğu Studio UI üzerinden gözlendi; API görüntü üretimi ücretsiz değildir.
+> **Faz 14:** Kullanıcı ücretli AI görsel API kullanımını reddetti; plan dokümanı (`docs/FAZ14_FREE_GEMINI_KAPAK_PLANI.md`) 2026-11-22'te API yoluyla birlikte silindi. Google API key 2026-11-22'te kullanıcı kararıyla koddan ve workflow'lardan tamamen söküldü; artık hiçbir yerde okunmaz. Şu an ücretsiz proje olduğu Studio UI üzerinden gözlendi; API görüntü üretimi ücretsiz değildir.
 
 > **Son Güncelleme:** `2026-11-20` (Faz 5 gerçek TTS scene timing geliştirmesi — Edge-TTS WordBoundary milisaniye zaman damgalarindan sahne sinirlari hesaplaniyor, SRT sahne-kesimlerine duyarli, ses sessizlik/clipping QC eklendi; 18 yeni test, 372 toplam test gecti; [PHASE5_ACCEPTANCE.md](docs/evidence/PHASE5_ACCEPTANCE.md)). Onceki Faz 4K: Faz4G kosusu [44700976069](https://github.com/ahmetbysoy/youtube_shorts_automation/actions/runs/44700976069) @f8a53b9 SUCCESS (39/39 QC, 0 hata); [PHASE4K_ACCEPTANCE.md](docs/evidence/PHASE4K_ACCEPTANCE.md))
 > **Hedef Kitle:** Bu projeyi devralacak bir sonraki Yapay Zeka Ajanı (Arena Agent, Claude Code, Cursor, Codex vb.) veya Geliştirici.
@@ -87,7 +87,7 @@ Aşağıdaki **33 secret** listesi tarihsel başlangıç envanteridir; bugünkü
   - `PIXABAY_COOK` — Pixabay oturum cookie'leri (aynı format).
   - Format ayrıntıları ve nasıl çıkarılacağı `.env.example` ve `README.md`'de yazılı.
 - **API / AI / Hizmet Anahtarları:**
-  - `GEMINI_COOK`, `GEMINI_API_KEY`, `GROQ_API_KEY` (LLM/Gemini Web)
+  - `GEMINI_COOK`, `GROQ_API_KEY` (LLM/Gemini Web; `GEMINI_API_KEY` 2026-11-22'te kullanıcı kararıyla tamamen kaldırıldı, artık yoktur ve okunmaz)
   - `PEXELS_API_KEY`, `PIXABAY_API_KEY` (opsiyonel; cookie varsa kullanılmaz)
   - `REPO_PAT` (artifact/secrets yönetimi)
 
