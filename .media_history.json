@@ -756,6 +756,34 @@
       "sha256": "92fc70f2b39bfe8f9bdda165656acd3bf48ce7c14d6bb351b367a4806dab20d9",
       "selected_at": "2026-11-22T16:50:52.806732+00:00",
       "generation_id": "292bc5fa-4b2f-40a3-ad2c-0a2f6fc0eae7"
+    },
+    {
+      "key": "wikimedia:64249230",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Animation_of_%CA%BBOumuamua_passing_through_the_Solar_System.webm",
+      "sha256": "a8b78aead64f39963954a1dae8523f09524a351cb1b70f6825de174491c7be08",
+      "selected_at": "2026-11-22T19:14:20.744251+00:00",
+      "generation_id": "907e88c5-daa8-4206-ae8c-38441bb1064a"
+    },
+    {
+      "key": "pixabay:11414",
+      "source_url": "https://pixabay.com/videos/search/science%20hundred/",
+      "sha256": "7a6dda2c773ef782170f3333adf8bafa40cc9059170ed3a4e9a23cbadab170e4",
+      "selected_at": "2026-11-22T19:16:06.571528+00:00",
+      "generation_id": "907e88c5-daa8-4206-ae8c-38441bb1064a"
+    },
+    {
+      "key": "wikimedia:3146562",
+      "source_url": "https://commons.wikimedia.org/wiki/File:GulaMons_SifMons_southeast.jpg",
+      "sha256": "409918e2fdb6744018421c090824bbdb30d9491d2a0fa52e303f20c1f1c8b03e",
+      "selected_at": "2026-11-22T19:16:57.238418+00:00",
+      "generation_id": "907e88c5-daa8-4206-ae8c-38441bb1064a"
+    },
+    {
+      "key": "pixabay:100649",
+      "source_url": "https://pixabay.com/videos/search/sun%20heat%20space/",
+      "sha256": "dbeca3436ea747e32cc0e969acd59e4c7412e9799b30c85a2a211f6899a1568d",
+      "selected_at": "2026-11-22T19:18:31.687672+00:00",
+      "generation_id": "907e88c5-daa8-4206-ae8c-38441bb1064a"
     }
   ]
 }
