@@ -36,7 +36,8 @@
     "Karadelikler Gerçekten Her Şeyi Yutmuyor! #Shorts",
     "Babil'in Asma Bahçeleri Gerçekte Ninova'da mıydı? #Shorts",
     "1349'da Altın Değerinde Tutulan Baharat: Karabiber! #Shorts",
-    "Birinci Dünya Savaşı'nda Cephede Noel Ateşkesi: 1914! #Shorts"
+    "Birinci Dünya Savaşı'nda Cephede Noel Ateşkesi: 1914! #Shorts",
+    "1325'te Tek Bir Tahta Kova Yüzünden Çıkan Gerçek Savaş! #Shorts"
   ],
   "used_records": [
     {
@@ -1404,9 +1405,7 @@
         "yillard"
       ],
       "created_at": "2026-11-22T00:10:23.034474+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "1325'te Tek Bir Tahta Kova Yüzünden Çıkan Gerçek Savaş! #Shorts",
       "topic": "Tarih",
@@ -1474,9 +1473,8 @@
         "year",
         "zapolino"
       ],
-      "created_at": "2026-11-22T10:01:17.507604+00:00",
-      "reservation_id": "b75f8b5e-17c0-4e3c-b92f-2f54f0760bf6",
-      "run_id": "45010078169:1"
+      "created_at": "2026-11-22T10:01:17.507604+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
