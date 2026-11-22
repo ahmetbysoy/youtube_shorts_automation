@@ -11,7 +11,7 @@ Cikti: probe_report.json + (basariliysa) probe_cover.jpg
 """
 from __future__ import annotations
 
-import asyncio, json, os, sys, time, glob, shutil
+import asyncio, json, os, re, sys, time, glob, shutil
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -130,6 +130,60 @@ async def part_c(client, cookies: dict, title: str) -> dict:
     return row
 
 
+async def part_d(client) -> list[dict]:
+    """batchexecute 400 teshisi: kutuphaneyle ayni POST'u elle kurup yanit gövdesini oku.
+
+    Varyantlar: D1 birebir klon, D2 f.sid'siz, D3 bl'siz, D4 minimal f.req.
+    Yanit gövdesi (Google hata mesaji) sansürlenerek yazdirilir.
+    """
+    from gemini_webapi.constants import Endpoint, Headers, GRPC, MODEL_HEADER_KEY
+    from gemini_webapi.types import RPCData
+
+    def scrub(text: str) -> str:
+        # uzun base64 benzeri tokenleri maskele (guvenlik, cookie/token asla loglanmaz)
+        return re.sub(r'[A-Za-z0-9_-]{40,}', '<masked>', text or '')[:500]
+
+    tests = []
+    payloads = [RPCData(rpcid=GRPC.GET_USER_STATUS, payload='[]')]
+    freq = json.dumps([[p.serialize() for p in payloads]])
+    base_params = {
+        'rpcids': GRPC.GET_USER_STATUS,
+        'hl': getattr(client, 'language', 'en-US') or 'en-US',
+        '_reqid': getattr(client, '_reqid', 10000),
+        'rt': 'c',
+        'source-path': '/app',
+    }
+    if getattr(client, 'build_label', None):
+        base_params['bl'] = client.build_label
+    if getattr(client, 'session_id', None):
+        base_params['f.sid'] = client.session_id
+    batch_exec_headers = Headers.BATCH_EXEC.value.copy()
+    h = json.loads(batch_exec_headers[MODEL_HEADER_KEY])
+    h.append(client._sessionid)
+    batch_exec_headers[MODEL_HEADER_KEY] = json.dumps(h).decode('utf8')
+    request_headers = {**Headers.GEMINI.value, **batch_exec_headers, **Headers.SAME_DOMAIN.value}
+    data = {'at': client.access_token or '', 'f.req': freq}
+
+    variants = [
+        ('D1_klon', dict(base_params), data),
+        ('D2_fsid_yok', {k: v for k, v in base_params.items() if k != 'f.sid'}, data),
+        ('D3_bl_yok', {k: v for k, v in base_params.items() if k != 'bl'}, data),
+        ('D4_minimal_freq', dict(base_params),
+         {'at': client.access_token or '', 'f.req': '[["otAQ7b","[]",null,"generic"]]'}),
+    ]
+    for name, params, d in variants:
+        row = {'part': 'D', 'test': name}
+        try:
+            r = await client._live_client.post(Endpoint.BATCH_EXEC, params=params,
+                                               headers=request_headers, data=d)
+            row.update(status=r.status_code, body=scrub(r.text))
+        except Exception as e:
+            row.update(error=type(e).__name__, detail=str(e)[:150])
+        tests.append(row)
+        log(f"{name} -> {row.get('status', row.get('error'))} gövde: {row.get('body', row.get('detail', ''))[:200]}")
+    return tests
+
+
 async def main_async(args) -> int:
     targets = [t.strip() for t in args.targets.split(',') if t.strip()]
     cookies = load_cookies()
@@ -142,7 +196,8 @@ async def main_async(args) -> int:
     except Exception:
         gw_ver = '?'
     summary = {'curl_cffi': curl_cffi.__version__, 'gemini_webapi': gw_ver,
-               'targets': targets, 'a': [], 'b': [], 'c': None, 'started': time.strftime('%Y-%m-%dT%H:%M:%S')}
+               'targets': targets, 'a': [], 'b': [], 'c': None, 'd': [],
+               'started': time.strftime('%Y-%m-%dT%H:%M:%S')}
 
     summary['a'] = await part_a(targets)
     summary['b'] = []
@@ -157,7 +212,12 @@ async def main_async(args) -> int:
             break
 
     if winner is not None:
-        log(f"init BASARILI: {winner_target} — tam kapak uretim testi (Part C)")
+        log(f"init BASARILI: {winner_target} — batchexecute teshis varyantlari (Part D)")
+        try:
+            summary['d'] = await part_d(winner)
+        except Exception as e:
+            log(f"Part D hatasi: {type(e).__name__}: {str(e)[:150]}")
+        log(f"tam kapak uretim testi (Part C)")
         summary['c'] = await part_c(winner, cookies, args.title)
         try:
             await asyncio.wait_for(winner.close(), timeout=10)
