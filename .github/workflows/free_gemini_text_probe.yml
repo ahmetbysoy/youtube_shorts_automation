@@ -58,10 +58,7 @@ jobs:
             echo "::warning::tam probe basarisiz (Wikipedia rate-limit/validasyon olabilir) — tasima-yalniz test yine de kosulacak"
           # Tasima-yalniz test: konu secimi/Wikipedia olmadan PW adapter'in
           # oturum+gonderim+extraction zincirini sabit mini prompt ile dogrular.
-          cat > /tmp/transport_prompt.txt <<'EOF'
-Sadece su JSON'u yanitla, baska hicbir metin ekleme:
-{"topic":"transport-test","title":"PW Transport Testi","script_text":"Bu bir tasima testidir.","visual_keywords":["test","bir","iki","uc"]}
-EOF
+          printf 'Sadece su JSON u yanitla, baska hicbir metin ekleme:\n{"topic":"transport-test","title":"PW Transport Testi","script_text":"Bu bir tasima testidir.","visual_keywords":["test","bir","iki","uc"]}\n' > /tmp/transport_prompt.txt
           TRANSPORT_OK=0
           if python scripts/gemini_story_pw.py --prompt-file /tmp/transport_prompt.txt --out /tmp/transport_resp.txt --timeout 120; then
             echo "TRANSPORT_OK(PW)"
