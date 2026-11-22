@@ -141,6 +141,11 @@ async def _one_topic_attempt(
     if concept.strip():
         user_prompt += "\nEk editoryal tercih (olguları değiştirmeden): " + concept.strip()
     client = GeminiClient(cookies["__Secure-1PSID"], cookies["__Secure-1PSIDTS"])
+    # 2026-11-22: Google kutuphanenin tum batchexecute POST'larina HTTP 400 donuyor
+    # (kapak teshisi ile ayni kok — AI_HANDOFF'a bak). _init_rpc telemetri RPC'leri
+    # bypass edilir: init 0.2sn'de biter, generate hizli APIError verir ve fallback
+    # 240sn yerine ~60sn'de tetiklenir.
+    client._init_rpc = lambda: asyncio.sleep(0)
     # auto_refresh=False — arka planda token yenileme gorevi bazen event loop'u kilitliyor
     # init 35sn: uretim loglarinda init fazinin 25sn'de tukendigi (Google yavas
     # yanit verdiginde) en az iki gercek kosuda dogrulandi.
