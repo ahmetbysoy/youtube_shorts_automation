@@ -728,6 +728,34 @@
       "sha256": "108897ec2bedc04ffb4b9a7c24c647bbef8e0d960c2e896b0bf6f6a705bfd7b5",
       "selected_at": "2026-11-22T16:27:45.716863+00:00",
       "generation_id": "e77117e1-2ab7-49dc-901a-d39d9107f61f"
+    },
+    {
+      "key": "pixabay:121737",
+      "source_url": "https://pixabay.com/videos/search/cosmos%20galaxy%20stars/",
+      "sha256": "f4935d31b9494832d987bf6964cfa226dae06493823317d923c4c2ea32ffd4c0",
+      "selected_at": "2026-11-22T16:47:48.190420+00:00",
+      "generation_id": "292bc5fa-4b2f-40a3-ad2c-0a2f6fc0eae7"
+    },
+    {
+      "key": "pixabay:191325",
+      "source_url": "https://pixabay.com/videos/search/supernova%20explosion%20nebula/",
+      "sha256": "e1ab32c1b6457f690c7022aea97d5ff9ced46fd2f7cb76efde81ea65b7f7ff9f",
+      "selected_at": "2026-11-22T16:48:54.378640+00:00",
+      "generation_id": "292bc5fa-4b2f-40a3-ad2c-0a2f6fc0eae7"
+    },
+    {
+      "key": "pixabay:12500",
+      "source_url": "https://pixabay.com/videos/search/science%20neutron/",
+      "sha256": "9144c3fada30116b9b0d0e388b2ff76e6381d5cef941daab0766e8523b02f7b4",
+      "selected_at": "2026-11-22T16:49:55.757565+00:00",
+      "generation_id": "292bc5fa-4b2f-40a3-ad2c-0a2f6fc0eae7"
+    },
+    {
+      "key": "wikimedia:96292067",
+      "source_url": "https://commons.wikimedia.org/wiki/File:NASA%27s_Fermi_Finds_Vast_%27Halo%27_Around_Nearby_Pulsar_BInimiulZQk.webm",
+      "sha256": "92fc70f2b39bfe8f9bdda165656acd3bf48ce7c14d6bb351b367a4806dab20d9",
+      "selected_at": "2026-11-22T16:50:52.806732+00:00",
+      "generation_id": "292bc5fa-4b2f-40a3-ad2c-0a2f6fc0eae7"
     }
   ]
 }
