@@ -106,18 +106,49 @@ def _upgrade_url(url: str) -> str | None:
 
 
 async def _fetch_blob(page, src: str) -> bytes | None:
-    try:
-        arr = await page.evaluate(
-            """async (src) => {
-                const r = await fetch(src);
-                if (!r.ok) return null;
-                const buf = await r.arrayBuffer();
-                return Array.from(new Uint8Array(buf));
-            }""", src)
-        return bytes(arr) if arr else None
-    except Exception as e:
-        log(f"blob fetch hatasi: {type(e).__name__}: {str(e)[:120]}")
-        return None
+    # blob URL'ler ureten dokumanin context'ine ozgudur — Gemini cevabi iframe
+    # icinde olabildigi icin TUM frame'lerde denenir
+    for frame in page.frames:
+        try:
+            arr = await frame.evaluate(
+                """async (src) => {
+                    const r = await fetch(src);
+                    if (!r.ok) return null;
+                    const buf = await r.arrayBuffer();
+                    return Array.from(new Uint8Array(buf));
+                }""", src)
+            if arr:
+                return bytes(arr)
+        except Exception as e:
+            log(f"blob fetch ({frame.url[:50]}) atlandi: {type(e).__name__}")
+    return None
+
+
+async def _fetch_via_canvas(page, src: str) -> bytes | None:
+    """img elementini bulup ayni dokumanda canvas'a cizer, PNG dataURL dondurur.
+
+    blob fetch basarisiz olursa (CORS/origin) son care; ayni-origin blob'ta
+    canvas temiz kalir.
+    """
+    import base64
+    for frame in page.frames:
+        try:
+            b64 = await frame.evaluate(
+                """async (src) => {
+                    const img = [...document.querySelectorAll('img')]
+                        .find(i => (i.currentSrc || i.src) === src);
+                    if (!img || !img.naturalWidth) return null;
+                    const c = document.createElement('canvas');
+                    c.width = img.naturalWidth;
+                    c.height = img.naturalHeight;
+                    c.getContext('2d').drawImage(img, 0, 0);
+                    return c.toDataURL('image/png');
+                }""", src)
+            if b64 and b64.startswith('data:image'):
+                return base64.b64decode(b64.split(',', 1)[1])
+        except Exception:
+            continue
+    return None
 
 
 async def _fetch_https(context, url: str) -> bytes | None:
@@ -278,12 +309,16 @@ async def generate(out_path: str, title: str, prompt_override: str | None = None
             await browser.close()
             raise SystemExit(f'HATA: {IMAGE_WAIT_TIMEOUT_S}sn icinde gorsel uretilmedi (screenshot /tmp/gemini_cover_pw_no_image.png)')
 
-        # 6) Gorseli indir: once buyuk boyut deneyip, olmazsa orijinal src
+        # 6) Gorseli indir: blob (tum frame'ler) -> canvas fallback -> buyuk URL -> orijinal src
         src = found['src']
         data = None
         if src.startswith('blob:'):
-            up = _upgrade_url(src)
             data = await _fetch_blob(page, src)
+            if data is None:
+                log("blob fetch tum framelerde basarisiz — canvas fallback denenecek")
+                data = await _fetch_via_canvas(page, src)
+                if data:
+                    log(f"canvas fallback calisti ({len(data)} byte)")
         else:
             up = _upgrade_url(src)
             if up:
@@ -292,12 +327,13 @@ async def generate(out_path: str, title: str, prompt_override: str | None = None
                     data = None  # buyuk istek 400/dusuk donduyse orijinale dus
             if data is None:
                 data = await _fetch_https(context, src)
-        if data is None and src.startswith('blob:'):
-            pass  # yukarida zaten denendi
+        if not data or len(data) < 5000:
+            # son care: canvas'i dene (non-blob icin de)
+            data = await _fetch_via_canvas(page, src)
         if not data or len(data) < 5000:
             await context.close()
             await browser.close()
-            raise SystemExit('HATA: gorsel indirilemedi')
+            raise SystemExit('HATA: gorsel indirilemedi (blob+canvas+https yollari basarisiz)')
 
         # 7) JPEG olarak yaz (uretim akisiyla ayni: RGB + quality 94)
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)
