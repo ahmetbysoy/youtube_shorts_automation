@@ -257,9 +257,11 @@ async def generate_text_scenario(
     # (sayfa acilma + doldurma + yanit kararliligi). Butceler buna gore acilir.
     TRANSPORT = (os.environ.get("GEMINI_TEXT_TRANSPORT", "pw") or "pw").strip().lower()
     if TRANSPORT == "pw":
-        PW_TEXT_BUDGET = _env_float("GEMINI_PW_TEXT_TIMEOUT_S", 150.0)
+        PW_TEXT_BUDGET = _env_float("GEMINI_PW_TEXT_TIMEOUT_S", 120.0)
         PER_ATTEMPT_TIMEOUT = max(PER_ATTEMPT_TIMEOUT, PW_TEXT_BUDGET + 60)
-        TOTAL_TIMEOUT = max(TOTAL_TIMEOUT, PW_TEXT_BUDGET + 90)
+        # 2 tam PW denemesi + backoff + research sigmali (run 45034450228:
+        # 240sn toplam butce 2. denemeyi ucmustu)
+        TOTAL_TIMEOUT = max(TOTAL_TIMEOUT, PW_TEXT_BUDGET * 2 + 120)
     cookies = load_cookie_payload()
     last_error: Exception | None = None
     excluded: set[str] = set()

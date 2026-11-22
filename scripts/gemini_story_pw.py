@@ -42,26 +42,49 @@ from gemini_cover_pw import (  # noqa: E402
     load_cookies, load_storage_state, _as_playwright_state,
 )
 
-# Tum frame'lerdeki SON model yanitinin metnini toplar (kullanici mesaji degil)
+# Tum frame'lerdeki SON model yanitinin metnini toplar (kullanici mesaji degil).
+# once bilinen seciciler, sonra genel '[class*=response]' fallback'i — Gemini DOM'u
+# surekli degistigi icin tek seciciye bagli kalmamak gerekir (run 45034450228 dersleri)
 _EXTRACT_JS = """
 () => {
   const sels = ['model-response', '.model-response-text',
-                '.response-container-content', '[data-test-id="model-response-text"]'];
+                '.response-container-content', '[data-test-id="model-response-text"]',
+                'message-content'];
   const roots = [document];
   for (const f of document.querySelectorAll('iframe')) {
     try { if (f.contentDocument) roots.push(f.contentDocument); } catch (e) {}
   }
-  let best = '';
-  for (const root of roots) {
-    const nodes = root.querySelectorAll(sels.join(','));
-    if (!nodes.length) continue;
+  const pick = (root, sel) => {
+    const nodes = root.querySelectorAll(sel);
     for (let i = nodes.length - 1; i >= 0; i--) {
       const t = (nodes[i].innerText || '').trim();
-      if (t) { best = t; break; }
+      if (t) return t;
     }
-    if (best) break;
+    return '';
+  };
+  for (const root of roots) {
+    for (const sel of sels) {
+      const t = pick(root, sel);
+      if (t) return t;
+    }
+    const t2 = pick(root, '[class*="response"]');
+    if (t2) return t2;
   }
-  return best;
+  return '';
+}
+"""
+
+# Kullanicinin gonderdigi mesaj gercekten sohbete dustu mu?
+_SENT_JS = """
+() => {
+  const roots = [document];
+  for (const f of document.querySelectorAll('iframe')) {
+    try { if (f.contentDocument) roots.push(f.contentDocument); } catch (e) {}
+  }
+  for (const root of roots) {
+    if (root.querySelectorAll('user-query, [class*="user-query"]').length) return true;
+  }
+  return false;
 }
 """
 
@@ -174,28 +197,40 @@ async def generate(out_path: str, prompt: str, budget_s: int) -> None:
         await ta.click(force=True, timeout=5000)
         await page.wait_for_timeout(400)
 
-        # Uzun prompt icin fill() (hizli), gonderilmezse type() fallback
-        sent = False
-        try:
-            await ta.fill(prompt, timeout=8000)
-            await page.wait_for_timeout(500)
-            await page.keyboard.press('Enter')
-            await page.wait_for_timeout(2500)
+        # Uzun prompt icin fill() (hizli); gonderim dogrulanir, dusmezse type() fallback.
+        # Kanit (run 45034450228): fill+Enter bazen sessizce yutuluyor — dogrulama sart.
+        async def _sent() -> bool:
             try:
-                still = await ta.inner_text()
+                return bool(await page.evaluate(_SENT_JS))
             except Exception:
-                still = ''
-            sent = not (still and still.strip())
-            if not sent:
-                log("fill ile gonderim alinmadi — type(delay=2) fallback")
-        except Exception as e:
-            log(f"fill basarisiz ({type(e).__name__}) — type(delay=2) fallback")
-        if not sent:
-            await ta.click(force=True, timeout=5000)
-            await ta.type(prompt, delay=2)
+                return False
+
+        async def _try_send(how: str) -> bool:
+            if how == 'fill':
+                await ta.fill(prompt, timeout=8000)
+            else:
+                await ta.click(force=True, timeout=5000)
+                await ta.type(prompt, delay=2)
             await page.wait_for_timeout(500)
             await page.keyboard.press('Enter')
-        log(f"prompt gonderildi ({time.monotonic() - started:.0f}sn) — yanit bekleniyor")
+            for _ in range(4):
+                await page.wait_for_timeout(1500)
+                if await _sent():
+                    return True
+            # Enter yutulduysa bir kez daha dene
+            await page.keyboard.press('Enter')
+            for _ in range(3):
+                await page.wait_for_timeout(1500)
+                if await _sent():
+                    return True
+            return False
+
+        if not await _try_send('fill'):
+            log("fill ile gonderim alinmadi — type(delay=2) fallback")
+            if not await _try_send('type'):
+                await page.screenshot(path='/tmp/gemini_story_pw_no_send.png')
+                raise SystemExit('STORY_FAIL(prompt gonderilemedi) — screenshot /tmp/gemini_story_pw_no_send.png')
+        log(f"prompt gonderildi, sohbete dustu ({time.monotonic() - started:.0f}sn) — yanit bekleniyor")
 
         # Yanit metni kararliylik takibi: son model-response metni N ornegin ayni olmali
         samples: list[str] = []
