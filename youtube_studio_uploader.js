@@ -1290,6 +1290,11 @@ async function uploadToYouTubeStudio() {
         }
 
         // 2) DISARDS (kimliksiz) olarak herkese acik erisilebiliyor mu? (en kritik dogrulama)
+        // 2026-11-21 kanitlari: iki ayri kosuda video Studio'da PUBLIC gorunup
+        // anonim erisimde ~3+ dk UNPLAYABLE kalmasina ragmen sonrasinda canli
+        // oldu (GwoeHZr2DJ4, 3QJlMNjAdD0). 12x15sn ~ 3dk pencere yetmiyor;
+        // 32x15sn ~ 8dk pencere kullaniliyor (hala fail-closed: sonunda hata).
+        const ANON_VERIFY_ATTEMPTS = 32;
         console.log("[*] Anonim (kimliksiz) erişim doğrulanıyor...");
         let publicVerified = false;
         let anonPage = null;
@@ -1299,7 +1304,7 @@ async function uploadToYouTubeStudio() {
                 locale: 'tr-TR', viewport: { width: 1366, height: 900 },
             });
             const anonTab = await anonPage.newPage();
-            for (let attempt = 0; attempt < 12; attempt++) {
+            for (let attempt = 0; attempt < ANON_VERIFY_ATTEMPTS; attempt++) {
                 const pubUrl = `https://www.youtube.com/shorts/${publishedId}`;
                 const resp = await anonTab.goto(pubUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
                 await anonTab.waitForTimeout(5000);
@@ -1316,9 +1321,9 @@ async function uploadToYouTubeStudio() {
                         console.log(`[✓] Anonim erişim BAŞARILI (status=${status}). Video gerçekten PUBLIC!`);
                         break;
                     }
-                    console.log(`[*] Anonim kontrol status=${status} processing=${processing} (deneme ${attempt+1}/12) — YouTube processing bekleniyor`);
+                    console.log(`[*] Anonim kontrol status=${status} processing=${processing} (deneme ${attempt+1}/${ANON_VERIFY_ATTEMPTS}) — YouTube processing bekleniyor`);
                 } else {
-                    console.log(`[*] Anonim erişimde video ${unavailable ? 'unavailable' : 'HTTP hatasi'} (deneme ${attempt+1}/12)`);
+                    console.log(`[*] Anonim erişimde video ${unavailable ? 'unavailable' : 'HTTP hatasi'} (deneme ${attempt+1}/${ANON_VERIFY_ATTEMPTS})`);
                 }
                 await anonTab.waitForTimeout(10000);
             }

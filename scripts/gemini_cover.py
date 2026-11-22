@@ -25,9 +25,12 @@ def load_default_prompt():
 
 # Faz4L: Gemini web gorsel uretimi bazen 2+ dk sürüyor veya tek istekte
 # timeout'a düşüyor. Burada sinirli retry/backoff uygulanır; toplam kötü durum
-# süresi embed_cover_frame.py'daki 240s subprocess bütçesinin altında kalır:
-# init 45 + (75 üretim + 10 bekleme) + 75 üretim = 205s < 240s.
-GEN_TIMEOUT_S = int(os.environ.get('GEMINI_GEN_TIMEOUT_S', '75'))
+# süresi embed_cover_frame.py'daki 240s subprocess bütçesinin altında kalır.
+# 2026-11-21 23:52 kosusu kanıtı: init 45sn hard-cap'siz bırakılınca kütüphane
+# iç retry'lar toplam 240s dış bütçeyi tüketti (dış kill → 35s boşa). init
+# asyncio.wait_for ile hard-cap'lenir + üretim 65sn: 45+65+10+65 = 185s < 240s.
+GEN_TIMEOUT_S = int(os.environ.get('GEMINI_GEN_TIMEOUT_S', '65'))
+INIT_TIMEOUT_S = int(os.environ.get('GEMINI_COVER_INIT_TIMEOUT_S', '45'))
 COVER_ATTEMPTS = max(1, int(os.environ.get('GEMINI_COVER_ATTEMPTS', '2')))
 COVER_BACKOFFS = (10, 20)
 
@@ -38,7 +41,11 @@ async def generate(out_path: str, title: str, prompt_override: str | None = None
     else:
         prompt = load_default_prompt() + '\n\nVideo basligi: ' + title
     client = GeminiClient(cookies.get('__Secure-1PSID',''), cookies.get('__Secure-1PSIDTS',''))
-    await client.init(timeout=45, auto_refresh=True)
+    # auto_refresh=False + wait_for hard-cap: arka plan token yenileme görevi
+    # bazen event loop'u kilitliyor (content tarafında da aynı nedenle False);
+    # kütüphane iç timeout'ları toplam bütçeyi aşan iç retry'lara izin veriyor.
+    await asyncio.wait_for(client.init(timeout=INIT_TIMEOUT_S, auto_refresh=False),
+                           timeout=INIT_TIMEOUT_S)
     resp = None
     last_err: Exception | None = None
     for attempt in range(1, COVER_ATTEMPTS + 1):
