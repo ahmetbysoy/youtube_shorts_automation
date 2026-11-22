@@ -644,6 +644,34 @@
       "sha256": "f8130f19f00c42cd6e81e1fc99fc61fd72cefbf53424224f0abc62fa57789293",
       "selected_at": "2026-11-22T06:44:15.873325+00:00",
       "generation_id": "87a7360c-f00e-4835-ae00-2405ace1e851"
+    },
+    {
+      "key": "wikimedia:200114463",
+      "source_url": "https://commons.wikimedia.org/wiki/File:10th_Mountain_Division%E2%80%99s_Run_of_Heritage-_Reel_(960744).webm",
+      "sha256": "ea0281e3817c6d7ecc591dee46107d0d61277ffc44b9b9edbe704948ba1697d5",
+      "selected_at": "2026-11-22T10:02:40.103879+00:00",
+      "generation_id": "5d92e7b5-f4ec-4bff-a3b3-7b9a84ebf06e"
+    },
+    {
+      "key": "pixabay:119856",
+      "source_url": "https://pixabay.com/videos/search/medieval%20soldiers%20battle/",
+      "sha256": "51e5310ba2073cc89ce5c9d70dc9c7062af4c94fb494407f192444642ecb7215",
+      "selected_at": "2026-11-22T10:03:25.791601+00:00",
+      "generation_id": "5d92e7b5-f4ec-4bff-a3b3-7b9a84ebf06e"
+    },
+    {
+      "key": "pixabay:110731",
+      "source_url": "https://pixabay.com/videos/search/historic%20bologna%20street/",
+      "sha256": "a66987cb573d0383919ce23350a74dc0089a13e8770cb3a736361f0652f06513",
+      "selected_at": "2026-11-22T10:04:16.877401+00:00",
+      "generation_id": "5d92e7b5-f4ec-4bff-a3b3-7b9a84ebf06e"
+    },
+    {
+      "key": "wikimedia:195316574",
+      "source_url": "https://commons.wikimedia.org/wiki/File:America%27s_Army-_The_Mexican-American_War_(950520).webm",
+      "sha256": "a976c880d944e07527d22082401380c2a8b732c3d9ce90426dd80d93b30eaa36",
+      "selected_at": "2026-11-22T10:05:17.237234+00:00",
+      "generation_id": "5d92e7b5-f4ec-4bff-a3b3-7b9a84ebf06e"
     }
   ]
 }
