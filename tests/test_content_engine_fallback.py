@@ -95,6 +95,110 @@ class TestContentEngineFallback(unittest.TestCase):  # type: ignore[name-defined
         self.assertEqual(len(scenario["viral_hashtags"]), 3)
 
 
+class TestFallbackReserveSafety(unittest.TestCase):  # type: ignore[name-defined]
+    """45069984817 dersi: pick filtresi ile reserve_candidate semantiği uyumsuzdu.
+
+    Aynı 15dk slotu + sabit havuz determinizmi, 3 fallback denemesini de AYNI
+    çarpan başlığa kilitliyordu. Bu sınıf: (1) attempt rotasyonu, (2) ledger
+    topic_key/norm eleme, (3) retry yardımcısının duplicate-redlerine dayanıklılığı.
+    """
+
+    def setUp(self):
+        self.original_history = HISTORY_FILE.read_text(encoding="utf-8") if HISTORY_FILE.exists() else "[]"
+        import content_engine as ce
+        self.ce = ce
+
+    def tearDown(self):
+        HISTORY_FILE.write_text(self.original_history, encoding="utf-8")
+
+    def test_pick_fallback_attempt_rotates_titles(self):
+        """Aynı 15dk bucket'ında attempt=0..5 FARKLI başlıklar döndürmeli."""
+        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        seen = [
+            pick_fallback_scenario([], channel_id="1", attempt=a)["title"]
+            for a in range(6)
+        ]
+        self.assertEqual(
+            len(set(seen)), 6,
+            f"attempt rotasyonu tekrar eden başlık verdi: {seen}",
+        )
+
+    def test_pick_fallback_filters_ledger_topic_key(self):
+        """Ledger'da topic_key'i zaten kullanılmış senaryo pick edilmemeli."""
+        from scripts.topic_history import _record as th_record, _norm as th_norm
+        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        target = None
+        for item in self.ce.FALLBACK_SCENARIOS:
+            rec = th_record(item["title"], item)
+            if rec["topic_key"]:
+                target = (item, rec)
+                break
+        self.assertIsNotNone(target, "topic_key'i dolu bir senaryo yok")
+        item, rec = target
+        ledger = {
+            "version": 2,
+            "used_titles": [item["title"]],
+            "used_records": [rec],
+            "pending": [],
+        }
+        HISTORY_FILE.write_text(json.dumps(ledger), encoding="utf-8")
+        target_key = rec["topic_key"]
+        for a in range(6):
+            scenario = pick_fallback_scenario([], channel_id="1", attempt=a)
+            cand = th_record(scenario["title"], scenario)
+            self.assertNotEqual(
+                cand["topic_key"], target_key,
+                f"attempt={a}: pick, ledger topic_key'i ile çarpışan senaryoyu verdi",
+            )
+            self.assertNotEqual(
+                th_norm(scenario["title"]), th_norm(item["title"]),
+                f"attempt={a}: pick, ledger başlığının normalize eşini verdi",
+            )
+
+    def test_retry_helper_survives_duplicate_rejections(self):
+        """save hep duplicate reddederse 8 deneme sonrası RuntimeError; 8 farklı pick."""
+        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        picked_attempts = []
+        real_pick = self.ce.pick_fallback_scenario
+
+        def spy_pick(recent_titles, **kwargs):
+            picked_attempts.append(kwargs.get("attempt"))
+            return real_pick(recent_titles, **kwargs)
+
+        def always_dup(title, scenario=None):
+            raise ValueError("Konu tekrarı engellendi (exact_title); yeni konu seçilmeli.")
+
+        real_save = self.ce.save_recent_title
+        self.ce.pick_fallback_scenario = spy_pick
+        self.ce.save_recent_title = always_dup
+        try:
+            with self.assertRaises(RuntimeError):
+                self.ce._pick_and_reserve_with_retry([], "1", None, attempts=8)
+        finally:
+            self.ce.pick_fallback_scenario = real_pick
+            self.ce.save_recent_title = real_save
+        self.assertEqual(picked_attempts, [0, 1, 2, 3, 4, 5, 6, 7], "attempt rotasyonu bozuldu")
+
+    def test_retry_helper_recovers_on_second_attempt(self):
+        """İlk rezervasyon reddi sonrası attempt=1'den BAŞARILI senaryo dönmeli."""
+        HISTORY_FILE.write_text("[]", encoding="utf-8")
+        state = {"n": 0}
+
+        def first_dup(title, scenario=None):
+            state["n"] += 1
+            if state["n"] == 1:
+                raise ValueError("Konu tekrarı engellendi (same_normalized_topic); yeni konu seçilmeli.")
+
+        real_save = self.ce.save_recent_title
+        self.ce.save_recent_title = first_dup
+        try:
+            scenario = self.ce._pick_and_reserve_with_retry([], "1", None, attempts=8)
+        finally:
+            self.ce.save_recent_title = real_save
+        self.assertEqual(state["n"], 2, "İkinci deneme rezervasyonu yapılmadı")
+        self.assertIn("title", scenario)
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()

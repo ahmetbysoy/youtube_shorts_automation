@@ -3282,12 +3282,52 @@ def validate_fallback_scenario(raw_data: dict[str, Any], provider_name: str) -> 
     return validate_and_normalize_scenario(candidate, provider_name)
 
 
+def _ledger_dedup_keys() -> tuple[set[str], set[str]]:
+    """Ledger (.used_topics.json) used_records+pending'ten (normalize_başlık, topic_key) kümesi.
+
+    Neden: pick aşamasındaki başlık-filtresi (string equality + is_similar_to_recent)
+    reserve_candidate'in _duplicate semantiğini karşılamıyor; filtre geçiren başlıklar
+    rezervasyonda exact_title/same_normalized_topic ile reddedilip koşuyu öldürüyordu
+    (2026-11-22 45069984817 kanıtı: 3/3 fallback denemesi rezervasyonda çarptı).
+    Bu fonksiyon ledger'ın GERÇEK yasak kümelerini pick'e taşır; okunamazsa boş küme
+    döner (eleme devre dışı — save katmanı yine korur, fail-open pick / fail-closed save).
+    """
+    norm_titles: set[str] = set()
+    topic_keys: set[str] = set()
+    try:
+        from scripts.topic_history import _norm as _topic_norm
+
+        data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, ImportError):
+        return norm_titles, topic_keys
+    if not isinstance(data, dict):
+        return norm_titles, topic_keys
+    records = [*data.get("used_records", []), *data.get("pending", [])]
+    for rec in records:
+        if not isinstance(rec, dict):
+            continue
+        norm_title = _topic_norm(str(rec.get("title", "")))
+        if norm_title:
+            norm_titles.add(norm_title)
+        key = rec.get("topic_key")
+        if isinstance(key, str) and key:
+            topic_keys.add(key)
+    return norm_titles, topic_keys
+
+
 def pick_fallback_scenario(
     recent_titles: list[str],
     channel_id: str = "1",
     analytics_feedback: dict[str, Any] | None = None,
+    attempt: int = 0,
 ) -> dict[str, Any]:
-    """Yedek Senaryo Havuzu: 15dk benzersizlik garantisi + Faz 9 analitik kazanan konu (%80 ağırlık) seçimi."""
+    """Yedek Senaryo Havuzu: 15dk benzersizlik garantisi + Faz 9 analitik kazanan konu (%80 ağırlık) seçimi.
+
+    attempt parametresi: aynı 15dk slotu içinde yapılan yeniden denemelerin (rezervasyon
+    duplicate reddi sonrası) FARKLI senaryolara dağıtılmasını sağlar. Aynı bucket'ta
+    len(pool)/step determinizmi değişmediği için attempt olmadan 3 deneme hep aynı
+    başlığa kilitleniyordu (45069984817 kök nedeni).
+    """
     effective_ch = str(channel_id or os.environ.get("MATRIX_CHANNEL_ID") or "1").strip() or "1"
     pool = list(FALLBACK_SCENARIOS)
 
@@ -3330,6 +3370,30 @@ def pick_fallback_scenario(
         else:
             print(f"[INFO] History filtresi: tum senaryolar kullanilmis, havuz sifirlaniyor.")
 
+        # Rezervasyon-güvenli eleme: ledger'da birebir (normalize) veya topic_key'i
+        # zaten kullanılmış senaryolar pick'te çökertilir — reserve_candidate'in
+        # exact_title/same_normalized_topic kanatlarıyla birebir uyumlu. Eleme sonrası
+        # havuz <10 kalırsa eski davranış korunur (eleme yalnız daraltır, genişletmez).
+        ledger_norm_titles, ledger_topic_keys = _ledger_dedup_keys()
+        if ledger_norm_titles or ledger_topic_keys:
+            try:
+                from scripts.topic_history import _norm as _topic_norm, _record as _topic_record
+            except ImportError:
+                _topic_norm = _topic_record = None
+            if _topic_norm is not None and _topic_record is not None:
+                combined_norm = {_topic_norm(t) for t in combined_recent if t} | ledger_norm_titles
+                reserve_safe = [
+                    item for item in pool
+                    if _topic_norm(item["title"]) not in combined_norm
+                    and (not _topic_record(item["title"], item)["topic_key"]
+                         or _topic_record(item["title"], item)["topic_key"] not in ledger_topic_keys)
+                ]
+                if len(reserve_safe) >= 10:
+                    skipped = len(pool) - len(reserve_safe)
+                    pool = reserve_safe
+                    print(f"[INFO] Rezervasyon-guvenli eleme: {skipped} carpan senaryo havuzdan dustu, "
+                          f"{len(pool)} senaryo kaldi.")
+
         # Analitik boost aktifse 5 zaman diliminin 4'ünde (%80) kazanan niş havuzuna öncelik ver
         if boost_active and winning_topic and (slot_15m % 5 != 4):
             winners = [
@@ -3338,18 +3402,56 @@ def pick_fallback_scenario(
             ]
             if winners:
                 w_step = _coprime_step(len(winners))
-                w_slot = (slot_15m * w_step + (int(effective_ch) - 1) * w_step) % len(winners)
+                w_slot = (slot_15m * w_step + attempt * w_step + (int(effective_ch) - 1) * w_step) % len(winners)
                 return validate_fallback_scenario(
                     winners[w_slot], f"local-fallback-analytics-boost-{winning_topic.lower()}-{effective_ch}"
                 )
 
         step = _coprime_step(len(pool))
-        slot = (slot_15m * step + (int(effective_ch) - 1) * step) % len(pool)
+        slot = (slot_15m * step + attempt * step + (int(effective_ch) - 1) * step) % len(pool)
         return validate_fallback_scenario(pool[slot], f"local-fallback-matrix-{effective_ch}")
 
     unused = [item for item in pool if item["title"] not in recent_titles]
     chosen = random.choice(unused if unused else pool)
     return validate_fallback_scenario(chosen, "local-fallback-pool")
+
+
+def _pick_and_reserve_with_retry(
+    recent_titles: list[str],
+    effective_channel_id: str,
+    analytics_feedback: dict[str, Any] | None,
+    attempts: int = 8,
+) -> dict[str, Any]:
+    """pick_fallback_scenario + save_recent_title çiftini duplicate-redlerine karşı döndürür.
+
+    Her denemede `attempt` indeksi artar (slot rotasyonu) ve çarpan başlık recent_titles'a
+    eklenir (filtre daralır). Rezervasyon duplicate reddi ValueError'dır; pick doğrulama
+    hatası da ValueError olabilir — her iki durumda da bir sonraki denemeye geçilir.
+    attempts tükenirse RuntimeError (fail-closed korunur; pick'teki rezervasyon-güvenli
+    eleme sayesinde pratikte ulaşılamaz derinliktedir).
+    """
+    last_err: Exception | None = None
+    for _attempt in range(attempts):
+        try:
+            scenario = pick_fallback_scenario(
+                recent_titles,
+                channel_id=effective_channel_id,
+                analytics_feedback=analytics_feedback,
+                attempt=_attempt,
+            )
+        except ValueError as pick_exc:
+            last_err = pick_exc
+            continue
+        try:
+            save_recent_title(scenario["title"], scenario)
+            return scenario
+        except ValueError as dup_exc:
+            last_err = dup_exc
+            print(f"[TOLERANS] Fallback başlığı rezerve edilemedi ({dup_exc}); yeni seçim deneniyor.",
+                  file=sys.stderr)
+            recent_titles.append(scenario["title"])
+            continue
+    raise RuntimeError(f"Yedek senaryo rezervasyonu {attempts} denemede başarısız oldu: {last_err}")
 
 
 def _coprime_step(size: int) -> int:
@@ -3415,11 +3517,10 @@ def generate_scenario(
 
     if force_fallback:
         print("[BİLGİ] '--force-fallback' aktif: Yerel yedek senaryo havuzu kullanılıyor.")
-        scenario = pick_fallback_scenario(
-            recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
+        # _pick_and_reserve_with_retry rezervasyonu da yapar; ikinci save çifte-rezervasyon olurdu.
+        return _pick_and_reserve_with_retry(
+            recent_titles, effective_channel_id, analytics_feedback
         )
-        save_recent_title(scenario["title"], scenario)
-        return scenario
 
     if gemini_web_only:
         try:
@@ -3451,22 +3552,12 @@ def generate_scenario(
                 recent_titles = load_recent_titles(HISTORY_FILE)
             except Exception:
                 pass
-            # En fazla 3 kez fallback dene; duplicate/benzer başlık gelirse bir sonrakine geç.
-            last_err: Exception | None = None
-            for _attempt in range(3):
-                scenario = pick_fallback_scenario(
-                    recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
-                )
-                try:
-                    save_recent_title(scenario["title"], scenario)
-                    return scenario
-                except ValueError as dup_exc:
-                    last_err = dup_exc
-                    print(f"[TOLERANS] Fallback başlığı rezerve edilemedi ({dup_exc}); yeni seçim deneniyor.",
-                          file=sys.stderr)
-                    recent_titles.append(scenario["title"])
-                    continue
-            raise RuntimeError(f"Fallback senaryo seçimi 3 denemede başarısız oldu: {last_err}")
+            # En fazla 8 kez fallback dene; duplicate/benzer başlık gelirse bir sonrakine geç.
+            # (attempt rotasyonu + rezervasyon-güvenli eleme: 45069984817 dersi)
+            scenario = _pick_and_reserve_with_retry(
+                recent_titles, effective_channel_id, analytics_feedback
+            )
+            return scenario
 
     # NOT: Google Gemini API (GEMINI_API_KEY / GOOGLE_API_KEY) katmani 2026-11-22'te
     # kullanici karariyla tamamen kaldirildi; metin uretimi yalniz Gemini Web cookie
@@ -3497,10 +3588,9 @@ def generate_scenario(
 
     # 3. Katman: Garantili Yedek Havuz (Asla çökmez)
     try:
-        scenario = pick_fallback_scenario(
-            recent_titles, channel_id=effective_channel_id, analytics_feedback=analytics_feedback
+        scenario = _pick_and_reserve_with_retry(
+            recent_titles, effective_channel_id, analytics_feedback
         )
-        save_recent_title(scenario["title"], scenario)
         return scenario
     except Exception as exc:
         raise RuntimeError(f"Kritik hata: Yedek senaryo havuzu bile yüklenemedi: {exc}") from exc
