@@ -57,11 +57,17 @@ async def part_a(targets: list[str]) -> list[dict]:
 
 
 async def init_one(cookies: dict, target: str, init_timeout: int = 25,
-                   hard_cap: int = 30) -> tuple[object | None, dict]:
+                   hard_cap: int = 30, skip_rpc: bool = True) -> tuple[object | None, dict]:
     from gemini_webapi import GeminiClient
     t0 = time.monotonic()
-    row: dict = {'part': 'B', 'target': target}
+    row: dict = {'part': 'B', 'target': target, 'skip_rpc': skip_rpc}
     client = GeminiClient(cookies.get('__Secure-1PSID', ''), cookies.get('__Secure-1PSIDTS', ''))
+    if skip_rpc:
+        # 2026-11-18 sonrasi: init'in _init_rpc() telemetri RPC'leri (GET_USER_STATUS
+        # vb.) batchexecute'dan HTTP 400 aliyor ve kutuphane ic retry'larla ~30sn
+        # takiliyor. Bu RPC'ler generate_content icin gereksizdir (model=None ->
+        # hesap varsayilani). Bypass ile init dogrudan tamamlanir.
+        client._init_rpc = lambda: asyncio.sleep(0)
     try:
         await asyncio.wait_for(client.init(timeout=init_timeout, auto_refresh=False,
                                            impersonate=target, verbose=True),
@@ -70,8 +76,14 @@ async def init_one(cookies: dict, target: str, init_timeout: int = 25,
         tok = client.access_token or ''
         row.update(ok=bool(tok), sn=sn, token_len=len(tok),
                    cookie_source=getattr(client, '_cookie_source', '?'))
+        if tok:
+            log(f"B {target} skip_rpc={skip_rpc} init OK ({sn}sn) token={len(tok)} karakter")
+        else:
+            row.update(ok=False, error='token_bos')
+            client = None
     except Exception as e:
         row.update(ok=False, error=type(e).__name__, sn=round(time.monotonic() - t0, 1))
+        log(f"B {target} skip_rpc={skip_rpc} init FAIL: {type(e).__name__} ({row['sn']}sn)")
         client = None
     report(row)
     return client, row
