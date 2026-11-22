@@ -53,7 +53,7 @@ function buildStorageState() {
 }
 
 (async () => {
-  const result = { label: LABEL, channel_id: '', candidates: [], method: '', byte: 0 };
+  const result = { label: LABEL, channel_id: '', candidates: [], method: '', byte: 0, diag: {} };
   const candidates = offlineCandidates(STORAGE);
   result.candidates = candidates;
   result.byte = fs.existsSync(STORAGE) ? fs.statSync(STORAGE).size : 0;
@@ -64,6 +64,7 @@ function buildStorageState() {
     headless: true,
     args: ['--disable-blink-features=AutomationControlled', '--no-sandbox'],
   });
+  const allUC = new Set();
   try {
     const ctx = await browser.newContext({
       viewport: { width: 1366, height: 900 },
@@ -73,6 +74,26 @@ function buildStorageState() {
     });
     const page = await ctx.newPage();
 
+    // 0) www.youtube.com isinma + ytcfg kimlik (kendi kanalinin en guvenilir kaynagi)
+    try {
+      await page.goto('https://www.youtube.com/', {
+        waitUntil: 'domcontentloaded',
+        timeout: 45000,
+      });
+      const ytId = await page.evaluate(() => {
+        try {
+          if (window.ytcfg && typeof window.ytcfg.get === 'function') {
+            return window.ytcfg.get('CHANNEL_ID') || '';
+          }
+        } catch (e) { /* yut */ }
+        return '';
+      });
+      result.diag['youtube_ytcfg'] = ytId || 'bos';
+      if (ytId && /^UC[A-Za-z0-9_-]{22}$/.test(ytId)) allUC.add(ytId);
+    } catch (e) {
+      result.diag['youtube_ytcfg'] = `hata: ${String(e).slice(0, 80)}`;
+    }
+
     // 1) Studio ac -> /channel/UC... redirect'i bekle
     try {
       await page.goto('https://studio.youtube.com/', {
@@ -80,16 +101,17 @@ function buildStorageState() {
         timeout: 45000,
       });
       await page.waitForURL(/channel\/(UC[A-Za-z0-9_-]{22})/, { timeout: 30000 }).catch(() => {});
-      let m = page.url().match(/UC[A-Za-z0-9_-]{22}/);
+      result.diag['studio_final_url'] = page.url().slice(0, 120);
+      const m = page.url().match(/UC[A-Za-z0-9_-]{22}/);
       if (m) {
         result.channel_id = m[0];
         result.method = 'studio-redirect';
       }
     } catch (e) {
-      console.log(`[${LABEL}] studio goto hatasi: ${String(e).slice(0, 120)}`);
+      result.diag['studio_final_url'] = `hata: ${String(e).slice(0, 80)}`;
     }
 
-    // 2) ytcfg fallback
+    // 2) ytcfg fallback (studio)
     if (!result.channel_id) {
       try {
         const id = await page.evaluate(() => {
@@ -108,23 +130,28 @@ function buildStorageState() {
       } catch (_) { /* sayfa kapandiysa */ }
     }
 
-    // 3) sayfa icerigi fallback (externalId bootstrap alani)
-    if (!result.channel_id) {
-      try {
-        const html = await page.content();
-        const m2 = html.match(/"(?:externalId|channelId)"\s*:\s*"(UC[A-Za-z0-9_-]{22})"/);
-        if (m2) {
-          result.channel_id = m2[1];
-          result.method = 'body-regex';
-        }
-      } catch (_) { /* yut */ }
-    }
+    // 3) sayfa icerigi genis tarama (picker/externalId/bootstrap; yalnizca public UC ID)
+    try {
+      result.diag['studio_title'] = await page.title().catch(() => '');
+      const html = await page.content();
+      for (const m of html.matchAll(UC_RE)) allUC.add(m[0]);
+      const m2 = html.match(/"(?:externalId|channelId)"\s*:\s*"(UC[A-Za-z0-9_-]{22})"/);
+      if (m2 && !result.channel_id) {
+        result.channel_id = m2[1];
+        result.method = 'body-regex';
+      }
+    } catch (_) { /* yut */ }
 
     await ctx.close().catch(() => {});
+  } catch (e) {
+    result.diag['browser'] = String(e).slice(0, 150);
   } finally {
     await browser.close().catch(() => {});
   }
 
+  result.candidates = [...new Set([...result.candidates, ...allUC])].slice(0, 10);
+  console.log(`[${LABEL}] tarama adaylari: ${result.candidates.join(',') || 'yok'}`);
+  console.log(`[${LABEL}] teshis: ${JSON.stringify(result.diag)}`);
   console.log(`[${LABEL}] KIMLIK: ${result.channel_id || 'COZULEMEDI'} (yontem: ${result.method || '-'})`);
   if (JSON_OUT) {
     fs.writeFileSync(JSON_OUT, JSON.stringify(result, null, 2));
