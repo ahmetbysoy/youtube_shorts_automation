@@ -58,7 +58,7 @@ jobs:
             python scripts/gemini_init_probe.py --title "${{ inputs.title }}"
           fi
 
-      - name: Uretim girisi testi (gemini_cover.py: PW adapter + kutuphane fallback)
+      - name: Uretim girisi testi (PW adapter + kutuphane fallback)
         if: always()
         env:
           GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
