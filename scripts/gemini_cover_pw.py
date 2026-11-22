@@ -48,6 +48,40 @@ def load_cookies() -> dict:
     raise SystemExit('HATA: GEMINI_COOKIES_JSON / GEMINI_COOK env yok ve jeton/gemini_cookies.json yok')
 
 
+def load_storage_state() -> Path | None:
+    """Tam Google oturum state'i bul: env GEMINI_STORAGE_STATE > workspace storage_state.json > cookies.json.
+
+    refresh_gemini_cookie.py kanitlar: yalnizca PSID+PSIDTS cookie enjeksiyonu
+    gemini.google.com'da oturum ACMAZ (accounts.google.com sign-in'e yonlenir);
+    tam YouTube storage_state (SID/HSID/SSID/SAPISID/... .google.com cookie'leri)
+    ise gercek oturum acar. Daily pipeline calisma dizininde cookies.json ve
+    (varsa) storage_state.json yazar; probe workflow'u secrets'tan yazar.
+    """
+    raw = (os.environ.get('GEMINI_STORAGE_STATE') or '').strip()
+    if raw:
+        p = Path('/tmp/yt_storage_state_pw.json')
+        p.write_text(raw, encoding='utf8')
+        return p
+    for name in ('storage_state.json', 'cookies.json'):
+        p = REPO / name
+        if p.exists() and p.stat().st_size > 50:
+            return p
+    return None
+
+
+def _as_playwright_state(path: Path) -> dict | None:
+    """storage_state.json (dict) veya cookies.json (liste) -> Playwright storage_state dict."""
+    try:
+        d = json.loads(path.read_text('utf8'))
+    except Exception:
+        return None
+    if isinstance(d, dict) and isinstance(d.get('cookies'), list) and d['cookies']:
+        return {'cookies': d['cookies'], 'origins': d.get('origins', [])}
+    if isinstance(d, list) and d:
+        return {'cookies': d, 'origins': []}
+    return None
+
+
 def load_default_prompt() -> str:
     return json.loads(CFG_PATH.read_text('utf8')).get('prompt', '')
 
@@ -118,20 +152,42 @@ async def generate(out_path: str, title: str, prompt_override: str | None = None
         browser = await p.chromium.launch(
             headless=True,
             args=['--disable-blink-features=AutomationControlled', '--no-sandbox'])
-        context = await browser.new_context(
-            user_agent=USER_AGENT, locale='tr-TR',
-            viewport={'width': 1280, 'height': 800})
-        base_cookie = {
-            'domain': '.google.com', 'path': '/', 'secure': True,
-            'sameSite': 'Lax', 'httpOnly': False,
-        }
-        await context.add_cookies([
-            {**base_cookie, 'name': '__Secure-1PSID', 'value': psid},
-            {**base_cookie, 'name': '__Secure-1PSIDTS', 'value': psidts},
-        ])
+
+        # Tam oturum state'i varsa onunla ac (kanitlanmis yol), yoksa bare cookie
+        ss_path = load_storage_state()
+        state = _as_playwright_state(ss_path) if ss_path else None
+        if state:
+            log(f"tam storage state kullaniliyor: {ss_path.name} "
+                f"({len(state['cookies'])} cookie)")
+            context = await browser.new_context(
+                storage_state=state, user_agent=USER_AGENT, locale='tr-TR',
+                viewport={'width': 1280, 'height': 800})
+        else:
+            log('UYARI: tam storage state yok — yalnizca PSID/PSIDTS deneniyor '
+                '(buyuk olasilikla accounts.google.com sign-in yonlendirmesi olacaktir)')
+            context = await browser.new_context(
+                user_agent=USER_AGENT, locale='tr-TR',
+                viewport={'width': 1280, 'height': 800})
+            base_cookie = {
+                'domain': '.google.com', 'path': '/', 'secure': True,
+                'sameSite': 'Lax', 'httpOnly': False,
+            }
+            await context.add_cookies([
+                {**base_cookie, 'name': '__Secure-1PSID', 'value': psid},
+                {**base_cookie, 'name': '__Secure-1PSIDTS', 'value': psidts},
+            ])
         page = await context.new_page()
 
-        # 1) Sayfa acilisi + oturum kaniti (refresh_gemini_cookie.py kanitlanan yolu)
+        # SSO isinma: accounts.google.com'a kisa ugra (refresh script'in yolu —
+        # oturum cookie'lerini canlandirir), ardindan Gemini app
+        try:
+            await page.goto('https://accounts.google.com/',
+                            wait_until='domcontentloaded', timeout=20000)
+            await page.wait_for_timeout(2000)
+        except Exception as e:
+            log(f"SSO isinma atlandi: {type(e).__name__}")
+
+        # 1) Gemini app acilisi + oturum kaniti
         try:
             await page.goto('https://gemini.google.com/app',
                             wait_until='domcontentloaded',

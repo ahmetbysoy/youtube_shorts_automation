@@ -62,10 +62,32 @@ jobs:
         if: always()
         env:
           GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+          STORAGE_STATE_JSON_1: ${{ secrets.STORAGE_STATE_JSON_1 }}
+          STORAGE_STATE_JSON: ${{ secrets.STORAGE_STATE_JSON }}
+          COOKIES_JSON_1: ${{ secrets.COOKIES_JSON_1 }}
+          COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
           PYTHONUNBUFFERED: '1'
         run: |
           set -o pipefail
           umask 077
+          # Tam Google oturum state'i workspace'e yaz (PW adapter bunu kullanir —
+          # yalnizca PSID/PSIDTS gemini.google.com'da oturum acmaya yetmiyor)
+          if [ -n "${STORAGE_STATE_JSON_1}" ]; then
+            printf '%s' "$STORAGE_STATE_JSON_1" > storage_state.json
+          elif [ -n "${STORAGE_STATE_JSON}" ]; then
+            printf '%s' "$STORAGE_STATE_JSON" > storage_state.json
+          elif [ -n "${COOKIES_JSON_1}" ]; then
+            printf '%s' "$COOKIES_JSON_1" > cookies.json
+          elif [ -n "${COOKIES_JSON}" ]; then
+            printf '%s' "$COOKIES_JSON" > cookies.json
+          fi
+          if [ -f storage_state.json ]; then
+            echo "storage_state.json yazildi ($(wc -c < storage_state.json) byte)"
+          elif [ -f cookies.json ]; then
+            echo "cookies.json yazildi ($(wc -c < cookies.json) byte)"
+          else
+            echo "::warning::Tam oturum secret'i bulunamadi — PW adapter bare cookie ile deneyecek"
+          fi
           python scripts/gemini_cover.py output/probe_cover_production.jpg "Ay'a Gitmek Icin Hicbir Zaman Cikmayacak: Iste Gercek Sebep!" 2>&1 | tee /tmp/cover_production.log
           echo "--- URETIM GIRIS SONUCU ---"
           grep -E "KAPAK_OK|KAPAK-PW|basarisiz|zamana" /tmp/cover_production.log | tail -5
