@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""Gemini Web init teshis probe (cookie ile, yayin hattina bagli degil).
+
+Amac: CI'da kapak uretiminin neden init'te takildigini kesin olarak tespit etmek.
+  Part A: curl_cffi ham baglanti matrisi (google.com + gemini.google.com/app) x impersonate hedefi
+  Part B: GeminiClient.init() impersonate matrisi (verbose) — hangi TLS hedefi init'i geciriyor?
+  Part C: ilk basarili init ile TAM kapak uretimi (kapak_gemini.json promptu + baslik = uretim akisi)
+
+Guvenlik: cookie degerleri hicbir zaman yazdirilmaz; rapor token/cookie icermez.
+Cikti: probe_report.json + (basariliysa) probe_cover.jpg
+"""
+from __future__ import annotations
+
+import asyncio, json, os, sys, time, glob, shutil
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO))
+
+DEFAULT_TARGETS = 'chrome145,chrome131,chrome124,edge101,safari184'
+
+
+def log(msg: str) -> None:
+    print(f'[PROBE] {msg}', flush=True)
+
+
+def load_cookies() -> dict:
+    raw = os.environ.get('GEMINI_COOKIES_JSON') or os.environ.get('GEMINI_COOK')
+    if raw:
+        return json.loads(raw)
+    local = REPO / 'jeton' / 'gemini_cookies.json'
+    if local.exists():
+        return json.loads(local.read_text('utf8'))
+    raise SystemExit('HATA: GEMINI_COOKIES_JSON / GEMINI_COOK env yok ve jeton/gemini_cookies.json yok')
+
+
+def report(out: dict) -> None:
+    print(json.dumps(out, ensure_ascii=False), flush=True)
+
+
+async def part_a(targets: list[str]) -> list[dict]:
+    from curl_cffi.requests import AsyncSession
+    rows = []
+    for target in targets:
+        for url in ('https://www.google.com', 'https://gemini.google.com/app'):
+            t0 = time.monotonic()
+            row = {'part': 'A', 'target': target, 'url': url.split('/')[2]}
+            try:
+                async with AsyncSession(impersonate=target, timeout=20) as s:
+                    r = await s.get(url)
+                row.update(status=r.status_code, sn=round(time.monotonic() - t0, 1))
+            except Exception as e:
+                row.update(error=type(e).__name__, sn=round(time.monotonic() - t0, 1))
+            rows.append(row)
+            log(f"A {target} {row.get('url')} -> {row.get('status', row.get('error'))} ({row['sn']}sn)")
+    return rows
+
+
+async def init_one(cookies: dict, target: str, init_timeout: int = 25,
+                   hard_cap: int = 30) -> tuple[object | None, dict]:
+    from gemini_webapi import GeminiClient
+    t0 = time.monotonic()
+    row: dict = {'part': 'B', 'target': target}
+    client = GeminiClient(cookies.get('__Secure-1PSID', ''), cookies.get('__Secure-1PSIDTS', ''))
+    try:
+        await asyncio.wait_for(client.init(timeout=init_timeout, auto_refresh=False,
+                                           impersonate=target, verbose=True),
+                               timeout=hard_cap)
+        sn = round(time.monotonic() - t0, 1)
+        tok = client.access_token or ''
+        row.update(ok=bool(tok), sn=sn, token_len=len(tok),
+                   cookie_source=getattr(client, '_cookie_source', '?'))
+    except Exception as e:
+        row.update(ok=False, error=type(e).__name__, sn=round(time.monotonic() - t0, 1))
+        client = None
+    report(row)
+    return client, row
+
+
+async def part_c(client, cookies: dict, title: str) -> dict:
+    """Uretim akisinin birebir aynisi: kapak_gemini.json promptu + '\n\nVideo basligi: <title>'."""
+    row = {'part': 'C'}
+    try:
+        prompt = json.loads((REPO / 'kapak_gemini.json').read_text('utf8')).get('prompt', '')
+        full_prompt = (prompt + '\n\nVideo basligi: ' + title)
+        log(f"C prompt uzunlugu {len(prompt)} + baslik {len(title)} — uretim basliyor")
+        t0 = time.monotonic()
+        resp = await asyncio.wait_for(client.generate_content(full_prompt), timeout=90)
+        if not resp or not getattr(resp, 'images', None):
+            row.update(ok=False, error='gorsel_yok',
+                       text=(getattr(resp, 'text', '') or '')[:200])
+            report(row)
+            return row
+        img = resp.images[0]
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            await img.save(path=td, filename='cover', verbose=False)
+            files = sorted(glob.glob(str(Path(td) / 'cover.*'))) or sorted(glob.glob(str(Path(td) / '*')))
+            if not files:
+                row.update(ok=False, error='dosya_yok')
+                report(row)
+                return row
+            out = REPO / 'probe_cover.jpg'
+            shutil.copyfile(files[0], out)
+            try:
+                from PIL import Image
+                with Image.open(out) as im:
+                    w, h = im.size
+                    im.convert('RGB').save(out, 'JPEG', quality=94)
+                row.update(width=w, height=h)
+            except Exception:
+                pass
+            row.update(ok=True, sn=round(time.monotonic() - t0, 1),
+                       bytes=out.stat().st_size, path=str(out))
+    except Exception as e:
+        row.update(ok=False, error=type(e).__name__, detail=str(e)[:200])
+    report(row)
+    return row
+
+
+async def main_async(args) -> int:
+    targets = [t.strip() for t in args.targets.split(',') if t.strip()]
+    cookies = load_cookies()
+    log(f"cookie yuklendi (PSID {len(cookies.get('__Secure-1PSID', ''))} / PSIDTS {len(cookies.get('__Secure-1PSIDTS', ''))} karakter) — deger yazdirilmiyor")
+
+    import curl_cffi
+    import importlib.metadata as md
+    try:
+        gw_ver = md.version('gemini-webapi')
+    except Exception:
+        gw_ver = '?'
+    summary = {'curl_cffi': curl_cffi.__version__, 'gemini_webapi': gw_ver,
+               'targets': targets, 'a': [], 'b': [], 'c': None, 'started': time.strftime('%Y-%m-%dT%H:%M:%S')}
+
+    summary['a'] = await part_a(targets)
+    summary['b'] = []
+
+    winner = None
+    for target in targets:
+        client, row = await init_one(cookies, target)
+        summary['b'].append(row)
+        if client is not None and row.get('ok'):
+            winner = client
+            winner_target = target
+            break
+
+    if winner is not None:
+        log(f"init BASARILI: {winner_target} — tam kapak uretim testi (Part C)")
+        summary['c'] = await part_c(winner, cookies, args.title)
+        try:
+            await asyncio.wait_for(winner.close(), timeout=10)
+        except Exception:
+            pass
+    else:
+        log('hicbir impersonate hedefi init i geciremedi (Part C atlandi)')
+
+    if winner is not None:
+        summary['c_target'] = winner_target
+    out = Path(args.output)
+    out.write_text(json.dumps(summary, ensure_ascii=False, indent=2), 'utf8')
+    log(f"rapor: {out}")
+    # Basari kosulu: en az bir hedef init gecmeli; kapak uretimi (Part C) bilgi amacli
+    return 0 if any(r.get('ok') for r in summary['b']) else 2
+
+
+def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--title', default="Ay'a Gitmek Icin Hicbir Zaman Cikmayacak: Iste Gercek Sebep!")
+    ap.add_argument('--targets', default=DEFAULT_TARGETS)
+    ap.add_argument('--output', default='probe_report.json')
+    args = ap.parse_args()
+    # loguru DEBUG: kutuphanin verbose loglari gorunsun (cookie icermez)
+    try:
+        from loguru import logger
+        logger.remove()
+        logger.add(sys.stderr, level='DEBUG', format='{time:HH:mm:ss} {level} {message}')
+    except Exception:
+        pass
+    sys.exit(asyncio.run(main_async(args)))
+
+
+if __name__ == '__main__':
+    main()

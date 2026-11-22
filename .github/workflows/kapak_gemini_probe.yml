@@ -1,0 +1,65 @@
+name: "Kapak Gemini Teshis Probe (init matrisi + tam kapak uretimi)"
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Test basligi (uretimde baslik+prompt seklinde gonderilir)"
+        required: false
+        default: "Ay'a Gitmek Icin Hicbir Zaman Cikmayacak: Iste Gercek Sebep!"
+        type: string
+      targets:
+        description: "Virgulle ayrilmis TLS impersonate hedefleri (bos = varsayilan matris)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kapak-gemini-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Araçları Kur (Python 3.11 + gemini_webapi)
+        uses: ./.github/actions/setup-tools
+        with:
+          python: 'true'
+          python_version: '3.11'
+          pip_requirements: ''
+          pip_extra: 'gemini_webapi==2.1.1 httpx Pillow loguru'
+
+      - name: Init teshis matrisi + tam kapak uretimi
+        env:
+          GEMINI_COOK: ${{ secrets.GEMINI_COOK }}
+          PYTHONUNBUFFERED: '1'
+        run: |
+          set -euo pipefail
+          if [ -z "${GEMINI_COOK:-}" ]; then
+            echo "::error::GEMINI_COOK secret bulunamadi."
+            exit 1
+          fi
+          umask 077
+          TARGETS="${{ inputs.targets }}"
+          if [ -n "$TARGETS" ]; then
+            python scripts/gemini_init_probe.py --title "${{ inputs.title }}" --targets "$TARGETS"
+          else
+            python scripts/gemini_init_probe.py --title "${{ inputs.title }}"
+          fi
+
+      - name: Rapor artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: kapak-gemini-probe
+          path: |
+            probe_report.json
+            probe_cover.jpg
+          if-no-files-found: warn
+          retention-days: 7
