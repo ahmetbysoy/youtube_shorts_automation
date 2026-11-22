@@ -1290,11 +1290,12 @@ async function uploadToYouTubeStudio() {
         }
 
         // 2) DISARDS (kimliksiz) olarak herkese acik erisilebiliyor mu? (en kritik dogrulama)
-        // 2026-11-21 kanitlari: iki ayri kosuda video Studio'da PUBLIC gorunup
+        // 2026-11-21/22 kanitlari: UC ayri kosuda video Studio'da PUBLIC gorunup
         // anonim erisimde ~3+ dk UNPLAYABLE kalmasina ragmen sonrasinda canli
-        // oldu (GwoeHZr2DJ4, 3QJlMNjAdD0). 12x15sn ~ 3dk pencere yetmiyor;
-        // 32x15sn ~ 8dk pencere kullaniliyor (hala fail-closed: sonunda hata).
-        const ANON_VERIFY_ATTEMPTS = 32;
+        // oldu (GwoeHZr2DJ4, 3QJlMNjAdD0, WF987yaDEO8 — son ornek 8.5dk pencereyi
+        // yerildi, ~10-12dk sonra canliydi). 32x15sn ~ 8dk pencere yetmiyor;
+        // 60x15sn ~ 15dk pencere kullaniliyor.
+        const ANON_VERIFY_ATTEMPTS = 60;
         console.log("[*] Anonim (kimliksiz) erişim doğrulanıyor...");
         let publicVerified = false;
         let anonPage = null;
@@ -1335,9 +1336,41 @@ async function uploadToYouTubeStudio() {
         }
 
         if (!publicVerified) {
-            writeAuthStatus('publish_not_public', { title, videoUrl, videoId: publishedId, channelUrl: page.url() });
-            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'publish_not_public.png') }).catch(() => {});
-            throw new Error(`Studio PUBLIC gördü ama video anonim erişimde görünmüyor. Video ID: ${publishedId}. YouTube işleme süreci veya gizlilik hatası olabilir.`);
+            // 2026-11-22 WF987yaDEO8 dersi: pencere bittiginde son durum
+            // UNPLAYABLE ise bu Google tarafindan ISLENME bastir; gizlilik
+            // hatasi DEGIL (private/unavailable zaten unavailable bayragiyle
+            // ayrismiyor). Studio zaten PUBLIC dogrulamis (birincil kanit).
+            // UNPLAYABLE/UNKNOWN -> published_anon_pending: zincir devam eder.
+            const lastAnonContent = await (async () => {
+                try {
+                    const p = `https://www.youtube.com/shorts/${publishedId}`;
+                    const ctx2 = await browser.newContext({
+                        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+                        locale: 'tr-TR', viewport: { width: 1366, height: 900 },
+                    });
+                    const t2 = await ctx2.newPage();
+                    await t2.goto(p, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
+                    await t2.waitForTimeout(5000);
+                    const c = await t2.content().catch(() => '');
+                    await ctx2.close().catch(() => {});
+                    return c;
+                } catch (_) { return ''; }
+            })();
+            const hardUnavailable = lastAnonContent.includes('Video unavailable') ||
+                lastAnonContent.includes('This video isn') ||
+                lastAnonContent.includes('This video has been removed') ||
+                lastAnonContent.includes('This video is private') ||
+                lastAnonContent.includes('This video may be');
+            const ps2 = lastAnonContent.match(/"playabilityStatus":\{"status":"([A-Z_]+)"/);
+            const lastStatus = ps2 ? ps2[1] : 'UNKNOWN';
+            if (hardUnavailable) {
+                writeAuthStatus('publish_not_public', { title, videoUrl, videoId: publishedId, channelUrl: page.url() });
+                await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'publish_not_public.png') }).catch(() => {});
+                throw new Error(`Studio PUBLIC gördü ama video anonim erişimde gerçekten görünmüyor (status=${lastStatus}). Video ID: ${publishedId}.`);
+            }
+            console.warn(`[!] Anonim erisim penceresi bitti ama son durum UNPLAYABLE/UNKNOWN (status=${lastStatus}) — bu ISLENME bastir; Studio PUBLIC gördü. Zincir devam ediyor (published_anon_pending).`);
+            writeAuthStatus('publish_anon_pending', { title, videoUrl: `https://youtube.com/shorts/${publishedId}`, videoId: publishedId, channelUrl: page.url(), lastStatus });
+            await page.screenshot({ path: path.join(BASE_DIR, 'logs', 'publish_anon_pending.png') }).catch(() => {});
         }
 
         videoUrl = `https://youtube.com/shorts/${publishedId}`;
