@@ -1,0 +1,1 @@
+oturum 2 yazma izni probe: 2026-11-23T17:2xZ, create_or_update_file yolu test edildi. Bu dosya deney sonrasi silinecek.
