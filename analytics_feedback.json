@@ -1,15 +1,15 @@
 {
-  "scraped_at": "2026-11-22T13:59:33.103Z",
+  "scraped_at": "2026-11-23T17:16:31.230Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
   "videos_analyzed": 14,
   "duplicates_removed": 1,
   "status": "ok",
   "winning_topic": "Tarih",
   "boost_active": false,
-  "boost_reason": "no_clear_lead",
-  "outperformance_ratio": 1.13,
+  "boost_reason": "insufficient_sample(top=5,second=1)",
+  "outperformance_ratio": 1.04,
   "discarded_topics": [],
-  "optimization_directive": "Kategoriler arası performans farkı 12% (eşik %30); boost YAPILMIYOR, dengeli dağılım korunuyor.",
+  "optimization_directive": "En yüksek skor 'Tarih' görünse de örneklem küçük (n=5); agresif kategori kayması YAPILMIYOR, dengeli dağılım korunuyor.",
   "data_quality": {
     "avg_view_duration_available_count": 0,
     "avg_view_duration_total": 14,
@@ -27,22 +27,22 @@
       "statistically_reliable": true
     },
     {
-      "niche": "Bilim",
-      "video_count": 6,
-      "avg_views": 1036.67,
+      "niche": "Uzay",
+      "video_count": 1,
+      "avg_views": 1136,
       "avg_view_duration_sec": null,
       "avg_view_duration_sample_size": 0,
-      "avg_score": 1036.67,
-      "statistically_reliable": true
+      "avg_score": 1136,
+      "statistically_reliable": false
     },
     {
-      "niche": "Uzay",
-      "video_count": 3,
-      "avg_views": 917,
+      "niche": "Bilim",
+      "video_count": 8,
+      "avg_views": 1025.5,
       "avg_view_duration_sec": null,
       "avg_view_duration_sample_size": 0,
-      "avg_score": 917,
-      "statistically_reliable": false
+      "avg_score": 1025.5,
+      "statistically_reliable": true
     }
   ],
   "recent_videos": [
@@ -119,6 +119,15 @@
       "compositeScore": 1070
     },
     {
+      "videoId": "pg39JuqqA40",
+      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
+      "niche": "Bilim",
+      "views": 1055,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
+      "compositeScore": 1055
+    },
+    {
       "videoId": "V6geVxL3hb8",
       "title": "Ahtapotlar Renk Körü Olmalarına Rağmen Renkleri Görüyor! #Shorts",
       "niche": "Bilim",
@@ -155,22 +164,13 @@
       "compositeScore": 946
     },
     {
-      "videoId": "Xy1QzBs_fF0",
-      "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
-      "niche": "Uzay",
-      "views": 899,
+      "videoId": "LIsIn3mAsmQ",
+      "title": "Göz Renginiz Gerçekte Yalnızca Kahverengi Pigmentten Oluşuyor! #Shorts",
+      "niche": "Bilim",
+      "views": 929,
       "avgViewDurationSec": null,
       "avgViewDurationAvailable": false,
-      "compositeScore": 899
-    },
-    {
-      "videoId": "WsPqj2rgqx0",
-      "title": "Dünya'nın İç Çekirdeği Güneş Yüzeyi Kadar Sıcak! #Shorts",
-      "niche": "Uzay",
-      "views": 716,
-      "avgViewDurationSec": null,
-      "avgViewDurationAvailable": false,
-      "compositeScore": 716
+      "compositeScore": 929
     }
   ]
 }
