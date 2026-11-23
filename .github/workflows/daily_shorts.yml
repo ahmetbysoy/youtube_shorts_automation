@@ -123,9 +123,14 @@ jobs:
       max-parallel: 1
       matrix:
         # distinct_csv duz virgullu stringtir ("1" veya "1,2"); JSON dizi GitHub
-        # tarafindan secret sanilip maskelenir. split(',') ile diziye cevrilir,
-        # join('","') ile ortalar yerlestirilir, format + fromJSON ile gercek dizi olur.
-        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', join(split(needs.channel-map.outputs.distinct_csv, ','), '","'))) }}
+        # tarafindan secret sanilip maskelenir (channel_map.sh notuna bak).
+        # DIKKAT: split() GitHub Actions expression dilinde YOK — bacdf04'te
+        # eklenen split'li satir "failed to parse workflow: Unrecognized
+        # function: 'split'" verdi (422 dispatch + schedule koşuları failure,
+        # zincir 8 saat ölü kaldı, 2026-11-23 kanit run 45123568700). join()
+        # da dizi bekler; string'e verildiginde ayirici yok sayilir. Tek kanal
+        # gercekliginde format+fromJSON birebir yeterli: "1" -> ["1"].
+        channel_id: ${{ (github.event_name == 'workflow_dispatch' && inputs.target_channel != '' && inputs.target_channel != 'all') && fromJSON(format('["{0}"]', inputs.target_channel)) || fromJSON(format('["{0}"]', needs.channel-map.outputs.distinct_csv)) }}
 
     steps:
       - name: Depoyu Çek (Checkout)
