@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## 2026-11-23 — BOBİ SKILL v2.0 Açılış Protokolü: E1/E7/E9 Başlangıç Kaydı
+
+- `SKILL.md` (BOBİ Agresif Büyüme Ajanı v2.0) köke kondu; §1 açılış protokolü işlendi: repo dokümanları, durum JSON'ları ve son 20 Actions koşusu tarandı.
+- `docs/BOBI_STATE.md` oluşturuldu: canlı Actions özeti (18 success / 2 kod-dışı failure), yerel sayaçlar, bilinen duvar durumu, rakip mekanizma notları, YPP sayaç tablosu. Abone/izlenme/Studio sayıları anonim erişimle ölçülemediği için **"ölçülemedi"** işaretlendi; uydurma sayı yazılmadı.
+- `docs/experiments.md` oluşturuldu; ilk üç deney: **E1 hook laboratuvarı (7g)**, **E7 görsel–konu uyumu (14g)**, **E9 pruner eşiği (14g)**. Karar kuralı: 24s'te medyan 2× → katla, altı → 48s'te kes.
+- `scripts/experiment_ledger.py` + `tests/test_experiment_ledger.py`: saf `upsert/validate`; makine yan kayıt `logs/experiments.json` (git ignored). E1/E7/E9 başlangıç kayıtları yazıldı.
+- Sınır kararları: üçüncü kanala yorum bu oturumda çalıştırılmadı (kullanıcı kararı + spam kırmızı çizgisi); kendi-kanalı sabit yorum dry-run varsayılan; pruner korumaları (`PRUNE_MAX_DELETIONS`, `PRUNE_MIN_REMAINING`) bozulmadı; kuru çalışma öncesi gerçek silme yok.
+- Testler: 16 hedefli test geçti (yeni 8 + SKILL v4.0 8); üretim workflow YAML parse'ları yeşil. Push kimliği bu ortamda yok; değişiklikler yerel commit + patch olarak teslim edilir.
+
 ## 2026-11-22 — PEXELS_API_KEY / PIXABAY_API_KEY Tamamen Kaldırıldı (Stok Video Cookie-Only)
 
 - **Kullanıcı kararı:** `GEMINI_API_KEY` gibi `PEXELS_API_KEY` ve `PIXABAY_API_KEY` da hiçbir yerde kullanılmayacak; stok video **yalnız cookie** (`PEXELS_COOK` / `PIXABAY_COOK`, Playwright) ve keyless public kaynaklarla (Wikimedia/NASA) yürür.

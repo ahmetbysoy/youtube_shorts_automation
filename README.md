@@ -24,6 +24,8 @@ Python, FFmpeg ve Node.js Playwright tabanlı, GitHub Actions üzerinde Türkçe
 > 🤖 **Projeyi Devralacak Yapay Zeka / Geliştirici İçin İlk Adım:**  
 > Tüm sistem durumu, kimlik/oturum dosyalarının Google Drive & GitHub Secrets konumları, kritik güvenlik kuralları ve çözülmüş teknik tuzaklar için önce **[`AI_HANDOFF.md`](./AI_HANDOFF.md)** ve **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)** belgelerini okuyun.
 
+> 🎰 **BOBİ Büyüme Modu (2026-11-23):** Otonom büyüme protokolü [`SKILL.md`](./SKILL.md); canlı durum [`docs/BOBI_STATE.md`](./docs/BOBI_STATE.md); deney defteri [`docs/experiments.md`](./docs/experiments.md) (makine yan kayıt `logs/experiments.json`). İlk deneyler E1 hook, E7 görsel uyum, E9 pruner eşiği. Kırmızı çizgiler: sahte etkileşim yok, spam/linkli yorum yok, atıf ihlali yok, secret sızdırma yok, kimlik/CAPTCHA atlatma yok, yanıltıcı başlık yok.
+
 ---
 
 ## Tamamlanan Fazlar ve Sistem Özeti
