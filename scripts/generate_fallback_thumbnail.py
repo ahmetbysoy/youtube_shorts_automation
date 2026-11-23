@@ -380,10 +380,28 @@ def main() -> int:
     chip_font = fit_font(draw, topic, 700, 52, 36)
     box = draw.textbbox((0, 0), topic, font=chip_font)
     chip_w = box[2] - box[0] + 70
-    draw.rounded_rectangle([60, 65, 60 + chip_w, 150], radius=16, fill=YELLOW)
-    draw.text((95, 79 - box[1]), topic, font=chip_font, fill=(12, 16, 26))
     title_text = turkish_upper(title.strip())
     title_font, lines = layout_title(draw, title_text, W - 120, 520)
+    title_h = 0
+    for line in lines:
+        box_t = draw.textbbox((0, 0), line, font=title_font, stroke_width=5)
+        title_h += box_t[3] - box_t[1] + 22
+    if base_img is not None:
+        # 2026-11-23 kapak denetimi (kullanici canli ekran goruntusu): AI gorseli
+        # icine pismis metin/yoğun grafikler (veya videonun giris baslik kartinin
+        # karesi) taban olarak geldiginde cizilen baslik arka plandaki metinle
+        # UST USTE BINIYORDU ("DEKOR KIRAN..." + beyaz baslik = okunmaz kapak).
+        # Baslik blogunun arkasina koyu yari saydam yuvarlak panel cizilir; arka
+        # plandaki her sey panelin altinda kalir, sistem metni tek katman gibi okunur.
+        panel_bottom = min(225 + title_h + 26, 830)
+        panel = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        pdraw = ImageDraw.Draw(panel)
+        pdraw.rounded_rectangle([40, 48, W - 40, panel_bottom], radius=30,
+                                fill=(8, 11, 18, 158))
+        img = Image.alpha_composite(img.convert("RGBA"), panel).convert("RGB")
+        draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle([60, 65, 60 + chip_w, 150], radius=16, fill=YELLOW)
+    draw.text((95, 79 - box[1]), topic, font=chip_font, fill=(12, 16, 26))
     y = 225
     for line in lines:
         box = draw.textbbox((0, 0), line, font=title_font, stroke_width=4)

@@ -26,6 +26,20 @@ USER_AGENT = (
     "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
 )
 
+# 2026-11-23 kapak denetimi (kullanici canli ekran goruntusu): Gemini'ye giden
+# promptta "metin yazma" kisiti yokken AI gorselin ICINE clickbait yazilar
+# pisiyordu ("DEKOR KIRAN... ANILAR!", "MUTLAKA IZLE! 100% GERCEK", "SOK!").
+# generate_fallback_thumbnail.py ardindan USTUNE ikinci basligi cizince iki metin
+# ust uste biniyor -> kanal gridinde okunmaz kapak. Artik her prompta metin
+# yasagi eklenir; gorunur metni compositor tek katman olarak ekler.
+NO_TEXT_SUFFIX = (
+    "\n\nKATEGORIK KURAL: Uretecegin gorselde HICBIR yazi, harf, sayi, logo, "
+    "filigran, ok, rozet, badge, cerceve, kolaj veya bolunmus ekran OLMASIN. "
+    "Metni SEN yazma; baslik metnini sistem ayrica guvenli bir katman olarak "
+    "ekliyor, sen yazarsan iki metin ust uste biner. Sadece tek net, buyuk, "
+    "ortada, taninabilir bir gorsel konu üret."
+)
+
 # Butce: embed_cover_frame.py'in 240s subprocess siniri icinde kalmali.
 PAGE_LOAD_TIMEOUT_S = int(os.environ.get('GEMINI_PW_LOAD_TIMEOUT_S', '45'))
 IMAGE_WAIT_TIMEOUT_S = int(os.environ.get('GEMINI_PW_IMG_TIMEOUT_S', '120'))
@@ -169,10 +183,10 @@ async def generate(out_path: str, title: str, prompt_override: str | None = None
 
     cookies = load_cookies()
     if prompt_override:
-        prompt = prompt_override
+        prompt = prompt_override + NO_TEXT_SUFFIX
     else:
-        prompt = load_default_prompt() + '\n\nVideo basligi: ' + title
-    log(f"prompt hazir ({len(prompt)} karakter, baslik+prompt formati)")
+        prompt = load_default_prompt() + NO_TEXT_SUFFIX + '\n\nVideo basligi: ' + title
+    log(f"prompt hazir ({len(prompt)} karakter, metin-yasagi+baslik formati)")
 
     psid = cookies.get('__Secure-1PSID', '')
     psidts = cookies.get('__Secure-1PSIDTS', '')

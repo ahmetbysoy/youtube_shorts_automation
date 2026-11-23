@@ -41,6 +41,17 @@ PW_BUDGET_S = int(os.environ.get('GEMINI_PW_BUDGET_S', '200'))
 # gercek tarayici = guncel sozlesme), sonra kutuphane fallback'i. Fallback'te
 # _init_rpc telemetri RPC'leri bypass edilir (generate icin gereksiz; bu RPC'ler
 # 400 alip ~30sn ic retry ile budget yakar).
+# 2026-11-23 kapak denetimi: AI gorseline pisen metin + compositor metni = cift
+# metin (kanal gridinde "DEKOR KIRAN..." + beyaz baslik ust uste biniyordu).
+# Her prompta metin yasagi eklenir; gorunur metni compositor tek katman ekler.
+NO_TEXT_SUFFIX = (
+    "\n\nKATEGORIK KURAL: Uretecegin gorselde HICBIR yazi, harf, sayi, logo, "
+    "filigran, ok, rozet, badge, cerceve, kolaj veya bolunmus ekran OLMASIN. "
+    "Metni SEN yazma; baslik metnini sistem ayrica guvenli bir katman olarak "
+    "ekliyor, sen yazarsan iki metin ust uste biner. Sadece tek net, buyuk, "
+    "ortada, taninabilir bir gorsel konu üret."
+)
+
 PW_SCRIPT = Path(__file__).resolve().parent / 'gemini_cover_pw.py'
 
 
@@ -84,9 +95,9 @@ async def generate(out_path: str, title: str, prompt_override: str | None = None
     print(f'KAPAK kutuphane fallback ({remaining:.0f}s kalan butce)', file=sys.stderr, flush=True)
     cookies = load_cookies()
     if prompt_override:
-        prompt = prompt_override
+        prompt = prompt_override + NO_TEXT_SUFFIX
     else:
-        prompt = load_default_prompt() + '\n\nVideo basligi: ' + title
+        prompt = load_default_prompt() + NO_TEXT_SUFFIX + '\n\nVideo basligi: ' + title
     client = GeminiClient(cookies.get('__Secure-1PSID',''), cookies.get('__Secure-1PSIDTS',''))
     # Telemetri RPC bypass: _init_rpc 400 alip ~30sn ic retry yapiyor; generate
     # icin gerekli degil (model=None -> hesap varsayilani). Init 0.2sn'e iner.
