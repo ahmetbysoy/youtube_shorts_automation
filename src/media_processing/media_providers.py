@@ -928,6 +928,9 @@ class BrowserStockProvider:
         provider_label = "Pexels" if self.provider == "pexels" else "Pixabay"
         if status == "ok" or status == "loaded" or status == "no_valid_video":
             print(f"[MEDYA] {provider_label} cookie oturumu aktif.", file=sys.stderr)
+        elif status == "guest_candidates":
+            print(f"[MEDYA] {provider_label} misafir mod: cookie yok ama aday bulundu; zincir devam ediyor.",
+                  file=sys.stderr)
         elif d.get("action_hint"):
             print(f"[MEDYA] {provider_label} erişim sorunu: {status} — {d['action_hint']}",
                   file=sys.stderr)
@@ -1048,11 +1051,25 @@ class BrowserStockProvider:
             "page_title": diag.get("page_title"),
             "final_url": diag.get("final_url"),
         }
+        # KOŞUL DÜZELTMESI (run 44929883887): cookie yok/yanlış domain diye
+        # tarayicinin buldugu misafir (guest) sonuclari da REDDEDILIYORDU. Oysa
+        # production_gate.py bos PEXELS/PIXABAY cookie'lerini misafir mod olarak
+        # kabul ediyor; tutarli olmak icin aday bulunduysa zincir devam etmeli,
+        # aday yoksa eski guvenli bos donus kullanilir.
+        guest_rows = [
+            row for row in (raw.get("candidates") or [])
+            if row.get("provider") == self.provider and row.get("download_url")
+        ]
         if not cookie_present or search_status in ("cookie_missing", "cookie_missing_or_wrong_domain", "cookie_wrong_domain"):
-            self.last_diagnostics["status"] = "cookie_missing_or_wrong_domain"
-            self._probe_status = "cookie_missing_or_wrong_domain"
+            if not guest_rows:
+                self.last_diagnostics["status"] = "cookie_missing_or_wrong_domain"
+                self._probe_status = "cookie_missing_or_wrong_domain"
+                self._emit_probe_log()
+                return []
+            self.last_diagnostics["status"] = "guest_candidates"
+            self._probe_status = "ok"
+            self.last_diagnostics["cookie_guest_mode"] = True
             self._emit_probe_log()
-            return []
         # Kalıcı hata durumları: probe cache'e al, sonraki aramalar tarayıcı açmasın
         if search_status in ("login_required", "auth_required", "access_denied",
                              "captcha_challenge"):

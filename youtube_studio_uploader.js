@@ -694,6 +694,25 @@ async function uploadCustomThumbnail(page, thumbPath) {
 }
 
 /**
+ * Kapak dosyasinin ortalama parlakligini (0-255) olcer.
+ * Donus: sayi veya olcum yapilamazsa null. Koyu kapaklarin ozel kucuk resim
+ * olarak yuklenmesini engeller (run 44929883887: son kapsel mean=14.1/255 idi).
+ */
+function coverBrightnessMean(coverPath) {
+    try {
+        const py = require('child_process').spawnSync(
+            'python3',
+            [path.join(BASE_DIR, 'scripts', 'pick_matching_still.py'), 'brightness', coverPath],
+            { encoding: 'utf8', timeout: 30000 }
+        );
+        const line = (py.stdout || '').trim().split('\n').pop() || '{}';
+        const payload = JSON.parse(line);
+        if (typeof payload.mean === 'number') return payload.mean;
+    } catch (_) {}
+    return null;
+}
+
+/**
  * FAZ 3.5 (kapak karesi gomulu video): Studio'nun otomatik urettigi kare adaylari
  * arasindan output/cover.jpg'a en cok benzeyeni secer. Ayri kapak dosyasi YUKLEMEZ
  * (gunluk ozel kucuk resim kotasina girmez). Adaylar cikmazsa YouTube'un secimine birakir.
@@ -740,7 +759,10 @@ async function selectMatchingAutoStill(page, coverPath) {
     if (!best || typeof best.index !== 'number' || !best.matched) {
         // Eslesen aday yok -> secimi degistirme (kullanici karari: yoksa YouTube'un/1. adayin kalmasi)
         await picker.locator('ytcp-button:has-text("İptal"), button:has-text("İptal")').first().click().catch(() => {});
-        return { ok: false, reason: `kapağa benzeyen aday yok (${count} aday${best ? `, en yakın fark=${best.distance}` : ''})`, total: count };
+        // distance yalniz sayisalsa eklenir; hata JSON'inda ("error": ...) alan yoksa
+        // "fark=undefined" yazilir ve tanilasilamaz hata mesaji uretilirdi (run 44929883887).
+        const distText = (best && typeof best.distance === 'number') ? `, en yakın fark=${best.distance}` : '';
+        return { ok: false, reason: `kapağa benzeyen aday yok (${count} aday${distText})`, total: count };
     }
     const cell = cells.nth(best.index);
     if ((await cell.getAttribute('aria-selected').catch(() => null)) !== 'true') { await cell.click({ timeout: 10000 }); await page.waitForTimeout(1000); }
@@ -962,18 +984,30 @@ async function uploadToYouTubeStudio() {
             try {
                 const stillResult = await selectMatchingAutoStill(page, coverPath);
                 if (stillResult.ok) {
-                    console.log(`[KAPAK] Gomulu ilk-kare kapagi Studio'da secildi: #${stillResult.index + 1}/${stillResult.total} (fark=${stillResult.distance}, secili-nitelik=${stillResult.selectedAttr}).`);
+                    const distLabel = (typeof stillResult.distance === 'number') ? stillResult.distance : '-';
+                    console.log(`[KAPAK] Gomulu ilk-kare kapagi Studio'da secildi: #${stillResult.index + 1}/${stillResult.total} (fark=${distLabel}, secili-nitelik=${stillResult.selectedAttr}).`);
                 } else if (fs.existsSync(coverPath)) {
                     // Studio adaylari gomulu ilk kareyi sunmazsa ayni cover.jpg dosyasini
                     // ozel kucuk resim olarak yukle; boylece farkli bir otomatik kareye dusme.
-                    console.log(`[KAPAK] Ilk-kare adayi secilemedi (${stillResult.reason}); ayni kapak dosyasi dogrudan yukleniyor.`);
-                    const fallbackThumb = await uploadCustomThumbnail(page, coverPath);
-                    if (fallbackThumb.ok) {
-                        console.log('[KAPAK] Ilk-kare kapagi dogrudan ozel kucuk resim olarak yuklendi; Studio onizlemesi degisti.');
-                    } else if (fallbackThumb.dailyThumbnailLimit) {
-                        console.log('[KAPAK] Gunluk ozel kapak limiti dolu; ilk-kare kapagi gomulu kaldi ancak Studio kucuk resmi secimi dogrulanamadi.');
+                    // KOŞUL (run 44929883887): dosya cok karanliksa (mean < 55/255) yukleme;
+                    // kotiya harcama ve koyu kapsel birakma. Studio'nun daha parlak otomatik
+                    // karesi olur; gomulu kapak yine videonun ilk 1.0 saniyesinde durur.
+                    const coverMean = coverBrightnessMean(coverPath);
+                    const MIN_CUSTOM_COVER_MEAN = 55;
+                    if (coverMean !== null && coverMean < MIN_CUSTOM_COVER_MEAN) {
+                        console.log(`[KAPAK] Ilk-kare adayi secilemedi (${stillResult.reason}); ozel kapak cok karanlik ` +
+                            `(parlaklik=${coverMean.toFixed(0)}/255 < ${MIN_CUSTOM_COVER_MEAN}) -> dosya yuklenmedi, ` +
+                            `Studio otomatik karesi birakildi (kota korundu).`);
                     } else {
-                        console.log(`[KAPAK] Ozel kapak yedegi dogrulanamadi: ${fallbackThumb.reason}; Studio kucuk resmi secimi dogrulanamadi.`);
+                        console.log(`[KAPAK] Ilk-kare adayi secilemedi (${stillResult.reason}); ayni kapak dosyasi dogrudan yukleniyor.`);
+                        const fallbackThumb = await uploadCustomThumbnail(page, coverPath);
+                        if (fallbackThumb.ok) {
+                            console.log('[KAPAK] Ilk-kare kapagi dogrudan ozel kucuk resim olarak yuklendi; Studio onizlemesi degisti.');
+                        } else if (fallbackThumb.dailyThumbnailLimit) {
+                            console.log('[KAPAK] Gunluk ozel kapak limiti dolu; ilk-kare kapagi gomulu kaldi ancak Studio kucuk resmi secimi dogrulanamadi.');
+                        } else {
+                            console.log(`[KAPAK] Ozel kapak yedegi dogrulanamadi: ${fallbackThumb.reason}; Studio kucuk resmi secimi dogrulanamadi.`);
+                        }
                     }
                 } else {
                     console.log(`[KAPAK] Kapak dosyasi yok: ${stillResult.reason}; kucuk resim secimi dogrulanamadi.`);

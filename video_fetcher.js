@@ -753,9 +753,12 @@ async function runProvider(provider, opts) {
 
   diag.cookie_present = cookies.length > 0;
   diag.cookie_count = cookies.length;
+  // MISAFIR MOD (run 44929883887 kosul duzeltmesi): cookie yoksa tarayiciyi
+  // tamamen kapatmak yerine bos cookielerle genel arama sayfasi denenir;
+  // production_gate.py bos PEXELS/PIXABAY cookie'lerini zaten misafir kabul ediyor.
+  // Yanlış domain'li (dolu ama alakasiz) cookie hala erken reddedilir.
   if (cookies.length === 0) {
-    diag.error = 'cookie_missing_or_wrong_domain';
-    return { candidates: [], diagnostics: diag, provider };
+    diag.error = 'cookie_missing_guest_attempt';
   }
   // Butun cookie'lerin dogru domain'de oldugunu teyit et
   const bareDomain = defaultDomain.replace(/^\./, '');
@@ -763,7 +766,7 @@ async function runProvider(provider, opts) {
     const d = c.domain || '';
     return d === defaultDomain || d === bareDomain || d.endsWith('.' + bareDomain);
   });
-  if (!diag.cookie_domain_ok) {
+  if (cookies.length > 0 && !diag.cookie_domain_ok) {
     diag.error = 'cookie_wrong_domain';
     return { candidates: [], diagnostics: diag, provider };
   }

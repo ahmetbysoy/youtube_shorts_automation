@@ -195,6 +195,28 @@ def pick_best_frame(frames: list[Path]) -> Path | None:
     return best_path
 
 
+def _gray_mean(img: Image.Image) -> float:
+    """Kucultulmus gri kopyanin ortalama parlakligi (0-255)."""
+    from PIL import ImageStat
+    small = img.convert("L").resize((64, 114))
+    return float(ImageStat.Stat(small).mean[0])
+
+
+def normalize_brightness(img: Image.Image, target: float = 90.0, max_factor: float = 1.7):
+    """Karanlik tabani (gece/uzay/karadelik karesi) hedef parlakliga cek.
+
+    run 44929883887 dersi: secilen kare mean=31 iken ust/bant karartmalari
+    eklenince YouTube kapseli mean=14.1/255 cikiyordu (okunamaz koyuluk).
+    Dusen kare once kontrast/renk, sonra parlaklik ile normalize edilir.
+    """
+    mean = _gray_mean(img)
+    if mean >= target or mean <= 1:
+        return img, mean
+    factor = min(max_factor, target / mean)
+    enhanced = ImageEnhance.Brightness(img).enhance(factor)
+    return enhanced, mean
+
+
 def cover_crop(img: Image.Image, width: int, height: int) -> Image.Image:
     """Gorseli 1080x1920'e kirpar (en-boy oranini koruyarak)."""
     src_ratio = img.width / img.height
@@ -212,14 +234,18 @@ def cover_crop(img: Image.Image, width: int, height: int) -> Image.Image:
 
 
 def draw_gradient_overlay(img: Image.Image) -> Image.Image:
-    """Ust koyulastirma + alt siyah band -> yazi okunur, konu hala gorunur."""
+    """Ust koyulastirma + alt siyah band -> yazi okunur, konu hala gorunur.
+
+    Alfa degerleri run 44929883887 sonrasi yumusatildi: eski ust=165/alt=235
+    koyu kareyi mean ~14'e indiriyordu; yazi kontrasti icin 135/180 yeterli.
+    """
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     odraw = ImageDraw.Draw(overlay)
     for y in range(0, 520):
-        alpha = int(165 * (1 - y / 520))
+        alpha = int(135 * (1 - y / 520))
         odraw.line([(0, y), (W, y)], fill=(0, 0, 0, alpha))
     for y in range(H - 760, H):
-        alpha = int(235 * ((y - (H - 760)) / 760))
+        alpha = int(180 * ((y - (H - 760)) / 760))
         odraw.line([(0, y), (W, y)], fill=(0, 0, 0, alpha))
     return Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
 
@@ -243,6 +269,7 @@ def main() -> int:
 
     # --- 1) Konu karesi: videodan en kontrastli kare -----------------------------
     base_img: Image.Image | None = None
+    frame_source = False  # kare videodan mi alindi (AI/hazir gorsel degil)
     base_image_path = Path(args.base_image) if args.base_image else None
     if base_image_path and base_image_path.exists() and base_image_path.stat().st_size > 1000:
         try:
@@ -270,9 +297,17 @@ def main() -> int:
             if best:
                 with Image.open(best) as raw:
                     base_img = cover_crop(raw.convert("RGB"), W, H)
+                frame_source = True
         if base_img is not None:
             base_img = ImageEnhance.Color(base_img).enhance(1.12)
             base_img = ImageEnhance.Contrast(base_img).enhance(1.08)
+            # Koyu video karesi (gece/uzay/karadelik) okunabilir parlakliga cekilir.
+            if frame_source:
+                before_mean = _gray_mean(base_img)
+                if before_mean < 85:
+                    base_img, _ = normalize_brightness(base_img, target=90.0)
+                    after_mean = _gray_mean(base_img)
+                    print(f"[*] Koyu kare parlaklastirildi (mean {before_mean:.0f} -> {after_mean:.0f}/255).")
             print(f"[*] Secilen video karesi alindi ({video_path.name}); model karari insan dogrulamasi degildir.")
 
     if base_img is None:
@@ -360,10 +395,18 @@ def main() -> int:
     draw.text((92, 1704), "ABONE OL", font=btn_font, fill=(255,255,255))
     draw.line([(60, 1830), (W - 60, 1830)], fill=YELLOW, width=7)
 
+    # SON KAPASITE KONTROLU (run 44929883887: YouTube kapseli mean=14.1/255).
+    # Kompozit sonrasi ortalama parlaklik 60'in altindaysa hafif boost uygulanir;
+    # metin/rozet zaten siyah konturlu oldugu icin okunurluluk bozulmaz.
+    final_mean = _gray_mean(img)
+    if final_mean < 62:
+        img, _ = normalize_brightness(img, target=70.0, max_factor=2.0)
+        final_mean = _gray_mean(img)
+
     img.save(out, "JPEG", quality=92)
     size_kb = round(out.stat().st_size / 1024)
     mode = "hazir gorselli" if (base_img is not None and base_image_path and video_path is None) else ("konu kareli" if base_img is not None else "metin karti")
-    print(f"[*] Yerel yedek kapak uretildi ({mode}): {out} ({size_kb} KB, {W}x{H})")
+    print(f"[*] Yerel yedek kapak uretildi ({mode}, parlaklik={final_mean:.0f}/255): {out} ({size_kb} KB, {W}x{H})")
     return 0
 
 
