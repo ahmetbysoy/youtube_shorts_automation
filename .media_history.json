@@ -812,6 +812,34 @@
       "sha256": "955359d826d92580bf43f7c4fa6aabc69aec015c60959d2f550da8ebb98dea52",
       "selected_at": "2026-11-22T21:30:08.223781+00:00",
       "generation_id": "6afc944c-033b-4916-b02f-21cd5287906a"
+    },
+    {
+      "key": "wikimedia:24062910",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Metabolism_branch_at_the_central_cancer_research_labs.jpg",
+      "sha256": "a8fdaa677a16af25480ab1a95ef348a2b164000830e4e193502f92d2789502ee",
+      "selected_at": "2026-11-23T02:41:38.518021+00:00",
+      "generation_id": "7114a3c0-85f4-4323-9204-9369820609dc"
+    },
+    {
+      "key": "wikimedia:149206437",
+      "source_url": "https://commons.wikimedia.org/wiki/File:MIT_unveils_IBM_704_computer_at_ribbon_cutting_-_the_first_on_campus_computer_ever!.webm",
+      "sha256": "7a7d26e2b5d874e94eec8aae204f1b6d0a9ff4df9f748a8b3783f73625859266",
+      "selected_at": "2026-11-23T02:42:47.383606+00:00",
+      "generation_id": "7114a3c0-85f4-4323-9204-9369820609dc"
+    },
+    {
+      "key": "pixabay:29826",
+      "source_url": "https://pixabay.com/videos/search/ada%20lovelace%20portrait%20vintage/",
+      "sha256": "3e0840ebbbe997875b65113f9725c0cb2317a4b0ec95736716f9d661683da234",
+      "selected_at": "2026-11-23T02:44:04.096244+00:00",
+      "generation_id": "7114a3c0-85f4-4323-9204-9369820609dc"
+    },
+    {
+      "key": "wikimedia:22629969",
+      "source_url": "https://commons.wikimedia.org/wiki/File:British_-_Serjeant_William_Lovelace_-_Google_Art_Project.jpg",
+      "sha256": "0d7febb9ea7a9b71d28d6d8aefcb0576f534c27f79d754bda1db6ea5e96ed40c",
+      "selected_at": "2026-11-23T02:44:47.569758+00:00",
+      "generation_id": "7114a3c0-85f4-4323-9204-9369820609dc"
     }
   ]
 }
