@@ -41,7 +41,8 @@
     "Domuzlar İnsanlardan Daha Zeki Olabilir! #Shorts",
     "Merkür Güneş'e En Yakın Gezegen Ama En Sıcağı Değil! #Shorts",
     "Çikolata Yer Çekiminin Olmadığı Yerde Farklı Erir! #Shorts",
-    "Dünyanın İlk Programcısı Bir Kadındı! #Shorts"
+    "Dünyanın İlk Programcısı Bir Kadındı! #Shorts",
+    "Çatalhöyük'te Sokak ve Kapı Yoktu, Evlere Çatıdan Girilirdi! #Shorts"
   ],
   "used_records": [
     {
@@ -1737,9 +1738,7 @@
         "zamand"
       ],
       "created_at": "2026-11-23T02:40:24.902888+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Çatalhöyük'te Sokak ve Kapı Yoktu, Evlere Çatıdan Girilirdi! #Shorts",
       "topic": "Tarih",
@@ -1813,9 +1812,8 @@
         "yirtic",
         "yokt"
       ],
-      "created_at": "2026-11-23T10:51:49.332337+00:00",
-      "reservation_id": "cefbaf42-6db4-4975-b658-8f9ffc37d77b",
-      "run_id": "45159417252:1"
+      "created_at": "2026-11-23T10:51:49.332337+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
