@@ -868,6 +868,34 @@
       "sha256": "afc429a9cd818f603e09a5379d33dddca070a23c7f25a3e57e6281302dd6b7aa",
       "selected_at": "2026-11-23T10:57:07.939836+00:00",
       "generation_id": "1267725c-7f6d-48b8-a2d1-b631a21d6913"
+    },
+    {
+      "key": "wikimedia:165177401",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Your_Earth_Is_Blue-_Happy_Halloween!.webm",
+      "sha256": "e1e5666ed42d2f22df2c517cc9dc6adc3a50bbf701e987b47a53e5772efae6b0",
+      "selected_at": "2026-11-23T18:47:47.697271+00:00",
+      "generation_id": "7f40dc64-8fe8-4857-9d97-b34f86209298"
+    },
+    {
+      "key": "wikimedia:43167588",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Coast_watch_(1979)_(20472080678).jpg",
+      "sha256": "e497e39b45becfc22796af1307be0122c7ee1c1328cb0ad4c02d8b5895f11db0",
+      "selected_at": "2026-11-23T18:48:52.483738+00:00",
+      "generation_id": "7f40dc64-8fe8-4857-9d97-b34f86209298"
+    },
+    {
+      "key": "pexels:5427616",
+      "source_url": "https://www.pexels.com/search/videos/science%20child/",
+      "sha256": "cc26841d4eb65add698309510eca75e8b6b3d43f1a165ddd41c5473661c3d101",
+      "selected_at": "2026-11-23T18:50:19.521568+00:00",
+      "generation_id": "7f40dc64-8fe8-4857-9d97-b34f86209298"
+    },
+    {
+      "key": "wikimedia:201811698",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Signs_of_El_Ni%C3%B1o_in_2026_(SVS5683_-_avw_cb_1010_2160p60).webm",
+      "sha256": "8b2ff6a1ef8d01ac7c26dc23c48a4866bd587754bc642d0d04fba8abb26dd095",
+      "selected_at": "2026-11-23T18:51:45.630695+00:00",
+      "generation_id": "7f40dc64-8fe8-4857-9d97-b34f86209298"
     }
   ]
 }
