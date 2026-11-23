@@ -17,8 +17,8 @@
 | # | Deney | Değişken | Ölçüt | Pencere | Durum | Karar |
 |---|---|---|---|---|---|---|
 | E1 | Hook laboratuvarı | İlk 2–3 sn hook kalıbı (soru / rakam şoku / "yanlış biliyorsun") | İzlenen-kaydırılan oranı (Studio), ilk 1s ve 24s izlenme | 7 gün | **Açıldı — kod hazır, canlı ölçüm bekliyor** | Bekliyor |
-| E7 | Görsel–konu uyumu | Sahne karesi seçim/uyum QC'si | Uyumsuz kare sayısı, APV, olumsuz yorum sinyali | 14 gün | **Açıldı — temel tarama** | Bekliyor |
-| E9 | Pruner eşiği | 60 dk/100 izlenme (kontrol) vs 48 sa/100 izlenme (uygulama adayı) | Kanal toplam izlenme, silinen video sayısı, kurtarılan izlenme | 14 gün | **Açıldı — kontrol grubu kaydı** | Bekliyor |
+| E7 | Görsel–konu uyumu | Sahne karesi seçim/uyum QC'si | Uyumsuz kare sayısı, APV, olumsuz yorum sinyali | 14 gün | **Açıldı — 2026-11-23 lokal koşu kanıtı: 4/4 kare konu dışı (Inka videosuna Pena Sarayı + bazaar resmi geldi), visual_verification=not_performed. Yerel medya seçici güvenilmez; montaj sonrası manuel sahne denetimi zorunlu.** | Reddi kök nedeni bulanana kadar her video için elle sahne denetimi |
+| E11 | Başlık kalıbı | Merak-soru vs rakam-şoku başlık (ilk 30 krkt kancası) | İlk 24s izlenme (RSS/oembed ölçülebilir), CTR (Studio erişilince) | 7 gün | **2026-11-23 Açıldı** — ilk kohort yerel üretimle: "…Nasıl Hesap Yaptı?" (soru) vs "Saniyede 600 Kilometre…" (rakam) vs "Doğusuna Batısına…" (zıtlık) | Bekliyor |
 
 ## Detay kartları
 
@@ -63,13 +63,14 @@
 | E6 | Süre eğrisi (20–25 / 35–40 / 60 sn) | Medya ve TTS timing QC kararlı olunca |
 | E8 | Yayın saati (4 dilim, eşit konu) | Günlük yayın hacmi stabilize olunca |
 | E10 | Gömülü kapak açık/kapalı | Kapak kotası günlük gözlemiyle |
-| E11 | Başlık kalıbı (merak/rakam/soru/zıtlık) | E1 hook sonuçlarıyla eşzamanlı okunur |
 | E12 | Kanal vitrini (öne çıkan, playlist, hakkında) | Abone dönüşüm ölçümü Studio gerekli |
 
 ## Karar geçmişi
 | Tarih | Deney | Gözlem (kanıt) | Karar |
 |---|---|---|---|
 | 2026-11-23 | E1/E7/E9 | Başlangıç kaydı; Studio sayaçları erişilemediği için sadece hipotez ve ölçüt bağlandı | Açıldı, bekliyor |
+| 2026-11-23 | E9 | **KAPANDI — veriyle.** oembed denetimi: 20-23 Kas arası yüklenen 13 videodan 12'si HTTP 404 (tek survivor YmLYCJoqQ2w). Kök neden: saatlik canlı pruner, eşik 60 dk, günde 2 cron. 60 dk eşiği izlenme katili; Shorts dağıtımı gecikmeli gelir | Eşik 2880 kod seviyesine işlendi (workflow+script), dry-run varsayılan, oembed denetim adımı zincire eklendi. Kanıt: `logs/incidents.jsonl`, `logs/oembed_audit.json` |
+| 2026-11-23 | E11 | Yerel üretimle 3 farklı başlık kalıbı hazırlandı (soru/rakam/zıtlık); sonraki Actions yayın turunda canlıya çıkacak | Açıldı |
 
 ## Komut (makine yan kaydı)
 ```bash
