@@ -840,6 +840,34 @@
       "sha256": "0d7febb9ea7a9b71d28d6d8aefcb0576f534c27f79d754bda1db6ea5e96ed40c",
       "selected_at": "2026-11-23T02:44:47.569758+00:00",
       "generation_id": "7114a3c0-85f4-4323-9204-9369820609dc"
+    },
+    {
+      "key": "wikimedia:151205825",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Daily_Polar_Sea_Ice,_Two_Year_History_(SVS5099_-_polar_sea_ice_sxs_w_date_2048p30_h265).webm",
+      "sha256": "aac0229c214aa302ae6de197590aadfa4d7d400f5be37c0117a597b5fb1d24ff",
+      "selected_at": "2026-11-23T10:53:37.674395+00:00",
+      "generation_id": "1267725c-7f6d-48b8-a2d1-b631a21d6913"
+    },
+    {
+      "key": "pixabay:144042",
+      "source_url": "https://pixabay.com/videos/search/history%20never/",
+      "sha256": "7129747c4899fe510abd85239e9893b2ffc39de05c2988ba13143df06ebadb8b",
+      "selected_at": "2026-11-23T10:54:51.959195+00:00",
+      "generation_id": "1267725c-7f6d-48b8-a2d1-b631a21d6913"
+    },
+    {
+      "key": "wikimedia:195837036",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Army_engineer_history_in_concrete_(956607).webm",
+      "sha256": "c46115c91526511c2649e8d8cefb6084a176b8bc6cea21f999da2f7bac22878d",
+      "selected_at": "2026-11-23T10:55:51.449201+00:00",
+      "generation_id": "1267725c-7f6d-48b8-a2d1-b631a21d6913"
+    },
+    {
+      "key": "wikimedia:195794962",
+      "source_url": "https://commons.wikimedia.org/wiki/File:19ESC_Lunar_New_Year_2026_Highlight_Reel_(996985).webm",
+      "sha256": "afc429a9cd818f603e09a5379d33dddca070a23c7f25a3e57e6281302dd6b7aa",
+      "selected_at": "2026-11-23T10:57:07.939836+00:00",
+      "generation_id": "1267725c-7f6d-48b8-a2d1-b631a21d6913"
     }
   ]
 }
