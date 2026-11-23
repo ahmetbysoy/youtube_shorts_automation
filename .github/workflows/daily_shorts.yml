@@ -217,9 +217,19 @@ jobs:
             fi
           fi
 
+      - name: "SKILL §8 Kill Switch (strike/blocked acil durdurma)"
+        id: kill
+        if: ${{ steps.gate.outputs.produce == 'true' }}
+        run: |
+          python3 scripts/kill_switch.py gate | while IFS= read -r line; do
+            case "$line" in
+              proceed=*) echo "$line" >> "$GITHUB_OUTPUT" ;;
+            esac
+          done
+
       - name: Run Orchestrator (Main Pipeline)
         id: orchestrator
-        if: ${{ steps.gate.outputs.produce == 'true' && steps.safety.outputs.allow == 'true' }}
+        if: ${{ steps.gate.outputs.produce == 'true' && steps.safety.outputs.allow == 'true' && steps.kill.outputs.proceed == 'true' }}
         env:
           PYTHONUNBUFFERED: "1"
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
@@ -357,6 +367,18 @@ jobs:
             echo "::warning::Kanal hijyeni başarısız (rc=${HYGIENE_RC}). Yayınlama etkilenmedi."
           fi
 
+      - name: "SKILL §6 Kanal İçi CTA Yorumu (yalnız kendi videoları; üçüncü kanallara yazılmaz)"
+        if: ${{ always() && steps.gate.outputs.produce != 'false' && steps.kill.outputs.proceed != 'false' }}
+        continue-on-error: true
+        env:
+          COMMENT_MODE: ${{ vars.COMMENT_MODE || 'dry_run' }}
+          SUBSCRIBE_URL: ${{ vars.SUBSCRIBE_URL }}
+          COMMENT_MAX_PER_RUN: ${{ vars.COMMENT_MAX_PER_RUN || '3' }}
+        run: |
+          ARGS=()
+          if [ "${COMMENT_MODE}" = "live" ]; then ARGS+=(--live); fi
+          python3 scripts/auto_pinned_comment.py "${ARGS[@]}" --max-per-run "${COMMENT_MAX_PER_RUN:-3}"
+
       - name: "Artifact Guvenlik Denetimi (cerez/token redakte)"
         if: always()
         run: bash scripts/sanitize_logs.sh logs
@@ -375,6 +397,13 @@ jobs:
       - name: "Run Durum Özeti (Tek Satır Bildirim)"
         if: always()
         run: python scripts/run_summary.py logs/run_status.json
+
+      - name: "SKILL §9 KPI Anlık Görüntüsü (günlük hedef raporu)"
+        if: always()
+        env:
+          KPI_DAILY_TARGET: ${{ vars.KPI_DAILY_TARGET || '5' }}
+          KPI_WINDOW_HOURS: ${{ vars.KPI_WINDOW_HOURS || '24' }}
+        run: python3 scripts/kpi_snapshot.py
 
       - name: "Konu Rezervasyonunu Tamamla veya Serbest Bırak"
         if: ${{ always() && steps.gate.outputs.produce == 'true' }}

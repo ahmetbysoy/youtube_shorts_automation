@@ -1,12 +1,13 @@
 name: Hourly Prune Low-View YouTube Videos
 
 on:
-  # FAZ C KILIT: Pruner cron'lari DURDURULDU (2026-11-21)
-  # Yayin zincirinin dogru calistigi anonim dogrulama ile kanitlanana kadar
-  # videolarin silinmesi RISKLI. Sadece manuel tetikleme (workflow_dispatch) calisiyor.
-  # Eski cron: '7 * * * *' ve '37 * * * *'
+  # SKILL §7.7 / Kullanıcı kararı 2026-11-23: saatlik canlı pruner AÇILDI.
+  # Korumalar kaldı: PRUNE_MAX_DELETIONS/çalışma, PRUNE_MIN_REMAINING tabanı,
+  # kill-switch (scripts/kill_switch.py), dry_run yalnız vars.PRUNE_DRY_RUN='true'
+  # yapılırsa rapor moduna döner. Manuel workflow_dispatch her zaman kullanılabilir.
   schedule:
-    - cron: '0 0 31 2 *'   # asla tetiklenmez (31 Subat yok)
+    - cron: '7 * * * *'
+    - cron: '37 * * * *'
   workflow_dispatch:
     inputs:
       target_channel:
@@ -122,6 +123,15 @@ jobs:
           echo "proceed=true" >> "$GITHUB_OUTPUT"
           echo "[GATE] pruner-studio-lock -> proceed=true"
 
+      - name: "SKILL §8 Kill Switch (strike/blocked -> silme adımı atlanır)"
+        id: kill
+        run: |
+          python3 scripts/kill_switch.py gate | while IFS= read -r line; do
+            case "$line" in
+              proceed=*) echo "$line" >> "$GITHUB_OUTPUT" ;;
+            esac
+          done
+
       - name: "Araçları Kur (önbellekli: xvfb .deb + node_modules + Chromium)"
         if: steps.gate.outputs.proceed == 'true'
         uses: ./.github/actions/setup-tools
@@ -182,7 +192,7 @@ jobs:
           fi
 
       - name: 1 Saatten Eski Düşük İzlenmeli Videoları Temizle (Kanal #${{ matrix.channel_id }})
-        if: steps.gate.outputs.proceed == 'true' && env.SKIP_DUPLICATE_CHANNEL != 'true'
+        if: steps.gate.outputs.proceed == 'true' && steps.kill.outputs.proceed == 'true' && env.SKIP_DUPLICATE_CHANNEL != 'true'
         env:
           MATRIX_CHANNEL_ID: ${{ matrix.channel_id }}
           PRUNE_MIN_VIEWS: ${{ vars.PRUNE_MIN_VIEWS || '100' }}
@@ -226,6 +236,12 @@ jobs:
               -d "${PAYLOAD}")
             echo "[*] GitHub Contents API yanıt kodu: ${HTTP_CODE}"
           fi
+
+      - name: "SKILL §9 KPI Anlık Görüntüsü (pruner sonucu özeti)"
+        if: always() && steps.gate.outputs.proceed == 'true' && steps.kill.outputs.proceed != 'false'
+        env:
+          KPI_DAILY_TARGET: ${{ vars.KPI_DAILY_TARGET || '5' }}
+        run: python3 scripts/kpi_snapshot.py
 
       - name: Temizlik Raporunu Yükle (Artifact - Kanal #${{ matrix.channel_id }})
         if: always() && steps.gate.outputs.proceed == 'true'
