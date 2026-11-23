@@ -4,7 +4,7 @@
  *
  * YouTube Studio'ya girer, kanalın videolarını tarar ve "ölü ağırlık" olanları
  * kalıcı olarak siler:
- *   - Video 1 saatten (PRUNE_MIN_AGE_MINUTES) eski olmalı
+ *   - Video 48 saatten (PRUNE_MIN_AGE_MINUTES, kod clamp'i >= 2880) eski olmalı
  *   - Video PRUNE_MIN_VIEWS (varsayılan 100) izlenmenin altında olmalı
  *
  * Yaş tespiti (3 katmanlı, en güvenilirden en muhafazakâra):
@@ -13,7 +13,13 @@
  *   3) Studio tarih sütunu -> göreli ("3 saat önce") veya mutlak ("3 Kas 2026")
  *      (mutlak tarihte en geç 23:59 varsayılır -> asla erken silme)
  *
+ * KAZA KAYDI 2026-11-23: varsayilan esik 60 dk + canli mod ile 13 videodan 12'si silindi
+ * (oembed kaniti: logs/oembed_audit.json). Fix kod seviyesinde: esik >= 2880 clamp,
+ * silme icin PRUNE_LIVE_ENABLED=true + PRUNE_DRY_RUN=false BERABER gereklidir.
  * Emniyet kilitleri:
+ *   - PRUNE_MIN_AGE_MINUTES  : video en az bu kadar dk eski olmalı (varsayılan 2880 = 48 saat.
+ *     2026-11-23 kazası: 60 dk eşik + canlı mod 13 videodan 12'sini öldürdü; eşik 48 saate
+ *     çekildi. Shorts dağıtımı gecikmeli gelir — erken silme izlenme katlidir.)
  *   - PRUNE_MAX_DELETIONS   : tek çalıştırmada en fazla N silme (varsayılan 10)
  *   - PRUNE_MIN_REMAINING   : kanalda bırakılacak en az video sayısı (varsayılan 1)
  *   - PRUNE_DRY_RUN=true     : sadece raporlar, silmez
@@ -46,10 +52,20 @@ const LOG_DIR = path.join(BASE_DIR, 'logs');
 const PROFILE_DIR = path.join(os.tmpdir(), 'yt_studio_pruner_profile');
 
 const MIN_VIEWS = Number(process.env.PRUNE_MIN_VIEWS || 100);
-const MIN_AGE_MINUTES = Number(process.env.PRUNE_MIN_AGE_MINUTES || 60);
+// Kod seviyesi fail-closed: varsayılan 2880 (48 saat). 60 dk eşiği 2026-11-23
+// kazasının kök nedeniydi (12/13 video oembed 404). Varsayılanı asla 60'a geri alma.
+// KAZA DERSI 2026-11-23 (12/13 video katliami): esik kod tabani asla 2880'in (48 saat) altina inemez.
+// Shorts dagitimi gecikmeli gelir; 60 dk/<100 izlenme eger HER SEYI sildi (oembed kaniti: logs/oembed_audit.json).
+// Clamp: env 60 yazilsa bile 2880 gecerli. Canli silme icin asagidaki LIVE gate de sart. (SKILL v5.0 §6.6)
+const MIN_AGE_MINUTES = Math.max(Number(process.env.PRUNE_MIN_AGE_MINUTES || 2880), 2880);
 const MAX_DELETIONS = Number(process.env.PRUNE_MAX_DELETIONS || 10);
 const MIN_REMAINING = Number(process.env.PRUNE_MIN_REMAINING || 1);
-const DRY_RUN = String(process.env.PRUNE_DRY_RUN || 'false').toLowerCase() === 'true';
+// FAIL-CLOSED: canli silme iki anahtari BERABER gerektirir:
+//   (1) PRUNE_LIVE_ENABLED=true  (kod seviyesi; hicbir workflow set etmiyor -> rapor modu)
+//   (2) PRUNE_DRY_RUN=false
+// Tek anahtar yetmez; (1) yoksa DRY_RUN=true -> sadece rapor, sifir silme.
+const LIVE_PRUNE_ENABLED = String(process.env.PRUNE_LIVE_ENABLED || 'false').toLowerCase() === 'true';
+const DRY_RUN = !(LIVE_PRUNE_ENABLED && String(process.env.PRUNE_DRY_RUN || 'false').toLowerCase() === 'false');
 // Güvenlik aşaması: ayrıntılı video bilgisi (başlık/ID) loga yazılmaz, yalnızca sayılar.
 const QUIET_LOG = String(process.env.PRUNE_QUIET_LOG || 'false').toLowerCase() === 'true';
 // Güvenlik aşaması: prune_state.json (ilk görülme kayıtları) diske yazılmaz.
@@ -691,7 +707,7 @@ async function pruneLowPerformers() {
                 report.targets.push({ videoId: video.videoId, title, views, studioViews, watchViews, ageMinutes: Math.round(age.minutes), ageSource: age.source });
 
                 if (DRY_RUN) {
-                    logDetail(`[*] DRY-RUN: '${title}' silinmedi (PRUNE_DRY_RUN=true).`);
+                    logDetail(`[*] DRY-RUN: '${title}' silinmedi (rapor modu; canlı silme için PRUNE_LIVE_ENABLED=true + PRUNE_DRY_RUN=false BERABER gerekir).`);
                     continue;
                 }
 
