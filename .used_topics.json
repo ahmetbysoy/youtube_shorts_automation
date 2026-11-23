@@ -42,7 +42,8 @@
     "Merkür Güneş'e En Yakın Gezegen Ama En Sıcağı Değil! #Shorts",
     "Çikolata Yer Çekiminin Olmadığı Yerde Farklı Erir! #Shorts",
     "Dünyanın İlk Programcısı Bir Kadındı! #Shorts",
-    "Çatalhöyük'te Sokak ve Kapı Yoktu, Evlere Çatıdan Girilirdi! #Shorts"
+    "Çatalhöyük'te Sokak ve Kapı Yoktu, Evlere Çatıdan Girilirdi! #Shorts",
+    "Mavi Balinanın Kalbi Küçük Bir Otomobil Boyutundadır! #Shorts"
   ],
   "used_records": [
     {
@@ -1813,9 +1814,7 @@
         "yokt"
       ],
       "created_at": "2026-11-23T10:51:49.332337+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Mavi Balinanın Kalbi Küçük Bir Otomobil Boyutundadır! #Shorts",
       "topic": "Bilim",
@@ -1872,9 +1871,8 @@
         "yasamis",
         "yeryuz"
       ],
-      "created_at": "2026-11-23T18:46:19.504498+00:00",
-      "reservation_id": "21bcbb13-1137-44ef-a612-74b70f5d1b1f",
-      "run_id": "45241291409:1"
+      "created_at": "2026-11-23T18:46:19.504498+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
