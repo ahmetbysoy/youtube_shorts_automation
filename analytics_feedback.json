@@ -1,60 +1,51 @@
 {
-  "scraped_at": "2026-11-23T17:16:31.230Z",
+  "scraped_at": "2026-11-24T16:56:00.734Z",
   "channel_id": "UCBZVbwc7s7TeUCcOaN58oHQ",
-  "videos_analyzed": 14,
-  "duplicates_removed": 1,
+  "videos_analyzed": 15,
+  "duplicates_removed": 0,
   "status": "ok",
   "winning_topic": "Tarih",
   "boost_active": false,
-  "boost_reason": "insufficient_sample(top=5,second=1)",
-  "outperformance_ratio": 1.04,
+  "boost_reason": "insufficient_sample(top=3,second=9)",
+  "outperformance_ratio": 1.18,
   "discarded_topics": [],
-  "optimization_directive": "En yüksek skor 'Tarih' görünse de örneklem küçük (n=5); agresif kategori kayması YAPILMIYOR, dengeli dağılım korunuyor.",
+  "optimization_directive": "En yüksek skor 'Tarih' görünse de örneklem küçük (n=3); agresif kategori kayması YAPILMIYOR, dengeli dağılım korunuyor.",
   "data_quality": {
     "avg_view_duration_available_count": 0,
-    "avg_view_duration_total": 14,
+    "avg_view_duration_total": 15,
     "note": "Ortalama izleme süresi Studio metrik kartından okunamadı (muhtemelen yeni video/erişim yok); AVD sıfır değil null olarak kaydedildi, kategori skoruna dahil edilmedi.",
     "min_videos_per_niche_for_boost": 4
   },
   "topic_scores": [
     {
       "niche": "Tarih",
-      "video_count": 5,
-      "avg_views": 1176.6,
+      "video_count": 3,
+      "avg_views": 1108.67,
       "avg_view_duration_sec": null,
       "avg_view_duration_sample_size": 0,
-      "avg_score": 1176.6,
-      "statistically_reliable": true
-    },
-    {
-      "niche": "Uzay",
-      "video_count": 1,
-      "avg_views": 1136,
-      "avg_view_duration_sec": null,
-      "avg_view_duration_sample_size": 0,
-      "avg_score": 1136,
+      "avg_score": 1108.67,
       "statistically_reliable": false
     },
     {
       "niche": "Bilim",
-      "video_count": 8,
-      "avg_views": 1025.5,
+      "video_count": 9,
+      "avg_views": 937.44,
       "avg_view_duration_sec": null,
       "avg_view_duration_sample_size": 0,
-      "avg_score": 1025.5,
+      "avg_score": 937.44,
       "statistically_reliable": true
+    },
+    {
+      "niche": "Uzay",
+      "video_count": 3,
+      "avg_views": 916.33,
+      "avg_view_duration_sec": null,
+      "avg_view_duration_sample_size": 0,
+      "avg_score": 916.33,
+      "statistically_reliable": false
     }
   ],
   "recent_videos": [
-    {
-      "videoId": "yiiLdVadjmM",
-      "title": "Dünya'nın En Yüksek Sesli Patlaması: 1883 Krakatoa! #Shorts",
-      "niche": "Tarih",
-      "views": 1349,
-      "avgViewDurationSec": null,
-      "avgViewDurationAvailable": false,
-      "compositeScore": 1349
-    },
     {
       "videoId": "6zwOEVEjOeo",
       "title": "2 Bin Yıllık Antik Bilgisayar: Antikythera Düzeneği! #Shorts",
@@ -63,15 +54,6 @@
       "avgViewDurationSec": null,
       "avgViewDurationAvailable": false,
       "compositeScore": 1210
-    },
-    {
-      "videoId": "WKYwF96hQzg",
-      "title": "Tarihin En Kısa Savaşı Sadece 38 Dakika Sürdü! #Shorts",
-      "niche": "Tarih",
-      "views": 1208,
-      "avgViewDurationSec": null,
-      "avgViewDurationAvailable": false,
-      "compositeScore": 1208
     },
     {
       "videoId": "Ji6u0gBcg1E",
@@ -119,15 +101,6 @@
       "compositeScore": 1070
     },
     {
-      "videoId": "pg39JuqqA40",
-      "title": "Asla Yaşlanmayan Ölümsüz Denizanası! #Shorts",
-      "niche": "Bilim",
-      "views": 1055,
-      "avgViewDurationSec": null,
-      "avgViewDurationAvailable": false,
-      "compositeScore": 1055
-    },
-    {
       "videoId": "V6geVxL3hb8",
       "title": "Ahtapotlar Renk Körü Olmalarına Rağmen Renkleri Görüyor! #Shorts",
       "niche": "Bilim",
@@ -155,6 +128,15 @@
       "compositeScore": 981
     },
     {
+      "videoId": "LIsIn3mAsmQ",
+      "title": "Göz Renginiz Gerçekte Yalnızca Kahverengi Pigmentten Oluşuyor! #Shorts",
+      "niche": "Bilim",
+      "views": 976,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
+      "compositeScore": 976
+    },
+    {
       "videoId": "NKBqoA_o34I",
       "title": "Bir Denizaltıyı Tuvalet Arızası Yüzünden Kaybetmek: U-1206! #Shorts",
       "niche": "Bilim",
@@ -164,13 +146,40 @@
       "compositeScore": 946
     },
     {
-      "videoId": "LIsIn3mAsmQ",
-      "title": "Göz Renginiz Gerçekte Yalnızca Kahverengi Pigmentten Oluşuyor! #Shorts",
-      "niche": "Bilim",
-      "views": 929,
+      "videoId": "Xy1QzBs_fF0",
+      "title": "Elmas Yağmurları Yağan Gezegenler: Neptün ve Uranüs! #Shorts",
+      "niche": "Uzay",
+      "views": 899,
       "avgViewDurationSec": null,
       "avgViewDurationAvailable": false,
-      "compositeScore": 929
+      "compositeScore": 899
+    },
+    {
+      "videoId": "WsPqj2rgqx0",
+      "title": "Dünya'nın İç Çekirdeği Güneş Yüzeyi Kadar Sıcak! #Shorts",
+      "niche": "Uzay",
+      "views": 714,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
+      "compositeScore": 714
+    },
+    {
+      "videoId": "1RPILZ4--5Q",
+      "title": "Fransız İhtilali Ekmek Kıtlığıyla Başladı! #Shorts",
+      "niche": "Bilim",
+      "views": 632,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
+      "compositeScore": 632
+    },
+    {
+      "videoId": "R2qiXpjYllI",
+      "title": "En Az Bilen En Çok Bildiğini Zanneder: Dunning-Kruger! #Shorts",
+      "niche": "Bilim",
+      "views": 609,
+      "avgViewDurationSec": null,
+      "avgViewDurationAvailable": false,
+      "compositeScore": 609
     }
   ]
 }
