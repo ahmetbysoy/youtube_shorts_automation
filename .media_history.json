@@ -924,6 +924,34 @@
       "sha256": "0b67d0e31ac8fda4370b2298429adff550f3777b4906e73003b80b8ba2a46be9",
       "selected_at": "2026-11-23T23:57:29.916298+00:00",
       "generation_id": "2b641cca-78eb-4693-b8a4-31ade94f1082"
+    },
+    {
+      "key": "pixabay:13568",
+      "source_url": "https://pixabay.com/videos/search/history%20thousand/",
+      "sha256": "3e7866f622880f0ac5d923ba42953b8d2dfabaf5c7290481d050a0bab6aabfc3",
+      "selected_at": "2026-11-24T04:30:53.648227+00:00",
+      "generation_id": "0c73313f-a593-433b-9db8-1d06710608d4"
+    },
+    {
+      "key": "pexels:14012924",
+      "source_url": "https://www.pexels.com/search/videos/history%20until/",
+      "sha256": "132e030a6bad240d8ea28efdd193195cc0c6113ecc168bdffe8a82e3dd461919",
+      "selected_at": "2026-11-24T04:31:56.955709+00:00",
+      "generation_id": "0c73313f-a593-433b-9db8-1d06710608d4"
+    },
+    {
+      "key": "wikimedia:2811638",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Brugsch_Uebereinstimmung.jpg",
+      "sha256": "963d1d0e0037dc9a2644e5703aa82c02b5386690ef8649e23fb997d48782b2fd",
+      "selected_at": "2026-11-24T04:32:40.994163+00:00",
+      "generation_id": "0c73313f-a593-433b-9db8-1d06710608d4"
+    },
+    {
+      "key": "pexels:17050886",
+      "source_url": "https://www.pexels.com/search/videos/history%20tongue/",
+      "sha256": "1a3232353b9652487251d4526c23227ec10968ac57eed8b669db1380ef355638",
+      "selected_at": "2026-11-24T04:33:44.199870+00:00",
+      "generation_id": "0c73313f-a593-433b-9db8-1d06710608d4"
     }
   ]
 }
