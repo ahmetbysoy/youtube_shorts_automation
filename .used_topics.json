@@ -43,7 +43,8 @@
     "Çikolata Yer Çekiminin Olmadığı Yerde Farklı Erir! #Shorts",
     "Dünyanın İlk Programcısı Bir Kadındı! #Shorts",
     "Çatalhöyük'te Sokak ve Kapı Yoktu, Evlere Çatıdan Girilirdi! #Shorts",
-    "Mavi Balinanın Kalbi Küçük Bir Otomobil Boyutundadır! #Shorts"
+    "Mavi Balinanın Kalbi Küçük Bir Otomobil Boyutundadır! #Shorts",
+    "Roma'yı Bitiren Son İmparator Sadece 16 Yaşındaydı! #Shorts"
   ],
   "used_records": [
     {
@@ -1872,9 +1873,7 @@
         "yeryuz"
       ],
       "created_at": "2026-11-23T18:46:19.504498+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Roma'yı Bitiren Son İmparator Sadece 16 Yaşındaydı! #Shorts",
       "topic": "Tarih",
@@ -1941,9 +1940,8 @@
         "year",
         "yi"
       ],
-      "created_at": "2026-11-23T23:50:59.275853+00:00",
-      "reservation_id": "4680578d-7124-435b-8008-f02a13e3f2d3",
-      "run_id": "45291861093:1"
+      "created_at": "2026-11-23T23:50:59.275853+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
