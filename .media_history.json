@@ -980,6 +980,34 @@
       "sha256": "5fa224003fe441278621f98b4497ae01a6d22f416c37f1d8d6804102a379f4e9",
       "selected_at": "2026-11-24T09:55:53.152703+00:00",
       "generation_id": "92c23476-41f8-4a28-b754-783b748daf54"
+    },
+    {
+      "key": "wikimedia:179476944",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Castle_Tower_at_Pena_Palace,_Sintra,_Portugal_(54876827882).jpg",
+      "sha256": "13c5d7ab80c0f6c44a155aad7dd2776ebf65a92fac97430fd5788f16d9ed0e3b",
+      "selected_at": "2026-11-24T15:22:56.252099+00:00",
+      "generation_id": "7576cc90-d7a4-49da-b8cb-b924942bea9d"
+    },
+    {
+      "key": "pixabay:2792",
+      "source_url": "https://pixabay.com/videos/search/history%20eat/",
+      "sha256": "d25a65461f5cf42290cf99de6e80a898063b27285d16b674abefda06151f7806",
+      "selected_at": "2026-11-24T15:24:04.746605+00:00",
+      "generation_id": "7576cc90-d7a4-49da-b8cb-b924942bea9d"
+    },
+    {
+      "key": "wikimedia:97113522",
+      "source_url": "https://commons.wikimedia.org/wiki/File:BUTTON_(FindID_980623).jpg",
+      "sha256": "3b8617c373e4122efd142b29d5fc2ee7f6df5988b1aed167eb978385f2cea806",
+      "selected_at": "2026-11-24T15:24:42.155178+00:00",
+      "generation_id": "7576cc90-d7a4-49da-b8cb-b924942bea9d"
+    },
+    {
+      "key": "pixabay:163791",
+      "source_url": "https://pixabay.com/videos/search/history%20physicist/",
+      "sha256": "ebfd3229c21cba6d491bf038803073e2f8ed5f4635c37eac47097782e4e0331c",
+      "selected_at": "2026-11-24T15:25:21.940428+00:00",
+      "generation_id": "7576cc90-d7a4-49da-b8cb-b924942bea9d"
     }
   ]
 }
