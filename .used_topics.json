@@ -46,7 +46,8 @@
     "Mavi Balinanın Kalbi Küçük Bir Otomobil Boyutundadır! #Shorts",
     "Roma'yı Bitiren Son İmparator Sadece 16 Yaşındaydı! #Shorts",
     "Antik Mısır dilini Çözen Üç Dilli Şifre: Rosetta Taşı! #Shorts",
-    "Antarktika Dünyanın En Büyük Çölüdür! #Shorts"
+    "Antarktika Dünyanın En Büyük Çölüdür! #Shorts",
+    "Çin Seddi Uzaydan Görünmez, Bu Bir Efsane! #Shorts"
   ],
   "used_records": [
     {
@@ -2070,9 +2071,7 @@
         "yoktur"
       ],
       "created_at": "2026-11-24T09:50:39.980034+00:00"
-    }
-  ],
-  "pending": [
+    },
     {
       "title": "Çin Seddi Uzaydan Görünmez, Bu Bir Efsane! #Shorts",
       "topic": "Tarih",
@@ -2126,9 +2125,8 @@
         "yanlis",
         "yapi"
       ],
-      "created_at": "2026-11-24T20:41:31.128914+00:00",
-      "reservation_id": "abd3f21f-501c-46e6-a940-2c7b0d917db9",
-      "run_id": "45482832196:1"
+      "created_at": "2026-11-24T20:41:31.128914+00:00"
     }
-  ]
+  ],
+  "pending": []
 }
