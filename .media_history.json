@@ -1008,6 +1008,34 @@
       "sha256": "ebfd3229c21cba6d491bf038803073e2f8ed5f4635c37eac47097782e4e0331c",
       "selected_at": "2026-11-24T15:25:21.940428+00:00",
       "generation_id": "7576cc90-d7a4-49da-b8cb-b924942bea9d"
+    },
+    {
+      "key": "pexels:1193306",
+      "source_url": "https://www.pexels.com/search/videos/great%20wall%20china%20aerial%20view/",
+      "sha256": "6248d023fafa649f88aa69d9f7cbda534acd62387556d1498c03f41a4558ca69",
+      "selected_at": "2026-11-24T20:43:08.721672+00:00",
+      "generation_id": "cd4f59a6-4c73-4fcc-8735-44c93988645d"
+    },
+    {
+      "key": "pixabay:173354",
+      "source_url": "https://pixabay.com/videos/search/history%20until/",
+      "sha256": "7a600e8d60f0ae333e076ffe92d8299849b2b7aec0d5d37c5ae7a9fe6613e388",
+      "selected_at": "2026-11-24T20:44:47.670394+00:00",
+      "generation_id": "cd4f59a6-4c73-4fcc-8735-44c93988645d"
+    },
+    {
+      "key": "pexels:14485621",
+      "source_url": "https://www.pexels.com/search/videos/china%20ancient%20architecture/",
+      "sha256": "cd87a014bb4951d7af4a7eba6790caab3218a027fc432317ad1ee90fcdac875f",
+      "selected_at": "2026-11-24T20:46:00.814870+00:00",
+      "generation_id": "cd4f59a6-4c73-4fcc-8735-44c93988645d"
+    },
+    {
+      "key": "pexels:10480415",
+      "source_url": "https://www.pexels.com/search/videos/history%20happen/",
+      "sha256": "c3a3e39166dfc71d3a461553803f47cbbc32a8774f8ac44b0db12542f7bad978",
+      "selected_at": "2026-11-24T20:47:15.649110+00:00",
+      "generation_id": "cd4f59a6-4c73-4fcc-8735-44c93988645d"
     }
   ]
 }
