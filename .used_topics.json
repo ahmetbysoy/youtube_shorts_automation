@@ -2016,5 +2016,63 @@
       "created_at": "2026-11-24T04:29:37.898721+00:00"
     }
   ],
-  "pending": []
+  "pending": [
+    {
+      "title": "Antarktika Dünyanın En Büyük Çölüdür! #Shorts",
+      "topic": "Bilim",
+      "topic_subject": "Antarktika Dünyanın En Büyük Çölüdür! #Shorts",
+      "topic_key": "",
+      "category": "bilim",
+      "entities": [
+        "antarktika",
+        "bilim",
+        "buyuk",
+        "coludur",
+        "dunyanin"
+      ],
+      "claims": [],
+      "scenario_tokens": [
+        "acik",
+        "alir",
+        "anlam",
+        "antarktik",
+        "ara",
+        "az",
+        "bilim",
+        "bolg",
+        "buyuk",
+        "col",
+        "colu",
+        "coludur",
+        "degil",
+        "dir",
+        "earth",
+        "gelir",
+        "heat",
+        "ikinc",
+        "ilgis",
+        "kare",
+        "kitas",
+        "km",
+        "kuru",
+        "miktar",
+        "milimetr",
+        "oldug",
+        "ondedir",
+        "onu",
+        "ortalam",
+        "oturur",
+        "sahr",
+        "siray",
+        "yagis",
+        "yalnizc",
+        "yapar",
+        "yild",
+        "yoktur"
+      ],
+      "created_at": "2026-11-24T09:50:39.980034+00:00",
+      "reservation_id": "f01eca8f-7399-4b04-b5b1-17e3ab3b9280",
+      "run_id": "45368390105:1"
+    }
+  ]
 }
