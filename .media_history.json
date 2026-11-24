@@ -952,6 +952,34 @@
       "sha256": "1a3232353b9652487251d4526c23227ec10968ac57eed8b669db1380ef355638",
       "selected_at": "2026-11-24T04:33:44.199870+00:00",
       "generation_id": "0c73313f-a593-433b-9db8-1d06710608d4"
+    },
+    {
+      "key": "pixabay:220444",
+      "source_url": "https://pixabay.com/videos/search/antarctica%20ice%20desert%20polar/",
+      "sha256": "90443e33879972c5eddf2c32d4fad0f423e1ebc6eafc7d84587a0dbd05055850",
+      "selected_at": "2026-11-24T09:53:16.133611+00:00",
+      "generation_id": "92c23476-41f8-4a28-b754-783b748daf54"
+    },
+    {
+      "key": "wikimedia:151568415",
+      "source_url": "https://commons.wikimedia.org/wiki/File:ICESat-2_Land_Ice_Height_Change_(SVS4984_-_is2_land-ice-change_antarctica-ice-streams_1080p30).webm",
+      "sha256": "7406082f336889a30f98e2a85169f0fb497b0cf6087c663eebdd98863f5a3bf9",
+      "selected_at": "2026-11-24T09:54:11.071507+00:00",
+      "generation_id": "92c23476-41f8-4a28-b754-783b748daf54"
+    },
+    {
+      "key": "wikimedia:151646895",
+      "source_url": "https://commons.wikimedia.org/wiki/File:ICESat-2_Land_Ice_Height_Change_(SVS4984_-_is2_land-ice-change_antarctica-ice-streams_2160p30).webm",
+      "sha256": "006cf3b810ebb31443cef81d0981409c3f052962c0d97fb1e43e5f22e2378acb",
+      "selected_at": "2026-11-24T09:54:55.667398+00:00",
+      "generation_id": "92c23476-41f8-4a28-b754-783b748daf54"
+    },
+    {
+      "key": "wikimedia:180953248",
+      "source_url": "https://commons.wikimedia.org/wiki/File:ICESat-2_Land_Ice_Height_Change_(2020-2025)_(SVS5591_-_antarctica_2160p60).webm",
+      "sha256": "5fa224003fe441278621f98b4497ae01a6d22f416c37f1d8d6804102a379f4e9",
+      "selected_at": "2026-11-24T09:55:53.152703+00:00",
+      "generation_id": "92c23476-41f8-4a28-b754-783b748daf54"
     }
   ]
 }
