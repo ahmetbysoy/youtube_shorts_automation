@@ -1120,6 +1120,34 @@
       "sha256": "5a82c519450fe68049e32b538bfdf439b34da3a65f42c8c323b73e6f79f4a89b",
       "selected_at": "2026-11-25T09:09:02.163048+00:00",
       "generation_id": "75611912-0a6d-47f4-8bdf-cce36db80074"
+    },
+    {
+      "key": "pexels:3245641",
+      "source_url": "https://www.pexels.com/search/videos/history%20eat/",
+      "sha256": "a4ac9a38d4c82f77b802c588600e916801714a6f8c1623c028670e83a1e319a1",
+      "selected_at": "2026-11-25T17:11:17.756680+00:00",
+      "generation_id": "d590b3ce-3e07-4411-88b4-1fb47d35efdf"
+    },
+    {
+      "key": "pixabay:118545",
+      "source_url": "https://pixabay.com/videos/search/history%20after/",
+      "sha256": "97bb28e1f31525e64e120da05a139289771cd5a88dfa1aeb37052349fcb9930f",
+      "selected_at": "2026-11-25T17:12:51.733402+00:00",
+      "generation_id": "d590b3ce-3e07-4411-88b4-1fb47d35efdf"
+    },
+    {
+      "key": "pexels:13719546",
+      "source_url": "https://www.pexels.com/search/videos/history%20fast/",
+      "sha256": "74e4f6af587be646f6970458c6366a2a2d776dd173077ec22a4b3a38dafec2a5",
+      "selected_at": "2026-11-25T17:14:07.689209+00:00",
+      "generation_id": "d590b3ce-3e07-4411-88b4-1fb47d35efdf"
+    },
+    {
+      "key": "pexels:11345413",
+      "source_url": "https://www.pexels.com/search/videos/ancient%20roman%20ruins%20columns/",
+      "sha256": "2571fad76cea1e5ec5a629636aab9a7a907428da666421ac979f0b3c1ef66811",
+      "selected_at": "2026-11-25T17:15:26.609540+00:00",
+      "generation_id": "d590b3ce-3e07-4411-88b4-1fb47d35efdf"
     }
   ]
 }
