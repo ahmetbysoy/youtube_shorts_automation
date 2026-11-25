@@ -1148,6 +1148,34 @@
       "sha256": "2571fad76cea1e5ec5a629636aab9a7a907428da666421ac979f0b3c1ef66811",
       "selected_at": "2026-11-25T17:15:26.609540+00:00",
       "generation_id": "d590b3ce-3e07-4411-88b4-1fb47d35efdf"
+    },
+    {
+      "key": "pexels:2916651",
+      "source_url": "https://www.pexels.com/search/videos/history%20single/",
+      "sha256": "37d234285d5bccb5412f8d060c04da8552a564c1fbaa20d69d5851eda495cd4c",
+      "selected_at": "2026-11-25T19:59:37.073943+00:00",
+      "generation_id": "978105ee-ec8e-4bb2-a19f-d49aefa293de"
+    },
+    {
+      "key": "pexels:7316609",
+      "source_url": "https://www.pexels.com/search/videos/history%20special/",
+      "sha256": "e870f6342efc5514999341c0558438bbc3d170070d050cb3cbbf0c918c827a13",
+      "selected_at": "2026-11-25T20:00:33.619898+00:00",
+      "generation_id": "978105ee-ec8e-4bb2-a19f-d49aefa293de"
+    },
+    {
+      "key": "wikimedia:179476944",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Castle_Tower_at_Pena_Palace,_Sintra,_Portugal_(54876827882).jpg",
+      "sha256": "13c5d7ab80c0f6c44a155aad7dd2776ebf65a92fac97430fd5788f16d9ed0e3b",
+      "selected_at": "2026-11-25T20:06:18.198252+00:00",
+      "generation_id": "978105ee-ec8e-4bb2-a19f-d49aefa293de"
+    },
+    {
+      "key": "wikimedia:165929364",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Warner_Wetlands_(32931133820).webm",
+      "sha256": "38a739d732b0e081ab9ce502f3f2ad9c2fcd800bcff864d20278a069503aa425",
+      "selected_at": "2026-11-25T20:06:57.449269+00:00",
+      "generation_id": "978105ee-ec8e-4bb2-a19f-d49aefa293de"
     }
   ]
 }
