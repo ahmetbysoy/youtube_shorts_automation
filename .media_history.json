@@ -1092,6 +1092,34 @@
       "sha256": "9e1ff02bbabac0bd4e1fb2cb567a3b9e914e89d4dc22fbdfa9e400c94d0e7a5f",
       "selected_at": "2026-11-25T05:01:18.978443+00:00",
       "generation_id": "506269c1-aab1-4af7-aab7-f11104ae912b"
+    },
+    {
+      "key": "pixabay:157741",
+      "source_url": "https://pixabay.com/videos/search/history%20single/",
+      "sha256": "f8e7c97b2992e4a053b92eb635e268ad152631fc3e76281b4466238b374cd669",
+      "selected_at": "2026-11-25T09:07:13.914592+00:00",
+      "generation_id": "75611912-0a6d-47f4-8bdf-cce36db80074"
+    },
+    {
+      "key": "wikimedia:66068907",
+      "source_url": "https://commons.wikimedia.org/wiki/File:22_of_%27History_of_the_Thirty_Years%27_War_..._Translated_by_A._Ten_Broek._..._With_an_Introductory_and_a_concluding_chapter_by_the_Translator%27_(11169479763).jpg",
+      "sha256": "38010d69dfed14e94da271a5c3d716fc23146dbe9dd5f7dfaf8bd50c53705199",
+      "selected_at": "2026-11-25T09:07:39.362058+00:00",
+      "generation_id": "75611912-0a6d-47f4-8bdf-cce36db80074"
+    },
+    {
+      "key": "wikimedia:195837036",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Army_engineer_history_in_concrete_(956607).webm",
+      "sha256": "c46115c91526511c2649e8d8cefb6084a176b8bc6cea21f999da2f7bac22878d",
+      "selected_at": "2026-11-25T09:08:15.723442+00:00",
+      "generation_id": "75611912-0a6d-47f4-8bdf-cce36db80074"
+    },
+    {
+      "key": "pixabay:143178",
+      "source_url": "https://pixabay.com/videos/search/ancient%20roman%20ruins%20columns/",
+      "sha256": "5a82c519450fe68049e32b538bfdf439b34da3a65f42c8c323b73e6f79f4a89b",
+      "selected_at": "2026-11-25T09:09:02.163048+00:00",
+      "generation_id": "75611912-0a6d-47f4-8bdf-cce36db80074"
     }
   ]
 }
