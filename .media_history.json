@@ -1036,6 +1036,34 @@
       "sha256": "c3a3e39166dfc71d3a461553803f47cbbc32a8774f8ac44b0db12542f7bad978",
       "selected_at": "2026-11-24T20:47:15.649110+00:00",
       "generation_id": "cd4f59a6-4c73-4fcc-8735-44c93988645d"
+    },
+    {
+      "key": "wikimedia:166203178",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Astrophysics_Multiwavelength_Vertical_Video_(SVS14798_-_reel_crab_v4).webm",
+      "sha256": "955359d826d92580bf43f7c4fa6aabc69aec015c60959d2f550da8ebb98dea52",
+      "selected_at": "2026-11-25T00:13:26.437088+00:00",
+      "generation_id": "22158e66-4381-4cab-8470-bbfd607a982b"
+    },
+    {
+      "key": "wikimedia:200239552",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Asteroid_Apophis_2029_Earth_Flyby_%E2%80%93_Orbit_Visualizations_(SVS5651_-_apex_2029_flyby_wide_ecliptic_2160p60).webm",
+      "sha256": "3de29451aff1357ef8cfe46bf5e9bddf20b014baab37c86a71c73cc7208e26a5",
+      "selected_at": "2026-11-25T00:14:13.517534+00:00",
+      "generation_id": "22158e66-4381-4cab-8470-bbfd607a982b"
+    },
+    {
+      "key": "pixabay:101817",
+      "source_url": "https://pixabay.com/videos/search/water%20droplet%20zero%20gravity/",
+      "sha256": "ca78f45241b7fb39ed3dff1f25892d81040b2ac59d3249b30782e5b3eb4bcda2",
+      "selected_at": "2026-11-25T00:14:52.199512+00:00",
+      "generation_id": "22158e66-4381-4cab-8470-bbfd607a982b"
+    },
+    {
+      "key": "wikimedia:199584773",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Collage_of_cutouts_of_star-forming_region_IC_348_(Webb_NIRCam_image)_(weic2619b).webm",
+      "sha256": "21940e8c3e543f5f35b36ce042472d3aedeff99b796d523900c8766c6f16dd53",
+      "selected_at": "2026-11-25T00:18:55.036471+00:00",
+      "generation_id": "22158e66-4381-4cab-8470-bbfd607a982b"
     }
   ]
 }
