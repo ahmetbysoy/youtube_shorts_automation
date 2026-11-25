@@ -1064,6 +1064,34 @@
       "sha256": "21940e8c3e543f5f35b36ce042472d3aedeff99b796d523900c8766c6f16dd53",
       "selected_at": "2026-11-25T00:18:55.036471+00:00",
       "generation_id": "22158e66-4381-4cab-8470-bbfd607a982b"
+    },
+    {
+      "key": "pixabay:154279",
+      "source_url": "https://pixabay.com/videos/search/amsterdam%20canal%20houses/",
+      "sha256": "cb9e1e1c8e5fa943d960dcdb5fbe73b4c5fdf5761b49fb39274d956e19e9d0ea",
+      "selected_at": "2026-11-25T04:57:37.020330+00:00",
+      "generation_id": "506269c1-aab1-4af7-aab7-f11104ae912b"
+    },
+    {
+      "key": "pixabay:117345",
+      "source_url": "https://pixabay.com/videos/search/history%20europe/",
+      "sha256": "95717c3f49b722695aeb1f90219fa2ce7ae2e7da1381cb70730ee5183f20941a",
+      "selected_at": "2026-11-25T04:59:04.300275+00:00",
+      "generation_id": "506269c1-aab1-4af7-aab7-f11104ae912b"
+    },
+    {
+      "key": "wikimedia:165905048",
+      "source_url": "https://commons.wikimedia.org/wiki/File:2016_Bitner_Ranch_Root_Cellar_Project_(29799447060).webm",
+      "sha256": "012a366ac9ab6c63daa7b1248d267e161645dde576644ebdd5162ce122669cb6",
+      "selected_at": "2026-11-25T05:00:24.386105+00:00",
+      "generation_id": "506269c1-aab1-4af7-aab7-f11104ae912b"
+    },
+    {
+      "key": "pixabay:114984",
+      "source_url": "https://pixabay.com/videos/search/history%20amsterdam/",
+      "sha256": "9e1ff02bbabac0bd4e1fb2cb567a3b9e914e89d4dc22fbdfa9e400c94d0e7a5f",
+      "selected_at": "2026-11-25T05:01:18.978443+00:00",
+      "generation_id": "506269c1-aab1-4af7-aab7-f11104ae912b"
     }
   ]
 }
