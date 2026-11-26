@@ -1204,6 +1204,34 @@
       "sha256": "9ad7ec9b7e9c7a1c1babbca6b82c4cbcc07bfef2cea725304a931e8207619b62",
       "selected_at": "2026-11-26T00:37:58.452729+00:00",
       "generation_id": "0786d452-6b9e-4d20-9a24-a04b3cdf2cdd"
+    },
+    {
+      "key": "wikimedia:151993747",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Discovering_Earth%E2%80%99s_Third_Global_Energy_Field_(SVS14628_-_Endurance_SEQ3C_4K).webm",
+      "sha256": "f3622c00b61135aff2095c8635d3d3da4eeb72ffc1b77fffbf344fcbd5c8266e",
+      "selected_at": "2026-11-26T09:42:08.728400+00:00",
+      "generation_id": "7818c339-6bca-442c-a2e6-41113f0d6088"
+    },
+    {
+      "key": "pixabay:110586",
+      "source_url": "https://pixabay.com/videos/search/cosmic%20dust%20particle%20microscope/",
+      "sha256": "683668761ddf38c0f55845198d3c865c0b5f2dd7eaed4d7307cc0071b8fd0269",
+      "selected_at": "2026-11-26T09:43:08.659639+00:00",
+      "generation_id": "7818c339-6bca-442c-a2e6-41113f0d6088"
+    },
+    {
+      "key": "wikimedia:180545436",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Artemis_Science-_Visualizing_NASA%E2%80%99s_Next_Lunar_Flyby_(SVS14938_-_Apollo_Visibility_Map_VERT_Small).webm",
+      "sha256": "46b2b42d1a9ebf89cc0c7a82f48df4c8097803d68a8621e861a7abc6c1727c19",
+      "selected_at": "2026-11-26T09:44:09.410490+00:00",
+      "generation_id": "7818c339-6bca-442c-a2e6-41113f0d6088"
+    },
+    {
+      "key": "wikimedia:105132412",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Ever_wonder_what_the_Earth%E2%80%99s_mantle_looks_like%3F_(51150649117).jpg",
+      "sha256": "3923d2dde140d37f9aa29a56e161c241a46a17bdd9e27b2d3f0c030f8fcb4ff0",
+      "selected_at": "2026-11-26T09:44:33.361948+00:00",
+      "generation_id": "7818c339-6bca-442c-a2e6-41113f0d6088"
     }
   ]
 }
