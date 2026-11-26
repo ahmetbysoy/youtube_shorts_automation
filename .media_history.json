@@ -1176,6 +1176,34 @@
       "sha256": "38a739d732b0e081ab9ce502f3f2ad9c2fcd800bcff864d20278a069503aa425",
       "selected_at": "2026-11-25T20:06:57.449269+00:00",
       "generation_id": "978105ee-ec8e-4bb2-a19f-d49aefa293de"
+    },
+    {
+      "key": "wikimedia:168193969",
+      "source_url": "https://commons.wikimedia.org/wiki/File:A_banana_tree!.jpg",
+      "sha256": "67e9a267346e640e51914c69cb06e91173436936282040d6627c25846e918b6a",
+      "selected_at": "2026-11-26T00:35:05.353814+00:00",
+      "generation_id": "0786d452-6b9e-4d20-9a24-a04b3cdf2cdd"
+    },
+    {
+      "key": "pixabay:10448",
+      "source_url": "https://pixabay.com/videos/search/atomic%20physics%20visualization/",
+      "sha256": "c3c23ac460eb9ff4c7c2b9afd52dba87f55c34a1e83b8048f8cbe5ee6594c6e8",
+      "selected_at": "2026-11-26T00:36:18.541585+00:00",
+      "generation_id": "0786d452-6b9e-4d20-9a24-a04b3cdf2cdd"
+    },
+    {
+      "key": "pixabay:1019",
+      "source_url": "https://pixabay.com/videos/search/science%20banana/",
+      "sha256": "654a0c6d07f1a5906ebe9f738fd936b36e7e2762ac9ac014ee597a9c93bd48cb",
+      "selected_at": "2026-11-26T00:37:31.172381+00:00",
+      "generation_id": "0786d452-6b9e-4d20-9a24-a04b3cdf2cdd"
+    },
+    {
+      "key": "wikimedia:187907630",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Artemis_II_Launch_From_Banana_Creek_(KSC-20260401-MH-CSH01-0002-M19183).webm",
+      "sha256": "9ad7ec9b7e9c7a1c1babbca6b82c4cbcc07bfef2cea725304a931e8207619b62",
+      "selected_at": "2026-11-26T00:37:58.452729+00:00",
+      "generation_id": "0786d452-6b9e-4d20-9a24-a04b3cdf2cdd"
     }
   ]
 }
