@@ -1232,6 +1232,34 @@
       "sha256": "3923d2dde140d37f9aa29a56e161c241a46a17bdd9e27b2d3f0c030f8fcb4ff0",
       "selected_at": "2026-11-26T09:44:33.361948+00:00",
       "generation_id": "7818c339-6bca-442c-a2e6-41113f0d6088"
+    },
+    {
+      "key": "wikimedia:23469266",
+      "source_url": "https://commons.wikimedia.org/wiki/File:China_-_Xian_21_-_Terracotta_warriors_(135952563).jpg",
+      "sha256": "57f4329f313f8cd6cc69a8a90f288433f7f6e577113e97c8cd90fd7079823636",
+      "selected_at": "2026-11-26T19:45:47.536230+00:00",
+      "generation_id": "95ec5aa1-6c73-46ac-a4e6-b0c2e417fcae"
+    },
+    {
+      "key": "wikimedia:179476944",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Castle_Tower_at_Pena_Palace,_Sintra,_Portugal_(54876827882).jpg",
+      "sha256": "13c5d7ab80c0f6c44a155aad7dd2776ebf65a92fac97430fd5788f16d9ed0e3b",
+      "selected_at": "2026-11-26T19:50:24.883710+00:00",
+      "generation_id": "95ec5aa1-6c73-46ac-a4e6-b0c2e417fcae"
+    },
+    {
+      "key": "wikimedia:199774167",
+      "source_url": "https://commons.wikimedia.org/wiki/File:A_Legacy_of_Discovery,_Built_for_the_Future_(A_History_of_NASA_Science_Video_MAIN).webm",
+      "sha256": "8f19bc7210a263850975f7fff789dd84d37d914581823f08d1eed4a17137a8a1",
+      "selected_at": "2026-11-26T19:51:24.073960+00:00",
+      "generation_id": "95ec5aa1-6c73-46ac-a4e6-b0c2e417fcae"
+    },
+    {
+      "key": "wikimedia:97207097",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Northern_Song_Imperial_Family_Tomb_-_3.jpg",
+      "sha256": "cbc73708eeeecf7bcbea4628c8aa8081db4a92b93c6c0b74c7040aae51bd514f",
+      "selected_at": "2026-11-26T19:51:41.088162+00:00",
+      "generation_id": "95ec5aa1-6c73-46ac-a4e6-b0c2e417fcae"
     }
   ]
 }
