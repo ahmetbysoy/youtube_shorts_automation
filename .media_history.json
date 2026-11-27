@@ -1260,6 +1260,34 @@
       "sha256": "cbc73708eeeecf7bcbea4628c8aa8081db4a92b93c6c0b74c7040aae51bd514f",
       "selected_at": "2026-11-26T19:51:41.088162+00:00",
       "generation_id": "95ec5aa1-6c73-46ac-a4e6-b0c2e417fcae"
+    },
+    {
+      "key": "wikimedia:84518925",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Vintage_electrotechnical_laboratory_at_Gda%C5%84sk_University_of_Technology.jpg",
+      "sha256": "271ab2525184272bf8ddfc1c3034d3f09267a5f0d4c52f151b30ee3d9576f7a2",
+      "selected_at": "2026-11-27T03:01:58.831803+00:00",
+      "generation_id": "70712efb-339a-4189-bd8c-a320645948a9"
+    },
+    {
+      "key": "wikimedia:122549232",
+      "source_url": "https://commons.wikimedia.org/wiki/File:2012_Sombke_et_al_f04.png",
+      "sha256": "bc84cd13127036f9cb5e938779e453b6d1a60913bf176986ee1ca2df98162fb3",
+      "selected_at": "2026-11-27T03:02:16.747332+00:00",
+      "generation_id": "70712efb-339a-4189-bd8c-a320645948a9"
+    },
+    {
+      "key": "pixabay:15522",
+      "source_url": "https://pixabay.com/videos/search/brain%20anatomy%20visualization/",
+      "sha256": "ab2bc458a007d4a0971442b55ea7479ec7230415e3146eeaeb2344d2f19170e5",
+      "selected_at": "2026-11-27T03:02:46.655635+00:00",
+      "generation_id": "70712efb-339a-4189-bd8c-a320645948a9"
+    },
+    {
+      "key": "wikimedia:84518926",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Vintage_electrotechnical_laboratory_at_Chemical_Faculty_of_Gda%C5%84sk_University_of_Technology.jpg",
+      "sha256": "2f69720bceee08c24b2eefd6f3c1a97bf58fe560a4969c4bf3009650c2ddf5b3",
+      "selected_at": "2026-11-27T03:06:22.130806+00:00",
+      "generation_id": "70712efb-339a-4189-bd8c-a320645948a9"
     }
   ]
 }
