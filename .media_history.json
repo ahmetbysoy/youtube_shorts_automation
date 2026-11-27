@@ -1316,6 +1316,34 @@
       "sha256": "7129747c4899fe510abd85239e9893b2ffc39de05c2988ba13143df06ebadb8b",
       "selected_at": "2026-11-27T12:45:16.872537+00:00",
       "generation_id": "bfc04caf-617c-42fa-bdc6-70825b2703e3"
+    },
+    {
+      "key": "pixabay:11657",
+      "source_url": "https://pixabay.com/videos/search/mantis%20shrimp%20coral/",
+      "sha256": "e5114485d007b30fe1e307633d6fd937defff22c1404238a0645966135d9b64c",
+      "selected_at": "2026-11-27T22:07:57.835711+00:00",
+      "generation_id": "c25a9306-106f-4ed4-bf6a-75cbbcbe109d"
+    },
+    {
+      "key": "pexels:3735783",
+      "source_url": "https://www.pexels.com/search/videos/science%20three/",
+      "sha256": "dc7c93db34adfba8f03570a787b9d536a4b70770855e318cf99b45d112fe1167",
+      "selected_at": "2026-11-27T22:09:50.809803+00:00",
+      "generation_id": "c25a9306-106f-4ed4-bf6a-75cbbcbe109d"
+    },
+    {
+      "key": "wikimedia:175169296",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Cumulus_Clouds_Spin_Around_a_High_Pressure_(CIRA_2025-09-16_-_nolabels_portrait).webm",
+      "sha256": "69db5940d7e5c4f43ca4286fa6f574545e0a02060db99b93986121a0bc86ae0c",
+      "selected_at": "2026-11-27T22:11:02.429604+00:00",
+      "generation_id": "c25a9306-106f-4ed4-bf6a-75cbbcbe109d"
+    },
+    {
+      "key": "pixabay:105322",
+      "source_url": "https://pixabay.com/videos/search/underwater%20ocean%20reef/",
+      "sha256": "b29e3d3e4a093b2366e4979a9d7debf14ccf513b5d5b1ff26476c146520e3eb6",
+      "selected_at": "2026-11-27T22:12:11.074877+00:00",
+      "generation_id": "c25a9306-106f-4ed4-bf6a-75cbbcbe109d"
     }
   ]
 }
