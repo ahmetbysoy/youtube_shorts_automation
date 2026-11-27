@@ -1288,6 +1288,34 @@
       "sha256": "2f69720bceee08c24b2eefd6f3c1a97bf58fe560a4969c4bf3009650c2ddf5b3",
       "selected_at": "2026-11-27T03:06:22.130806+00:00",
       "generation_id": "70712efb-339a-4189-bd8c-a320645948a9"
+    },
+    {
+      "key": "pixabay:110937",
+      "source_url": "https://pixabay.com/videos/search/middle%20east%20caravan/",
+      "sha256": "71e64986af99b9f4b81ef13d0c99475072c04e24cc9c084dc5e21a2d12e23ee1",
+      "selected_at": "2026-11-27T12:42:30.065872+00:00",
+      "generation_id": "bfc04caf-617c-42fa-bdc6-70825b2703e3"
+    },
+    {
+      "key": "pixabay:186516",
+      "source_url": "https://pixabay.com/videos/search/petra%20jordan%20canyon/",
+      "sha256": "961942763126ab2378c588a0c2564db33765f9044978136f1faffb3cdd040f02",
+      "selected_at": "2026-11-27T12:43:19.887589+00:00",
+      "generation_id": "bfc04caf-617c-42fa-bdc6-70825b2703e3"
+    },
+    {
+      "key": "pixabay:144043",
+      "source_url": "https://pixabay.com/videos/search/history%20area/",
+      "sha256": "ed596a7ca193475fa7aa54120c5c11b376f7e4c78f35ae50ccf7160dbbf2b7ae",
+      "selected_at": "2026-11-27T12:44:26.553287+00:00",
+      "generation_id": "bfc04caf-617c-42fa-bdc6-70825b2703e3"
+    },
+    {
+      "key": "pixabay:13568",
+      "source_url": "https://pixabay.com/videos/search/history%20thousand/",
+      "sha256": "7129747c4899fe510abd85239e9893b2ffc39de05c2988ba13143df06ebadb8b",
+      "selected_at": "2026-11-27T12:45:16.872537+00:00",
+      "generation_id": "bfc04caf-617c-42fa-bdc6-70825b2703e3"
     }
   ]
 }
