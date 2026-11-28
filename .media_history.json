@@ -1344,6 +1344,34 @@
       "sha256": "b29e3d3e4a093b2366e4979a9d7debf14ccf513b5d5b1ff26476c146520e3eb6",
       "selected_at": "2026-11-27T22:12:11.074877+00:00",
       "generation_id": "c25a9306-106f-4ed4-bf6a-75cbbcbe109d"
+    },
+    {
+      "key": "pexels:10156813",
+      "source_url": "https://www.pexels.com/search/videos/ancient%20harbor%20ruins/",
+      "sha256": "f50dcbf53b381743d522ea031bb1e5660f4f4f2ffdfb7a72dcc0b6fdf8c59250",
+      "selected_at": "2026-11-28T04:02:58.064089+00:00",
+      "generation_id": "53f53ca2-ba6d-49a5-bd40-38b73fa62a22"
+    },
+    {
+      "key": "wikimedia:145562084",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Pantheon_(Rome),_Dome_interior.jpg",
+      "sha256": "5a515e4846edff28b44ad376176edc2a914f79ef98780eab5290bdb9f7f837e3",
+      "selected_at": "2026-11-28T04:05:18.308127+00:00",
+      "generation_id": "53f53ca2-ba6d-49a5-bd40-38b73fa62a22"
+    },
+    {
+      "key": "pexels:16469966",
+      "source_url": "https://www.pexels.com/search/videos/mediterranean%20sea%20waves/",
+      "sha256": "b8d5a7d9e4150c133841f419dab94e52b92e6f3fa43a35810199fb6ec1fa7c5c",
+      "selected_at": "2026-11-28T04:06:46.435808+00:00",
+      "generation_id": "53f53ca2-ba6d-49a5-bd40-38b73fa62a22"
+    },
+    {
+      "key": "wikimedia:147124946",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Evolution_of_United_States_standard_time_zone_boundaries.webm",
+      "sha256": "287295efcaddad9d7512063d32058ae49ee161470b90bec55929ce1d4fc09b10",
+      "selected_at": "2026-11-28T04:08:35.333937+00:00",
+      "generation_id": "53f53ca2-ba6d-49a5-bd40-38b73fa62a22"
     }
   ]
 }
