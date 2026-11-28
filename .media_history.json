@@ -1372,6 +1372,34 @@
       "sha256": "287295efcaddad9d7512063d32058ae49ee161470b90bec55929ce1d4fc09b10",
       "selected_at": "2026-11-28T04:08:35.333937+00:00",
       "generation_id": "53f53ca2-ba6d-49a5-bd40-38b73fa62a22"
+    },
+    {
+      "key": "pixabay:2",
+      "source_url": "https://pixabay.com/videos/search/science%20according/",
+      "sha256": "7a6dda2c773ef782170f3333adf8bafa40cc9059170ed3a4e9a23cbadab170e4",
+      "selected_at": "2026-11-28T07:43:28.940030+00:00",
+      "generation_id": "03089918-5b3d-49f3-b5f9-bdd0d60e453a"
+    },
+    {
+      "key": "wikimedia:178046654",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Ecovative-_Growing_Sustainable_Products_From_Mushroom_Mycelium_To_Save_The_Planet.webm",
+      "sha256": "b192dd7ca10771f4cb3f8d34c2bfc832c29ebf0d0292289d8f6170171f718061",
+      "selected_at": "2026-11-28T07:44:08.789425+00:00",
+      "generation_id": "03089918-5b3d-49f3-b5f9-bdd0d60e453a"
+    },
+    {
+      "key": "pixabay:100220",
+      "source_url": "https://pixabay.com/videos/search/science%20bullet/",
+      "sha256": "79b8ff40abf1e78a352fa6b7ac976c2b72d8fc72120f7a8e086943deb4e38437",
+      "selected_at": "2026-11-28T07:45:03.323576+00:00",
+      "generation_id": "03089918-5b3d-49f3-b5f9-bdd0d60e453a"
+    },
+    {
+      "key": "pexels:3195443",
+      "source_url": "https://www.pexels.com/search/videos/science%20according/",
+      "sha256": "dbf20f653a17945f152fc6b11217f8c215c02ea0dc85cef50215d5f757528fb6",
+      "selected_at": "2026-11-28T07:45:33.754119+00:00",
+      "generation_id": "03089918-5b3d-49f3-b5f9-bdd0d60e453a"
     }
   ]
 }
