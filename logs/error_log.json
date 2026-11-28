@@ -275,5 +275,11 @@
     "status": "error",
     "channel_id": "1",
     "stage": "upload"
+  },
+  {
+    "timestamp": "2026-11-28T04:12:30.253186+00:00",
+    "status": "error",
+    "channel_id": "1",
+    "stage": "upload"
   }
 ]
